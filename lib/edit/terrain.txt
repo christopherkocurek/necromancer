@@ -48,16 +48,16 @@ G: :w
 # 0x01 --> open floor
 
 N:1:open floor
-G:.:W
+G:.:s
 
-# 0x02 --> chasm
+# 0x02 --> bottomless pit
 
-N:2:chasm
+N:2:bottomless pit
 G:%:D
 
-# 0x03 --> glyph of warding
+# 0x03 --> protective rune
 
-N:3:glyph of warding
+N:3:protective rune
 G:;:G1
 
 # 0x04 --> open door
@@ -65,9 +65,9 @@ G:;:G1
 N:4:open door
 G:':U
 
-# 0x05 --> broken door
+# 0x05 --> shattered door
 
-N:5:broken door
+N:5:shattered door
 G:':s
 
 # 0x06 --> warded door (power 1)
@@ -85,9 +85,9 @@ G:+:B
 N:8:warded door
 G:+:v
 
-# 0x09 --> sunlight
+# 0x09 --> fading daylight
 
-N:9: patch of sunlight
+N:9:fading daylight
 G:.:y
 
 # 0x0A --> rage version of open floor
@@ -122,69 +122,69 @@ G:0:D
 N:15:torture rack
 G:&:r
 
-# 0x10 --> visible trap -- false floor
+# 0x10 --> visible trap -- weakened floor
 
-N:16:false floor
+N:16:weakened floor
 G:^:U
 
-# 0x11 --> visible trap -- open pit
+# 0x11 --> visible trap -- jagged pit
 
-N:17:pit
+N:17:jagged pit
 G:^:s
 
-# 0x12 --> visible trap -- spiked pit
+# 0x12 --> visible trap -- poisoned spike pit
 
-N:18:spiked pit
+N:18:poisoned spike pit
 G:^:W
 
-# 0x13 --> visible trap -- dart
+# 0x13 --> visible trap -- poison needle
 
-N:19:dart trap
+N:19:poison needle trap
 G:^:v1
 
-# 0x14 --> visible trap -- gas -- confusion
+# 0x14 --> visible trap -- noxious fumes
 
-N:20:gas trap
+N:20:noxious fumes
 G:^:G1
 
-# 0x15 --> visible trap -- gas -- memory
+# 0x15 --> visible trap -- mind fog
 
-N:21:gas trap
+N:21:mind fog
 G:^:B1
 
-# 0x16 --> visible trap -- alarm
+# 0x16 --> visible trap -- orc alarm
 
-N:22:alarm trap
+N:22:orc alarm
 G:^:U1
 
-# 0x17 --> visible trap -- flash
+# 0x17 --> visible trap -- blinding glyph
 
-N:23:flash trap
+N:23:blinding glyph
 G:^:y
 
-# 0x18 --> visible trap -- caltrops
+# 0x18 --> visible trap -- rusted caltrops
 
-N:24:caltrop field
+N:24:rusted caltrops
 G:^:w
 
-# 0x19 --> visible trap -- roost
+# 0x19 --> visible trap -- bat roost
 
-N:25:roost
+N:25:bat roost
 G:^:D1
 
-# 0x1A --> visible trap - web
+# 0x1A --> visible trap -- thick web
 
-N:26:web
+N:26:thick web
 G:^:D
 
-# 0x1B --> visible trap -- deadfall
+# 0x1B --> visible trap -- falling stones
 
-N:27:deadfall trap
+N:27:falling stones
 G:^:r
 
-# 0x1C --> visible trap -- acid
+# 0x1C --> visible trap -- pool of filth
 
-N:28:discoloured spot
+N:28:pool of filth
 G:^:u
 
 # 0x1D --> prison bars (Dol Guldur feature)
@@ -202,51 +202,51 @@ G:\:s
 N:31:bloodstain
 G:.:r
 
-# 0x20 --> locked door (power 0) -- aka a normal door
+# 0x20 --> iron door (power 0) -- aka a normal door
 
-N:32:door
+N:32:iron door
 G:+:U
 M:32
 
-# 0x21 --> locked door (power 1)
+# 0x21 --> locked iron door (power 1)
 
-N:33:locked door
+N:33:locked iron door
 G:+:U
 M:32
 
-# 0x22 --> locked door (power 2)
+# 0x22 --> locked iron door (power 2)
 
-N:34:locked door
+N:34:locked iron door
 G:+:U
 M:32
 
-# 0x23 --> locked door (power 3)
+# 0x23 --> locked iron door (power 3)
 
-N:35:locked door
+N:35:locked iron door
 G:+:U
 M:32
 
-# 0x24 --> locked door (power 4)
+# 0x24 --> locked iron door (power 4)
 
-N:36:locked door
+N:36:locked iron door
 G:+:U
 M:32
 
-# 0x25 --> locked door (power 5)
+# 0x25 --> locked iron door (power 5)
 
-N:37:locked door
+N:37:locked iron door
 G:+:U
 M:32
 
-# 0x26 --> locked door (power 6)
+# 0x26 --> locked iron door (power 6)
 
-N:38:locked door
+N:38:locked iron door
 G:+:U
 M:32
 
-# 0x27 --> locked door (power 7)
+# 0x27 --> locked iron door (power 7)
 
-N:39:locked door
+N:39:locked iron door
 G:+:U
 M:32
 
@@ -298,15 +298,15 @@ N:47:jammed door
 G:+:U1
 M:32
 
-# 0x30 --> secret door
+# 0x30 --> hidden passage
 
-N:48:secret door
+N:48:hidden passage
 G:#:W1
 M:56
 
-# 0x31 --> pile of rubble
+# 0x31 --> fallen masonry
 
-N:49:pile of rubble
+N:49:fallen masonry
 G:::s
 
 # 0x32 --> unused
@@ -339,27 +339,27 @@ G:1:s
 N:55:unused
 G:1:s
 
-# 0x38 --> granite wall -- basic
+# 0x38 --> dark stone wall -- basic
 
-N:56:granite wall
-G:#:W1
+N:56:dark stone wall
+G:#:D
 
-# 0x39 --> granite wall -- inner
+# 0x39 --> dark stone wall -- inner
 
-N:57:granite wall
-G:#:W1
+N:57:dark stone wall
+G:#:D
 M:56
 
-# 0x3A --> granite wall -- outer
+# 0x3A --> dark stone wall -- outer
 
-N:58:granite wall
-G:#:W1
+N:58:dark stone wall
+G:#:D
 M:56
 
-# 0x3B --> granite wall -- solid
+# 0x3B --> dark stone wall -- solid
 
-N:59:granite wall
-G:#:W1
+N:59:dark stone wall
+G:#:D
 M:56
 
 # 0x3C --> unused
@@ -377,108 +377,108 @@ G:1:s
 N:62:unused
 G:1:s
 
-# 0x3F --> granite wall -- permanent
+# 0x3F --> dark stone wall -- permanent
 
-N:63:granite wall
-G:#:W1
+N:63:dark stone wall
+G:#:D
 M:56
 
-# 0x40 --> forge -- 0 uses
+# 0x40 --> orc forge -- 0 uses
 
-N:64:forge (exhausted)
+N:64:orc forge (exhausted)
 G:0:s
 
-# 0x41 --> forge -- 1 use
+# 0x41 --> orc forge -- 1 use
 
-N:65:forge (1 use remaining)
+N:65:orc forge (1 use remaining)
 G:0:s
 
-# 0x42 --> forge -- 2 uses
+# 0x42 --> orc forge -- 2 uses
 
-N:66:forge (2 uses remaining)
+N:66:orc forge (2 uses remaining)
 G:0:s
 
-# 0x43 --> forge -- 3 uses
+# 0x43 --> orc forge -- 3 uses
 
-N:67:forge (3 uses remaining)
+N:67:orc forge (3 uses remaining)
 G:0:s
 
-# 0x44 --> forge -- 4 uses
+# 0x44 --> orc forge -- 4 uses
 
-N:68:forge (4 uses remaining)
+N:68:orc forge (4 uses remaining)
 G:0:s
 
-# 0x45 --> forge -- 5 uses
+# 0x45 --> orc forge -- 5 uses
 
-N:69:forge (5 uses remaining)
+N:69:orc forge (5 uses remaining)
 G:0:s
 
-# 0x46 --> good forge -- 0 uses
+# 0x46 --> shadow forge -- 0 uses
 
-N:70:enchanted forge (exhausted)
-G:0:y1
+N:70:shadow forge (exhausted)
+G:0:v
 
-# 0x47 --> good forge -- 1 use
+# 0x47 --> shadow forge -- 1 use
 
-N:71:enchanted forge (1 use remaining)
-G:0:y1
+N:71:shadow forge (1 use remaining)
+G:0:v
 
-# 0x48 --> good forge -- 2 uses
+# 0x48 --> shadow forge -- 2 uses
 
-N:72:enchanted forge (2 uses remaining)
-G:0:y1
+N:72:shadow forge (2 uses remaining)
+G:0:v
 
-# 0x49 --> good forge -- 3 uses
+# 0x49 --> shadow forge -- 3 uses
 
-N:73:enchanted forge (3 uses remaining)
-G:0:y1
+N:73:shadow forge (3 uses remaining)
+G:0:v
 
-# 0x4A --> good forge -- 4 uses
+# 0x4A --> shadow forge -- 4 uses
 
-N:74:enchanted forge (4 uses remaining)
-G:0:y1
+N:74:shadow forge (4 uses remaining)
+G:0:v
 
-# 0x4B --> good forge -- 5 uses
+# 0x4B --> shadow forge -- 5 uses
 
-N:75:enchanted forge (5 uses remaining)
-G:0:y1
+N:75:shadow forge (5 uses remaining)
+G:0:v
 
-# 0x4C --> unique forge -- 0 uses
+# 0x4C --> unique forge 'Angdur' -- 0 uses
 
-N:76:shadow forge (exhausted)
+N:76:forge 'Angdur' (exhausted)
 G:0:D
 
-# 0x4D --> unique forge -- 1 use
+# 0x4D --> unique forge 'Angdur' -- 1 use
 
-N:77:shadow forge (1 use remaining)
+N:77:forge 'Angdur' (1 use remaining)
 G:0:v
 
-# 0x4E --> unique forge -- 2 uses
+# 0x4E --> unique forge 'Angdur' -- 2 uses
 
-N:78:shadow forge (2 uses remaining)
+N:78:forge 'Angdur' (2 uses remaining)
 G:0:v
 
-# 0x4F --> unique forge -- 3 uses
+# 0x4F --> unique forge 'Angdur' -- 3 uses
 
-N:79:shadow forge (3 uses remaining)
+N:79:forge 'Angdur' (3 uses remaining)
 G:0:v
 
-# 0x50 --> up stairs (perm)
+# 0x50 --> crumbling stairs up (perm)
 
-N:80:up staircase
+N:80:crumbling stairs up
 G:<:W
 
-# 0x51 --> down stairs (perm)
+# 0x51 --> dark stairs down (perm)
 
-N:81:down staircase
+N:81:dark stairs down
 G:>:W
 
-# 0x52 --> up shaft (perm)
+# 0x52 --> narrow shaft up (perm)
 
-N:82:up shaft
+N:82:narrow shaft up
 G:<:D
 
-# 0x53 --> down shaft (perm)
+# 0x53 --> narrow shaft down (perm)
 
-N:83:down shaft
+N:83:narrow shaft down
 G:>:D

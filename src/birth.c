@@ -62,6 +62,11 @@ static int get_start_xp(void)
     {
         return PY_FIXED_EXP;
     }
+    /* Istari (race 3) get 50,000 XP for playtesting */
+    else if (p_ptr->prace == 3)
+    {
+        return 50000;
+    }
     else
     {
         return PY_START_EXP;

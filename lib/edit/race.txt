@@ -111,4 +111,25 @@ D: In the Third Age, their great halls of Khazad-dum lie
 D: abandoned, and many have scattered to Erebor and the
 D: Iron Hills. Their hatred of orcs and dragons is legendary.
 
+# - Istari:
+#   - Godmode race for playtesting
+#   - Stat modifiers +10 +10 +10 +10 (Total: +40)
+#   - All proficiencies, no penalties
+
+N:3:Istari
+S:10:10:10:10
+I:1:1000:10000
+H:72:3
+W:160:10
+C:0|1|2
+F:BOW_PROFICIENCY | SWORD_PROFICIENCY | AXE_PROFICIENCY
+E:39:0:5:5     # ~ Wooden Torches (5)
+E:80:37:10:10  # , Fragment of Lembas (10)
+E:23:7:1:1     # | Curved sword (1)
+D:The Istari are Maiar spirits sent to Middle-earth in the
+D: guise of old men. Though their true power is veiled, they
+D: possess wisdom and strength far beyond mortal ken. This
+D: form is for playtesting only - the Necromancer himself
+D: trembles before their might.
+
 
