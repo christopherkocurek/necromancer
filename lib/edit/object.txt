@@ -221,8 +221,7 @@ I:39:2:0
 W:3:20:1:1000
 P:0:0d0:0:0d0:0
 A:3/20
-D:An enchanted glowing jewel, akin to a Silmaril, but much less
-D: powerful.
+D:An enchanted glowing jewel, imbued with Elven light.
 D: You can equip it as a light source with a radius of 1 square.
 D: It will shine forever.
 
@@ -747,15 +746,16 @@ D: You can equip it as a light source with a radius of 4 squares.
 D: It will shine forever.
 
 
-N:131:& Silmaril~
+N:131:& Star-glass~
 G:*:w
 I:39:9:0
 W:25:0:1:100000
 P:0:0d0:0:0d0
 F:SEE_INVIS | SUST_GRA | EASY_KNOW
 F:IGNORE_ALL | NO_SMITHING
-D:You can equip it as a light source with a radius of 7 squares.
-D: It will shine forever.
+D:A crystal phial filled with the light of Earendil's star, blessed
+D: by the Lady of Lothlorien. You can equip it as a light source with
+D: a radius of 7 squares. It will shine forever.
 
 ##### Amulets #####
 
@@ -940,7 +940,7 @@ F:FEAR | EASY_KNOW | LIGHT_CURSE
 B:2/0
 
 
-N:161:Bauglir's Vanguard
+N:161:the Shadow's Vanguard
 G:=:d
 I:45:11:0
 W:6:0:1:300
@@ -1592,7 +1592,21 @@ A:8/3
 F:EASY_KNOW
 D:It reduces your constitution by one point.
 D: Herbs provide nourishment for
-D: about 250 turns under normal conditions. 
+D: about 250 turns under normal conditions.
+
+
+N:390:Athelas
+G:,:G
+I:80:10:250
+W:12:0:1:500
+P:0:0d0:0:0d0
+A:12/8:18/4
+F:EASY_KNOW
+D:The kingsfoil, a powerful healing herb known to the Dunedain.
+D: It cures poison, fear, confusion, and hallucination, and restores
+D: a quarter of your health. It is especially potent against the
+D: shadow-sickness of Dol Guldur. Herbs provide nourishment for about
+D: 250 turns under normal conditions.
 
 
 N:399:& Piece~ of Dark Bread
@@ -1698,13 +1712,13 @@ I:2:1:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:Welcome to Sil. The game is set within a vast dungeon called Angband.
-D: You have journeyed far into the north to reach Angband, and at
-D: great cost have found your way in. You plan to descend 1,000 ft
-D: into the earth, to find the dark enemy Morgoth and to cut a
-D: Silmaril from his crown, so that its light might once again be free.
-D:                                  
-D: As with many other Roguelike games, Sil's graphics are represented by text:
+D:Welcome to The Necromancer. The game is set within the fortress of Dol Guldur.
+D: You have journeyed through the dark forest of Mirkwood to reach the
+D: Necromancer's stronghold, and at great cost have found your way in.
+D: You plan to descend into the depths to find Thrain's ring and the
+D: key to Erebor, so that the dwarves might reclaim their homeland.
+D:
+D: As with many other Roguelike games, graphics are represented by text:
 D: you are represented by the @, the + is a door, the ~ is a note, the blocks are
 D: walls. Try moving around with the keypad or arrow keys to reach the note.
 D: (You may need to press Numlock if your keypad doesn't work).
@@ -1896,7 +1910,7 @@ I:2:15:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:The dungeons of Angband are littered with many traps. Near here is a
+D:The halls of Dol Guldur are littered with many traps. Near here is a
 D: caltrop trap which temporarily slows you. Like most traps, it can be
 D: disarmed by holding down Control while attempting to move into it
 D: (or pressing (/) before moving). This also has a chance of triggering the trap.
@@ -1914,7 +1928,7 @@ F:EASY_KNOW
 D:Your character has four main statistics: Strength, Dexterity,
 D: Constitution, and Grace. These are represented at the left of
 D: the screen. The numbers can be positive or negative, with zero
-D: representing the average for the humans of this age (the Edain).
+D: representing the average for the humans of this age.
 
 
 N:467:& Note~
@@ -1964,8 +1978,8 @@ P:0:0d0:0:0d0
 F:EASY_KNOW
 D:As well as your Statistics, you have 8 skills open to you.
 D: Your Grace affects the last four of these: Perception, Will,
-D: Smithing, and Song. It also increases your 'Voice' which is
-D: a measure of how long you can keep singing a song of power.
+D: Smithing, and Lore. It also increases your 'Voice' which is
+D: a measure of how long you can maintain your concentration.
 
 
 N:471:& Note~
@@ -1977,7 +1991,7 @@ F:EASY_KNOW
 D:To have a look at your character sheet, press (Escape) to bring up the
 D: main menu then choose the second option. This will show
 D: all of your Skills and much more. To exit just press (Escape)
-D: (which exits any menu or screen in Sil).
+D: (which exits any menu or screen).
 D: An alternative way to look at your character sheet is to press the @
 D: key.
 
@@ -2054,12 +2068,12 @@ I:2:28:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:Enemies in Sil have three levels of alertness. They can be asleep, unwary,
+D:Enemies have three levels of alertness. They can be asleep, unwary,
 D: or alert. When they are asleep they don't move, and their Evasion score is
 D: set to [-5]. When they are unwary, they move around oblivious to you and
 D: their Evasion is halved.
-D:                                             
-D: Remaining unnoticed can be a great advantage in Sil. You can try to avoid
+D:
+D: Remaining unnoticed can be a great advantage. You can try to avoid
 D: all enemies, avoid only those you cannot handle, or kill them in their sleep.
 D: It is even possible to play the game without any combat if you are very
 D: careful.                                                 
@@ -2130,13 +2144,11 @@ I:2:33:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:Some characters learn to sing songs of power, which can
+D:Some characters learn words of power and ancient lore, which can
 D: have great effect upon you, your enemies, or even your environment.
-D: Your character knows two songs: the Song of Staunching, which stops
-D: you from bleeding and increases the speed at which you heal, and
-D: the Song of the Trees, which increases your light radius. Behind this
-D: door you will find use for both of them. Press (s) to begin or end
-D: singing.
+D: Your character knows abilities that aid healing and provide light.
+D: Behind this door you will find use for them. Press (s) to begin or end
+D: using your lore abilities.
 
 
 N:484:& Note~
@@ -2157,7 +2169,7 @@ I:2:35:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:When you have learnt about Song and Smithing, go through this door.
+D:When you have learnt about Lore and Smithing, go through this door.
 
 N:486:& Note~
 G:~:W1
@@ -2166,8 +2178,8 @@ W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
 D:Each of the eight skills has a set of special Abilities tied to it.
-D: Each type of song is an Ability for the Song skill. Jewellery is
-D: an Ability for the Smithing skill.
+D: Words of power and ancient knowledge are Abilities for the Lore skill.
+D: Jewellery is an Ability for the Smithing skill.
 
 N:487:& Note~
 G:~:W1
@@ -2190,7 +2202,7 @@ I:2:38:0
 W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
-D:That's it. You now know enough about Sil to really get started.
+D:That's it. You now know enough to really get started.
 D: If you need to know any more, then have a look through the manual.
 D: Through here lies your final challenge, and one that will
 D: almost certainly mean your demise. See if you can make it past the

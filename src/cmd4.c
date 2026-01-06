@@ -471,7 +471,7 @@ void show_songs(void)
     for (k = 0, i = 0; i < SNG_WOVEN_THEMES; i++)
     {
         /* Is this song acceptable? */
-        if (!p_ptr->active_ability[S_SNG][i])
+        if (!p_ptr->active_ability[S_LOR][i])
             continue;
 
         /* Save the index */
@@ -479,7 +479,7 @@ void show_songs(void)
 
         /* Save the song name */
         my_strcpy(out_desc[k],
-            b_name + (&b_info[ability_index(S_SNG, i)])->name,
+            b_name + (&b_info[ability_index(S_LOR, i)])->name,
             sizeof(out_desc[0]));
 
         /* Advance to next "line" */
@@ -553,7 +553,7 @@ void do_cmd_change_song()
     for (i = 0; i < SNG_WOVEN_THEMES; i++)
     {
         // keep track of the number of options and final song
-        if (p_ptr->active_ability[S_SNG][i])
+        if (p_ptr->active_ability[S_LOR][i])
         {
             options += 1;
         }
@@ -590,13 +590,13 @@ void do_cmd_change_song()
             show_songs();
 
         /* Begin the prompt */
-        sprintf(out_val, "Songs: s");
+        sprintf(out_val, "Lore: s");
 
         // count the abilities
         for (i = 0; i < SNG_WOVEN_THEMES; i++)
         {
             // keep track of the number of options
-            if (p_ptr->active_ability[S_SNG][i])
+            if (p_ptr->active_ability[S_LOR][i])
             {
                 my_strcat(out_val, ",", sizeof(out_val));
                 sprintf(tmp_val, "%c", (char)'a' + i);
@@ -690,7 +690,7 @@ void do_cmd_change_song()
             if ((which >= 'a') && (which < 'a' + SNG_WOVEN_THEMES))
             {
                 song_choice = (int)which - 'a';
-                if (p_ptr->active_ability[S_SNG][song_choice])
+                if (p_ptr->active_ability[S_LOR][song_choice])
                 {
                     done = TRUE;
                     break;
@@ -1762,7 +1762,7 @@ void do_cmd_ability_screen(void)
                                 "Ability now switched off.");
 
                             // need to cancel second song in some cases
-                            if ((skilltype == S_SNG)
+                            if ((skilltype == S_LOR)
                                 && (abilitynum == SNG_WOVEN_THEMES))
                             {
                                 p_ptr->song2 = SNG_NOTHING;
@@ -1976,7 +1976,7 @@ static const smithing_flag_desc smithing_flag_types[] = { { CAT_STAT, TR1_STR,
     { CAT_STAT, TR1_NEG_GRA, 1, "Gra penalty" },
     { CAT_SKILL, TR1_ARC, 1, "Archery" }, { CAT_SKILL, TR1_STL, 1, "Stealth" },
     { CAT_SKILL, TR1_PER, 1, "Perception" }, { CAT_SKILL, TR1_WIL, 1, "Will" },
-    { CAT_SKILL, TR1_SNG, 1, "Song" },
+    { CAT_SKILL, TR1_SNG, 1, "Lore" },
     { CAT_MISC, TR1_DAMAGE_SIDES, 1, "Damage bonus" },
     { CAT_MISC, TR2_LIGHT, 2, "Light" },
     { CAT_MISC, TR2_SLOW_DIGEST, 2, "Sustenance" },

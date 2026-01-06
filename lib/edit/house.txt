@@ -1,7 +1,7 @@
 # File: house.txt
 #
 # This file is used to create the "lib/data/house.raw" file, which is
-# used to initialize the "player house" information for Sil.
+# used to initialize the "player house" information for The Necromancer.
 #
 # Do not modify this file unless you know exactly what you are doing,
 # unless you wish to risk possible system crashes and broken savefiles.
@@ -33,113 +33,109 @@
 
 V:1.5.0
 
-N:0:Houseless
-A:Houseless
-B:Houseless
-S:0:0:0:0
-D:
+# === Elf Houses (for race 0) ===
 
-N:1:House of Feanor
-A:Feanor's House
-B:Feanor
-F:SMT_AFFINITY
-S:0:1:0:0
-D:Feanor was the greatest of the Noldor, though proud and
-D: unyielding. He created the Silmarils which Morgoth later
-D: stole, and he led his house across the sea to Beleriand
-D: in pursuit. Those of Feanor's house are fiery in temper,
-D: but capable of great works of beauty.
-
-N:2:House of Fingolfin
-A:Fingolfin's House
-B:Fingolfin
-F:WIL_AFFINITY
-S:0:0:1:0
-D:Fingolfin led his house into Beleriand to protect its
-D: peoples from the shadow of Morgoth. Betrayed by the
-D: Feanorians, they had to come through the icy wastes of the north.
-D: Their people are the most hardy and valiant, most
-D: feared by the orcs and hated by Morgoth.
-
-N:3:House of Finarfin
-A:Finarfin's House
-B:Finarfin
-F:PER_AFFINITY
+N:0:Of Lothlorien
+A:Lothlorien
+B:Lorien
+F:LOR_AFFINITY
 S:0:0:0:1
-D:Finarfin himself did not come to Beleriand, but many of his house
-D: made the journey under Fingolfin's banner. They are the
-D: fairest and wisest of the Noldor. All have golden hair as
-D: a mark of their Vanyarin ancestry.
+D:The Galadhrim dwell in the golden wood of Lothlorien, protected
+D: by the power of Galadriel and Celeborn. They are the most
+D: magical of the remaining elves, keepers of ancient wisdom
+D: and the light of the Elder Days. Their arrows fly true and
+D: their knowledge of lore is unmatched in Middle-earth.
 
-N:4:Of Doriath
-A:Doriath
-B:Doriath
-F:SNG_AFFINITY
+N:1:Of Rivendell
+A:Rivendell
+B:Imladris
+F:LOR_AFFINITY
 S:0:0:0:1
-D:Most Sindar dwell in the forests of Doriath. Thingol is their
-D: king, and rules from Menegroth with Melian at his side.
-D: Her power hides Doriath from the servants of Morgoth, allowing
-D: the Sindar to hunt and feast as in the days before his shadow grew.
+D:The Last Homely House east of the Sea is ruled by Elrond
+D: Half-elven, master of healing and keeper of Vilya. His folk
+D: are loremasters and scholars, preserving the knowledge of
+D: ages past. Many seeking wisdom or refuge come to the hidden
+D: valley of Imladris.
 
-N:5:House of Nogrod
-A:Nogrod
-B:Nogrod
-F:SMT_AFFINITY
-S:0:1:0:0
-D:Nogrod, the 'Hollowbold', is a dwarven stronghold beneath the
-D: Blue Mountains. The forges burn brightly in its deep mansions
-D: and the smiths of Nogrod are matchless in all Beleriand.
-
-N:6:House of Belegost
-A:Belegost
-B:Belegost
-F:WIL_AFFINITY
-S:1:0:0:0
-D:Belegost, the 'Great Fortress', is a dwarven citadel in the
-D: northern ranges of the Blue Mountains. Its stout warriors
-D: are legendary for their strength and for the fearsome
-D: iron masks they wear to battle.
-
-N:7:House of Beor
-A:Beor's House
-B:Beor
-F:EVN_AFFINITY
-S:0:0:0:1
-D:Those of Beor's house are steadfast in endurance of hardship
-D: and sorrow, slow to tears and to laughter; their fortitude needs
-D: no hope to sustain it. For the most part they have brown hair
-D: with brown or grey eyes.
-
-N:8:People of Haleth
-A:Haleth's People
-B:Haleth
+N:2:Of Greenwood
+A:Greenwood
+B:Silvan
 F:STL_AFFINITY
 S:0:1:0:0
-D:The people of Haleth are not eager for lore, and use few words;
-D: for they do not love great concourse of men, and many among them
-D: delight in solitude, wandering free in the greenwoods. For the most
-D: part they are small in stature, with dark hair and dark eyes.
+D:The Silvan Elves of Greenwood the Great dwell under King
+D: Thranduil in halls carved beneath the forest. They are
+D: less wise in lore than their western kin, but unmatched
+D: in woodcraft and stealth. The shadow of Dol Guldur has
+D: darkened their realm, and they know well the Enemy's servants.
 
-N:9:House of Hador
-A:Hador's House
-B:Hador
+# === Man Houses (for race 1) ===
+
+N:3:Dunedain
+A:the Dunedain
+B:Ranger
+F:PER_AFFINITY
+S:0:1:0:1
+D:The Rangers of the North are the last remnant of the kingdom
+D: of Arnor, descendants of the kings of Numenor. They wander
+D: the wild lands, protecting the innocent from evil they never
+D: see. Long-lived and keen-eyed, they are skilled trackers
+D: and deadly foes of the servants of Sauron.
+
+N:4:Of Rohan
+A:Rohan
+B:Rohirrim
+F:EVN_AFFINITY
+S:1:0:0:0
+D:The Rohirrim are the horse-lords of the Mark, dwelling on
+D: the green plains between Fangorn and the White Mountains.
+D: They are fierce warriors and unmatched riders, loyal allies
+D: of Gondor. Their ancestors came from the north, and they
+D: still sing songs of Eorl the Young.
+
+N:5:Of Gondor
+A:Gondor
+B:Gondorian
+F:MEL_AFFINITY
+S:0:0:1:0
+D:Gondor is the great southern kingdom of the Dunedain,
+D: founded by Elendil's sons after the fall of Numenor.
+D: Its soldiers are disciplined and well-trained, guarding
+D: the borders of the West against Mordor's shadow. The
+D: Tower Guard of Minas Tirith are the elite of the realm.
+
+# === Dwarf Houses (for race 2) ===
+
+N:6:Of Khazad-dum
+A:Khazad-dum
+B:Moria
+F:LOR_AFFINITY
+S:0:0:0:1
+D:The exiles of Khazad-dum remember the glory days before
+D: Durin's Bane awoke. They are keepers of ancient dwarven
+D: lore and secrets, preserving knowledge from the greatest
+D: of all dwarven mansions. Though their home is lost to
+D: shadow, they dream of its reclamation.
+
+N:7:Of Erebor
+A:Erebor
+B:Erebor
+F:SMT_AFFINITY
+S:0:0:1:0
+D:The dwarves of Erebor were driven from the Lonely Mountain
+D: by Smaug the Golden. Now scattered in exile, they await
+D: the day they might reclaim their home. The smiths of
+D: Erebor crafted wonders, including the Arkenstone, and
+D: their skill with forge and anvil is renowned.
+
+N:8:Of the Iron Hills
+A:the Iron Hills
+B:Iron Hills
 F:MEL_AFFINITY
 S:1:0:0:0
-D:Those of Hador's house are quick to wrath and laughter,
-D: fierce in battle, generous to friend and foe, swift in resolve,
-D: fast in loyalty and joyous in heart. For the most part they are
-D: tall, with flaxen or golden hair, blue-grey eyes and fair skin.
+D:Dain Ironfoot rules the dwarves of the Iron Hills, east
+D: of Erebor. They are a martial folk, hardened by constant
+D: battle against orcs and other foes. Their warriors are
+D: among the fiercest of all dwarven-kind, and their axes
+D: have drunk deep of orc-blood.
 
-# New Sindar House: should be moved into order when I next break savefile
-# compatibility (v 1.1?)
-
-N:10:Of the Falas
-A:the Falas
-B:Falathrim
-F:ARC_AFFINITY
-S:0:1:0:0
-D:When Thingol met with Melian under the wheeling stars, many of his folk
-D: despaired of finding him again and journeyed to the shore, the Falas,
-D: to set sail to Valinor. Some tarried there and dwelt in the havens on the
-D: edge of Middle-Earth with their lord, Cirdan, the shipbuilder.
 

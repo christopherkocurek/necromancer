@@ -332,9 +332,9 @@ N:130:80
 G:,:w
 D:Pale
 
-#N:131:80
-#G:,:g1
-#D:Leafy
+N:131:80
+G:,:G
+D:Fragrant
 
 N:141:81
 G:,:r1

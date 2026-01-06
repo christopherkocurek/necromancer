@@ -592,107 +592,111 @@ N:127:Grace
 I:6:7:10
 D:You gain a point of grace.
 
-# Song ---------------------------------------------
+# Lore ---------------------------------------------
 
-N:140:Song of Elbereth
+N:140:Word of Command
 I:7:0:1
-D:Causes fear in nearby servants of Morgoth.
+D:Speaking a word of power causes fear in nearby servants of the Enemy.
+D: Your voice carries the authority of ancient knowledge.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:39:0:99  # Light Source
 
-N:141:Song of Challenge
+N:141:Lore of Battle
 I:7:1:1
-D:Causes weak-willed foes to attack aggressively without regard to 
-D: strategy. Enemies with ranged weapons will close to melee range.
+D:Your knowledge of enemy tactics allows you to provoke weak-willed foes
+D: into attacking recklessly. Enemies with ranged weapons close to melee.
 T:32:0:99  # Helm
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
 
-N:142:Song of Delvings
+N:142:Deep Memory
 I:7:2:2
-D:Slowly reveals the terrain around you, working out from
-D: already known areas.
+D:Drawing on ancestral knowledge, you gradually perceive the layout
+D: of your surroundings, sensing passages and chambers nearby.
 T:35:0:99  # Cloak
 T:20:0:99  # Shovels and Mattocks
 
-N:143:Song of Freedom
+N:143:Word of Opening
 I:7:3:2
-D:Discovers and overcomes nearby doors, traps, and rubble.
-D: Grants you freedom of movement.
+D:Speaking the words of unbinding, you discover and overcome
+D: nearby doors, traps, and rubble. Grants freedom of movement.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:21:3:3   # Quarterstaves
 
-N:144:Song of Silence
+N:144:Lore of Silence
 I:7:4:3
-D:Dampens all nearby sounds, making it harder for
-D: opponents to hear you and each other.
+D:Your knowledge of stealth and concealment dampens all nearby sounds,
+D: making it harder for enemies to hear you and each other.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:30:0:99  # Boots
 
-N:145:Song of Staunching
+N:145:Herbcraft
 I:7:5:3
-D:Stops all bleeding and speeds healing of your wounds.
+D:Your knowledge of healing herbs and remedies stops bleeding
+D: and speeds the healing of wounds. Doubles herb effectiveness.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:45:0:99  # Ring
 
-N:146:Song of Thresholds
+N:146:Word of Shutting
 I:7:6:4
 P:7/0:7/2
-D:Doors you close while singing this song are warded against
-D: your enemies.
+D:Speaking words of warding, doors you close become sealed against
+D: your enemies, barring their passage.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 
-N:147:Song of the Trees
+N:147:Inner Light
 I:7:7:5
 P:7/0:7/5
-D:Increases your light level by 1 point per 5 points
-D: of Song.
+D:Your spirit shines with inner radiance, increasing your light
+D: level by 1 point per 5 points of Lore.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:39:0:99  # Light Source
 
-N:148:Song of Slaying
+N:148:Deadly Lore
 I:7:8:6
 P:7/1:7/3
-D:Critical hits in melee kill enemies outright instead of doing damage
-D: if the enemy has health less than or equal to twice your Song score.
+D:Your knowledge of anatomy and weak points is lethal. Critical hits
+D: kill enemies outright if their health is at most twice your Lore score.
 T:22:0:99  # Polearms and axes
 T:23:0:99  # Swords
 
-N:149:Song of Staying
+N:149:Lore of Endurance
 I:7:9:7
 P:7/1:7/5
-D:Gives you a bonus to Will equal to half your Song score and
-D: [2d2] protection.
+D:Ancient techniques of mental fortitude grant a bonus to Will
+D: equal to half your Lore score and [2d2] protection.
 T:32:0:99  # Helm
 T:34:0:99  # Shields
 T:35:0:99  # Cloak
 T:45:0:99  # Ring
 
-N:150:Song of Lorien
+N:150:Lore of Sleep
 I:7:10:8
 P:7/4:7/2
-D:Gradually puts nearby opponents to sleep.
+D:Drawing on the dreaming lore of the Eldar, you can gradually
+D: put nearby opponents into a deep slumber.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 
-N:151:Song of Mastery
+N:151:Word of Mastery
 I:7:11:10
 P:7/3:7/4
-D:Occasionally prevents nearby opponents from moving or acting.
+D:Speaking words of domination, you occasionally prevent nearby
+D: opponents from moving or acting against their will.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 
-N:152:Woven Themes
+N:152:Device Mastery
 I:7:12:11
-D:Allows you to add a 'minor theme' to your song. This means you
-D: can have the effect of a second song, but at half your normal Song score.
+D:Your deep understanding of magical devices allows you to combine
+D: two lore effects at once, though the second is at half strength.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 

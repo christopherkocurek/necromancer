@@ -2046,7 +2046,7 @@ void drop_loot(monster_type* m_ptr)
     if (r_ptr->flags1 & (RF1_DROP_CHOSEN))
     {
         /* Drop Morgoth's treasures */
-        if (m_ptr->r_idx == R_IDX_MORGOTH)
+        if (m_ptr->r_idx == R_IDX_SAURON)
         {
             // create the Massive Hammer 'Grond'
             create_chosen_artefact(ART_GROND, y, x, TRUE);
@@ -2229,34 +2229,34 @@ void anger_morgoth(int level)
     {
     case 0:
         /* starting values - for comparison. */
-        (&r_info[R_IDX_MORGOTH])->evn = 20;
-        (&r_info[R_IDX_MORGOTH])->blow[0].att = 20;
-        (&r_info[R_IDX_MORGOTH])->wil = 25;
-        (&r_info[R_IDX_MORGOTH])->per = 10;
+        (&r_info[R_IDX_SAURON])->evn = 20;
+        (&r_info[R_IDX_SAURON])->blow[0].att = 20;
+        (&r_info[R_IDX_SAURON])->wil = 25;
+        (&r_info[R_IDX_SAURON])->per = 10;
         break;
     case 1: // loses crown
-        (&r_info[R_IDX_MORGOTH])->evn = 22;
-        (&r_info[R_IDX_MORGOTH])->light = 0;
-        (&r_info[R_IDX_MORGOTH])->per = 15;
+        (&r_info[R_IDX_SAURON])->evn = 22;
+        (&r_info[R_IDX_SAURON])->light = 0;
+        (&r_info[R_IDX_SAURON])->per = 15;
         break;
     case 2: // hurt or Sils stolen
-        (&r_info[R_IDX_MORGOTH])->blow[0].att = 30;
-        (&r_info[R_IDX_MORGOTH])->blow[0].dd = 7;
-        (&r_info[R_IDX_MORGOTH])->wil = 30;
-        (&r_info[R_IDX_MORGOTH])->per = 20;
-        (&r_info[R_IDX_MORGOTH])->evn = 25;
+        (&r_info[R_IDX_SAURON])->blow[0].att = 30;
+        (&r_info[R_IDX_SAURON])->blow[0].dd = 7;
+        (&r_info[R_IDX_SAURON])->wil = 30;
+        (&r_info[R_IDX_SAURON])->per = 20;
+        (&r_info[R_IDX_SAURON])->evn = 25;
         break;
     case 3: // badly hurt
-        (&r_info[R_IDX_MORGOTH])->pd = 7;
-        (&r_info[R_IDX_MORGOTH])->wil = 35;
-        (&r_info[R_IDX_MORGOTH])->per = 25;
+        (&r_info[R_IDX_SAURON])->pd = 7;
+        (&r_info[R_IDX_SAURON])->wil = 35;
+        (&r_info[R_IDX_SAURON])->per = 25;
         break;
     case 4: // desperate
-        (&r_info[R_IDX_MORGOTH])->evn = 30;
-        (&r_info[R_IDX_MORGOTH])->blow[0].att = 40;
-        (&r_info[R_IDX_MORGOTH])->blow[0].dd = 8;
-        (&r_info[R_IDX_MORGOTH])->wil = 40;
-        (&r_info[R_IDX_MORGOTH])->per = 30;
+        (&r_info[R_IDX_SAURON])->evn = 30;
+        (&r_info[R_IDX_SAURON])->blow[0].att = 40;
+        (&r_info[R_IDX_SAURON])->blow[0].dd = 8;
+        (&r_info[R_IDX_SAURON])->wil = 40;
+        (&r_info[R_IDX_SAURON])->per = 30;
         break;
     default:
         return;
@@ -2291,7 +2291,7 @@ void monster_death(int m_idx)
      */
 
     // Special message and flag setting for killing Morgoth
-    if (m_ptr->r_idx == R_IDX_MORGOTH)
+    if (m_ptr->r_idx == R_IDX_SAURON)
     {
         p_ptr->morgoth_slain = TRUE;
         msg_print("BUG: Morgoth has been defeated in combat.");

@@ -2691,7 +2691,7 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
             /* Carcharoth */
             case 'C':
             {
-                place_monster_one(y, x, R_IDX_CARCHAROTH, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_GATEKEEPER, TRUE, TRUE, NULL);
                 break;
             }
 
@@ -2862,35 +2862,35 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
             /* Glaurung */
             case 'D':
             {
-                place_monster_one(y, x, R_IDX_GLAURUNG, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_TORTURER, TRUE, TRUE, NULL);
                 break;
             }
 
             /* Gothmog */
             case 'R':
             {
-                place_monster_one(y, x, R_IDX_GOTHMOG, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_LESSER_NAZGUL, TRUE, TRUE, NULL);
                 break;
             }
 
             /* Ungoliant */
             case 'U':
             {
-                place_monster_one(y, x, R_IDX_UNGOLIANT, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_BROODMOTHER, TRUE, TRUE, NULL);
                 break;
             }
 
             /* Gorthaur */
             case 'G':
             {
-                place_monster_one(y, x, R_IDX_GORTHAUR, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_KHAMUL, TRUE, TRUE, NULL);
                 break;
             }
 
             /* Morgoth */
             case 'V':
             {
-                place_monster_one(y, x, R_IDX_MORGOTH, TRUE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_SAURON, TRUE, TRUE, NULL);
                 break;
             }
             }
@@ -3748,7 +3748,7 @@ static bool cave_gen(void)
             if (cave_naked_bold(y, x) && !los(p_ptr->py, p_ptr->px, y, x)
                 && !(cave_info[y][x] & (CAVE_ICKY)))
             {
-                place_monster_one(y, x, R_IDX_MORGOTH, FALSE, TRUE, NULL);
+                place_monster_one(y, x, R_IDX_SAURON, FALSE, TRUE, NULL);
                 break;
             }
         }

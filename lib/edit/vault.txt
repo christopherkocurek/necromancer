@@ -20,11 +20,11 @@
 # 'X' is for extra information - room type, minimum depth, rarity,
 #     rows, and columns.
 #
-#     type 10 - Gates of Angband
+#     type 10 - Gates of Dol Guldur
 #     type 6  - interesting room
 #     type 7  - lesser vault
 #     type 8  - greater vault
-#     type 9  - Morgoth's vault
+#     type 9  - Sauron's vault
 #
 # 'F' is for the vault flags (if any)
 #
@@ -80,12 +80,12 @@
 #     M - spider +1d4 levels
 #     d - dragon +4 levels
 #     A - Aldor
-#     R - Gothmog
-#     U - Ungoliant
-#     D - Glaurung
-#     G - Gorthaur
-#     V - Morgoth
-#     C - Carcharoth
+#     R - Lesser Nazgul
+#     U - Broodmother of Mirkwood
+#     D - The Master Torturer
+#     G - Khamul the Easterling
+#     V - Sauron the Necromancer
+#     C - Gatekeeper of Dol Guldur
 #
 
 # Future Vault Thoughts
@@ -128,10 +128,10 @@
 
 V:1.5.0
 
-### The Gates of Angband (type 10) -- maximum size 66x44 ??? ###
+### The Gates of Dol Guldur (type 10) -- maximum size 66x44 ??? ###
 ### This must be the first vault record
 
-N:1:The Gates of Angband
+N:1:The Gates of Dol Guldur
 X:10:0:1
 F:NO_ROTATION 
 D:################################################################
@@ -2598,9 +2598,9 @@ D:#.*######~s......#....######
 D:###########$$$$$$#$$$$######
 
 
-### Morgoth's vault (type 9) ###
+### Sauron's vault (type 9) ###
 
-N:450:Morgoth's throne room
+N:450:Sauron's sanctum
 X:9:20:1
 F:NO_ROTATION 
 D:###################################

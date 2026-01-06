@@ -985,6 +985,7 @@ extern byte total_mds(const object_type* o_ptr, int str_adjustment);
 extern bool two_handed_melee(void);
 extern int hand_and_a_half_bonus(const object_type* o_ptr);
 extern int axe_bonus(const object_type* o_ptr);
+extern int sword_bonus(const object_type* o_ptr);
 extern int polearm_bonus(const object_type* o_ptr);
 extern byte total_ads(const object_type* j_ptr);
 extern void cnv_stat(int val, char* out_val);

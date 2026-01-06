@@ -24,11 +24,11 @@
 int challenge_check(monster_type* m_ptr)
 {
     monster_race* r_ptr = &r_info[m_ptr->r_idx];
-    int challenge = ability_bonus(S_SNG, SNG_CHALLENGE);
+    int challenge = ability_bonus(S_LOR, SNG_CHALLENGE);
     int resistance = monster_skill(m_ptr, S_WIL);
 
     if (!singing(SNG_CHALLENGE) || m_ptr->stance != STANCE_AGGRESSIVE
-        || (r_ptr->flags3 & (RF3_NO_CONF)) || m_ptr->r_idx == R_IDX_MORGOTH)
+        || (r_ptr->flags3 & (RF3_NO_CONF)) || m_ptr->r_idx == R_IDX_SAURON)
         return 0;
 
     // Adjust to work best against lower-will monsters.
@@ -108,7 +108,7 @@ static void find_range(monster_type* m_ptr)
         m_ptr->best_range = 0;
         m_ptr->min_range = 0;
     }
-    else if ((r_ptr->freq_ranged > 15) && (m_ptr->r_idx != R_IDX_MORGOTH))
+    else if ((r_ptr->freq_ranged > 15) && (m_ptr->r_idx != R_IDX_SAURON))
     {
         /* Breathers like range 2  */
         if ((r_ptr->flags4 & (RF4_BREATH_MASK)) && (m_ptr->best_range < 6))
@@ -300,7 +300,7 @@ static void remove_invalid_spells(int m_idx, u32b* f4p)
     }
 
     // no songs by Morgoth until uncrowned
-    if ((m_ptr->r_idx == R_IDX_MORGOTH)
+    if ((m_ptr->r_idx == R_IDX_SAURON)
         && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
     {
         f4 &= ~(RF4_SNG_MASK);
@@ -2270,7 +2270,7 @@ static bool get_move(
     }
 
     // Morgoth will not move during the 'truce'
-    if ((m_ptr->r_idx == R_IDX_MORGOTH) && p_ptr->truce)
+    if ((m_ptr->r_idx == R_IDX_SAURON) && p_ptr->truce)
     {
         return (FALSE);
     }
@@ -4819,11 +4819,11 @@ static void process_monster(monster_type* m_ptr)
 
     // Morgoth is always active during the escape
     // Sil-y: but this might be irrelevant as he can be unwary...
-    if ((m_ptr->r_idx == R_IDX_MORGOTH) && p_ptr->on_the_run)
+    if ((m_ptr->r_idx == R_IDX_SAURON) && p_ptr->on_the_run)
         m_ptr->mflag |= (MFLAG_ACTV);
 
     // do this before Mastery and Lorien effects kick in...
-    if (m_ptr->r_idx == R_IDX_MORGOTH
+    if (m_ptr->r_idx == R_IDX_SAURON
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_WOUNDED
         && p_ptr->morgoth_state < 2)
     {
@@ -4831,7 +4831,7 @@ static void process_monster(monster_type* m_ptr)
         message_flush();
         anger_morgoth(2);
     }
-    else if (m_ptr->r_idx == R_IDX_MORGOTH
+    else if (m_ptr->r_idx == R_IDX_SAURON
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_BADLY_WOUNDED
         && p_ptr->morgoth_state < 3)
     {
@@ -4839,7 +4839,7 @@ static void process_monster(monster_type* m_ptr)
         message_flush();
         anger_morgoth(3);
     }
-    else if (m_ptr->r_idx == R_IDX_MORGOTH
+    else if (m_ptr->r_idx == R_IDX_SAURON
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_ALMOST_DEAD
         && p_ptr->morgoth_state < 4)
     {
@@ -4854,7 +4854,7 @@ static void process_monster(monster_type* m_ptr)
     // first work out if the song of mastery stops the monster's turn
     if (singing(SNG_MASTERY))
     {
-        int player_skill = damroll(2, 8) + ability_bonus(S_SNG, SNG_MASTERY);
+        int player_skill = damroll(2, 8) + ability_bonus(S_LOR, SNG_MASTERY);
         int enemy_skill = damroll(2, 10) + monster_skill(m_ptr, S_WIL)
                     + flow_dist(FLOW_PLAYER_NOISE, m_ptr->fy, m_ptr->fx);
 
@@ -6067,7 +6067,7 @@ void monster_perception(bool player_centered, bool main_roll, int difficulty)
 
     // the song of silence quietens this a bit
     if (singing(SNG_SILENCE))
-        difficulty_roll += ability_bonus(S_SNG, SNG_SILENCE);
+        difficulty_roll += ability_bonus(S_LOR, SNG_SILENCE);
 
     /* Process the monsters (backwards) */
     for (i = mon_max - 1; i >= 1; i--)

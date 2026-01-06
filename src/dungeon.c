@@ -1656,7 +1656,7 @@ static void process_player(void)
 
                 m_ptr = &mon_list[cave_m_idx[yy][xx]];
 
-                if ((m_ptr->r_idx == R_IDX_MORGOTH)
+                if ((m_ptr->r_idx == R_IDX_SAURON)
                     && (m_ptr->alertness >= ALERTNESS_ALERT))
                 {
                     msg_print("With a voice as of rolling thunder, Morgoth, "
@@ -2332,7 +2332,7 @@ static void process_player(void)
     if (p_ptr->slow)
     {
         if (singing(SNG_FREEDOM))
-            (void)set_slow(p_ptr->slow - ability_bonus(S_SNG, SNG_FREEDOM));
+            (void)set_slow(p_ptr->slow - ability_bonus(S_LOR, SNG_FREEDOM));
         else
             (void)set_slow(p_ptr->slow - 1);
     }

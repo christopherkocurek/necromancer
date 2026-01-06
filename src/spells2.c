@@ -853,11 +853,11 @@ void self_knowledge(void)
         good[i] = (p_ptr->skill_equip_mod[S_SMT] > 0) ? TRUE : FALSE;
         i++;
     }
-    if (p_ptr->skill_equip_mod[S_SNG] != 0)
+    if (p_ptr->skill_equip_mod[S_LOR] != 0)
     {
-        strnfmt(s[i], 80, "Your singing is affected by your equipment");
-        strnfmt(t[i], 80, "(%+d Song)", p_ptr->skill_equip_mod[S_SNG]);
-        good[i] = (p_ptr->skill_equip_mod[S_SNG] > 0) ? TRUE : FALSE;
+        strnfmt(s[i], 80, "Your lore skill is affected by your equipment");
+        strnfmt(t[i], 80, "(%+d Lore)", p_ptr->skill_equip_mod[S_LOR]);
+        good[i] = (p_ptr->skill_equip_mod[S_LOR] > 0) ? TRUE : FALSE;
         i++;
     }
 

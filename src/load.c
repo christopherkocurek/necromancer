@@ -2027,10 +2027,10 @@ bool load_player(void)
         {
             // lower Morgoth's protection, remove his light source, increase his
             // will and perception
-            (&r_info[R_IDX_MORGOTH])->pd -= 1;
-            (&r_info[R_IDX_MORGOTH])->light = 0;
-            (&r_info[R_IDX_MORGOTH])->wil += 5;
-            (&r_info[R_IDX_MORGOTH])->per += 5;
+            (&r_info[R_IDX_SAURON])->pd -= 1;
+            (&r_info[R_IDX_SAURON])->light = 0;
+            (&r_info[R_IDX_SAURON])->wil += 5;
+            (&r_info[R_IDX_SAURON])->per += 5;
         }
 
         /* Player is dead */

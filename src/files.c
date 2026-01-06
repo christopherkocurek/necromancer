@@ -1381,19 +1381,19 @@ void display_player_xtra_info(int mode)
     Term_putstr(col, 10 + mod, -1, TERM_WHITE, "Voice");
     Term_putstr(col + 8, 10 + mod, -1, TERM_L_BLUE, format("%8s", buf));
 
-    /* Song */
+    /* Lore */
     if (p_ptr->song1 != SNG_NOTHING)
     {
         strnfmt(buf, sizeof(buf), "%s",
-            b_name + (&b_info[ability_index(S_SNG, p_ptr->song1)])->name);
-        Term_putstr(col, 11 + mod, -1, TERM_WHITE, "Song");
+            b_name + (&b_info[ability_index(S_LOR, p_ptr->song1)])->name);
+        Term_putstr(col, 11 + mod, -1, TERM_WHITE, "Lore");
         Term_putstr(
             col + 5, 11 + mod, -1, TERM_L_BLUE, format("%11s", buf + 8));
     }
     if (p_ptr->song2 != SNG_NOTHING)
     {
         strnfmt(buf, sizeof(buf), "%s",
-            b_name + (&b_info[ability_index(S_SNG, p_ptr->song2)])->name);
+            b_name + (&b_info[ability_index(S_LOR, p_ptr->song2)])->name);
         Term_putstr(
             col + 5, 12 + mod, -1, TERM_L_BLUE, format("%11s", buf + 8));
     }

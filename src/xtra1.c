@@ -199,6 +199,25 @@ int axe_bonus(const object_type* o_ptr)
 }
 
 /*
+ * Bonus for certain races/houses (men) using swords
+ */
+int sword_bonus(const object_type* o_ptr)
+{
+    int bonus = 0;
+
+    if ((rp_ptr->flags & RHF_SWORD_PROFICIENCY) && (o_ptr->tval == TV_SWORD))
+    {
+        bonus += 1;
+    }
+    if ((hp_ptr->flags & RHF_SWORD_PROFICIENCY) && (o_ptr->tval == TV_SWORD))
+    {
+        bonus += 1;
+    }
+
+    return bonus;
+}
+
+/*
  * Bonus for people with polearm affinity
  */
 int polearm_bonus(const object_type* o_ptr)
@@ -505,9 +524,9 @@ static void prt_sp(void)
 static void prt_song(void)
 {
     char* song1_name
-        = b_name + (&b_info[ability_index(S_SNG, p_ptr->song1)])->name;
+        = b_name + (&b_info[ability_index(S_LOR, p_ptr->song1)])->name;
     char* song2_name
-        = b_name + (&b_info[ability_index(S_SNG, p_ptr->song2)])->name;
+        = b_name + (&b_info[ability_index(S_LOR, p_ptr->song2)])->name;
 
     // wipe old songs
     put_str("             ", ROW_SONG, COL_SONG);
@@ -1881,7 +1900,7 @@ void calc_torch(void)
     // Song of the trees
     if (singing(SNG_TREES))
     {
-        p_ptr->cur_light += ability_bonus(S_SNG, SNG_TREES);
+        p_ptr->cur_light += ability_bonus(S_LOR, SNG_TREES);
     }
 
     /* Update the visuals */
@@ -1946,10 +1965,10 @@ int affinity_level(int skilltype)
         penalty_flag = RHF_SMT_PENALTY;
         break;
     }
-    case S_SNG:
+    case S_LOR:
     {
-        affinity_flag = RHF_SNG_AFFINITY;
-        penalty_flag = RHF_SNG_PENALTY;
+        affinity_flag = RHF_LOR_AFFINITY;
+        penalty_flag = RHF_LOR_PENALTY;
         break;
     }
     }
@@ -1971,7 +1990,7 @@ int ability_bonus(int skilltype, int abilitynum)
     int bonus = 0;
     int skill = p_ptr->skill_use[skilltype];
 
-    if (skilltype == S_SNG)
+    if (skilltype == S_LOR)
     {
         // penalize minor themes
         if (p_ptr->song1 != abilitynum)
@@ -2364,7 +2383,7 @@ static void calc_bonuses(void)
         if (f1 & (TR1_SMT))
             p_ptr->skill_equip_mod[S_SMT] += o_ptr->pval;
         if (f1 & (TR1_SNG))
-            p_ptr->skill_equip_mod[S_SNG] += o_ptr->pval;
+            p_ptr->skill_equip_mod[S_LOR] += o_ptr->pval;
 
         /* Affect Damage Sides */
         if (f1 & (TR1_DAMAGE_SIDES))
@@ -2524,7 +2543,7 @@ static void calc_bonuses(void)
         p_ptr->stat_misc_mod[A_CON]++;
     if (p_ptr->active_ability[S_SMT][SMT_GRA])
         p_ptr->stat_misc_mod[A_GRA]++;
-    if (p_ptr->active_ability[S_SNG][SNG_GRA])
+    if (p_ptr->active_ability[S_LOR][SNG_GRA])
         p_ptr->stat_misc_mod[A_GRA]++;
 
     if (p_ptr->active_ability[S_WIL][WIL_STRENGTH_IN_ADVERSITY])
@@ -2781,7 +2800,7 @@ static void calc_bonuses(void)
     p_ptr->skill_misc_mod[S_PER] += affinity_level(S_PER);
     p_ptr->skill_misc_mod[S_WIL] += affinity_level(S_WIL);
     p_ptr->skill_misc_mod[S_SMT] += affinity_level(S_SMT);
-    p_ptr->skill_misc_mod[S_SNG] += affinity_level(S_SNG);
+    p_ptr->skill_misc_mod[S_LOR] += affinity_level(S_LOR);
 
     /*** Modify skills by ability scores ***/
 
@@ -2807,17 +2826,17 @@ static void calc_bonuses(void)
     p_ptr->skill_stat_mod[S_SMT] = p_ptr->stat_use[A_GRA];
 
     /* Affect Skill -- song (GRA) */
-    p_ptr->skill_stat_mod[S_SNG] = p_ptr->stat_use[A_GRA];
+    p_ptr->skill_stat_mod[S_LOR] = p_ptr->stat_use[A_GRA];
 
     // Finalise song first as it modifies some other skills...
-    p_ptr->skill_use[S_SNG] = p_ptr->skill_base[S_SNG]
-        + p_ptr->skill_equip_mod[S_SNG] + p_ptr->skill_stat_mod[S_SNG]
-        + p_ptr->skill_misc_mod[S_SNG];
+    p_ptr->skill_use[S_LOR] = p_ptr->skill_base[S_LOR]
+        + p_ptr->skill_equip_mod[S_LOR] + p_ptr->skill_stat_mod[S_LOR]
+        + p_ptr->skill_misc_mod[S_LOR];
 
     // Apply song effects that modify skills
     if (singing(SNG_STAYING))
     {
-        p_ptr->skill_misc_mod[S_WIL] += ability_bonus(S_SNG, SNG_STAYING) / 2;
+        p_ptr->skill_misc_mod[S_WIL] += ability_bonus(S_LOR, SNG_STAYING) / 2;
     }
     if (singing(SNG_FREEDOM))
     {
@@ -2880,7 +2899,7 @@ static void calc_bonuses(void)
     p_ptr->skill_equip_mod[S_MEL] += o_ptr->att;
 
     // attack bonuses for matched weapon types
-    p_ptr->skill_misc_mod[S_MEL] += axe_bonus(o_ptr) + polearm_bonus(o_ptr);
+    p_ptr->skill_misc_mod[S_MEL] += axe_bonus(o_ptr) + sword_bonus(o_ptr) + polearm_bonus(o_ptr);
 
     // deal with the 'Versatility' ability
     if (p_ptr->active_ability[S_ARC][ARC_VERSATILITY]
@@ -2902,14 +2921,14 @@ static void calc_bonuses(void)
     {
         // remove main-hand specific bonuses
         p_ptr->offhand_mel_mod
-            -= o_ptr->att + axe_bonus(o_ptr) + polearm_bonus(o_ptr);
+            -= o_ptr->att + axe_bonus(o_ptr) + sword_bonus(o_ptr) + polearm_bonus(o_ptr);
         if (p_ptr->active_ability[S_MEL][MEL_RAPID_ATTACK])
             p_ptr->offhand_mel_mod += 3;
 
         // add off-hand specific bonuses
         o_ptr = &inventory[INVEN_ARM];
         p_ptr->offhand_mel_mod
-            += o_ptr->att + axe_bonus(o_ptr) + polearm_bonus(o_ptr) - 3;
+            += o_ptr->att + axe_bonus(o_ptr) + sword_bonus(o_ptr) + polearm_bonus(o_ptr) - 3;
 
         p_ptr->mdd2 = total_mdd(o_ptr);
         p_ptr->mds2 = total_mds(o_ptr, -3);

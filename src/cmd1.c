@@ -486,7 +486,7 @@ void set_alertness(monster_type* m_ptr, int alertness)
                 // redisplay the monster
                 redisplay = TRUE;
             }
-            if (m_ptr->r_idx == R_IDX_MORGOTH)
+            if (m_ptr->r_idx == R_IDX_SAURON)
             {
                 // Dump a message
                 msg_format("%^s falls asleep.", m_name);
@@ -4325,7 +4325,7 @@ void py_attack_aux(int y, int x, int attack_type)
 
             if (singing(SNG_SLAYING) && crit_bonus_dice > 0)
             {
-                int kill_threshold = ability_bonus(S_SNG, SNG_SLAYING);
+                int kill_threshold = ability_bonus(S_LOR, SNG_SLAYING);
                 if (m_ptr->hp <= kill_threshold)
                 {
                     msg_format("Your song soars as %s falls before you.", m_name);
@@ -4418,7 +4418,7 @@ void py_attack_aux(int y, int x, int attack_type)
 
                 // Morgoth drops his iron crown if he is hit for 10 or more net
                 // damage twice
-                if ((m_ptr->r_idx == R_IDX_MORGOTH)
+                if ((m_ptr->r_idx == R_IDX_SAURON)
                     && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
                 {
                     if (net_dam >= 10)

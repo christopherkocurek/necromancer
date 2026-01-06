@@ -102,25 +102,25 @@ G:1:s
 N:11:wall
 G:1:s
 
-# 0x0C --> unused
+# 0x0C --> dark pool (Dol Guldur feature)
 
-N:12:unused
-G:1:s
+N:12:dark pool
+G:~:D
 
-# 0x0D --> unused
+# 0x0D --> morgul runes (Dol Guldur feature)
 
-N:13:unused
-G:1:s
+N:13:morgul runes
+G:*:v
 
-# 0x0E --> unused
+# 0x0E --> shadow brazier (Dol Guldur feature)
 
-N:14:unused
-G:1:s
+N:14:shadow brazier
+G:0:D
 
-# 0x0F --> unused
+# 0x0F --> torture rack (Dol Guldur feature)
 
-N:15:unused
-G:1:s
+N:15:torture rack
+G:&:r
 
 # 0x10 --> visible trap -- false floor
 
@@ -187,20 +187,20 @@ G:^:r
 N:28:discoloured spot
 G:^:u
 
-# 0x1D --> unused
+# 0x1D --> prison bars (Dol Guldur feature)
 
-N:29: unused
-G:1:s
+N:29:prison bars
+G:#:s
 
-# 0x1E --> unused
+# 0x1E --> chains (Dol Guldur feature)
 
-N:30:unused
-G:1:s
+N:30:chains
+G:\:s
 
-# 0x1F --> unused
+# 0x1F --> bloodstain (Dol Guldur feature)
 
-N:31:unused
-G:1:s
+N:31:bloodstain
+G:.:r
 
 # 0x20 --> locked door (power 0) -- aka a normal door
 
@@ -445,23 +445,23 @@ G:0:y1
 
 # 0x4C --> unique forge -- 0 uses
 
-N:76:forge 'Orodruth' (exhausted)
+N:76:shadow forge (exhausted)
 G:0:D
 
 # 0x4D --> unique forge -- 1 use
 
-N:77:forge 'Orodruth' (1 use remaining)
-G:0:r
+N:77:shadow forge (1 use remaining)
+G:0:v
 
 # 0x4E --> unique forge -- 2 uses
 
-N:78:forge 'Orodruth' (2 uses remaining)
-G:0:r
+N:78:shadow forge (2 uses remaining)
+G:0:v
 
 # 0x4F --> unique forge -- 3 uses
 
-N:79:forge 'Orodruth' (3 uses remaining)
-G:0:r
+N:79:shadow forge (3 uses remaining)
+G:0:v
 
 # 0x50 --> up stairs (perm)
 

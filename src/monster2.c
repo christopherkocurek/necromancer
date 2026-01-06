@@ -1193,7 +1193,7 @@ int monster_skill(monster_type* m_ptr, int skill_type)
     case S_SMT:
         msg_debug("Can't determine the monster's Smithing score.");
         break;
-    case S_SNG:
+    case S_LOR:
         msg_debug("Can't determine the monster's Song score.");
         break;
 
@@ -1302,7 +1302,7 @@ void listen(monster_type* m_ptr)
 
     // penalty for song of silence
     if (singing(SNG_SILENCE))
-        difficulty += ability_bonus(S_SNG, SNG_SILENCE);
+        difficulty += ability_bonus(S_LOR, SNG_SILENCE);
 
     // make the check
     result = skill_check(PLAYER, p_ptr->skill_use[S_PER], difficulty, m_ptr);
@@ -2491,9 +2491,9 @@ bool place_monster_one(
     n_ptr->r_idx = r_idx;
 
     /* Save the hallucinatory race */
-    if (r_idx == R_IDX_MORGOTH)
+    if (r_idx == R_IDX_SAURON)
     {
-        n_ptr->image_r_idx = R_IDX_MORGOTH_HALLU;
+        n_ptr->image_r_idx = R_IDX_SAURON_HALLU;
     }
     else if (m_ptr != NULL)
     {

@@ -24,10 +24,10 @@
 #
 # Chart progression by race:
 #
-#  Noldor         -->  1 -->  2 -->  3 --> 50 --> 51 --> 52
-#  Sindar         -->  4 -->  5 --> 54 --> 55 --> 56
-#  Edain          --> 21 --> 22 --> 23 --> 25 --> 26 --> 27 --> 28
-#  Naugrim        --> 16 --> 17 --> 18 --> 57 --> 58 --> 59 --> 60 --> 61
+#  Elf            -->  1 -->  2 -->  3 --> 50 --> 51 --> 52
+#  (unused)       -->  4 -->  5 --> 54 --> 55 --> 56
+#  Man            --> 21 --> 22 --> 23 --> 25 --> 26 --> 27 --> 28
+#  Dwarf          --> 16 --> 17 --> 18 --> 57 --> 58 --> 59 --> 60 --> 61
 #
 #
 # * Note that this table *must* be correct or drastic errors may occur!
@@ -40,7 +40,7 @@
 V:1.5.0
 
 
-# Noldor history
+# Elf history
 
 N:1:2:30:0
 D:You are one of several children
@@ -49,25 +49,25 @@ D:You are one of two children
 N:1:2:95:0
 D:You are the only child
 N:1:50:100:0
-D:You awoke on the shores of lake Cuivienen.
+D:You have lived for many centuries in Middle-earth.
 
 N:2:3:20:0
 D:of an archer
 N:2:3:40:0
 D:of a warrior
 N:2:3:60:0
-D:of a smith
+D:of a loremaster
 N:2:3:95:0
-D:of a bard
+D:of a healer
 N:2:3:100:0
-D:of a prince
+D:of an Elven lord
 
+N:3:50:100:0
+D:from the golden wood of Lothlorien.
 N:3:50:100:1
-D:from the house of Feanor.
+D:from the hidden valley of Rivendell.
 N:3:50:100:2
-D:from the house of Fingolfin.
-N:3:50:100:3
-D:from the house of Finarfin.
+D:from the realm of the Woodland King.
 
 
 # Sindar history

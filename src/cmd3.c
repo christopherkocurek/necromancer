@@ -949,7 +949,7 @@ void shatter_weapon(int silnum)
         monster_type* m_ptr = &mon_list[i];
 
         /* If Morgoth, then anger him */
-        if (m_ptr->r_idx == R_IDX_MORGOTH)
+        if (m_ptr->r_idx == R_IDX_SAURON)
         {
             if ((m_ptr->cdis <= 5)
                 && los(p_ptr->py, p_ptr->px, m_ptr->fy, m_ptr->fx))
@@ -1054,7 +1054,7 @@ void prise_silmaril(void)
     if (hit_result > 0)
     {
         crit_bonus_dice = crit_bonus(hit_result, w_ptr->weight,
-            &r_info[R_IDX_MORGOTH], S_MEL, FALSE, NULL);
+            &r_info[R_IDX_SAURON], S_MEL, FALSE, NULL);
 
         dam = damroll(p_ptr->mdd + crit_bonus_dice, mds);
         prt = damroll(pd, 4);
@@ -1104,7 +1104,7 @@ void prise_silmaril(void)
                     monster_type* m_ptr = &mon_list[i];
 
                     /* If Morgoth, then anger him */
-                    if (m_ptr->r_idx == R_IDX_MORGOTH
+                    if (m_ptr->r_idx == R_IDX_SAURON
                         && m_ptr->alertness >= ALERTNESS_ALERT)
                     {
                         if ((m_ptr->cdis <= 5)

@@ -4768,7 +4768,7 @@ void song_of_binding(monster_type* m_ptr)
     // if the player is singing the song of silence, then the  monster suffers a
     // penalty
     if (singing(SNG_SILENCE))
-        song_skill -= ability_bonus(S_SNG, SNG_SILENCE) / 2;
+        song_skill -= ability_bonus(S_LOR, SNG_SILENCE) / 2;
 
     // determine the player's resistance
     // Sil-y: might want to add in the same +5 bonus as against Mastery and
@@ -4858,7 +4858,7 @@ void song_of_piercing(monster_type* m_ptr)
     // if the player is singing the song of silence, then the  monster suffers a
     // penalty
     if (singing(SNG_SILENCE))
-        song_skill -= ability_bonus(S_SNG, SNG_SILENCE) / 2;
+        song_skill -= ability_bonus(S_LOR, SNG_SILENCE) / 2;
 
     // determine the player's resistance
     resistance = p_ptr->skill_use[S_WIL] + dist + 5;
@@ -4952,7 +4952,7 @@ void song_of_oaths(monster_type* m_ptr)
     // if the player is singing the song of silence, then the  monster suffers a
     // penalty
     if (singing(SNG_SILENCE))
-        song_skill -= ability_bonus(S_SNG, SNG_SILENCE) / 2;
+        song_skill -= ability_bonus(S_LOR, SNG_SILENCE) / 2;
 
     // perform the skill check
     result = skill_check(m_ptr, song_skill, 15, PLAYER);
@@ -5031,7 +5031,7 @@ void change_song(int song)
     int song_to_change;
     int old_song;
 
-    if (p_ptr->active_ability[S_SNG][SNG_WOVEN_THEMES]
+    if (p_ptr->active_ability[S_LOR][SNG_WOVEN_THEMES]
         && (p_ptr->song1 != SNG_NOTHING) && (song != SNG_NOTHING))
     {
         song_to_change = 2;
@@ -5537,7 +5537,7 @@ void sing_song_of_elbereth(int score)
             resistance += 100;
 
         // Morgoth is not affected
-        if (m_ptr->r_idx == R_IDX_MORGOTH)
+        if (m_ptr->r_idx == R_IDX_SAURON)
             resistance += 100;
 
         // adjust difficulty by the distance to the monster
@@ -5610,10 +5610,10 @@ void sing(void)
     // either song ability
     if ((p_ptr->csp < 1)
         || ((p_ptr->song2 != SNG_NOTHING)
-            && !p_ptr->active_ability[S_SNG][SNG_WOVEN_THEMES])
-        || (!p_ptr->active_ability[S_SNG][p_ptr->song1])
+            && !p_ptr->active_ability[S_LOR][SNG_WOVEN_THEMES])
+        || (!p_ptr->active_ability[S_LOR][p_ptr->song1])
         || ((p_ptr->song2 != SNG_NOTHING)
-            && !p_ptr->active_ability[S_SNG][p_ptr->song2]))
+            && !p_ptr->active_ability[S_LOR][p_ptr->song2]))
     {
         /* Stop singing */
         change_song(SNG_NOTHING);
@@ -5634,7 +5634,7 @@ void sing(void)
         if (type == 2)
             song = p_ptr->song2;
 
-        score = ability_bonus(S_SNG, song);
+        score = ability_bonus(S_LOR, song);
 
         switch (song)
         {

@@ -961,6 +961,20 @@ static void print_rh_flags(int race, int house, int col, int row)
         flags++;
     }
 
+    if ((p_info[race].flags & RHF_SWORD_PROFICIENCY)
+        && (c_info[house].flags & RHF_SWORD_PROFICIENCY))
+    {
+        Term_putstr(col, row + flags, -1, attr_mastery, "sword mastery       ");
+        flags++;
+    }
+    else if ((p_info[race].flags & RHF_SWORD_PROFICIENCY)
+        || (c_info[house].flags & RHF_SWORD_PROFICIENCY))
+    {
+        Term_putstr(
+            col, row + flags, -1, attr_affinity, "sword proficiency      ");
+        flags++;
+    }
+
     if ((p_info[race].flags & RHF_MEL_AFFINITY)
         && (c_info[house].flags & RHF_MEL_AFFINITY))
     {
@@ -1100,23 +1114,23 @@ static void print_rh_flags(int race, int house, int col, int row)
         flags++;
     }
 
-    if ((p_info[race].flags & RHF_SNG_AFFINITY)
-        && (c_info[house].flags & RHF_SNG_AFFINITY))
+    if ((p_info[race].flags & RHF_LOR_AFFINITY)
+        && (c_info[house].flags & RHF_LOR_AFFINITY))
     {
-        Term_putstr(col, row + flags, -1, attr_mastery, "song mastery        ");
+        Term_putstr(col, row + flags, -1, attr_mastery, "lore mastery        ");
         flags++;
     }
-    else if ((p_info[race].flags & RHF_SNG_AFFINITY)
-        || (c_info[house].flags & RHF_SNG_AFFINITY))
+    else if ((p_info[race].flags & RHF_LOR_AFFINITY)
+        || (c_info[house].flags & RHF_LOR_AFFINITY))
     {
         Term_putstr(
-            col, row + flags, -1, attr_affinity, "song affinity       ");
+            col, row + flags, -1, attr_affinity, "lore affinity       ");
         flags++;
     }
-    if ((p_info[race].flags & RHF_SNG_PENALTY)
-        || (c_info[house].flags & RHF_SNG_PENALTY))
+    if ((p_info[race].flags & RHF_LOR_PENALTY)
+        || (c_info[house].flags & RHF_LOR_PENALTY))
     {
-        Term_putstr(col, row + flags, -1, attr_penalty, "song penalty        ");
+        Term_putstr(col, row + flags, -1, attr_penalty, "lore penalty        ");
         flags++;
     }
 }
@@ -1307,7 +1321,7 @@ static bool get_player_house(void)
     birth_menu* houses;
 
     // select 'houseless' automatically if there are no available houses
-    if ((rp_ptr->choice & 1))
+    if (rp_ptr->choice == 0)
     {
         p_ptr->phouse = 0;
         hp_ptr = &c_info[p_ptr->phouse];

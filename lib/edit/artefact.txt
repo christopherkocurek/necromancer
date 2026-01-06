@@ -322,7 +322,7 @@ P:0:0d0:0:1d1
 F:WILL | RES_FEAR
 F:DANGER | INSTA_ART
 B:5/9
-D:The crown of Maedhros, High King of the Noldor, who was captured by Morgoth
+D:The crown of Maedhros, High King of the Noldor, who was captured by the Necromancer
 D: when he went to parley with him and hung by his right hand from Thangorodrim
 D: for thirty years.
 
@@ -499,9 +499,9 @@ W:13:12:330:105000
 P:-2:0d0:-3:2d6
 F:RES_FIRE | RES_POIS
 D:A suit of mail once worn by Maedhros, eldest son of Feanor.
-D: When he was taken into Angband by Morgoth's servants
+D: When he was taken into Angband by the Necromancer's servants
 D: and hung by his right hand from Thangorodrim, his armour was
-D: stripped from him and stored in Morgoth's iron vaults.
+D: stripped from him and stored in the Necromancer's iron vaults.
 
 
 ## The Hauberk of Amon Rudh
@@ -784,7 +784,7 @@ P:2:2d5:2:0d0
 F:SLAY_ORC | SLAY_TROLL | SLAY_DRAGON | SLAY_RAUKO | WILL
 D:This bright blade was forged by Enerdhil of Gondolin
 D: and borne by Turgon, lord of the hidden city. Its edge
-D: is the bane of many of Morgoth's servants.
+D: is the bane of many of the Necromancer's servants.
 
 
 ## The Longsword 'Narsil'
@@ -876,7 +876,7 @@ F:CON | BRAND_FIRE | LIGHT
 F:VUL_COLD | LIGHT_CURSE
 D:A cruel and heavy blade, wreathed in undying flames. It was originally
 D: forged for the great Valarauko, Gothmog, to break any dissension amongst
-D: the hosts of Morgoth.
+D: the hosts of the Necromancer.
 
 
 ## The Mithril Longsword 'Celeg Aithorn'
@@ -901,7 +901,7 @@ W:20:7:20:300000
 P:3:2d5:3:0d0
 F:BRAND_COLD | LIGHT
 D:The weapon of Fingolfin, High King of the Noldor; it shines like a
-D: column of ice lit by light unquenchable.  Morgoth came but
+D: column of ice lit by light unquenchable.  the Necromancer came but
 D: unwillingly to meet it of old; his lame foot will remind him of its
 D: might should he face it again.
 
@@ -933,7 +933,7 @@ P:1:1d11:0:0d0
 F:SLAY_RAUKO | SLAY_MAN_OR_ELF | SEE_INVIS | FREE_ACT
 F:GRA | AGGRAVATE | THROWING
 D:A weapon forged after the Dagor Bragollach by Sauron,
-D: tainted to slay Morgoth's foes whether they be man, elf or Maiar. 
+D: tainted to slay the Necromancer's foes whether they be man, elf or Maiar. 
 D: Black-hafted, with a bronze head, it throws no shadow.
 
 
@@ -1024,7 +1024,7 @@ I:22:12:1
 W:15:12:60:90000
 P:-3:3d5:0:0d0
 F:STR | CON | HAUNTED | VAMPIRIC
-D:A dark axe with a wicked edge, forged by Morgoth Bauglir himself.
+D:A dark axe with a wicked edge, forged by the Necromancer Bauglir himself.
 D: Many are the lives that it has severed. It is blood-warm to the touch,
 D: and foul it feels to the hand.
 
@@ -1041,7 +1041,7 @@ F:STR | RES_FIRE
 D:Forged by Gamil Zirak in days long gone, this giant axe
 D: was for many years an heirloom of the dwarven city of Nogrod.
 D: It grants its wielder strength to wield it and the power to
-D: fight some of Morgoth's foulest servants.
+D: fight some of the Necromancer's foulest servants.
 
 ## The Great Axe 'Mazarbulbark'
 ## Khuzdul 'that-which-is-written axe'
@@ -1113,7 +1113,7 @@ P:0:2d4:3:0d0
 F:SUST_STR | SUST_CON | RES_POIS
 B:7/2
 D:Halmir, who once bore this staff, was a chieftain among men,
-D: and resolute always against the power of Morgoth.
+D: and resolute always against the power of the Necromancer.
 
 
 ## The War Hammer of Telchar
@@ -1204,7 +1204,7 @@ W:20:15:90:300000
 P:0:0d0:-2:1d4
 F:STR | RES_FEAR | RES_STUN | WILL
 D:The legendary dragon helm of Hador's House, an object of dread to the
-D: servants of Morgoth.
+D: servants of the Necromancer.
 
 
 ## The Great Helm of Utumno
@@ -1218,7 +1218,7 @@ P:0:0d0:-2:1d4
 F:CON
 F:NEG_GRA | VUL_FIRE | LIGHT_CURSE
 D:A great black helm, wrought in years
-D: forgotten in Morgoth's first stronghold.
+D: forgotten in the Necromancer's first stronghold.
 D: It offers power, but bends the will of the one who
 D: wears it to its own dark purposes.
 
@@ -1279,7 +1279,7 @@ W:20:20:15:35000
 P:0:0d0:2:0d0
 F:RES_FIRE | RES_COLD | FREE_ACT
 D:By what black treachery the fabled grey cloak of Elu Thingol has come
-D: to the hoards of Angband, you cannot say.
+D: to the hoards of Dol Guldur, you cannot say.
 
 
 ## The Shadow Cloak of Luthien
@@ -1326,7 +1326,7 @@ B:3/0
 F:STEALTH
 F:INSTA_ART
 D:With its great black wings, might this remnant of the vampire
-D: let you pass as a messenger journeying to Morgoth?
+D: let you pass as a messenger journeying to the Necromancer?
 
 
 ##### Bows #####
@@ -1528,8 +1528,8 @@ W:14:20:50:60000
 P:0:0d0:-1:2d1
 F:STR | DARKNESS
 B:0/2
-D:The brutal gauntlets forged by Morgoth for the great orc-chieftain Gorgdaz,
-D: who perished along with many of Morgoth's host at Dagor-nuin-Giliath.
+D:The brutal gauntlets forged by the Necromancer for the great orc-chieftain Gorgdaz,
+D: who perished along with many of the Necromancer's host at Dagor-nuin-Giliath.
 
 
 ## The Set of Gauntlets of Bregolas
@@ -1569,84 +1569,81 @@ I:39:2:2
 W:4:5:1:10000
 P:0:0d0:0:0d0
 F:RES_FIRE | LIGHT
-D:When Morgoth slew Finwe, High King of the Noldor, he
+D:When the Necromancer slew Finwe, High King of the Noldor, he
 D: took many jewels from his treasuries. Most are now
 D: lost to the Unlight, but this one shines yet pure.
 
 
-##### Morgoth Artefacts #####
+##### Sauron Artefacts #####
 
 
-## The Massive Iron Crown of Morgoth (no Silmarils)
-## 1st age
+## The Ring of Thrain (Victory Item)
+## 3rd age
 ## (automatic drop -- don't move)
 
-N:175:of Morgoth
-I:33:50:0
-W:20:1:4000:10000000
+N:175:of Thrain
+I:45:50:3
+W:20:1:2:10000000
 P:0:0d0:0:0d0:0
-F:INSTA_ART 
-D:Once containing much of the power of he who is the mightiest among the
-D: Ainur, this plain iron crown now bears just three empty sockets:
-D: holes where should be stars.
+F:INSTA_ART | GRA | SUST_GRA | FREE_ACT
+D:One of the Seven Rings of Power given to the Dwarf-lords. This ring
+D: was taken from Thrain II in the dungeons of Dol Guldur. It amplifies
+D: the greed and pride of its wearer, but also grants great resilience.
+D: You must escape with this ring to fulfill your quest.
 
 
-## The Massive Iron Crown of Morgoth (one Silmaril)
-## 1st age
+## The Ring of Thrain (corrupted)
+## 3rd age
 ## (automatic drop -- don't move)
 
-N:176:of Morgoth
-I:33:50:4
-W:20:1:4000:10000000
+N:176:of Thrain
+I:45:50:4
+W:20:1:2:10000000
 P:0:0d0:0:0d0:0
-F:INSTA_ART 
-D:Containing much of the power of he who is the mightiest among the
-D: Ainur, this plain iron crown has mounted upon it the sole remaining
-D: Silmaril, greatest treasure of Middle-Earth.
+F:INSTA_ART | GRA | SUST_GRA | FREE_ACT | AGGRAVATE
+D:One of the Seven Rings of Power, now stained by Sauron's malice.
+D: The ring whispers of gold and glory, but its promises are hollow.
+D: You sense that its master is aware of your theft.
 
 
-## The Massive Iron Crown of Morgoth (two Silmarils)
-## 1st age
+## The Ring of Thrain (burning)
+## 3rd age
 ## (automatic drop -- don't move)
 
-N:177:of Morgoth
-I:33:50:5
-W:20:1:4000:10000000
+N:177:of Thrain
+I:45:50:5
+W:20:1:2:10000000
 P:0:0d0:0:0d0:0
-F:INSTA_ART 
-D:Containing much of the power of he who is the mightiest among the
-D: Ainur, this plain iron crown has mounted upon it the two remaining
-D: Silmarils, greatest treasures of Middle-Earth.
+F:INSTA_ART | GRA | SUST_GRA | FREE_ACT | AGGRAVATE | LIGHT
+D:One of the Seven Rings of Power, burning with inner fire as Sauron's
+D: will seeks to reclaim it. The ring grows hot upon your finger,
+D: and you feel his Eye searching for you through the darkness.
 
 
-## The Massive Iron Crown of Morgoth (three Silmarils)
-## 1st age
+## (placeholder - kept for compatibility)
 ## (automatic drop -- don't move)
 
-N:178:of Morgoth
-I:33:50:6
-W:20:1:4000:10000000
+N:178:of Thrain
+I:45:50:6
+W:20:1:2:10000000
 P:0:0d0:0:0d0:0
-F:INSTA_ART 
-D:Containing much of the power of he who is the mightiest among the
-D: Ainur, this plain iron crown has mounted upon it the three
-D: Silmarils, greatest treasures of Middle-Earth. To attempt to cut
-D: a Silmaril from the crown, stand over it and press (k).
+F:INSTA_ART | GRA | SUST_GRA | FREE_ACT
+D:One of the Seven Rings of Power.
 
 
-## The Mighty Hammer 'Grond'
-## 1st age
+## The Key to Erebor (Victory Item)
+## 3rd age
 ## (automatic drop -- don't move)
 
-N:179:'Grond'
-I:21:50:3
-W:20:1:1000:500000
-P:-9:6d5:0:0d0
-F:TUNNEL
+N:179:to Erebor
+I:39:50:0
+W:20:1:5:500000
+P:0:0d0:0:0d0
 F:INSTA_ART
-D:The mighty Hammer of the Underworld, blackened by dark sorceries,
-D: whose wielder holds the lives of all Morgoth's servants
-D: in his hand.
+D:This ancient dwarven key was crafted by Thrain's father Thror, and
+D: opens the secret door to the Lonely Mountain. Gandalf sought this
+D: key for decades, and now you have found it in the deepest pit of
+D: Dol Guldur. With this and the Ring, Erebor can be reclaimed.
 
 
 

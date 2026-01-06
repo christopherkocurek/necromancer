@@ -1563,7 +1563,7 @@ static bool do_cmd_close_aux(int y, int x)
     {
         int difficulty = 15;
         int result = skill_check(
-            PLAYER, ability_bonus(S_SNG, SNG_THRESHOLDS), difficulty, NULL);
+            PLAYER, ability_bonus(S_LOR, SNG_THRESHOLDS), difficulty, NULL);
         if (result > 9)
         {
             msg_print("You close the door, singing a song of trust unbroken.");
@@ -4233,7 +4233,7 @@ void do_cmd_fire(int quiver)
 
                         // Morgoth drops his iron crown if he is hit for 10 or
                         // more net damage twice
-                        if (m_ptr->r_idx == R_IDX_MORGOTH)
+                        if (m_ptr->r_idx == R_IDX_SAURON)
                         {
                             if (net_dam >= 10
                                 && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
@@ -4790,6 +4790,7 @@ void do_cmd_throw(bool automatic)
     // it)
     attack_mod -= (&inventory[INVEN_WIELD])->att;
     attack_mod -= axe_bonus(&inventory[INVEN_WIELD]);
+    attack_mod -= sword_bonus(&inventory[INVEN_WIELD]);
     attack_mod -= polearm_bonus(&inventory[INVEN_WIELD]);
 
     /* Weapons that are not good for throwing are much less accurate */
@@ -4800,6 +4801,7 @@ void do_cmd_throw(bool automatic)
 
     // give people their weapon affinity bonuses if the weapon is thrown
     attack_mod += axe_bonus(i_ptr);
+    attack_mod += sword_bonus(i_ptr);
     attack_mod += polearm_bonus(i_ptr);
 
     /* Take a turn */
@@ -5097,7 +5099,7 @@ void do_cmd_throw(bool automatic)
 
                     // Morgoth drops his iron crown if he is hit for 10 or more
                     // net damage twice
-                    if ((m_ptr->r_idx == R_IDX_MORGOTH)
+                    if ((m_ptr->r_idx == R_IDX_SAURON)
                         && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
                     {
                         if (net_dam >= 10)

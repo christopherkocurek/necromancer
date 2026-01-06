@@ -1542,25 +1542,25 @@ extern void display_introduction(void)
     Term_clear();
 
     Term_putstr(14, 3, -1, TERM_L_BLUE,
-        "  The world was young, the mountains green,            ");
+        "  In the shadows of Mirkwood's eaves,                  ");
     Term_putstr(14, 4, -1, TERM_L_BLUE,
-        "     No stain yet on the moon was seen...              ");
+        "     A darkness stirs beneath the leaves...            ");
 
     Term_putstr(14, 7, -1, TERM_WHITE,
-        "Welcome to Sil, a game of adventure set                ");
+        "Welcome to The Necromancer, a game of adventure set    ");
     Term_putstr(14, 8, -1, TERM_WHITE,
-        "  in the First Age of Middle-earth,                    ");
+        "  in the Third Age of Middle-earth,                    ");
     Term_putstr(14, 9, -1, TERM_WHITE,
-        "    when the world still rang with elven song          ");
+        "    when shadow returned to Dol Guldur                 ");
     Term_putstr(14, 10, -1, TERM_WHITE,
-        "      and gleamed with dwarven mail.                   ");
+        "      and the Necromancer claimed his tower.           ");
 
     Term_putstr(14, 11, -1, TERM_WHITE,
-        "Walk the dark halls of Angband.                        ");
+        "Descend into the pits of Dol Guldur.                   ");
     Term_putstr(14, 12, -1, TERM_WHITE,
-        "  Slay creatures black and fell.                       ");
+        "  Face the servants of the Shadow.                     ");
     Term_putstr(14, 13, -1, TERM_WHITE,
-        "    Wrest a shining Silmaril from Morgoth's iron crown.");
+        "    Claim Thrain's ring and the key to Erebor.         ");
 
     /* Flush it */
     Term_fresh();
