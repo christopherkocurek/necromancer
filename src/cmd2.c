@@ -115,14 +115,14 @@ void do_cmd_go_up(void)
     }
 
     /* Ironman */
-    if (birth_ironman && (silmarils_possessed() == 0))
+    if (birth_ironman && !can_escape_dol_guldur())
     {
-        msg_print("You have vowed to not to return until you hold a Silmaril.");
+        msg_print("You have vowed to not return until you hold the Ring of Thrain and the Key to Erebor.");
         return;
     }
 
     if (chosen_oath(OATH_IRON) && !oath_invalid(OATH_IRON) &&
-       (silmarils_possessed() == 0))
+       !can_escape_dol_guldur())
     {
         if (get_check("Are you sure you wish to break your oath? "))
         {
@@ -135,7 +135,7 @@ void do_cmd_go_up(void)
         }
     }
 
-    if (silmarils_possessed() == 0)
+    if (!can_escape_dol_guldur())
     {
         p_ptr->oaths_broken |= OATH_IRON_FLAG;
     }
@@ -146,10 +146,14 @@ void do_cmd_go_up(void)
     // store the action type
     p_ptr->previous_action[0] = ACTION_MISC;
 
-    // Cannot flee Morgoth's throne room without a Silmaril
-    if ((p_ptr->depth == MORGOTH_DEPTH) && (silmarils_possessed() == 0))
+    // Cannot flee Sauron's throne room without both quest items
+    if ((p_ptr->depth == SAURON_DEPTH) && !can_escape_dol_guldur())
     {
         msg_print("You enter a maze of staircases, but cannot find your way.");
+        if (!has_ring_of_thrain())
+            msg_print("You need the Ring of Thrain to escape.");
+        if (!has_key_to_erebor())
+            msg_print("You need the Key to Erebor to escape.");
 
         return;
     }
@@ -191,7 +195,7 @@ void do_cmd_go_up(void)
             message_flush();
             msg_print("You fall through...");
             message_flush();
-            msg_print("...and land somewhere deeper in the Iron Hells.");
+            msg_print("...and land somewhere deeper in Dol Guldur.");
             message_flush();
 
             // add to the notes file
@@ -236,19 +240,19 @@ void do_cmd_go_up(void)
     {
         message(MSG_STAIRS, 0, "You enter a maze of up staircases.");
 
-        if (silmarils_possessed() > 0)
+        if (can_escape_dol_guldur())
         {
-            message(MSG_STAIRS, 0, "The divine light reveals the way.");
+            message(MSG_STAIRS, 0, "The Ring of Thrain guides your path.");
         }
 
-        if (p_ptr->depth == MORGOTH_DEPTH)
+        if (p_ptr->depth == SAURON_DEPTH)
         {
             if (!p_ptr->morgoth_slain)
             {
-                msg_print("As you climb the stair, a great cry of rage and "
-                          "anguish comes "
+                msg_print("As you climb the stair, a terrible shriek of malice "
+                          "echoes "
                           "from below.");
-                msg_print("Make quick your escape: it shall be hard-won.");
+                msg_print("Make quick your escape: the Necromancer's wrath pursues you.");
             }
 
             // set the 'on the run' flag
@@ -265,7 +269,7 @@ void do_cmd_go_up(void)
             message_flush();
             msg_print("You fall through...");
             message_flush();
-            msg_print("...and land somewhere deeper in the Iron Hells.");
+            msg_print("...and land somewhere deeper in Dol Guldur.");
             message_flush();
 
             // add to the notes file
@@ -375,13 +379,13 @@ void do_cmd_go_down(void)
     }
 
     // warn players if this could lead them to Morgoth's Throne Room
-    if (new == MORGOTH_DEPTH)
+    if (new == SAURON_DEPTH)
     {
         if (!p_ptr->on_the_run)
         {
-            msg_print("From up this stair comes the harsh din of feasting in "
-                      "Morgoth's own "
-                      "hall.");
+            msg_print("From up this stair comes an oppressive darkness and the "
+                      "whisper of "
+                      "ancient malice.");
             if (!get_check("Are you completely sure you wish to descend? "))
             {
                 p_ptr->create_stair = FALSE;
@@ -399,14 +403,14 @@ void do_cmd_go_down(void)
     message(MSG_STAIRS, 0, "You enter a maze of down staircases.");
 
     // Can never return to the throne room...
-    if ((p_ptr->on_the_run) && (new == MORGOTH_DEPTH))
+    if ((p_ptr->on_the_run) && (new == SAURON_DEPTH))
     {
         message(MSG_STAIRS, 0,
-            "Try though you might, you cannot find your way back to Morgoth's "
-            "throne.");
+            "Try though you might, you cannot find your way back to the "
+            "Necromancer's throne.");
         message(MSG_STAIRS, 0, "You emerge near where you began.");
         p_ptr->create_stair = FEAT_MORE;
-        new = MORGOTH_DEPTH - 1;
+        new = SAURON_DEPTH - 1;
     }
 
     // deal with trapped stairs
@@ -416,7 +420,7 @@ void do_cmd_go_down(void)
         message_flush();
         msg_print("You fall through...");
         message_flush();
-        msg_print("...and land somewhere deeper in the Iron Hells.");
+        msg_print("...and land somewhere deeper in Dol Guldur.");
         message_flush();
 
         // add to the notes file

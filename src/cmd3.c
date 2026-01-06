@@ -948,13 +948,13 @@ void shatter_weapon(int silnum)
     {
         monster_type* m_ptr = &mon_list[i];
 
-        /* If Morgoth, then anger him */
+        /* If the Necromancer, then anger him */
         if (m_ptr->r_idx == R_IDX_SAURON)
         {
             if ((m_ptr->cdis <= 5)
                 && los(p_ptr->py, p_ptr->px, m_ptr->fy, m_ptr->fx))
             {
-                msg_print("A shard strikes Morgoth upon his cheek.");
+                msg_print("A shard strikes the Necromancer.");
                 set_alertness(m_ptr, ALERTNESS_VERY_ALERT);
                 anger_morgoth(2);
             }
@@ -1103,14 +1103,14 @@ void prise_silmaril(void)
                 {
                     monster_type* m_ptr = &mon_list[i];
 
-                    /* If Morgoth, then anger him */
+                    /* If the Necromancer, then anger him */
                     if (m_ptr->r_idx == R_IDX_SAURON
                         && m_ptr->alertness >= ALERTNESS_ALERT)
                     {
                         if ((m_ptr->cdis <= 5)
                             && los(p_ptr->py, p_ptr->px, m_ptr->fy, m_ptr->fx))
                         {
-                            msg_print("Morgoth howls with rage!");
+                            msg_print("The Necromancer shrieks with rage!");
                             anger_morgoth(2);
                         }
                     }
@@ -1169,23 +1169,23 @@ void prise_silmaril(void)
             break_truce(TRUE);
 
             // add a note to the notes file
-            do_cmd_note("Cut a Silmaril from Morgoth's crown", p_ptr->depth);
+            do_cmd_note("Claimed a treasure from Dol Guldur", p_ptr->depth);
         }
     }
 
-    // if you fail to prise out a Silmaril...
+    // if you fail to prise out a treasure...
     else
     {
-        msg_print("Try though you might, you were unable to free a Silmaril.");
+        msg_print("Try though you might, you were unable to claim the treasure.");
 
         // Break the truce if creatures see
         break_truce(FALSE);
     }
 
-    // check for taking of final Silmaril
-    if (o_ptr->name1 == ART_MORGOTH_0)
+    // check for taking of final treasure
+    if (o_ptr->name1 == ART_RING_OF_THRAIN_0)
     {
-        msg_print("You hear a cry of vengeance echo through the iron hells.");
+        msg_print("You hear a cry of vengeance echo through Dol Guldur.");
         msg_print("You feel your doom awaiting you.");
         wake_all_monsters(0);
         anger_morgoth(2);

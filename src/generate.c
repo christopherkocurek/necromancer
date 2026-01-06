@@ -2138,7 +2138,7 @@ static bool build_type2(int y0, int x0)
 
     int light = FALSE;
 
-    /* Occasional light - always at level 1 through to never at Morgoth's level
+    /* Occasional light - always at level 1 through to never at the final level
      */
     if (p_ptr->depth < dieroll(MORGOTH_DEPTH))
         light = TRUE;
@@ -2887,7 +2887,7 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
                 break;
             }
 
-            /* Morgoth */
+            /* The Necromancer (Sauron) */
             case 'V':
             {
                 place_monster_one(y, x, R_IDX_SAURON, TRUE, TRUE, NULL);
@@ -3239,20 +3239,20 @@ static bool build_type8(int y0, int x0)
 }
 
 /*
- * Type 9 -- Morgoth's vault (see "vault.txt")
+ * Type 9 -- The Necromancer's throne vault (see "vault.txt")
  */
 static bool build_type9(int y0, int x0)
 {
     vault_type* v_ptr;
     int tries = 0;
 
-    /* Pick a version of Morgoth's vault */
+    /* Pick a version of the throne vault */
     while (TRUE)
     {
         /* Get a random vault record */
         v_ptr = &v_info[rand_int(z_info->v_max)];
 
-        /* Accept the first morgoth vault */
+        /* Accept the first throne vault */
         if (v_ptr->typ == 9)
             break;
 
@@ -3260,7 +3260,7 @@ static bool build_type9(int y0, int x0)
         if (tries > 10000)
         {
             msg_format(
-                "Could not find a record for Morgoth's Vault in vault.txt");
+                "Could not find a record for the Throne Vault in vault.txt");
             return (FALSE);
         }
     }
@@ -3723,19 +3723,20 @@ static bool cave_gen(void)
         (void)alloc_monster(FALSE, FALSE);
     }
 
-    // place Morgoth if on the run
+    // place the Necromancer if on the run
     if (p_ptr->on_the_run && !p_ptr->morgoth_slain)
     {
-        /* simple way to place Morgoth */
+        /* simple way to place the Necromancer (Sauron) */
         for (i = 0; i <= 100; i++)
         {
+            // danger_factor is 5 if player has quest items, 6 otherwise
             int danger_factor = 6 - silmarils_possessed();
 
             y = rand_int(p_ptr->cur_map_hgt);
             x = rand_int(p_ptr->cur_map_wid);
 
-            // pull Morgoth's start toward the player more based on the
-            // silmarils the player has
+            // pull the Necromancer's start toward the player more
+            // if the player has the quest items
             if (p_ptr->px < x)
                 x -= 2 * ((x - p_ptr->px) / danger_factor);
             if (p_ptr->px > x)
@@ -3820,7 +3821,7 @@ static void gates_gen(void)
 }
 
 /*
- * Create the level containing Morgoth's throne room
+ * Create the level containing the Necromancer's throne room
  */
 static void throne_gen(void)
 {
@@ -4058,8 +4059,8 @@ void generate_cave(void)
             p_ptr->create_stair = 0;
         }
 
-        /* Build Morgoth's throne room */
-        else if (p_ptr->depth == MORGOTH_DEPTH)
+        /* Build the Necromancer's throne room */
+        else if (p_ptr->depth == SAURON_DEPTH)
         {
             throne_gen();
 

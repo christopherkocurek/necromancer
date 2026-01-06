@@ -1939,18 +1939,18 @@ void describe_floor_object(void)
         disturb(0, 0);
     }
 
-    // special explanation the first time you step over the crown
-    if ((o_ptr->name1 == ART_MORGOTH_3) && !(p_ptr->crown_hint))
+    // special explanation the first time you step over the Ring of Thrain
+    if ((o_ptr->name1 == ART_RING_OF_THRAIN_3) && !(p_ptr->crown_hint))
     {
         if (hjkl_movement)
         {
-            msg_print("To attempt to prise a Silmaril from the crown, use the "
+            msg_print("To claim this treasure, use the "
                       "'destroy' "
                       "command ('Ctrl-k').");
         }
         else
         {
-            msg_print("To attempt to prise a Silmaril from the crown, use the "
+            msg_print("To claim this treasure, use the "
                       "'destroy' "
                       "command (which is 'k' by default).");
         }

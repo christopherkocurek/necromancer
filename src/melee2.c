@@ -4827,7 +4827,7 @@ static void process_monster(monster_type* m_ptr)
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_WOUNDED
         && p_ptr->morgoth_state < 2)
     {
-        msg_print("Morgoth grows angry.");
+        msg_print("The Necromancer's wrath intensifies.");
         message_flush();
         anger_morgoth(2);
     }
@@ -4835,7 +4835,7 @@ static void process_monster(monster_type* m_ptr)
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_BADLY_WOUNDED
         && p_ptr->morgoth_state < 3)
     {
-        msg_print("Morgoth unslings his mighty shield.");
+        msg_print("The Necromancer summons a shield of shadow.");
         message_flush();
         anger_morgoth(3);
     }
@@ -4843,7 +4843,7 @@ static void process_monster(monster_type* m_ptr)
         && health_level(m_ptr->hp, m_ptr->maxhp) <= HEALTH_ALMOST_DEAD
         && p_ptr->morgoth_state < 4)
     {
-        msg_print("Morgoth grows desperate.");
+        msg_print("The Necromancer grows desperate.");
         message_flush();
         anger_morgoth(4);
     }

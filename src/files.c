@@ -3182,7 +3182,7 @@ bool get_name(void)
 }
 
 /*
- * Hack -- escape from Angband
+ * Hack -- escape from Dol Guldur
  */
 void do_cmd_escape(void)
 {
@@ -3211,36 +3211,29 @@ void do_cmd_escape(void)
     /* Add note */
     my_strcat(notes_buffer, "\n", sizeof(notes_buffer));
 
-    /*killed by */
-    sprintf(buf, "You escaped the Iron Hells on %s.", long_day);
+    /* Escaped */
+    sprintf(buf, "You escaped Dol Guldur on %s.", long_day);
 
     /* Write message */
     do_cmd_note(buf, p_ptr->depth);
 
-    // make a note
-    switch (silmarils_possessed())
+    // make a note about quest items
+    if (can_escape_dol_guldur())
     {
-    case 0:
+        do_cmd_note("You escaped with the Ring of Thrain and the Key to Erebor!", p_ptr->depth);
+        do_cmd_note("The Lonely Mountain awaits its rightful heirs.", p_ptr->depth);
+    }
+    else if (has_ring_of_thrain())
+    {
+        do_cmd_note("You brought back the Ring of Thrain.", p_ptr->depth);
+    }
+    else if (has_key_to_erebor())
+    {
+        do_cmd_note("You brought back the Key to Erebor.", p_ptr->depth);
+    }
+    else
+    {
         do_cmd_note("You returned empty handed.", p_ptr->depth);
-        break;
-    case 1:
-        do_cmd_note(
-            "You brought back a Silmaril from Morgoth's crown!", p_ptr->depth);
-        break;
-    case 2:
-        do_cmd_note("You brought back two Silmarils from Morgoth's crown!",
-            p_ptr->depth);
-        break;
-    case 3:
-        do_cmd_note(
-            "You brought back all three Silmarils from Morgoth's crown!",
-            p_ptr->depth);
-        break;
-    default:
-        do_cmd_note("You brought back so many Silmarils that people should be "
-                    "suspicious!",
-            p_ptr->depth);
-        break;
     }
 
     if (p_ptr->oath_type > 0)
@@ -3795,28 +3788,14 @@ extern void display_single_score(
     /* Possibly ammend the first line */
     if (the_score->morgoth_slain[0] == 't')
     {
-        my_strcat(out_val, ", who defeated Morgoth in his dark halls",
+        my_strcat(out_val, ", who defeated the Necromancer in Dol Guldur",
             sizeof(out_val));
     }
     else
     {
-        if (the_score->silmarils[0] == '1')
+        if (the_score->silmarils[0] >= '1')
         {
-            my_strcat(out_val, ", who freed a Silmaril", sizeof(out_val));
-        }
-        if (the_score->silmarils[0] == '2')
-        {
-            my_strcat(out_val, ", who freed two Silmarils", sizeof(out_val));
-        }
-        if (the_score->silmarils[0] == '3')
-        {
-            my_strcat(
-                out_val, ", who freed all three Silmarils", sizeof(out_val));
-        }
-        if (the_score->silmarils[0] > '3')
-        {
-            my_strcat(out_val, ", who freed suspiciously many Silmarils",
-                sizeof(out_val));
+            my_strcat(out_val, ", who recovered the Ring of Thrain and the Key to Erebor", sizeof(out_val));
         }
     }
 
@@ -3827,12 +3806,12 @@ extern void display_single_score(
     if (the_score->escaped[0] == 't')
     {
         strnfmt(
-            out_val, sizeof(out_val), "               Escaped the iron hells");
+            out_val, sizeof(out_val), "               Escaped Dol Guldur");
 
         if ((the_score->morgoth_slain[0] == 't')
             || (the_score->silmarils[0] > '0'))
         {
-            my_strcat(out_val, " and brought back the light of Valinor",
+            my_strcat(out_val, " with treasures for the heirs of Erebor",
                 sizeof(out_val));
         }
         else
@@ -3845,7 +3824,7 @@ extern void display_single_score(
     else if (fake)
     {
         strnfmt(out_val, sizeof(out_val),
-            "               Lives still, deep within Angband's vaults");
+            "               Lives still, deep within Dol Guldur");
     }
 
     /* Prepare the second line for those slain */
@@ -3854,7 +3833,7 @@ extern void display_single_score(
         strnfmt(out_val, sizeof(out_val), "               Slain by %s",
             the_score->how);
 
-        /* Mark those with a silmaril */
+        /* Mark those with the quest items */
         if (the_score->silmarils[0] > '0')
         {
             my_strcat(out_val, " during a daring escape", sizeof(out_val));
@@ -4057,27 +4036,55 @@ void display_scores(int from, int to)
 static int score_idx = -1;
 
 /*
- * Counts the player's silmarils
+ * The Necromancer: Check if player has the Ring of Thráin (any variant)
  */
-extern int silmarils_possessed(void)
+extern bool has_ring_of_thrain(void)
 {
-    int silmarils = 0;
     int i;
 
     for (i = 0; i < INVEN_TOTAL; i++)
     {
-        if (((&inventory[i])->tval == TV_LIGHT)
-            && ((&inventory[i])->sval == SV_LIGHT_SILMARIL))
-            silmarils += (&inventory[i])->number;
-        if ((&inventory[i])->name1 == ART_MORGOTH_1)
-            silmarils += 1;
-        if ((&inventory[i])->name1 == ART_MORGOTH_2)
-            silmarils += 2;
-        if ((&inventory[i])->name1 == ART_MORGOTH_3)
-            silmarils += 3;
+        if (((&inventory[i])->name1 >= ART_RING_OF_THRAIN_0)
+            && ((&inventory[i])->name1 <= ART_RING_OF_THRAIN_3))
+            return TRUE;
     }
 
-    return silmarils;
+    return FALSE;
+}
+
+/*
+ * The Necromancer: Check if player has the Key to Erebor
+ */
+extern bool has_key_to_erebor(void)
+{
+    int i;
+
+    for (i = 0; i < INVEN_TOTAL; i++)
+    {
+        if ((&inventory[i])->name1 == ART_KEY_TO_EREBOR)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
+ * The Necromancer: Check if player can escape Dol Guldur
+ * Requires BOTH the Ring of Thráin AND the Key to Erebor
+ */
+extern bool can_escape_dol_guldur(void)
+{
+    return has_ring_of_thrain() && has_key_to_erebor();
+}
+
+/*
+ * Legacy function for backwards compatibility.
+ * Returns 1 if player can escape (has both quest items), 0 otherwise.
+ * Used for scoring and some legacy code paths.
+ */
+extern int silmarils_possessed(void)
+{
+    return can_escape_dol_guldur() ? 1 : 0;
 }
 
 /*

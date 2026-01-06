@@ -4866,17 +4866,17 @@ void song_of_piercing(monster_type* m_ptr)
     // perform the skill check
     result = skill_check(m_ptr, song_skill, resistance, PLAYER);
 
-    // if the check succeeds, Morgoth knows the player's location
+    // if the check succeeds, the Necromancer knows the player's location
     if (result > 0)
     {
-        msg_print("You feel your mind laid bare before Morgoth's will.");
+        msg_print("You feel your mind laid bare before the Necromancer's will.");
         set_alertness(m_ptr, MIN(result, ALERTNESS_VERY_ALERT));
     }
 
     else if (result > -5)
     {
         msg_print(
-            "You feel the force of Morgoth's will searching for the intruder.");
+            "You sense the Necromancer's dark will searching for the intruder.");
     }
 }
 

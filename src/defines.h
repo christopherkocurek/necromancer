@@ -182,7 +182,8 @@
  * (such as during initialisation)
  */
 #define MAX_DEPTH 128
-#define MORGOTH_DEPTH 20
+#define SAURON_DEPTH 20
+#define MORGOTH_DEPTH SAURON_DEPTH  /* Backwards compatibility alias */
 
 /*
  * Locations of various monsters in the monster.txt file
@@ -1034,11 +1035,19 @@
 #define ART_DRAUGLUIN 137
 #define ART_THURINGWETHIL 138
 
-#define ART_MORGOTH_0 175
-#define ART_MORGOTH_1 176
-#define ART_MORGOTH_2 177
-#define ART_MORGOTH_3 178
-#define ART_GROND 179
+/* The Necromancer: Ring of Thráin variants and Key to Erebor */
+#define ART_RING_OF_THRAIN_0 175  /* Ring of Thráin (basic) */
+#define ART_RING_OF_THRAIN_1 176  /* Ring of Thráin (empowered) */
+#define ART_RING_OF_THRAIN_2 177  /* Ring of Thráin (awakened) */
+#define ART_RING_OF_THRAIN_3 178  /* Ring of Thráin (fully restored) */
+#define ART_KEY_TO_EREBOR 179     /* Key to Erebor - needed with Ring to escape */
+
+/* Backwards compatibility aliases for existing code */
+#define ART_MORGOTH_0 ART_RING_OF_THRAIN_0
+#define ART_MORGOTH_1 ART_RING_OF_THRAIN_1
+#define ART_MORGOTH_2 ART_RING_OF_THRAIN_2
+#define ART_MORGOTH_3 ART_RING_OF_THRAIN_3
+#define ART_GROND ART_KEY_TO_EREBOR
 
 #define ART_ULTIMATE 182
 

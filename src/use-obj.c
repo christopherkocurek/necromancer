@@ -854,7 +854,7 @@ static bool play_instrument(object_type* o_ptr, bool* ident)
                     msg_print("You fall through...");
                     message_flush();
                     msg_print(
-                        "...and land somewhere deeper in the Iron Hells.");
+                        "...and land somewhere deeper in Dol Guldur.");
                     message_flush();
 
                     // add to the notes file

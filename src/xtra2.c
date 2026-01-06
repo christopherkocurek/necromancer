@@ -2290,11 +2290,11 @@ void monster_death(int m_idx)
      *   1. General monster death things
      */
 
-    // Special message and flag setting for killing Morgoth
+    // Special message and flag setting for killing the Necromancer
     if (m_ptr->r_idx == R_IDX_SAURON)
     {
         p_ptr->morgoth_slain = TRUE;
-        msg_print("BUG: Morgoth has been defeated in combat.");
+        msg_print("BUG: The Necromancer has been defeated in combat.");
         msg_print(
             "But this is not possible within the fates Iluvatar has decreed.");
         msg_print("Please post an 'ultimate bug-report' on "

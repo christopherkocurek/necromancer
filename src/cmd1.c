@@ -3031,7 +3031,7 @@ void hit_trap(int y, int x)
         // give several messages so the player has a chance to see it happen
         msg_print("You fall into the darkness!");
         message_flush();
-        msg_print("...and land somewhere deeper in the Iron Hells.");
+        msg_print("...and land somewhere deeper in Dol Guldur.");
         message_flush();
 
         // add to the notes file
@@ -3059,7 +3059,7 @@ void hit_trap(int y, int x)
         message_flush();
         msg_print("You fall through...");
         message_flush();
-        msg_print("...and land somewhere deeper in the Iron Hells.");
+        msg_print("...and land somewhere deeper in Dol Guldur.");
         message_flush();
 
         // add to the notes file

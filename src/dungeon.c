@@ -533,9 +533,9 @@ static void process_world(void)
     if (bones_selector)
         was_ghost = TRUE;
 
-    /* Vastly more wandering monsters during the endgame when you have 2 or 3
-     * Silmarils */
-    if (silmarils_possessed() >= 2)
+    /* Vastly more wandering monsters during the escape when you have
+     * the quest items and are fleeing Dol Guldur */
+    if (p_ptr->on_the_run && can_escape_dol_guldur())
     {
         int percent = (p_ptr->cur_map_hgt * p_ptr->cur_map_wid)
             / (PANEL_HGT * PANEL_WID_FIXED);
@@ -1636,8 +1636,8 @@ static void process_player(void)
             stop_stealth_mode = FALSE;
         }
 
-        // Morgoth will announce a challenge if adjacent
-        if (p_ptr->truce && (p_ptr->depth == MORGOTH_DEPTH))
+        // The Necromancer will announce a challenge if adjacent
+        if (p_ptr->truce && (p_ptr->depth == SAURON_DEPTH))
         {
             int d, yy, xx;
 
@@ -1659,12 +1659,10 @@ static void process_player(void)
                 if ((m_ptr->r_idx == R_IDX_SAURON)
                     && (m_ptr->alertness >= ALERTNESS_ALERT))
                 {
-                    msg_print("With a voice as of rolling thunder, Morgoth, "
-                              "Lord of Darkness, "
-                              "speaks:");
-                    msg_print("'You dare challenge me in mine own hall? Now is "
-                              "your death upon "
-                              "you!'");
+                    msg_print("A voice of malice and ancient power echoes through "
+                              "the dark halls:");
+                    msg_print("'Fool! You trespass in my domain. Your death shall "
+                              "feed the Shadow!'");
 
                     // Break the truce (always)
                     break_truce(TRUE);
@@ -2662,13 +2660,13 @@ static void dungeon(void)
         ghost_challenge();
 
     // explain the truce for the final level
-    if ((p_ptr->depth == MORGOTH_DEPTH) && p_ptr->truce)
+    if ((p_ptr->depth == SAURON_DEPTH) && p_ptr->truce)
     {
         msg_print("There is a strange tension in the air.");
         if (p_ptr->skill_use[S_PER] >= 15)
-            msg_print("You feel that Morgoth's servants are reluctant to "
-                      "attack before he "
-                      "delivers judgment.");
+            msg_print("You sense the Necromancer's servants await his command "
+                      "before they "
+                      "dare strike.");
     }
 
     /*** Process this dungeon level ***/

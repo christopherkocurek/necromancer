@@ -524,6 +524,9 @@ extern void signals_init(void);
 extern void mini_screenshot(void);
 extern void prt_mini_screenshot(int col, int row);
 extern int silmarils_possessed(void);
+extern bool has_ring_of_thrain(void);
+extern bool has_key_to_erebor(void);
+extern bool can_escape_dol_guldur(void);
 
 /* generate.c */
 extern void place_monster_by_flag(
