@@ -1866,4 +1866,360 @@ F:RES_FEAR | RES_CONFU | REGEN
 F:FREE_ACT | SPEED | AVOID_TRAPS
 F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
 F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+
+#################################################################
+# NEW ARTIFACT ADDITIONS - The Necromancer
+# Indices 200-230
+#################################################################
+
+
+## The Lamp of the Noldor
+## High Elven craft - everlasting light
+
+N:199:of the Noldor
+G:~:B
+I:39:8:2
+W:12:15:10:8000
+P:0:0d0:0:0d0
+F:PERCEPTION | LIGHT
 F:INSTA_ART
+D:A lamp of the High Elves, wrought in the style of Feanor's
+D: folk though made in later days. It shines with a steady
+D: light that never fades and reveals hidden things.
+
+
+## The Palantir of Dol Guldur
+## Third Age - Sauron's seeing-stone
+## CURSED
+
+N:200:'Palantir'
+G:*:D
+I:39:2:4
+W:20:30:20:100000
+P:0:0d0:0:0d0
+F:SEE_INVIS | PERCEPTION | WILL
+F:DANGER | AGGRAVATE | LIGHT_CURSE
+F:INSTA_ART
+D:One of the Seven Seeing-stones of Numenor. Sauron has
+D: corrupted this one to his purposes. To look into it is
+D: to risk drawing the Eye upon yourself, yet the knowledge
+D: it offers is beyond price.
+
+
+## The Torch of Mordor
+## Third Age - Orc-make
+## CURSED
+
+N:201:of Mordor
+G:~:r
+I:39:0:0
+W:8:10:20:500
+P:0:0d0:0:0d0
+F:RES_FIRE | LIGHT
+F:AGGRAVATE | LIGHT_CURSE
+F:INSTA_ART
+D:A torch of Mordor-make that burns with a sullen red flame
+D: and never goes out. Its light draws the attention of
+D: servants of the Enemy.
+
+
+## The Elendilmir
+## Third Age - Star of the North Kingdom
+
+N:202:'Elendilmir'
+G:*:w
+I:39:2:3
+W:16:20:1:50000
+P:0:0d0:0:0d0
+F:WILL | GRA | LIGHT | RES_FEAR
+F:INSTA_ART
+D:The Star of Elendil, a white gem bound upon the brow of
+D: the Kings of Arnor. It shines with a clear light that
+D: gives courage to the faithful and dismays the servants
+D: of darkness.
+
+
+## The Shadow Cloak of Mordor
+## Third Age - Dark artifact
+## CURSED
+
+N:203:of Mordor
+G:(:D
+I:35:6:3
+W:14:15:10:25000
+P:0:0d0:3:1d0
+F:STEALTH | DARKNESS | SEE_INVIS
+F:HUNGER | LIGHT_CURSE
+D:A cloak woven from shadow itself in the pits of Mordor.
+D: It hides the wearer from sight but feeds on their
+D: life force, and the darkness seeps into their soul.
+
+
+## The Mantle of Stars
+## Third Age - Lothlorien masterwork
+
+N:204:'Mantle of Stars'
+G:(:B
+I:35:1:2
+W:18:25:15:60000
+P:0:0d0:2:1d0
+F:STEALTH | GRA | LIGHT | FREE_ACT
+D:A cloak of deepest blue sewn with gems that gleam like
+D: stars. It is the finest work of the weavers of Lothlorien,
+D: and those who wear it walk with the grace of the Eldar.
+
+
+## The Corslet of Erebor
+## Third Age - Dwarven mail
+
+N:205:of Erebor
+I:37:4:1
+W:10:15:280:80000
+P:-1:0d0:-3:2d5
+F:STR | RES_FIRE | SUST_STR
+D:A corslet of dwarf-mail from Erebor, forged before
+D: Smaug came. It turns aside flame and grants the
+D: wearer something of dwarven endurance.
+
+
+## The Helm of Durin
+## Third Age - Dwarven heirloom
+
+N:206:of Durin
+I:32:6:2
+W:14:20:80:45000
+P:0:0d0:-2:1d4
+F:WILL | RES_FEAR | CON | SUST_CON
+D:A helm of the line of Durin, wrought in Khazad-dum
+D: in days of glory. It grants the stubborn courage
+D: of the dwarves and protects against fear.
+
+
+## The Crown of the Smith
+## Third Age - Masterwork
+
+N:207:'Crown of the Smith'
+G:]:y
+I:32:6:3
+W:20:30:70:100000
+P:0:0d0:-2:1d4
+F:WILL | RES_FIRE | FREE_ACT
+F:SUST_STR | SUST_DEX
+D:A crown forged by a master smith, set with gems of
+D: their own cutting. It is the mark of one who has
+D: achieved true mastery of the forge.
+
+
+## The Gauntlets of Erebor
+## Third Age - Dwarven
+
+N:208:of Erebor
+I:31:2:1
+W:12:15:50:50000
+P:0:0d0:-1:1d2
+F:STR | RES_FIRE | SUST_STR
+D:Heavy gauntlets of Erebor-make, forged for smithing
+D: and war alike. They grant strength to the wearer
+D: and protect against fire.
+
+
+## The Gloves of Shadow
+## Third Age - Dark artifact
+## CURSED
+
+N:209:of Shadow
+I:31:1:2
+W:10:15:5:30000
+P:0:0d0:0:1d0
+F:STEALTH | SEE_INVIS | DARKNESS
+F:HUNGER | LIGHT_CURSE
+D:Gloves of black silk that seem to drink in light.
+D: They grant stealth and the ability to see hidden
+D: things, but at a cost to the wearer's vitality.
+
+
+## The Pair of Boots of Lothlorien
+## Third Age - Elven craft
+
+N:210:of Lothlorien
+I:30:1:1
+W:10:15:15:30000
+P:0:0d0:1:1d1
+F:GRA | FREE_ACT | STEALTH
+D:Boots of elven make from the Golden Wood. They are
+D: light as leaves and make no sound upon stone or
+D: twig. Those who wear them move with elven grace.
+
+
+## The Longsword 'Hadhafang'
+## Third Age - Elrond's blade
+
+N:211:'Hadhafang'
+I:23:17:1
+W:12:15:30:35000
+P:1:2d5:2:0d0
+F:SLAY_ORC | SLAY_TROLL | FREE_ACT | PERCEPTION
+D:An Elven blade of Rivendell, its name meaning
+D: "Throng-cleaver." It has been wielded by the lords
+D: of that house against many foes.
+
+
+## The Dagger 'Noldorin Knife'
+## Third Age - High Elven blade
+
+N:212:'Noldorin Knife'
+I:23:4:1
+W:8:15:5:20000
+P:1:1d6:0:0d0
+F:SHARPNESS | SEE_INVIS | LIGHT
+F:THROWING
+D:A knife of the High Elves, its edge never dulls
+D: and its blade reveals things hidden from mortal
+D: sight. It gleams with pale light.
+
+
+## The Battle Axe of Erebor
+## Third Age - Dwarven
+
+N:213:of Erebor
+I:22:12:1
+W:10:15:55:40000
+P:-2:3d5:0:0d0
+F:STR | SLAY_ORC | RES_FIRE
+D:A battle axe forged in Erebor before the dragon came.
+D: It is heavy and keen, and grants strength to cleave
+D: through orcish armor.
+
+
+## The War Hammer 'Hammer of the Longbeards'
+## Third Age - Dwarven masterwork
+
+N:214:'Hammer of the Longbeards'
+I:21:8:2
+W:18:25:60:80000
+P:-1:4d3:0:0d0
+F:STR | CON | SLAY_ORC | SLAY_TROLL
+F:RES_FIRE | SUST_STR
+D:A mighty hammer of Durin's Folk, made for both the
+D: forge and the battlefield. Its weight is terrible
+D: and its blows shatter stone and bone alike.
+
+
+## The Longbow of Mirkwood
+## Third Age - Wood-elf craft
+
+N:215:of Mirkwood
+I:19:13:1
+W:10:12:25:25000
+P:1:2d5:0:0d0
+F:STEALTH | SLAY_SPIDER | RES_POIS
+D:A bow of the Wood-elves of Mirkwood, made for
+D: hunting the great spiders. Its arrows fly true
+D: in the shadows beneath the trees.
+
+
+## The Longbow 'Black Bow of Mordor'
+## Third Age - Orc-make
+## CURSED
+
+N:216:'Black Bow of Mordor'
+G:}:D
+I:19:13:0
+W:12:15:35:20000
+P:2:2d6:0:0d0
+F:ACCURATE | DARKNESS
+F:AGGRAVATE | LIGHT_CURSE
+D:A great bow of Mordor-make, black as night and
+D: terribly accurate. It draws the attention of
+D: the Enemy's servants but strikes with deadly force.
+
+
+## The Longbow 'Bow of the Last Alliance'
+## Second Age - Legendary
+
+N:217:'Bow of the Last Alliance'
+G:}:w
+I:19:13:2
+W:18:25:35:60000
+P:2:2d7:0:0d0
+F:SLAY_ORC | SLAY_TROLL | LIGHT | RES_FEAR
+D:A great bow that saw service at the Battle of
+D: Dagorlad, where Elves and Men stood together
+D: against Sauron. It gleams with remembered glory.
+
+
+## The Ring of the Noldor
+## Third Age - Elven ring (not of Power)
+
+N:218:of the Noldor
+I:45:30:2
+W:12:20:1:30000
+P:0:0d0:0:0d0
+F:GRA | SEE_INVIS | SUST_GRA
+F:INSTA_ART
+D:A ring of the High Elves, wrought with great skill
+D: but not with the arts of Power. It grants clarity
+D: of sight and steadiness of spirit.
+
+
+## The Ring of Mastery
+## Third Age - Masterwork
+
+N:219:'Ring of Mastery'
+I:45:30:2
+W:20:30:1:100000
+P:0:0d0:0:0d0
+F:STR | DEX | CON | GRA
+F:INSTA_ART
+D:A ring forged by a master of the craft, set with
+D: four gems representing the cardinal virtues.
+D: It grants balance and strength in all things.
+
+
+## The Amulet of the Istari
+## Third Age - Wizard's focus
+
+N:220:of the Istari
+I:40:10:2
+W:14:20:1:40000
+P:0:0d0:0:0d0
+F:WILL | PERCEPTION | RES_FEAR
+F:INSTA_ART
+D:An amulet of the Wizards, a focus for their power.
+D: It sharpens the mind and strengthens the will
+D: against the deceits of the Enemy.
+
+
+## The Black Necklace of Morgul
+## Third Age - Dark artifact
+## CURSED
+
+N:221:'Black Necklace'
+I:40:12:2
+W:12:15:1:25000
+P:0:0d0:0:0d0
+F:STR | VAMPIRIC | DARKNESS
+F:HUNGER | DANGER | LIGHT_CURSE
+F:INSTA_ART
+D:A necklace of black iron forged in Minas Morgul.
+D: It grants fell strength and drinks the life of
+D: those you strike, but it slowly devours its wearer.
+
+
+## The Star of the North
+## Third Age - Dunedain heirloom
+
+N:222:'Star of the North'
+I:40:16:3
+W:18:25:1:70000
+P:0:0d0:0:0d0
+F:WILL | GRA | LIGHT | RES_FEAR | RES_COLD
+F:INSTA_ART
+D:A jewel of the Dunedain, a lesser echo of the
+D: Elendilmir. It shines with cold clear light
+D: and gives courage against the terrors of darkness.
+
+
+#################################################################
+# END OF ADDITIONS
+#################################################################

@@ -1385,9 +1385,9 @@ static void describe_monster_movement(int r_idx, const monster_lore* l_ptr)
         else
             text_out(" is normally found ");
 
-        if (r_idx == R_IDX_GATEKEEPER)
+        if (r_idx == R_IDX_WARG_LORD)
         {
-            text_out_c(TERM_YELLOW, "guarding the gates of Angband");
+            text_out_c(TERM_YELLOW, "prowling the dark forests");
         }
         else if (r_ptr->level < MORGOTH_DEPTH)
         {

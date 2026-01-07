@@ -1048,6 +1048,8 @@ struct player_type
     byte oaths_broken; /* which possible oaths the player has broken */
 
     byte thrall_quest;
+    byte thrain_quest;      /* Thráin interaction progress (0-3 successes) */
+    byte thrain_given_key;  /* Has Thráin given the Key to Erebor? */
 
     s32b unused2; // Room for expansion without breaking savefiles
     s32b unused3; // Room for expansion without breaking savefiles

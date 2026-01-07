@@ -123,9 +123,13 @@ H:72:3
 W:160:10
 C:0|1|2
 F:BOW_PROFICIENCY | SWORD_PROFICIENCY | AXE_PROFICIENCY
-E:39:0:5:5     # ~ Wooden Torches (5)
-E:80:37:10:10  # , Fragment of Lembas (10)
-E:23:7:1:1     # | Curved sword (1)
+E:39:0:5:5       # ~ Wooden Torches (5)
+E:23:17:1:1      # | Long Sword (1) - equipped
+E:23:1:10:10     # | Broken Glowing Weapon (10)
+E:37:1:10:10     # [ Broken Glowing Armor (10)
+E:23:2:10:10     # | Broken Strange Weapon (10)
+E:37:2:10:10     # [ Broken Strange Armor (10)
+E:45:99:10:10    # = Broken Strange Jewelry (10)
 D:The Istari are Maiar spirits sent to Middle-earth in the
 D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This

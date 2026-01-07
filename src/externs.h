@@ -308,6 +308,9 @@ extern void new_wandering_flow(monster_type* m_ptr, int y, int x);
 extern void new_wandering_destination(
     monster_type* m_ptr, monster_type* leader_ptr);
 extern void drop_iron_crown(monster_type* m_ptr, const char* msg);
+extern void drop_ring_of_thrain(monster_type* m_ptr, const char* msg);
+extern void do_quest(monster_type* m_ptr);
+extern void do_thrain_quest(monster_type* m_ptr);
 extern void make_alert(monster_type* m_ptr);
 extern void set_alertness(monster_type* m_ptr, int alertness);
 extern void perceive(void);

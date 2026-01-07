@@ -2294,17 +2294,48 @@ void monster_death(int m_idx)
     if (m_ptr->r_idx == R_IDX_SAURON)
     {
         p_ptr->morgoth_slain = TRUE;
-        msg_print("BUG: The Necromancer has been defeated in combat.");
-        msg_print(
-            "But this is not possible within the fates Iluvatar has decreed.");
-        msg_print("Please post an 'ultimate bug-report' on "
-                  "http://angband.oook.cz/forum/ "
-                  "explaining how this happened.");
-        msg_print("But for now, let's run with it, since it's undeniably "
-                  "impressive.");
+        msg_print("Sauron falls, his shadowy form dissolving into the darkness!");
+        msg_print("Something gleams amidst the fading shadow...");
 
-        // display the ultimate bug text
-        pause_with_text(ultimate_bug_text, 5, 15);
+        // Drop the Ring of Thráin
+        if ((&a_info[ART_RING_OF_THRAIN_0])->cur_num == 0)
+        {
+            int near_y, near_x, i;
+
+            // choose a nearby location
+            for (i = 0; i < 1000; i++)
+            {
+                near_y = m_ptr->fy + rand_range(-1, 1);
+                near_x = m_ptr->fx + rand_range(-1, 1);
+
+                if (((near_y != m_ptr->fy) || (near_x != m_ptr->fx))
+                    && cave_floor_bold(near_y, near_x))
+                    break;
+            }
+
+            // drop it there
+            create_chosen_artefact(ART_RING_OF_THRAIN_0, near_y, near_x, TRUE);
+
+            msg_print("The Ring of Thráin lies where the Necromancer fell.");
+        }
+    }
+
+    // Handle Thráin's death - drop the Key if player hasn't received it
+    if (m_ptr->r_idx == R_IDX_THRAIN)
+    {
+        if (!p_ptr->thrain_given_key)
+        {
+            msg_print("As the shade fades, a cold iron key clatters to the ground...");
+
+            // Drop the Key to Erebor
+            if ((&a_info[ART_KEY_TO_EREBOR])->cur_num == 0)
+            {
+                create_chosen_artefact(
+                    ART_KEY_TO_EREBOR, m_ptr->fy, m_ptr->fx, TRUE);
+                p_ptr->thrain_given_key = TRUE;
+                do_cmd_note("Found the Key to Erebor", p_ptr->depth);
+            }
+        }
     }
 
     /* If the player kills a Unique, write a note. */

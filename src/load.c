@@ -959,6 +959,8 @@ static errr rd_extra(void)
     rd_byte(&p_ptr->oath_type);
     rd_byte(&p_ptr->oaths_broken);
     rd_byte(&p_ptr->thrall_quest);
+    rd_byte(&p_ptr->thrain_quest);
+    rd_byte(&p_ptr->thrain_given_key);
 
     rd_s32b(&p_ptr->unused2);
     rd_s32b(&p_ptr->unused3);

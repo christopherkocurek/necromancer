@@ -1877,9 +1877,12 @@ smithing_cost_type smithing_cost;
 #define SMT_MENU_ARTEFACT 3
 #define SMT_MENU_NUMBERS 4
 #define SMT_MENU_MELT 5
-#define SMT_MENU_ACCEPT 6
+#define SMT_MENU_REFORGE 6
+#define SMT_MENU_RECLAIM 7
+#define SMT_MENU_MASTERWORK 8
+#define SMT_MENU_ACCEPT 9
 
-#define SMT_MENU_MAX 6
+#define SMT_MENU_MAX 9
 
 #define SMT_NUM_MENU_I_ATT 1
 #define SMT_NUM_MENU_D_ATT 2
@@ -2777,6 +2780,50 @@ int mithril_carried(void)
     return (w);
 }
 
+/*
+ * Count Broken Glowing items in inventory (k_idx 491-500)
+ */
+int broken_glowing_carried(void)
+{
+    int count = 0;
+    int item;
+
+    for (item = 0; item < INVEN_WIELD; item++)
+    {
+        object_type* o_ptr = &inventory[item];
+
+        /* k_idx 491 = Broken Glowing Weapon, 492 = Broken Glowing Armor */
+        if (o_ptr->k_idx >= 491 && o_ptr->k_idx <= 492)
+        {
+            count += o_ptr->number;
+        }
+    }
+
+    return (count);
+}
+
+/*
+ * Count Broken Strange items in inventory (k_idx 493-495)
+ */
+int broken_strange_carried(void)
+{
+    int count = 0;
+    int item;
+
+    for (item = 0; item < INVEN_WIELD; item++)
+    {
+        object_type* o_ptr = &inventory[item];
+
+        /* k_idx 493 = Weapon, 494 = Armor, 495 = Jewelry */
+        if (o_ptr->k_idx >= 493 && o_ptr->k_idx <= 495)
+        {
+            count += o_ptr->number;
+        }
+    }
+
+    return (count);
+}
+
 void use_mithril(int cost)
 {
     int item;
@@ -3398,7 +3445,7 @@ int object_difficulty(object_type* o_ptr)
 
     // Deal with masterpiece
     if ((dif > p_ptr->skill_use[S_SMT] + forge_bonus(p_ptr->py, p_ptr->px))
-        && p_ptr->active_ability[S_SMT][SMT_MASTERPIECE])
+        && p_ptr->active_ability[S_SMT][SMT_MASTERWORK])
     {
         smithing_cost.drain += dif
             - (p_ptr->skill_use[S_SMT] + forge_bonus(p_ptr->py, p_ptr->px));
@@ -3422,11 +3469,11 @@ int object_difficulty(object_type* o_ptr)
     {
         smithing_cost.jeweller = 1;
     }
-    if (smith_o_ptr->name1 && !p_ptr->active_ability[S_SMT][SMT_ARTEFACT])
+    if (smith_o_ptr->name1 && !p_ptr->active_ability[S_SMT][SMT_RECLAIM])
     {
         smithing_cost.artifice = 1;
     }
-    if (smith_o_ptr->name2 && !p_ptr->active_ability[S_SMT][SMT_ENCHANTMENT])
+    if (smith_o_ptr->name2 && !p_ptr->active_ability[S_SMT][SMT_REFORGE])
     {
         smithing_cost.enchantment = 1;
     }
@@ -3527,7 +3574,7 @@ int too_difficult(object_type* o_ptr)
     int ability = p_ptr->skill_use[S_SMT] + forge_bonus(p_ptr->py, p_ptr->px);
     int dif = object_difficulty(o_ptr);
 
-    if (p_ptr->active_ability[S_SMT][SMT_MASTERPIECE])
+    if (p_ptr->active_ability[S_SMT][SMT_MASTERWORK])
         ability += p_ptr->skill_base[S_SMT];
 
     if (ability < dif)
@@ -5781,6 +5828,590 @@ void melt_menu(void)
 }
 
 /*
+ * Broken item k_idx values (simplified system)
+ */
+#define K_IDX_BROKEN_GLOWING_WEAPON  491
+#define K_IDX_BROKEN_GLOWING_ARMOR   492
+#define K_IDX_BROKEN_STRANGE_WEAPON  493
+#define K_IDX_BROKEN_STRANGE_ARMOR   494
+#define K_IDX_BROKEN_STRANGE_JEWELRY 495
+
+/*
+ * Weapon tvals for random selection
+ */
+static int weapon_tvals[] = { TV_SWORD, TV_POLEARM, TV_HAFTED, TV_BOW, 0 };
+
+/*
+ * Armor tvals for random selection
+ */
+static int armor_tvals[] = { TV_MAIL, TV_SOFT_ARMOR, TV_SHIELD, TV_HELM,
+                              TV_CLOAK, TV_GLOVES, TV_BOOTS, 0 };
+
+/*
+ * Jewelry tvals for random selection
+ */
+static int jewelry_tvals[] = { TV_RING, TV_AMULET, 0 };
+
+/*
+ * Count how many of a specific broken item type the player carries.
+ */
+int count_broken_item(int k_idx)
+{
+    int count = 0;
+    int item;
+    for (item = 0; item < INVEN_WIELD; item++)
+    {
+        object_type* o_ptr = &inventory[item];
+        if (o_ptr->k_idx == k_idx)
+        {
+            count += o_ptr->number;
+        }
+    }
+    return count;
+}
+
+/*
+ * Consume N broken items of a given k_idx from inventory.
+ */
+bool consume_broken_items(int k_idx, int count)
+{
+    int remaining = count;
+    int item;
+
+    for (item = 0; item < INVEN_WIELD && remaining > 0; item++)
+    {
+        object_type* o_ptr = &inventory[item];
+        if (o_ptr->k_idx == k_idx)
+        {
+            int to_remove = (o_ptr->number < remaining) ? o_ptr->number : remaining;
+            inven_item_increase(item, -to_remove);
+            inven_item_describe(item);
+            inven_item_optimize(item);
+            remaining -= to_remove;
+        }
+    }
+
+    return (remaining == 0);
+}
+
+/*
+ * Pick a random sval for a given tval that can be smithed.
+ */
+int pick_random_sval(int tval)
+{
+    int i, count = 0;
+    int svals[40];
+
+    for (i = 1; i < z_info->k_max && count < 40; i++)
+    {
+        object_kind* k_ptr = &k_info[i];
+        if (k_ptr->tval == tval)
+        {
+            if (k_ptr->flags3 & (TR3_INSTA_ART)) continue;
+            if (k_ptr->flags3 & (TR3_NO_SMITHING)) continue;
+            svals[count++] = k_ptr->sval;
+        }
+    }
+
+    if (count == 0) return 0;
+    return svals[rand_int(count)];
+}
+
+/*
+ * Pick a random ego item (enchantment) valid for given tval/sval.
+ */
+int pick_random_ego(int tval, int sval)
+{
+    int i, j, count = 0;
+    int egos[60];
+
+    for (i = 1; i < z_info->e_max && count < 60; i++)
+    {
+        ego_item_type* e_ptr = &e_info[i];
+
+        for (j = 0; j < EGO_TVALS_MAX; j++)
+        {
+            if (tval == e_ptr->tval[j])
+            {
+                if (sval >= e_ptr->min_sval[j] && sval <= e_ptr->max_sval[j])
+                {
+                    egos[count++] = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (count == 0) return 0;
+    return egos[rand_int(count)];
+}
+
+/*
+ * Pick a random artifact of a given category (weapon/armor/jewelry).
+ */
+int pick_random_artifact(int* tval_list, bool best)
+{
+    int i, count = 0;
+    int arts[100];
+    int best_idx = 0;
+    int best_level = 0;
+
+    for (i = 1; i < z_info->art_norm_max && count < 100; i++)
+    {
+        artefact_type* a_ptr = &a_info[i];
+        int j;
+        bool match = FALSE;
+        int k_idx;
+
+        if (a_ptr->cur_num != 0) continue;  /* Already created */
+
+        /* Verify artifact has a valid base item */
+        k_idx = lookup_kind(a_ptr->tval, a_ptr->sval);
+        if (k_idx == 0) continue;  /* No valid base item for this artifact */
+
+        for (j = 0; tval_list[j] != 0; j++)
+        {
+            if (a_ptr->tval == tval_list[j])
+            {
+                match = TRUE;
+                break;
+            }
+        }
+
+        if (match)
+        {
+            arts[count++] = i;
+            if (a_ptr->level > best_level)
+            {
+                best_level = a_ptr->level;
+                best_idx = i;
+            }
+        }
+    }
+
+    if (count == 0) return 0;
+    if (best) return best_idx;
+    return arts[rand_int(count)];
+}
+
+/*
+ * Reforge menu - combine 2 Broken Glowing items into random enchanted item.
+ * Player picks item TYPE, then item and enchantment are randomly selected.
+ */
+void reforge_menu(void)
+{
+    int k_idx_broken;
+    int tval, sval, ego_idx;
+    char desc[80];
+    char ch;
+    object_type* i_ptr;
+    object_type object_type_body;
+
+    /* Determine which type of broken glowing item to use */
+    int weapon_count = count_broken_item(K_IDX_BROKEN_GLOWING_WEAPON);
+    int armor_count = count_broken_item(K_IDX_BROKEN_GLOWING_ARMOR);
+
+    /* Show item type selection menu */
+    if (weapon_count >= 2 && armor_count >= 2)
+    {
+        msg_print("Reforge into what type?");
+        msg_print("  Weapons: (s)word, (p)olearm, (h)afted, (b)ow");
+        msg_print("  Armor: (m)ail, (l)ight armor, s(h)ield, hel(M), (c)loak, (g)loves, boo(t)s");
+        ch = inkey();
+    }
+    else if (weapon_count >= 2)
+    {
+        msg_print("Reforge into: (s)word, (p)olearm, (h)afted, (b)ow?");
+        ch = inkey();
+    }
+    else
+    {
+        msg_print("Reforge into: (m)ail, (l)ight, s(H)ield, hel(M), (c)loak, (g)loves, boo(t)s?");
+        ch = inkey();
+    }
+
+    /* Parse selection */
+    switch (ch)
+    {
+        case 's': case 'S':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_WEAPON;
+            tval = TV_SWORD;
+            break;
+        case 'p': case 'P':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_WEAPON;
+            tval = TV_POLEARM;
+            break;
+        case 'h':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_WEAPON;
+            tval = TV_HAFTED;
+            break;
+        case 'b': case 'B':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_WEAPON;
+            tval = TV_BOW;
+            break;
+        case 'm':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_MAIL;
+            break;
+        case 'l': case 'L':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_SOFT_ARMOR;
+            break;
+        case 'H':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_SHIELD;
+            break;
+        case 'M':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_HELM;
+            break;
+        case 'c': case 'C':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_CLOAK;
+            break;
+        case 'g': case 'G':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_GLOVES;
+            break;
+        case 't': case 'T':
+            k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
+            tval = TV_BOOTS;
+            break;
+        default:
+            return;  /* Cancelled */
+    }
+
+    /* Check we have enough of the needed broken item type */
+    if (count_broken_item(k_idx_broken) < 2)
+    {
+        msg_print("You don't have enough broken items of that type.");
+        return;
+    }
+
+    /* Confirm */
+    if (!get_check("Reforge broken items into enchanted item? "))
+    {
+        return;
+    }
+
+    /* Consume 2 broken items */
+    if (!consume_broken_items(k_idx_broken, 2))
+    {
+        msg_print("Failed to consume broken items!");
+        return;
+    }
+
+    /* Pick random sval for the chosen tval */
+    sval = pick_random_sval(tval);
+    if (sval == 0)
+    {
+        msg_print("No suitable item could be created.");
+        return;
+    }
+
+    /* Pick random ego for that tval/sval */
+    ego_idx = pick_random_ego(tval, sval);
+
+    /* Create the item */
+    i_ptr = &object_type_body;
+    object_wipe(i_ptr);
+    object_prep(i_ptr, lookup_kind(tval, sval));
+
+    /* Apply enchantment if found */
+    if (ego_idx > 0)
+    {
+        i_ptr->name2 = ego_idx;
+        object_into_special(i_ptr, p_ptr->skill_use[S_SMT], TRUE);
+    }
+
+    /* Make it known */
+    i_ptr->ident |= (IDENT_KNOWN);
+    object_known(i_ptr);
+
+    /* Give to player */
+    inven_carry(i_ptr, TRUE);
+
+    /* Use up one forge use */
+    cave_feat[p_ptr->py][p_ptr->px]--;
+
+    /* Describe what was created */
+    object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
+    msg_format("You reforge the broken items into %s!", desc);
+}
+
+/*
+ * Reclaim menu - combine 2 Broken Strange items into random artifact.
+ */
+void reclaim_menu(void)
+{
+    int k_idx_broken = 0;
+    int* tval_list = NULL;
+    int art_idx;
+    char desc[80];
+    object_type* i_ptr;
+    object_type object_type_body;
+
+    /* Determine which type of broken strange item to use */
+    int weapon_count = count_broken_item(K_IDX_BROKEN_STRANGE_WEAPON);
+    int armor_count = count_broken_item(K_IDX_BROKEN_STRANGE_ARMOR);
+    int jewelry_count = count_broken_item(K_IDX_BROKEN_STRANGE_JEWELRY);
+    int num_choices = 0;
+
+    /* Count available choices */
+    if (weapon_count >= 2) num_choices++;
+    if (armor_count >= 2) num_choices++;
+    if (jewelry_count >= 2) num_choices++;
+
+    /* Show choice menu if 2+ categories available */
+    if (num_choices >= 2)
+    {
+        char ch;
+        char prompt[80];
+        char opts[40] = "";
+
+        if (weapon_count >= 2) strcat(opts, "(w)eapon ");
+        if (armor_count >= 2) strcat(opts, "(a)rmor ");
+        if (jewelry_count >= 2) strcat(opts, "(j)ewelry ");
+
+        strnfmt(prompt, sizeof(prompt), "Reclaim from: %s?", opts);
+        msg_print(prompt);
+        ch = inkey();
+
+        if ((ch == 'w' || ch == 'W') && weapon_count >= 2)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
+            tval_list = weapon_tvals;
+        }
+        else if ((ch == 'a' || ch == 'A') && armor_count >= 2)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
+            tval_list = armor_tvals;
+        }
+        else if ((ch == 'j' || ch == 'J') && jewelry_count >= 2)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
+            tval_list = jewelry_tvals;
+        }
+        else
+        {
+            return;  /* Cancelled */
+        }
+    }
+    else if (weapon_count >= 2)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
+        tval_list = weapon_tvals;
+    }
+    else if (armor_count >= 2)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
+        tval_list = armor_tvals;
+    }
+    else if (jewelry_count >= 2)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
+        tval_list = jewelry_tvals;
+    }
+    else
+    {
+        return;  /* No valid options */
+    }
+
+    /* Confirm */
+    if (!get_check("Reclaim artifact from broken items? "))
+    {
+        return;
+    }
+
+    /* Consume 2 broken items */
+    if (!consume_broken_items(k_idx_broken, 2))
+    {
+        msg_print("Failed to consume broken items!");
+        return;
+    }
+
+    /* Pick random artifact from category */
+    art_idx = pick_random_artifact(tval_list, FALSE);
+
+    if (art_idx > 0)
+    {
+        artefact_type* a_ptr = &a_info[art_idx];
+
+        /* Create the artifact */
+        i_ptr = &object_type_body;
+        object_wipe(i_ptr);
+        object_prep(i_ptr, lookup_kind(a_ptr->tval, a_ptr->sval));
+        i_ptr->name1 = art_idx;
+
+        /* Mark artifact as created */
+        a_ptr->cur_num = 1;
+
+        /* Apply artifact properties */
+        i_ptr->pval = a_ptr->pval;
+        i_ptr->att = a_ptr->att;
+        i_ptr->dd = a_ptr->dd;
+        i_ptr->ds = a_ptr->ds;
+        i_ptr->evn = a_ptr->evn;
+        i_ptr->pd = a_ptr->pd;
+        i_ptr->ps = a_ptr->ps;
+        i_ptr->weight = a_ptr->weight;
+
+        /* Make it known */
+        i_ptr->ident |= (IDENT_KNOWN);
+        object_known(i_ptr);
+
+        /* Give to player */
+        inven_carry(i_ptr, TRUE);
+
+        /* Use up one forge use */
+        cave_feat[p_ptr->py][p_ptr->px]--;
+
+        object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
+        msg_format("You reclaim %s from the broken items!", desc);
+    }
+    else
+    {
+        msg_print("No suitable artifact could be reclaimed.");
+    }
+}
+
+/*
+ * Masterwork menu - combine 4 Broken Strange items into best artifact.
+ */
+void masterwork_menu(void)
+{
+    int k_idx_broken = 0;
+    int* tval_list = NULL;
+    int art_idx;
+    char desc[80];
+    object_type* i_ptr;
+    object_type object_type_body;
+
+    /* Determine which type of broken strange item to use */
+    int weapon_count = count_broken_item(K_IDX_BROKEN_STRANGE_WEAPON);
+    int armor_count = count_broken_item(K_IDX_BROKEN_STRANGE_ARMOR);
+    int jewelry_count = count_broken_item(K_IDX_BROKEN_STRANGE_JEWELRY);
+    int num_choices = 0;
+
+    /* Count available choices */
+    if (weapon_count >= 4) num_choices++;
+    if (armor_count >= 4) num_choices++;
+    if (jewelry_count >= 4) num_choices++;
+
+    /* Show choice menu if 2+ categories available */
+    if (num_choices >= 2)
+    {
+        char ch;
+        char prompt[80];
+        char opts[40] = "";
+
+        if (weapon_count >= 4) strcat(opts, "(w)eapon ");
+        if (armor_count >= 4) strcat(opts, "(a)rmor ");
+        if (jewelry_count >= 4) strcat(opts, "(j)ewelry ");
+
+        strnfmt(prompt, sizeof(prompt), "Masterwork from: %s?", opts);
+        msg_print(prompt);
+        ch = inkey();
+
+        if ((ch == 'w' || ch == 'W') && weapon_count >= 4)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
+            tval_list = weapon_tvals;
+        }
+        else if ((ch == 'a' || ch == 'A') && armor_count >= 4)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
+            tval_list = armor_tvals;
+        }
+        else if ((ch == 'j' || ch == 'J') && jewelry_count >= 4)
+        {
+            k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
+            tval_list = jewelry_tvals;
+        }
+        else
+        {
+            return;  /* Cancelled */
+        }
+    }
+    else if (weapon_count >= 4)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
+        tval_list = weapon_tvals;
+    }
+    else if (armor_count >= 4)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
+        tval_list = armor_tvals;
+    }
+    else if (jewelry_count >= 4)
+    {
+        k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
+        tval_list = jewelry_tvals;
+    }
+    else
+    {
+        return;  /* No valid options */
+    }
+
+    /* Confirm */
+    if (!get_check("Create masterwork from broken items? "))
+    {
+        return;
+    }
+
+    /* Consume 4 broken items */
+    if (!consume_broken_items(k_idx_broken, 4))
+    {
+        msg_print("Failed to consume broken items!");
+        return;
+    }
+
+    /* Pick best artifact from category */
+    art_idx = pick_random_artifact(tval_list, TRUE);
+
+    if (art_idx > 0)
+    {
+        artefact_type* a_ptr = &a_info[art_idx];
+
+        /* Create the artifact */
+        i_ptr = &object_type_body;
+        object_wipe(i_ptr);
+        object_prep(i_ptr, lookup_kind(a_ptr->tval, a_ptr->sval));
+        i_ptr->name1 = art_idx;
+
+        /* Mark artifact as created */
+        a_ptr->cur_num = 1;
+
+        /* Apply artifact properties */
+        i_ptr->pval = a_ptr->pval;
+        i_ptr->att = a_ptr->att;
+        i_ptr->dd = a_ptr->dd;
+        i_ptr->ds = a_ptr->ds;
+        i_ptr->evn = a_ptr->evn;
+        i_ptr->pd = a_ptr->pd;
+        i_ptr->ps = a_ptr->ps;
+        i_ptr->weight = a_ptr->weight;
+
+        /* Make it known */
+        i_ptr->ident |= (IDENT_KNOWN);
+        object_known(i_ptr);
+
+        /* Give to player */
+        inven_carry(i_ptr, TRUE);
+
+        /* Use up one forge use */
+        cave_feat[p_ptr->py][p_ptr->px]--;
+
+        object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
+        msg_format("You create a masterwork: %s!", desc);
+    }
+    else
+    {
+        msg_print("No suitable artifact could be created.");
+    }
+}
+
+/*
  * Performs the interface and selection work for the smithing screen.
  */
 int smithing_menu_aux(int* highlight)
@@ -5821,6 +6452,18 @@ int smithing_menu_aux(int* highlight)
     valid[SMT_MENU_NUMBERS - 1] = (smith_o_ptr->tval != 0);
     valid[SMT_MENU_MELT - 1]
         = mithril_items_carried() && cave_forge_bold(p_ptr->py, p_ptr->px);
+    valid[SMT_MENU_REFORGE - 1]
+        = (broken_glowing_carried() >= 2)
+        && p_ptr->active_ability[S_SMT][SMT_REFORGE]
+        && cave_forge_bold(p_ptr->py, p_ptr->px);
+    valid[SMT_MENU_RECLAIM - 1]
+        = (broken_strange_carried() >= 2)
+        && p_ptr->active_ability[S_SMT][SMT_RECLAIM]
+        && cave_forge_bold(p_ptr->py, p_ptr->px);
+    valid[SMT_MENU_MASTERWORK - 1]
+        = (broken_strange_carried() >= 4)
+        && p_ptr->active_ability[S_SMT][SMT_MASTERWORK]
+        && cave_forge_bold(p_ptr->py, p_ptr->px);
     valid[SMT_MENU_ACCEPT - 1] = affordable(smith_o_ptr)
         && cave_forge_bold(p_ptr->py, p_ptr->px)
         && (forge_uses(p_ptr->py, p_ptr->px) > 0);
@@ -5833,28 +6476,40 @@ int smithing_menu_aux(int* highlight)
         : TERM_RED;
     Term_putstr(COL_SMT1, 2, -1,
         valid[SMT_MENU_CREATE - 1] ? valid_attr : TERM_L_DARK, "a) Base Item");
-    valid_attr = (p_ptr->active_ability[S_SMT][SMT_ENCHANTMENT]) ? TERM_WHITE
+    valid_attr = (p_ptr->active_ability[S_SMT][SMT_REFORGE]) ? TERM_WHITE
                                                                  : TERM_RED;
     Term_putstr(COL_SMT1, 3, -1,
         valid[SMT_MENU_ENCHANT - 1] ? valid_attr : TERM_L_DARK, "b) Enchant");
     valid_attr
-        = (p_ptr->active_ability[S_SMT][SMT_ARTEFACT]) ? TERM_WHITE : TERM_RED;
+        = (p_ptr->active_ability[S_SMT][SMT_RECLAIM]) ? TERM_WHITE : TERM_RED;
     Term_putstr(COL_SMT1, 4, -1,
         valid[SMT_MENU_ARTEFACT - 1] ? valid_attr : TERM_L_DARK, "c) Artifice");
     Term_putstr(COL_SMT1, 5, -1,
         valid[SMT_MENU_NUMBERS - 1] ? TERM_WHITE : TERM_L_DARK, "d) Numbers");
     Term_putstr(COL_SMT1, 6, -1,
         valid[SMT_MENU_MELT - 1] ? TERM_WHITE : TERM_L_DARK, "e) Melt");
+    valid_attr = (p_ptr->active_ability[S_SMT][SMT_REFORGE]) ? TERM_WHITE
+                                                                 : TERM_RED;
+    Term_putstr(COL_SMT1, 7, -1,
+        valid[SMT_MENU_REFORGE - 1] ? valid_attr : TERM_L_DARK, "f) Reforge");
+    valid_attr = (p_ptr->active_ability[S_SMT][SMT_RECLAIM]) ? TERM_WHITE
+                                                                 : TERM_RED;
+    Term_putstr(COL_SMT1, 8, -1,
+        valid[SMT_MENU_RECLAIM - 1] ? valid_attr : TERM_L_DARK, "g) Reclaim");
+    valid_attr = (p_ptr->active_ability[S_SMT][SMT_MASTERWORK]) ? TERM_WHITE
+                                                                 : TERM_RED;
+    Term_putstr(COL_SMT1, 9, -1,
+        valid[SMT_MENU_MASTERWORK - 1] ? valid_attr : TERM_L_DARK, "h) Masterwork");
 
     if (p_ptr->smithing_leftover == 0)
     {
-        Term_putstr(COL_SMT1, 7, -1,
-            valid[SMT_MENU_ACCEPT - 1] ? TERM_WHITE : TERM_L_DARK, "f) Accept");
+        Term_putstr(COL_SMT1, 10, -1,
+            valid[SMT_MENU_ACCEPT - 1] ? TERM_WHITE : TERM_L_DARK, "i) Accept");
     }
     else
     {
-        Term_putstr(COL_SMT1, 7, -1,
-            valid[SMT_MENU_ACCEPT - 1] ? TERM_WHITE : TERM_L_DARK, "f) Resume");
+        Term_putstr(COL_SMT1, 10, -1,
+            valid[SMT_MENU_ACCEPT - 1] ? TERM_WHITE : TERM_L_DARK, "i) Resume");
     }
 
     // display information about the selected item
@@ -5902,6 +6557,30 @@ int smithing_menu_aux(int* highlight)
     {
         Term_putstr(COL_SMT2 + 2, 2, -1, TERM_SLATE,
             "Choose a mithril item to melt down.");
+        break;
+    }
+    case SMT_MENU_REFORGE:
+    {
+        Term_putstr(COL_SMT2 + 2, 2, -1, TERM_SLATE,
+            "Combine 2 Broken Glowing items to create");
+        Term_putstr(COL_SMT2 + 2, 3, -1, TERM_SLATE,
+            "an enchanted item of your choice.");
+        break;
+    }
+    case SMT_MENU_RECLAIM:
+    {
+        Term_putstr(COL_SMT2 + 2, 2, -1, TERM_SLATE,
+            "Combine 2 Broken Strange items to create");
+        Term_putstr(COL_SMT2 + 2, 3, -1, TERM_SLATE,
+            "a random artifact.");
+        break;
+    }
+    case SMT_MENU_MASTERWORK:
+    {
+        Term_putstr(COL_SMT2 + 2, 2, -1, TERM_SLATE,
+            "Combine 4 Broken Strange items to create");
+        Term_putstr(COL_SMT2 + 2, 3, -1, TERM_SLATE,
+            "a legendary artifact.");
         break;
     }
     case SMT_MENU_ACCEPT:
@@ -6145,6 +6824,45 @@ void do_cmd_smithing_screen(void)
                 bell("You don't have any mithril items.");
             }
 
+            break;
+        }
+        case SMT_MENU_REFORGE:
+        {
+            if (broken_glowing_carried() >= 2)
+            {
+                p_ptr->smithing_leftover = 0;
+                reforge_menu();
+            }
+            else
+            {
+                bell("You need at least 2 Broken Glowing items.");
+            }
+            break;
+        }
+        case SMT_MENU_RECLAIM:
+        {
+            if (broken_strange_carried() >= 2)
+            {
+                p_ptr->smithing_leftover = 0;
+                reclaim_menu();
+            }
+            else
+            {
+                bell("You need at least 2 Broken Strange items.");
+            }
+            break;
+        }
+        case SMT_MENU_MASTERWORK:
+        {
+            if (broken_strange_carried() >= 4)
+            {
+                p_ptr->smithing_leftover = 0;
+                masterwork_menu();
+            }
+            else
+            {
+                bell("You need at least 4 Broken Strange items.");
+            }
             break;
         }
         case SMT_MENU_ACCEPT:
@@ -9905,7 +10623,7 @@ static int collect_artefacts(int grp_cur, int object_idx[])
 {
     int i, object_cnt = 0;
     bool* okay;
-    bool know_all = cheat_know || p_ptr->active_ability[S_SMT][SMT_ENCHANTMENT];
+    bool know_all = cheat_know || p_ptr->active_ability[S_SMT][SMT_REFORGE];
 
     /* Get a list of x_char in this group */
     byte group_tval = object_group_tval[grp_cur];

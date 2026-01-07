@@ -2233,3 +2233,91 @@ D:40.
 # indices to fit them in the right place, since moving indices around
 # breaks savefile compatibility.
 
+
+#################################################################
+# BROKEN ITEMS FOR SMITHING SYSTEM
+# Broken Glowing items: Common drops, used to craft Enchanted items
+# Broken Strange items: Rare drops, used to craft Artifact/Legendary items
+#
+# Recipe reminder:
+# - 2x Broken Glowing → 1 Enchanted item (player chooses "of X" type)
+# - 2x Broken Strange → 1 random Artifact
+# - 4x Broken Strange → 1 random Legendary
+#################################################################
+
+
+#### Broken Glowing Items ####
+# These glow faintly with residual enchantment
+# More common, found throughout dungeon
+# Use with Reforge ability to create random enchanted items
+
+
+N:491:& Broken Glowing Weapon~
+G:|:B
+I:23:1:0
+W:3:0:25:50
+P:0:0d0:0:0d0
+A:3/4:7/3:12/2:17/2
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A shattered weapon that still glimmers with faint enchantment.
+D: A skilled smith with the Reforge ability might salvage
+D: the magic within to create a new enchanted weapon.
+
+
+N:492:& Broken Glowing Armor~
+G:[:B
+I:37:1:0
+W:4:0:50:75
+P:0:0d0:0:0d0
+A:4/4:9/3:14/2:19/2
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:Shattered pieces of armor that still shimmer faintly.
+D: A skilled smith with the Reforge ability could work
+D: the remaining magic into new protective gear.
+
+
+#### Broken Strange Items ####
+# These feel wrong, uncanny - powerful but damaged
+# Rare drops, found deeper in dungeon
+# Use with Reclaim (2) or Masterwork (4) to create artifacts
+
+
+N:493:& Broken Strange Weapon~
+G:|:v
+I:23:2:0
+W:8:0:20:200
+P:0:0d0:0:0d0
+A:8/12:13/8:18/5
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A weapon-fragment that seems to shift when you're not looking.
+D: It hums with power that transcends normal enchantment.
+D: A master smith might forge it into something legendary.
+
+
+N:494:& Broken Strange Armor~
+G:[:v
+I:37:2:0
+W:10:0:80:200
+P:0:0d0:0:0d0
+A:10/12:15/8:20/5
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:Twisted pieces of armor that seem to absorb light.
+D: The metal feels ancient and powerful.
+D: Only a master smith could unlock its potential.
+
+
+N:495:& Broken Strange Jewelry~
+G:=:v
+I:45:99:0
+W:12:0:1:300
+P:0:0d0:0:0d0
+A:12/15:17/10
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A cracked ring or amulet that whispers at the edge of hearing.
+D: Great power sleeps within, waiting to be reawakened.
+
+
+#################################################################
+# END OF BROKEN ITEM ADDITIONS
+#################################################################
+

@@ -149,7 +149,7 @@
 /*
  * Maximum amount of starting equipment
  */
-#define MAX_START_ITEMS 4
+#define MAX_START_ITEMS 8
 
 /*
  * Number of tval/min-sval/max-sval slots per ego_item
@@ -207,14 +207,22 @@
 #define R_IDX_CAT_ASSASSIN 175
 #define R_IDX_YOUNG_FIRE_DRAKE 181
 #define R_IDX_TROLL_GUARD 192
-#define R_IDX_SILENT_WATCHER 203
-#define R_IDX_LESSER_NAZGUL 241 // the location of Lesser Nazgul
-#define R_IDX_BROODMOTHER 242 // the location of Broodmother of Mirkwood
-#define R_IDX_TORTURER 243 // the location of the Master Torturer
-#define R_IDX_KHAMUL 244 // the location of Khamul the Easterling
-#define R_IDX_SAURON 251 // the location of Sauron the Necromancer
-#define R_IDX_GATEKEEPER 253 // the location of Gatekeeper of Dol Guldur
-#define R_IDX_SAURON_HALLU 401 // the location of Sauron's hallucination image
+/* The Necromancer: Monster indices - must match monster.txt */
+#define R_IDX_BROODMOTHER 22    // Broodmother (Layer 1 boss)
+#define R_IDX_WARG_LORD 39      // Gashnak, Warg-lord
+#define R_IDX_TORTURER 59       // Karvag the Torturer (Layer 3 boss)
+#define R_IDX_WRAITH 94         // Wraith
+#define R_IDX_GREATER_WRAITH 114 // Greater Wraith
+#define R_IDX_KHAMUL 118        // Khamûl, Shadow of the East (Layer 6 boss)
+#define R_IDX_VOID_WRAITH 133   // Void Wraith
+#define R_IDX_THRAIN 134        // Thráin's Shade (quest NPC)
+#define R_IDX_SAURON 135        // Sauron, the Necromancer (final boss)
+#define R_IDX_SAURON_HALLU 301  // Hallucination images start at 301
+
+/* Legacy placeholders - map old vault symbols to new monsters */
+#define R_IDX_GATEKEEPER R_IDX_WARG_LORD      // 'C' in vaults
+#define R_IDX_SILENT_WATCHER R_IDX_WRAITH     // 'H' in vaults
+#define R_IDX_LESSER_NAZGUL R_IDX_GREATER_WRAITH // 'R' in vaults
 
 #define O_IDX_HERB_RAGE 380
 #define O_IDX_HERB_TERROR 382
@@ -519,10 +527,10 @@
 #define SMT_WEAPONSMITH 0
 #define SMT_ARMOURSMITH 1
 #define SMT_JEWELLER 2
-#define SMT_ENCHANTMENT 3
+#define SMT_REFORGE 3
 #define SMT_EXPERTISE 4
-#define SMT_ARTEFACT 5
-#define SMT_MASTERPIECE 6
+#define SMT_RECLAIM 5
+#define SMT_MASTERWORK 6
 #define SMT_GRA 7
 
 /*

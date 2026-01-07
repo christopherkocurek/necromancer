@@ -159,6 +159,90 @@ void do_quest(monster_type* m_ptr)
     }
 }
 
+/*
+ * Handles interaction with Thráin's Shade in the throne room.
+ * Player must make 3 successful Will checks (difficulty 15) to get the Key.
+ */
+void do_thrain_quest(monster_type* m_ptr)
+{
+    char m_name[80];
+    int result;
+    int difficulty = 15;
+
+    /* Get the monster name */
+    monster_desc(m_name, sizeof(m_name), m_ptr, 0);
+
+    /* Already gave the key */
+    if (p_ptr->thrain_given_key)
+    {
+        msg_format("%^s stares through you with hollow eyes.", m_name);
+        msg_print("\"The mountain... the mountain calls...\"");
+        return;
+    }
+
+    /* Take a turn */
+    p_ptr->energy_use = 100;
+
+    /* Flavor message based on current progress */
+    switch (p_ptr->thrain_quest)
+    {
+    case 0:
+        msg_format("%^s mutters about endless gold and creeping shadows...", m_name);
+        break;
+    case 1:
+        msg_format("%^s's eyes flicker with momentary recognition...", m_name);
+        break;
+    case 2:
+        msg_format("%^s clutches at something hidden beneath his rags...", m_name);
+        break;
+    }
+
+    /* Will check against difficulty */
+    result = skill_check(PLAYER, p_ptr->skill_use[S_WIL], difficulty, NULL);
+
+    if (result > 0)
+    {
+        /* Success! */
+        p_ptr->thrain_quest++;
+
+        if (p_ptr->thrain_quest >= 3)
+        {
+            /* Final success - give the Key */
+            msg_print("With trembling hands, Thrain presses a cold iron key into your palm.");
+            msg_print("\"The door... beneath the mountain... find it...\"");
+
+            /* Create and give the Key to Erebor */
+            create_chosen_artefact(ART_KEY_TO_EREBOR, p_ptr->py, p_ptr->px, TRUE);
+
+            p_ptr->thrain_given_key = TRUE;
+
+            /* Add note */
+            do_cmd_note("Received the Key to Erebor from Thrain", p_ptr->depth);
+        }
+        else
+        {
+            /* Partial success */
+            msg_print("Something stirs in the dwarf's shattered mind...");
+        }
+    }
+    else
+    {
+        /* Failure */
+        switch (dieroll(3))
+        {
+        case 1:
+            msg_format("%^s recoils, babbling incoherently.", m_name);
+            break;
+        case 2:
+            msg_print("\"Fire... the dragon's fire... it burns still...\"");
+            break;
+        case 3:
+            msg_print("\"Where is my ring? He took it... the shadow took it...\"");
+            break;
+        }
+    }
+}
+
 void new_wandering_flow(monster_type* m_ptr, int ty, int tx)
 {
     int y, x, i;
@@ -355,6 +439,37 @@ void drop_iron_crown(monster_type* m_ptr, const char* msg)
     }
 }
 
+/*
+ * Makes Sauron drop the Ring of Thráin with an appropriate message.
+ */
+
+void drop_ring_of_thrain(monster_type* m_ptr, const char* msg)
+{
+    int i, near_y, near_x;
+
+    if ((&a_info[ART_RING_OF_THRAIN_0])->cur_num == 0)
+    {
+        msg_print(msg);
+
+        // choose a nearby location, but not his own square
+        for (i = 0; i < 1000; i++)
+        {
+            near_y = m_ptr->fy + rand_range(-1, 1);
+            near_x = m_ptr->fx + rand_range(-1, 1);
+
+            if (((near_y != m_ptr->fy) || (near_x != m_ptr->fx))
+                && cave_floor_bold(near_y, near_x))
+                break;
+        }
+
+        // drop it there
+        create_chosen_artefact(ART_RING_OF_THRAIN_0, near_y, near_x, TRUE);
+
+        // Sauron becomes enraged when separated from the ring
+        anger_morgoth(1);
+    }
+}
+
 void make_alert(monster_type* m_ptr)
 {
     int random_level = rand_range(ALERTNESS_ALERT, ALERTNESS_QUITE_ALERT);
@@ -494,8 +609,8 @@ void set_alertness(monster_type* m_ptr, int alertness)
                 // redisplay the monster
                 redisplay = TRUE;
 
-                drop_iron_crown(m_ptr,
-                    "His crown slips from off his brow and falls to the "
+                drop_ring_of_thrain(m_ptr,
+                    "The ring slips from his shadowy hand and falls to the "
                     "ground nearby.");
             }
         }
@@ -3998,6 +4113,10 @@ void py_attack_aux(int y, int x, int attack_type)
             {
                 do_quest(m_ptr);
             }
+            else if (m_ptr->r_idx == R_IDX_THRAIN)
+            {
+                do_thrain_quest(m_ptr);
+            }
             else
             {
                 msg_format("You stop before you bump into %s.", m_name);
@@ -4416,23 +4535,22 @@ void py_attack_aux(int y, int x, int attack_type)
                     knocked = knock_back(p_ptr->py, p_ptr->px, y, x);
                 }
 
-                // Morgoth drops his iron crown if he is hit for 10 or more net
-                // damage twice
+                // Sauron drops the Ring of Thráin if hit for 10+ damage twice
                 if ((m_ptr->r_idx == R_IDX_SAURON)
-                    && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
+                    && ((&a_info[ART_RING_OF_THRAIN_0])->cur_num == 0))
                 {
                     if (net_dam >= 10)
                     {
                         if (p_ptr->morgoth_hits == 0)
                         {
-                            msg_print("The force of your blow knocks the Iron "
-                                      "Crown off balance.");
+                            msg_print("Your blow strikes true! Something gleams "
+                                      "on his shadowy hand...");
                             p_ptr->morgoth_hits++;
                         }
                         else if (p_ptr->morgoth_hits == 1)
                         {
-                            drop_iron_crown(m_ptr,
-                                "You knock his crown from off his brow, and it "
+                            drop_ring_of_thrain(m_ptr,
+                                "You strike the ring from his hand, and it "
                                 "falls to the ground nearby.");
                             p_ptr->morgoth_hits++;
                         }

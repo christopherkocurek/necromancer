@@ -3110,7 +3110,7 @@ void update_lore_aux(object_type* o_ptr)
         bool alchemy = p_ptr->active_ability[S_PER][PER_ALCHEMY];
         bool channeling = p_ptr->active_ability[S_WIL][WIL_CHANNELING];
         bool jeweller = p_ptr->active_ability[S_SMT][SMT_JEWELLER];
-        bool enchantment = p_ptr->active_ability[S_SMT][SMT_ENCHANTMENT];
+        bool enchantment = p_ptr->active_ability[S_SMT][SMT_REFORGE];
 
         bool staffOrHorn = o_ptr->tval == TV_HORN || o_ptr->tval == TV_STAFF;
         bool foodOrPotion = o_ptr->tval == TV_FOOD || o_ptr->tval == TV_POTION;

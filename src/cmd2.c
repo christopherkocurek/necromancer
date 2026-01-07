@@ -4235,26 +4235,23 @@ void do_cmd_fire(int quiver)
                             stun_monster(m_ptr, net_dam);
                         }
 
-                        // Morgoth drops his iron crown if he is hit for 10 or
-                        // more net damage twice
+                        // Sauron drops Ring of Thráin if hit for 10+ damage twice
                         if (m_ptr->r_idx == R_IDX_SAURON)
                         {
                             if (net_dam >= 10
-                                && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
+                                && ((&a_info[ART_RING_OF_THRAIN_0])->cur_num == 0))
                             {
                                 if (p_ptr->morgoth_hits == 0)
                                 {
-                                    msg_print("The force of your shot knocks "
-                                              "the Iron Crown off "
-                                              "balance.");
+                                    msg_print("Your shot strikes true! Something "
+                                              "gleams on his shadowy hand...");
                                     p_ptr->morgoth_hits++;
                                 }
                                 else if (p_ptr->morgoth_hits == 1)
                                 {
-                                    drop_iron_crown(m_ptr,
-                                        "You knock his crown from off his "
-                                        "brow, and "
-                                        "it falls to the ground nearby.");
+                                    drop_ring_of_thrain(m_ptr,
+                                        "You strike the ring from his hand, "
+                                        "and it falls to the ground nearby.");
                                     p_ptr->morgoth_hits++;
                                 }
                             }
@@ -5101,26 +5098,23 @@ void do_cmd_throw(bool automatic)
                         make_alert(m_ptr);
                     }
 
-                    // Morgoth drops his iron crown if he is hit for 10 or more
-                    // net damage twice
+                    // Sauron drops Ring of Thráin if hit for 10+ damage twice
                     if ((m_ptr->r_idx == R_IDX_SAURON)
-                        && ((&a_info[ART_MORGOTH_3])->cur_num == 0))
+                        && ((&a_info[ART_RING_OF_THRAIN_0])->cur_num == 0))
                     {
                         if (net_dam >= 10)
                         {
                             if (p_ptr->morgoth_hits == 0)
                             {
-                                msg_print("The force of your blow knocks the "
-                                          "Iron Crown off "
-                                          "balance.");
+                                msg_print("Your throw strikes true! Something "
+                                          "gleams on his shadowy hand...");
                                 p_ptr->morgoth_hits++;
                             }
                             else if (p_ptr->morgoth_hits == 1)
                             {
-                                drop_iron_crown(m_ptr,
-                                    "You knock his crown from off his brow, "
-                                    "and it "
-                                    "falls to the ground nearby.");
+                                drop_ring_of_thrain(m_ptr,
+                                    "You strike the ring from his hand, "
+                                    "and it falls to the ground nearby.");
                                 p_ptr->morgoth_hits++;
                             }
                         }

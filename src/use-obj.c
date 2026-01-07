@@ -783,8 +783,8 @@ static bool play_instrument(object_type* o_ptr, bool* ident)
 
                 if (m_ptr->r_idx == R_IDX_SAURON)
                 {
-                    drop_iron_crown(m_ptr,
-                        "Your blast unseats the crown from his head "
+                    drop_ring_of_thrain(m_ptr,
+                        "Your blast knocks the ring from his shadowy hand "
                         "and it falls to the floor.");
                 }
             }

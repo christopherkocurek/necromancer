@@ -558,10 +558,11 @@ D: sources and identify rings, amulets, horns and light
 D: sources you encounter.
 T:31:0:99  # Gloves
 
-N:123:Enchantment
+N:123:Reforge
 I:6:3:5
-D:Allows you to create {special} items and determine
-D: what enchantments exist on items you encounter.
+D:Allows you to combine two Broken Glowing items at a forge
+D: to create an enchanted item of that type. You choose the
+D: enchantment from all available types.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
@@ -573,18 +574,21 @@ D: negates all experience and stat costs.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
-N:125:Artifice
+N:125:Reclaim
 I:6:5:7
-P:6/2:6/3
-D:Allows you to create highly customised artifacts.
+P:6/3
+D:Allows you to combine two Broken Strange items at a forge
+D: to create a random artifact of that type. The artifact
+D: is drawn from the legends of Middle-earth.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
-N:126:Masterpiece
+N:126:Masterwork
 I:6:6:8
-P:6/3
-D:Allows you to create items that are more difficult than usual.
-D: Doing so drains your smithing skill for each excess point.
+P:6/5
+D:Allows you to combine four Broken Strange items at a forge
+D: to create a legendary artifact. These are the greatest
+D: works of the Third Age, surpassing even ancient relics.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 

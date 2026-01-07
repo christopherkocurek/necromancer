@@ -554,6 +554,8 @@ static void player_wipe(void)
     p_ptr->oaths_broken = 0;
 
     p_ptr->thrall_quest = QUEST_NOT_STARTED;
+    p_ptr->thrain_quest = 0;      /* 0-3 successes needed */
+    p_ptr->thrain_given_key = FALSE;
 
     p_ptr->unused2 = 0;
     p_ptr->unused3 = 0;
@@ -622,6 +624,18 @@ static void player_outfit(void)
         if (slot == INVEN_LITE)
         {
             i_ptr->timeout = 2000;
+        }
+
+        /* give staves full charges */
+        if (i_ptr->tval == TV_STAFF)
+        {
+            i_ptr->pval = 16; /* max charges for testing */
+        }
+
+        /* give horns full charges */
+        if (i_ptr->tval == TV_HORN)
+        {
+            i_ptr->pval = 8; /* max charges for testing */
         }
 
         object_known(i_ptr);
