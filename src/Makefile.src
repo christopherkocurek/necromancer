@@ -5,10 +5,10 @@
 # across a range of different makefiles, to cut down on maintenance.
 #
 
-NAME = Sil
-VERSION = 1.5.0
-COPYRIGHT = half & Scatha
-PROG = sil
+NAME = Necromancer
+VERSION = 0.4.3
+COPYRIGHT = Christopher Kocurek
+PROG = necromancer
 
 HEADERS = \
   	h-basic.h \

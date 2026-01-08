@@ -110,9 +110,9 @@ APPRES = $(APPCONT)/Resources
 # of 8x8.png for Vanilla.  Make sure setting dpi to 72, *not* preserving
 # the actual size of image.  When you have them ready, put them in
 # the lib/xtra/graf directory and rebuild.
-PLIST = cocoa/Sil-Cocoa.xml
+PLIST = cocoa/Necromancer-Cocoa.xml
 
-ICONFILES = cocoa/Sil_Icons.icns cocoa/Save.icns cocoa/Edit.icns cocoa/Data.icns
+ICONFILES = cocoa/Necromancer_Icons.icns cocoa/Save.icns cocoa/Edit.icns cocoa/Data.icns
 
 install: $(EXE) $(ICONFILES) $(PLIST)
 	@echo making directories...
