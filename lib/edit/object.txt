@@ -215,13 +215,13 @@ F:INSTA_ART
 
 ##### The Normal Item Types #####
 
-N:21:& Lesser Jewel~
+N:21:& Elven Light~
 G:*:B
 I:39:2:0
 W:3:20:1:1000
 P:0:0d0:0:0d0:0
 A:3/20
-D:An enchanted glowing jewel, imbued with Elven light.
+D:A small crystal that glows with inner light. The elves craft these as gifts.
 D: You can equip it as a light source with a radius of 1 square.
 D: It will shine forever.
 
@@ -325,20 +325,22 @@ F:EASY_KNOW
 
 ##### Shields #####
 
-N:43:& Round Shield~
+N:43:& Buckler~
 G:):s
 I:34:3:0
 W:3:0:50:50
 P:0:0d0:0:1d3
 A:3/2
+D:A small round shield, easy to maneuver but offering limited coverage.
 
 
-N:44:& Kite Shield~
+N:44:& Tower Shield~
 G:):W
 I:34:5:0
 W:6:0:80:200
 P:-2:0d0:0:1d6
 A:6/1
+D:A tall shield that covers from shoulder to knee. Favored by the Tower Guard.
 
 
 N:46:& Mithril Shield~
@@ -544,20 +546,22 @@ D:A heavy pick used by dwarven miners. Excellent for breaking through rock and a
 ##### Helms #####
 
 
-N:100:& Helm~
+N:100:& Iron Helm~
 G:]:s1
 I:32:5:0
 W:3:0:50:75
 P:0:0d0:-1:1d2
 A:3/1
+D:A simple iron helm. It protects the head at the cost of peripheral vision.
 
 
-N:101:& Great Helm~
+N:101:& Tower Helm~
 G:]:W
 I:32:6:0
 W:5:0:80:200
 P:0:0d0:-2:1d3
 A:5/1
+D:A tall helm in the style of the Tower Guard. It bears a small silver star.
 
 
 N:102:& Dwarf Mask~
@@ -589,12 +593,13 @@ F:INSTA_ART
 
 ##### Cloaks #####
 
-N:106:& Cloak~
+N:106:& Traveler's Cloak~
 G:(:g
 I:35:1:0
 W:2:0:20:3
 P:0:0d0:1:1d0
 A:2/2:10/1
+D:A weathered cloak that keeps off rain and wind. It helps you blend into shadows.
 
 
 N:107:& Shadow Cloak~
@@ -664,21 +669,23 @@ A:2/1:6/1:11/1:17/1
 
 ##### Boots #####
 
-N:122:& Pair~ of Boots
+N:122:& Traveler's Boots~
 G:]:U
 I:30:1:0
 W:1:0:20:7
 P:0:0d0:0:1d1
 A:1/2:10/1
+D:Sturdy boots for long roads. They've seen many leagues.
 
 
-N:123:& Pair~ of Greaves
+N:123:& Iron Greaves~
 G:]:s
 I:30:2:0
 W:4:0:80:19
 P:0:0d0:-1:1d2
 A:4/1:15/1
 F:IGNORE_FIRE
+D:Metal plates that protect the lower legs. Heavy but effective.
 
 
 N:124:& Pair~ of Mithril Greaves
@@ -692,21 +699,23 @@ F:IGNORE_ALL | MITHRIL
 
 ##### Gloves #####
 
-N:125:& Set~ of Gloves
+N:125:& Leather Gloves~
 G:]:U
 I:31:1:0
 W:1:0:5:3
 P:0:0d0:0:1d0
 A:1/4:10/2
+D:Simple gloves of tanned leather. They protect the hands without hindering dexterity.
 
 
-N:126:& Set~ of Gauntlets
+N:126:& Iron Gauntlets~
 G:]:W
 I:31:2:0
 W:3:0:30:35
 P:-1:0d0:0:1d1
 A:3/1:11/1
 F:IGNORE_FIRE
+D:Heavy metal gloves that protect the hands in combat.
 
 
 N:127:& Set~ of Mithril Gauntlets
@@ -747,14 +756,14 @@ D: 7,000 turns of light.
 
 # Mallorn Torch is at index 411
 
-N:130:& Feanorian Lamp~
+N:130:& Jewel-lamp~
 G:~:B
 I:39:8:0
 W:12:0:10:1000
 P:0:0d0:0:0d0:0
 A:12/8:18/4
 F:MITHRIL
-D:An enchanted lamp, shining with the light of lesser jewels.
+D:A crystal lamp that shines with captured starlight. It never dims or goes out.
 D: You can equip it as a light source with a radius of 4 squares.
 D: It will shine forever.
 
@@ -1695,29 +1704,32 @@ D: maximum of 100 turns of light.
 
 #### Damaged items ####
 
-N:420:& Rusty Helm~
+N:420:& Rusted Helm~
 G:]:s1
 I:32:1:0
 W:1:0:50:15
 P:0:0d0:-1:1d1
 A:1/1
 F:DAMAGED | NO_SMITHING
+D:An old helm covered in rust. It offers some protection, but not much.
 
-N:421:& Pair~ of Shabby Boots
+N:421:& Worn Boots~
 G:]:U
 I:30:4:0
 W:1:0:20:7
 P:0:0d0:-1:1d1
 A:1/1
 F:DAMAGED | NO_SMITHING
+D:Old boots that have seen better days. They still keep out the worst of the mud.
 
-N:422:& Broken Shield~
+N:422:& Shattered Shield~
 G:):s
 I:34:1:0
 W:1:0:50:50
 P:-1:0d0:0:1d2
 A:1/1
 F:DAMAGED | NO_SMITHING
+D:The remains of a once-sturdy shield. It might deflect a blow or two.
 
 N:451:& Note~
 G:~:W1
