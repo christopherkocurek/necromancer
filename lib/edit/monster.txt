@@ -78,7 +78,7 @@ A:5:4:8:1
 P:[+6]
 B:BITE:HURT:(+5,1d3)
 F:RAND_50 | TERRITORIAL
-S:SPELL_PCT_30
+S:SPELL_PCT_50
 S:SHRIEK
 D:Mirkwood's corruption has twisted even the squirrels.
 D: This one chatters malevolently, alerting others to your presence.
@@ -116,7 +116,7 @@ A:15:4:4:1
 P:[+7,1d4]
 B:BITE:HURT:(+6,1d5)
 F:FLYING | RAND_50 | TERRITORIAL
-S:SPELL_PCT_10
+S:SPELL_PCT_5
 S:SHRIEK
 D:A bat the size of a dog, flitting erratically through
 D: the dark canopy. Its screech can wake the forest.
@@ -142,7 +142,7 @@ P:[+3,1d4]
 B:HIT:HURT:(+3,1d8)
 F:MALE | DROP_33 | OPEN_DOOR
 F:ORC | HURT_LITE | SMART
-S:SPELL_PCT_25
+S:SPELL_PCT_40
 S:SHRIEK
 D:A small, quick orc sent to patrol the forest edges.
 D: He carries a crude blade and horn to signal intruders.
@@ -174,7 +174,7 @@ N:21:Warg Pup
 W:3:1
 G:C:u
 I:3:5d4:0
-A:20:3:4:2
+A:25:3:4:2
 P:[+4,1d4]
 B:BITE:WOUND:(+5,1d6)
 F:FRIENDS | RAND_25 | WOLF
@@ -205,7 +205,7 @@ N:31:Orc Slave
 W:3:1
 G:o:s
 I:2:4d4:0
-A:20:1:1:1
+A:25:1:1:1
 P:[+1,1d4]
 B:HIT:HURT:(+1,1d6)
 F:MALE | ORC | HURT_LITE
@@ -216,7 +216,7 @@ N:32:Orc Soldier
 W:4:1
 G:o:W
 I:2:7d4:0
-A:15:2:2:3
+A:20:2:2:3
 P:[+4,2d4]
 B:HIT:HURT:(+4,2d6)
 F:MALE | FRIENDS | DROP_33 | OPEN_DOOR | BASH_DOOR
@@ -228,7 +228,7 @@ N:33:Orc Archer
 W:4:2
 G:o:U
 I:2:6d4:0
-A:15:3:3:3
+A:15:4:3:3
 P:[+3,1d4]
 B:HIT:HURT:(+4,1d6)
 F:MALE | FRIENDS | DROP_33 | OPEN_DOOR
@@ -252,7 +252,7 @@ N:35:Orc Thrallmaster
 W:5:3
 G:o:r
 I:2:8d4:0
-A:10:4:3:4
+A:10:5:3:4
 P:[+5,2d4]
 B:HIT:HURT:(+6,2d5)
 B:WHIP:DISARM:(+4,1d4)
@@ -290,12 +290,12 @@ N:38:Hill Troll
 W:6:2
 G:T:W
 I:2:14d4:0
-A:15:2:0:3
+A:25:1:0:3
 P:[+4,2d4]
 B:HIT:BATTER:(+7,3d6)
 F:MALE | FRIEND | DROP_33 | REGENERATE | OPEN_DOOR
 F:BASH_DOOR | TROLL | HURT_LITE | SMART | NO_FEAR
-F:KNOCK_BACK
+F:KNOCK_BACK | TERRITORIAL
 D:A massive brute from the mountains, pressed into
 D: service at Dol Guldur. Sunlight would turn it to stone.
 
@@ -364,11 +364,11 @@ N:53:Mirk-troll
 W:7:1
 G:T:D
 I:2:16d4:0
-A:15:3:1:4
+A:20:2:1:4
 P:[+6,2d4]
 B:HIT:POISON:(+9,3d6)
 F:MALE | FRIEND | DROP_33 | REGENERATE | OPEN_DOOR
-F:BASH_DOOR | TROLL | SMART | NO_FEAR | KNOCK_BACK
+F:BASH_DOOR | TROLL | SMART | NO_FEAR | KNOCK_BACK | TERRITORIAL
 D:A troll bred in Dol Guldur's darkness, resistant to
 D: sunlight. Its weapons drip with poison.
 
@@ -376,7 +376,7 @@ N:54:Easterling Warrior
 W:7:2
 G:@:U
 I:2:9d4:1
-A:15:4:2:6
+A:20:4:2:6
 P:[+6,3d4]
 B:HIT:HURT:(+8,2d7)
 F:MAN | MALE | DROP_33 | OPEN_DOOR | BASH_DOOR | FRIENDS
