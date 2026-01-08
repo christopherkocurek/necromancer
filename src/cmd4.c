@@ -5948,12 +5948,13 @@ int pick_random_ego(int tval, int sval)
 
 /*
  * Pick a random artifact of a given category (weapon/armor/jewelry).
+ * If best=TRUE, pick randomly from artifacts with the highest level.
+ * If best=FALSE, pick randomly from all available artifacts.
  */
 int pick_random_artifact(int* tval_list, bool best)
 {
     int i, count = 0;
     int arts[100];
-    int best_idx = 0;
     int best_level = 0;
 
     for (i = 1; i < z_info->art_norm_max && count < 100; i++)
@@ -5984,13 +5985,31 @@ int pick_random_artifact(int* tval_list, bool best)
             if (a_ptr->level > best_level)
             {
                 best_level = a_ptr->level;
-                best_idx = i;
             }
         }
     }
 
     if (count == 0) return 0;
-    if (best) return best_idx;
+
+    /* If best=TRUE, filter to only artifacts with the highest level */
+    if (best)
+    {
+        int best_arts[100];
+        int best_count = 0;
+
+        for (i = 0; i < count; i++)
+        {
+            artefact_type* a_ptr = &a_info[arts[i]];
+            if (a_ptr->level == best_level)
+            {
+                best_arts[best_count++] = arts[i];
+            }
+        }
+
+        if (best_count == 0) return 0;
+        return best_arts[rand_int(best_count)];
+    }
+
     return arts[rand_int(count)];
 }
 
