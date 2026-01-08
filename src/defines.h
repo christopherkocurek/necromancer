@@ -897,6 +897,8 @@
 
 #define GF_WEB 26 // creates a web trap where it lands
 
+#define GF_CROSSBOW 27 // crossbow bolt attack that can cause bleeding
+
 /*
  * Some constants for the "learn" code.  These generalized from the
  * old DRS constants.
@@ -2237,7 +2239,7 @@
 #define RF4_SNG_BINDING 0x00040000 /* Sing a song of binding */
 #define RF4_SNG_PIERCING 0x00080000 /* Sing a song of piercing */
 #define RF4_SNG_OATHS 0x00100000 /* Sing a song of oaths */
-#define RF4_RF4XXX22 0x00200000 /*  */
+#define RF4_CROSSBOW 0x00200000 /* Fire crossbow bolt (2d7) + bleeding */
 #define RF4_RF4XXX23 0x00400000 /*  */
 #define RF4_THROW_WEB 0x00800000 /* Throw a web over the player */
 #define RF4_RALLY 0x01000000 /* Rally fleeing foes */
@@ -2271,7 +2273,7 @@
  * Archery attacks
  * Need special treatment in AI.
  */
-#define RF4_ARCHERY_MASK (RF4_ARROW1 | RF4_ARROW2 | RF4_BOULDER)
+#define RF4_ARCHERY_MASK (RF4_ARROW1 | RF4_ARROW2 | RF4_BOULDER | RF4_CROSSBOW)
 
 /*
  * Breath attacks.

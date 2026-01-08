@@ -2565,6 +2565,20 @@ bool make_attack_ranged(monster_type* m_ptr, int attack)
         break;
     }
 
+    /* RF4_CROSSBOW */
+    case 96 + 21:
+    {
+        disturb(1, 0);
+        if (blind)
+            msg_print("You hear a loud thunk.");
+        else
+            msg_format("%^s fires a crossbow bolt.", m_name);
+
+        mon_bolt(m_idx, GF_CROSSBOW, 2, 7, -1);
+
+        break;
+    }
+
     /* RF4_THROW_WEB */
     case 96 + 23:
     {

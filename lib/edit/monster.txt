@@ -224,8 +224,8 @@ F:ORC | HURT_LITE | SMART
 D:An orc of Dol Guldur in black leather armor.
 D: He carries a notched scimitar and shield.
 
-N:33:Orc Archer
-W:4:2
+N:33:Orc Crossbowman
+W:4:3
 G:o:U
 I:2:6d4:0
 A:15:4:3:3
@@ -233,9 +233,9 @@ P:[+3,1d4]
 B:HIT:HURT:(+4,1d6)
 F:MALE | FRIENDS | DROP_33 | OPEN_DOOR
 F:ORC | HURT_LITE | SMART
-S:SPELL_PCT_75 | POW_6
-S:ARROW1
-D:An orc with a short bow, preferring to strike from shadows.
+S:SPELL_PCT_40 | POW_6
+S:CROSSBOW
+D:An orc with a heavy crossbow. Its bolts strike with cruel force.
 
 N:34:Warg
 W:5:1

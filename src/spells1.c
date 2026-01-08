@@ -450,6 +450,8 @@ static byte spell_color(int type)
         return (TERM_SLATE);
     case GF_WEB:
         return (TERM_L_UMBER);
+    case GF_CROSSBOW:
+        return (TERM_L_UMBER);
     }
 
     /* Standard "color" */
@@ -3438,6 +3440,91 @@ static bool project_p(int who, int y, int x, int dd, int ds, int dif, int typ)
 
             /* Make some noise */
             monster_perception(TRUE, FALSE, -10);
+        }
+
+        break;
+    }
+
+    /* Crossbow bolt */
+    /* Like GF_ARROW but with bleeding effect */
+    case GF_CROSSBOW:
+    {
+        int total_attack_mod, total_evasion_mod, crit_bonus_dice, hit_result;
+        int total_dd, total_ds;
+        int prt, net_dam, weight;
+
+        // attacks with GF_CROSSBOW will require an attack roll
+
+        // determine the monster's attack score
+        total_attack_mod = total_monster_attack(m_ptr, r_ptr->spell_power);
+
+        // determine the player's evasion score
+        total_evasion_mod = total_player_evasion(m_ptr, FALSE);
+
+        // target only gets half the evasion modifier against archery
+        total_evasion_mod /= 2;
+
+        // crossbow is heavier than a bow
+        weight = 40;
+
+        // perform the hit roll
+        hit_result = hit_roll(
+            total_attack_mod, total_evasion_mod, m_ptr, PLAYER, TRUE);
+
+        if (hit_result > 0)
+        {
+            crit_bonus_dice = crit_bonus(
+                hit_result, weight, &r_info[0], S_ARC, FALSE, m_ptr);
+            total_dd = dd + crit_bonus_dice;
+            total_ds = ds;
+
+            dam = damroll(total_dd, total_ds);
+
+            // armour is effective against GF_CROSSBOW
+            prt = protection_roll(GF_HURT, FALSE);
+            net_dam = (dam - prt > 0) ? (dam - prt) : 0;
+
+            if (blind)
+            {
+                msg_print("You are hit by something sharp.");
+            }
+            else
+            {
+                if (net_dam > 0)
+                {
+                    if (crit_bonus_dice == 0)
+                    {
+                        msg_print("A bolt hits you.");
+                    }
+                    else
+                    {
+                        msg_print("A bolt hits!");
+                    }
+                }
+            }
+
+            update_combat_rolls2(
+                total_dd, total_ds, dam, -1, -1, prt, 100, GF_HURT, FALSE);
+            display_hit(p_ptr->py, p_ptr->px, net_dam, GF_HURT, p_ptr->is_dead);
+
+            if (net_dam)
+            {
+                take_hit(net_dam, killer);
+
+                // crossbow bolts can cause bleeding (50% chance if damage dealt)
+                if (percent_chance(50))
+                {
+                    int bleeding = (net_dam + 1) / 2;
+                    if (bleeding > 0)
+                    {
+                        msg_print("The bolt tears into you!");
+                        (void)set_cut(p_ptr->cut + bleeding);
+                    }
+                }
+            }
+
+            /* Make some noise */
+            monster_perception(TRUE, FALSE, -5);
         }
 
         break;
