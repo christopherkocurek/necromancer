@@ -5853,6 +5853,23 @@ static int armor_tvals[] = { TV_MAIL, TV_SOFT_ARMOR, TV_SHIELD, TV_HELM,
 static int jewelry_tvals[] = { TV_RING, TV_AMULET, 0 };
 
 /*
+ * Single-type tval arrays for specific artifact selection
+ */
+static int sword_tvals[] = { TV_SWORD, 0 };
+static int polearm_tvals[] = { TV_POLEARM, 0 };
+static int hafted_tvals[] = { TV_HAFTED, 0 };
+static int bow_tvals[] = { TV_BOW, 0 };
+static int mail_tvals[] = { TV_MAIL, 0 };
+static int soft_armor_tvals[] = { TV_SOFT_ARMOR, 0 };
+static int shield_tvals[] = { TV_SHIELD, 0 };
+static int helm_tvals[] = { TV_HELM, 0 };
+static int cloak_tvals[] = { TV_CLOAK, 0 };
+static int gloves_tvals[] = { TV_GLOVES, 0 };
+static int boots_tvals[] = { TV_BOOTS, 0 };
+static int ring_tvals[] = { TV_RING, 0 };
+static int amulet_tvals[] = { TV_AMULET, 0 };
+
+/*
  * Count how many of a specific broken item type the player carries.
  */
 int count_broken_item(int k_idx)
@@ -6243,6 +6260,58 @@ void reclaim_menu(void)
     else
     {
         return;  /* No valid options */
+    }
+
+    /* Now show type selection submenu based on category */
+    {
+        char ch;
+
+        if (k_idx_broken == K_IDX_BROKEN_STRANGE_WEAPON)
+        {
+            msg_print("What type? (s)word, (p)olearm, (h)afted, (b)ow, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 's': case 'S': tval_list = sword_tvals; break;
+                case 'p': case 'P': tval_list = polearm_tvals; break;
+                case 'h': case 'H': tval_list = hafted_tvals; break;
+                case 'b': case 'B': tval_list = bow_tvals; break;
+                case 'a': case 'A': tval_list = weapon_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
+        else if (k_idx_broken == K_IDX_BROKEN_STRANGE_ARMOR)
+        {
+            msg_print("What type? (m)ail, (l)ight, sh(i)eld, hel(M), (c)loak, (g)loves, boo(t)s, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 'm': tval_list = mail_tvals; break;
+                case 'l': case 'L': tval_list = soft_armor_tvals; break;
+                case 'i': case 'I': tval_list = shield_tvals; break;
+                case 'M': tval_list = helm_tvals; break;
+                case 'c': case 'C': tval_list = cloak_tvals; break;
+                case 'g': case 'G': tval_list = gloves_tvals; break;
+                case 't': case 'T': tval_list = boots_tvals; break;
+                case 'a': case 'A': tval_list = armor_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
+        else if (k_idx_broken == K_IDX_BROKEN_STRANGE_JEWELRY)
+        {
+            msg_print("What type? (r)ing, a(m)ulet, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 'r': case 'R': tval_list = ring_tvals; break;
+                case 'm': case 'M': tval_list = amulet_tvals; break;
+                case 'a': case 'A': tval_list = jewelry_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
     }
 
     /* Confirm */
