@@ -1181,7 +1181,7 @@ static void race_aux_hook(birth_menu r_str)
         Term_putstr(RACE_AUX_COL, TABLE_ROW + i, -1, TERM_WHITE, s);
 
         adj = p_info[race].r_adj[i];
-        strnfmt(s, sizeof(s), "%+d", adj);
+        strnfmt(s, sizeof(s), "%+3d", adj);
 
         if (adj < 0)
             attr = TERM_RED;

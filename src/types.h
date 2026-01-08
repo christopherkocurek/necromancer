@@ -830,6 +830,7 @@ struct player_type
     s16b tmp_con; /* Timed -- Constitution */
     s16b tmp_gra; /* Timed -- Grace */
     s16b tim_invis; /* Timed -- See Invisible */
+    s16b faded; /* Timed -- Faded (invisible after stealth kill) */
 
     s16b oppose_fire; /* Timed -- oppose heat */
     s16b oppose_cold; /* Timed -- oppose cold */

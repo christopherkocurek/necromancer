@@ -3052,6 +3052,11 @@ static bool build_type6(int y0, int x0, bool force_forge)
         if (force_forge && !v_ptr->forge)
             continue;
 
+        // if NOT forcing a forge, skip vaults with forges when we already
+        // placed a guaranteed forge this level (prevents 2x forge bug)
+        if (!force_forge && v_ptr->forge && p_ptr->force_forge)
+            continue;
+
         // unless forcing a forge, try additional times to place any vault
         // marked TEST
         if ((tries < 1000) && !(v_ptr->flags & (VLT_TEST))

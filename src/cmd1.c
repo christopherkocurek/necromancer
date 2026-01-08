@@ -3724,7 +3724,9 @@ bool valid_charge(int fy, int fx, int attack_type)
 }
 
 /*
- *  Attacks a new monster with 'follow through' if applicable
+ *  Attacks new monsters with 'follow through' or 'cleave' if applicable.
+ *  Follow-Through: attack one adjacent enemy after a kill
+ *  Cleave: attack ALL adjacent enemies after a kill
  */
 
 void possible_follow_through(int fy, int fx, int attack_type)
@@ -3747,9 +3749,45 @@ void possible_follow_through(int fy, int fx, int attack_type)
     else if (deltay < -1)
         deltay = -1;
 
+    // Cleave: attack ALL adjacent enemies on kill
+    if (p_ptr->active_ability[S_MEL][MEL_CLEAVE] && !(p_ptr->confused)
+        && (is_normal_attack(attack_type) || (attack_type == ATT_CLEAVE)))
+    {
+        bool cleaved = FALSE;
+
+        // attack all adjacent squares
+        for (i = 1; i < 8; i++)
+        {
+            d = cycle[chome[dir_from_delta(deltay, deltax)] + i];
+
+            y = p_ptr->py + ddy[d];
+            x = p_ptr->px + ddx[d];
+
+            if (cave_m_idx[y][x] > 0)
+            {
+                monster_type* m_ptr = &mon_list[cave_m_idx[y][x]];
+
+                if (m_ptr->ml
+                    && (!forgo_attacking_unwary
+                        || (m_ptr->alertness >= ALERTNESS_ALERT)))
+                {
+                    if (!cleaved)
+                    {
+                        msg_print("Your blade sweeps through the horde!");
+                        cleaved = TRUE;
+                    }
+                    py_attack_aux(y, x, ATT_CLEAVE);
+                    // Don't return - continue to attack all adjacent
+                }
+            }
+        }
+        // If we cleaved, don't also do follow-through
+        if (cleaved) return;
+    }
+
+    // Follow-Through: attack ONE adjacent enemy on kill
     if (p_ptr->active_ability[S_MEL][MEL_FOLLOW_THROUGH] && !(p_ptr->confused)
-        && (is_normal_attack(attack_type) || (attack_type == ATT_FOLLOW_THROUGH)
-            || (attack_type == ATT_WHIRLWIND)))
+        && (is_normal_attack(attack_type) || (attack_type == ATT_FOLLOW_THROUGH)))
     {
         // look through adjacent squares in an anticlockwise direction
         for (i = 1; i < 8; i++)
@@ -4224,7 +4262,7 @@ void py_attack_aux(int y, int x, int attack_type)
 
     // Attack types that take place in the opponents' turns only allow a single
     // attack
-    if (!is_normal_attack(attack_type) && attack_type != ATT_WHIRLWIND)
+    if (!is_normal_attack(attack_type) && attack_type != ATT_CLEAVE)
     {
         blows = 1;
 
@@ -4247,7 +4285,7 @@ void py_attack_aux(int y, int x, int attack_type)
             && (attack_type == ATT_MAIN || attack_type == ATT_FLANKING
                 || attack_type == ATT_IMPALE
                 || attack_type == ATT_FOLLOW_THROUGH
-                || attack_type == ATT_WHIRLWIND);
+                || attack_type == ATT_CLEAVE);
 
         do_knock_back = FALSE;
         knocked = FALSE;
@@ -4512,6 +4550,18 @@ void py_attack_aux(int y, int x, int attack_type)
                     }
                 }
 
+                // Fade: become invisible for 2 turns after killing an unwary enemy
+                if (p_ptr->active_ability[S_STL][STL_FADE] && stealth_bonus > 0)
+                {
+                    set_faded(2);
+                }
+
+                // Silent Kill: don't alert nearby monsters when killing unwary enemy
+                if (p_ptr->active_ability[S_STL][STL_SILENT_KILL] && stealth_bonus > 0)
+                {
+                    player_attacked = FALSE;
+                }
+
                 // deal with 'follow_through' ability
                 possible_follow_through(y, x, attack_type);
 
@@ -4638,16 +4688,6 @@ void py_attack_aux(int y, int x, int attack_type)
     break_truce(FALSE);
 }
 
-bool whirlwind_possible(void)
-{
-    if (!p_ptr->active_ability[S_MEL][MEL_WHIRLWIND_ATTACK])
-    {
-        return (FALSE);
-    }
-
-    return (TRUE);
-}
-
 bool can_impale()
 {
     bool has_impale_skill = p_ptr->active_ability[S_MEL][MEL_IMPALE];
@@ -4671,17 +4711,12 @@ void py_attack(int y, int x, int attack_type)
     dir = dir_from_delta(y - p_ptr->py, x - p_ptr->px);
     dir0 = chome[dir];
 
-    if ((p_ptr->rage || whirlwind_possible())
-        && (adj_mon_count(p_ptr->py, p_ptr->px) > 1) && !p_ptr->afraid)
+    if (p_ptr->rage && (adj_mon_count(p_ptr->py, p_ptr->px) > 1) && !p_ptr->afraid)
     {
         int i;
         bool clockwise = one_in_(2);
 
-        // message only for rage (too annoying otherwise)
-        if (p_ptr->rage)
-        {
-            msg_print("You strike out at everything around you!");
-        }
+        msg_print("You strike out at everything around you!");
 
         // attack the adjacent squares in sequence
         for (i = 0; i < 8; i++)
@@ -4696,17 +4731,7 @@ void py_attack(int y, int x, int attack_type)
 
             if (cave_m_idx[yy][xx] > 0)
             {
-                monster_type* m_ptr = &mon_list[cave_m_idx[yy][xx]];
-
-                if (p_ptr->rage)
-                {
-                    py_attack_aux(yy, xx, ATT_RAGE);
-                }
-                else if ((i == 0) || !forgo_attacking_unwary
-                    || (m_ptr->alertness >= ALERTNESS_ALERT))
-                {
-                    py_attack_aux(yy, xx, ATT_WHIRLWIND);
-                }
+                py_attack_aux(yy, xx, ATT_RAGE);
             }
         }
     }

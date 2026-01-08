@@ -947,6 +947,59 @@ bool set_tim_invis(int v)
 }
 
 /*
+ * Set "p_ptr->faded", notice observable changes
+ *
+ * When faded, the player has just performed a stealth kill and
+ * becomes temporarily invisible to enemies.
+ */
+bool set_faded(int v)
+{
+    bool notice = FALSE;
+
+    /* Hack -- Force good values */
+    v = (v > 10000) ? 10000 : (v < 0) ? 0 : v;
+
+    /* Open */
+    if (v)
+    {
+        if (!p_ptr->faded)
+        {
+            msg_print("You fade into the shadows.");
+            notice = TRUE;
+        }
+    }
+
+    /* Shut */
+    else
+    {
+        if (p_ptr->faded)
+        {
+            msg_print("You become visible again.");
+            notice = TRUE;
+        }
+    }
+
+    /* Use the value */
+    p_ptr->faded = v;
+
+    /* Nothing to notice */
+    if (!notice)
+        return (FALSE);
+
+    /* Disturb */
+    disturb(0, 0);
+
+    /* Recalculate bonuses */
+    p_ptr->update |= (PU_BONUS);
+
+    /* Handle stuff */
+    handle_stuff();
+
+    /* Result */
+    return (TRUE);
+}
+
+/*
  *
  * Set "p_ptr->darkened", notice observable changes
  *
@@ -2204,6 +2257,26 @@ void drop_loot(monster_type* m_ptr)
 
         /* Drop it in the dungeon */
         drop_near(i_ptr, -1, y, x);
+    }
+
+    /* Pilfer: 25% chance for an extra item drop */
+    if (p_ptr->active_ability[S_STL][STL_PILFER] && percent_chance(25))
+    {
+        /* Get local object */
+        i_ptr = &object_type_body;
+
+        /* Wipe the object */
+        object_wipe(i_ptr);
+
+        /* Make an object */
+        if (make_object(i_ptr, FALSE, FALSE, DROP_TYPE_NOT_DAMAGED))
+        {
+            /* Assume seen XXX XXX XXX */
+            dump_item++;
+
+            /* Drop it in the dungeon */
+            drop_near(i_ptr, -1, y, x);
+        }
     }
 
     /* Reset the object level */

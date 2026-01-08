@@ -446,7 +446,7 @@
 #define MEL_FOLLOW_THROUGH 5
 #define MEL_IMPALE 6
 #define MEL_CONTROL 7
-#define MEL_WHIRLWIND_ATTACK 8
+#define MEL_CLEAVE 8
 #define MEL_ZONE_OF_CONTROL 9
 #define MEL_SMITE 10
 #define MEL_TWO_WEAPON 11
@@ -491,6 +491,10 @@
 #define STL_OPPORTUNIST 4
 #define STL_VANISH 5
 #define STL_DEX 6
+#define STL_FADE 7
+#define STL_PILFER 8
+#define STL_DISTRACTION 9
+#define STL_SILENT_KILL 10
 
 /*
  * Perception abilities
@@ -570,7 +574,7 @@
 #define ATT_POLEARM 5
 #define ATT_FOLLOW_THROUGH 6
 #define ATT_RIPOSTE 7
-#define ATT_WHIRLWIND 8
+#define ATT_CLEAVE 8
 #define ATT_RAGE 9
 #define ATT_OPPORTUNITY                                                        \
     10 /* i.e. attacks of opportunity when monsters exchange places with you   \

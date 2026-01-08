@@ -4036,6 +4036,16 @@ void do_cmd_fire(int quiver)
                     total_attack_mod += 5;
                 }
 
+                // Keen Eyes: +2 archery at ranges beyond 5 squares
+                if (p_ptr->active_ability[S_ARC][ARC_VERSATILITY])
+                {
+                    int range = distance(p_ptr->py, p_ptr->px, y, x);
+                    if (range > 5)
+                    {
+                        total_attack_mod += 2;
+                    }
+                }
+
                 // Determine the monster's evasion after all modifiers
                 total_evasion_mod = total_monster_evasion(m_ptr, TRUE);
 

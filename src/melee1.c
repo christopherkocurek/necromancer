@@ -1874,6 +1874,15 @@ bool make_attack_normal(monster_type* m_ptr)
                         /* Message */
                         msg_format("%^s misses you.", m_name);
 
+                        // Distraction: confuse alert enemies that miss badly
+                        if (p_ptr->active_ability[S_STL][STL_DISTRACTION]
+                            && (m_ptr->alertness >= ALERTNESS_ALERT)
+                            && (hit_result <= -5) && !m_ptr->confused)
+                        {
+                            msg_format("%^s is bewildered!", m_name);
+                            m_ptr->confused = 1;
+                        }
+
                         // allow for ripostes
                         if (p_ptr->active_ability[S_EVN][EVN_RIPOSTE]
                             && (p_ptr->ripostes < 1) && !p_ptr->afraid

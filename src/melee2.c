@@ -6087,6 +6087,10 @@ void monster_perception(bool player_centered, bool main_roll, int difficulty)
          * 2 for shortsighted ones) */
         if (!((r_ptr->flags2 & (RF2_SHORT_SIGHTED)) && (m_ptr->cdis > 2)))
         {
+            // Faded: player is invisible after a stealth kill - skip detection
+            if (p_ptr->faded && player_centered)
+                continue;
+
             if (player_centered)
             {
                 noise_dist = flow_dist(FLOW_PLAYER_NOISE, m_ptr->fy, m_ptr->fx);

@@ -2296,6 +2296,12 @@ static void process_player(void)
         (void)set_tim_invis(p_ptr->tim_invis - 1);
     }
 
+    /* Faded (invisible after stealth kill) */
+    if (p_ptr->faded)
+    {
+        (void)set_faded(p_ptr->faded - 1);
+    }
+
     /* Entranced */
     if (p_ptr->entranced)
     {

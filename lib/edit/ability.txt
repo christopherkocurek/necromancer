@@ -109,11 +109,11 @@ T:22:0:99  # Polearms
 T:23:0:99  # Swords
 T:31:0:99  # Gloves
 
-N:8:Controlled Fury
+N:8:Cleave
 I:0:8:9
 P:0/3:0/5
-D:When you kill an enemy, you get a free attack on one other
-D: adjacent enemy. Battle momentum carries your blade forward.
+D:When you kill an enemy, you get free attacks on all other
+D: adjacent enemies. Your blade sweeps through the horde.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
@@ -203,8 +203,8 @@ T:35:0:99  # Cloak
 
 N:25:Keen Eyes
 I:1:5:7
-D:You can see enemies one square beyond your light radius. You gain +2
-D: to archery attacks at ranges beyond 5 squares. Elven far-sight.
+D:You gain +2 to archery attacks at ranges beyond 5 squares, and can
+D: spot enemies in dim light at the edge of your vision. Elven far-sight.
 T:19:0:99  # Bows
 T:32:0:99  # Helm
 
@@ -379,6 +379,43 @@ P:3/0:3/1
 I:3:6:11
 D:You gain a point of dexterity.
 
+N:67:Fade
+P:3/1:3/5
+I:3:7:9
+D:When you kill an unaware enemy, you fade into the shadows and
+D: become invisible to other enemies for 2 turns. Chain assassinations.
+T:35:0:99  # Cloak
+T:30:1:1   # Boots
+T:36:0:99  # Soft Armour
+
+N:68:Pilfer
+P:3/4
+I:3:8:10
+D:Your kills have a 25% chance to drop an extra item. A thief's
+D: eye for hidden treasures ensures you always profit from your work.
+T:31:0:99  # Gloves
+T:35:0:99  # Cloak
+T:45:0:99  # Ring
+
+N:69:Distraction
+P:3/0
+I:3:9:6
+D:When an alert enemy misses you by 5 or more, they become confused
+D: for 1 turn. Quick footwork leaves your foes bewildered.
+T:30:1:1   # Boots
+T:35:0:99  # Cloak
+T:36:0:99  # Soft Armour
+
+N:70:Silent Kill
+P:3/1:3/7
+I:3:10:12
+D:Killing an unaware enemy doesn't alert nearby monsters.
+D: True assassination leaves no witnesses. The ultimate stealth skill.
+T:21:0:99  # Hafted
+T:22:0:99  # Polearms
+T:23:0:99  # Swords
+T:35:0:99  # Cloak
+
 # Perception ---------------------------------------------
 
 N:80:Natural Talent
@@ -415,8 +452,8 @@ T:40:0:99  # Amulet
 
 N:84:Alchemy
 I:4:4:5
-D:Lets you determine the purpose of all herbs and potions you encounter,
-D: as well as staves and horns.
+D:Lets you determine the purpose of all herbs and potions you encounter.
+D: A scholar's knowledge of the natural world.
 T:32:0:99  # Helm
 T:45:0:99  # Ring
 
@@ -553,9 +590,9 @@ T:31:0:99  # Gloves
 
 N:122:Jeweller
 I:6:2:4
-D:Allows you to create rings, amulets, horns and light
-D: sources and identify rings, amulets, horns and light
-D: sources you encounter.
+D:Allows you to create rings, amulets, and light sources,
+D: and identify such items you encounter. The craft of
+D: adornment and illumination.
 T:31:0:99  # Gloves
 
 N:123:Reforge

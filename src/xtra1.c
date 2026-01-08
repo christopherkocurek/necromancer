@@ -2901,13 +2901,7 @@ static void calc_bonuses(void)
     // attack bonuses for matched weapon types
     p_ptr->skill_misc_mod[S_MEL] += axe_bonus(o_ptr) + sword_bonus(o_ptr) + polearm_bonus(o_ptr);
 
-    // deal with the 'Versatility' ability
-    if (p_ptr->active_ability[S_ARC][ARC_VERSATILITY]
-        && (p_ptr->skill_base[S_ARC] > p_ptr->skill_base[S_MEL]))
-    {
-        p_ptr->skill_misc_mod[S_MEL]
-            += (p_ptr->skill_base[S_ARC] - p_ptr->skill_base[S_MEL]) / 2;
-    }
+    // Keen Eyes: archery range bonus is handled in py_attack_aux (ranged attacks)
 
     /* generate the melee dice/sides from weapon, to_mdd, to_mds and strength */
     p_ptr->mdd = total_mdd(o_ptr);
@@ -3115,13 +3109,16 @@ void update_lore_aux(object_type* o_ptr)
         bool staffOrHorn = o_ptr->tval == TV_HORN || o_ptr->tval == TV_STAFF;
         bool foodOrPotion = o_ptr->tval == TV_FOOD || o_ptr->tval == TV_POTION;
         bool jewellery = o_ptr->tval == TV_RING || o_ptr->tval == TV_AMULET
-            || o_ptr->tval == TV_LIGHT || o_ptr->tval == TV_HORN;
+            || o_ptr->tval == TV_LIGHT;  // horns handled by channeling
         bool enchantedItem = !staffOrHorn && !foodOrPotion
             && o_ptr->tval != TV_CHEST && o_ptr->tval != TV_SKELETON;
 
+        // Force of Will (channeling): staves and horns
+        // Alchemy: herbs and potions only
+        // Jeweller: rings, amulets, light sources
         if ((channeling && staffOrHorn)
-            || (alchemy && (staffOrHorn || foodOrPotion))
-            || (jeweller && (jewellery)) || (enchantment && enchantedItem))
+            || (alchemy && foodOrPotion)
+            || (jeweller && jewellery) || (enchantment && enchantedItem))
         {
             ident(o_ptr);
         }
