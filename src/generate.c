@@ -3852,24 +3852,43 @@ static void throne_gen(void)
 
     build_type9(16, 38);
 
-    /* Find an up staircase */
+    /* Find an up staircase - search entire map for any FEAT_LESS */
     for (y = 0; y < p_ptr->cur_map_hgt; y++)
     {
         for (x = 0; x < p_ptr->cur_map_wid; x++)
         {
-            // Sil-y: assumes the important staircase is at the centre of the
-            // level
-            if ((cave_feat[y][x] == FEAT_LESS) && (x >= 30) && (x <= 45))
+            if (cave_feat[y][x] == FEAT_LESS)
             {
                 py = y;
                 px = x;
+                break;
             }
         }
+        if (py != 0) break;  /* Found a staircase, stop searching */
     }
 
+    /* Fallback: if no staircase found, create one near the center */
     if ((py == 0) || (px == 0))
     {
-        msg_format("Failed to find an up staircase in the throne-room");
+        /* Place staircase in a safe location near vault center */
+        py = 16;
+        px = 38;
+
+        /* Find first floor tile near this location */
+        for (y = py; y < p_ptr->cur_map_hgt; y++)
+        {
+            for (x = px; x < p_ptr->cur_map_wid; x++)
+            {
+                if (cave_feat[y][x] == FEAT_FLOOR)
+                {
+                    py = y;
+                    px = x;
+                    cave_set_feat(py, px, FEAT_LESS);
+                    break;
+                }
+            }
+            if (cave_feat[py][px] == FEAT_LESS) break;
+        }
     }
 
     /* Delete any monster on the starting square */
