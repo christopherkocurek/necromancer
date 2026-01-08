@@ -201,12 +201,12 @@ T:19:0:99  # Bows
 T:31:1:1   # Gloves (leather gloves only)
 T:35:0:99  # Cloak
 
-N:25:Versatility
+N:25:Keen Eyes
 I:1:5:7
-D:If you have more skill points in archery than in melee, you gain a bonus
-D: to melee of half the difference between them.
+D:You can see enemies one square beyond your light radius. You gain +2
+D: to archery attacks at ranges beyond 5 squares. Elven far-sight.
 T:19:0:99  # Bows
-T:31:1:1   # Gloves (leather gloves only)
+T:32:0:99  # Helm
 
 N:26:Crippling Shot
 I:1:6:8
