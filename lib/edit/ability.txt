@@ -381,10 +381,10 @@ D:You gain a point of dexterity.
 
 # Perception ---------------------------------------------
 
-N:80:Quick Study
+N:80:Natural Talent
 I:4:0:1
-D:Allows you to take advanced abilities when you don't have the
-D: prerequisite abilities.
+D:You possess an innate gift that allows you to take advanced abilities
+D: without the usual prerequisites. Some are simply born to greatness.
 T:40:0:99  # Amulet
 
 N:81:Focused attack
