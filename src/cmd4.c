@@ -6153,6 +6153,15 @@ void reforge_menu(void)
     /* Use up one forge use */
     cave_feat[p_ptr->py][p_ptr->px]--;
 
+    /* Deduct XP cost (500 for enchanted item) */
+    if (p_ptr->new_exp >= 500)
+    {
+        p_ptr->new_exp -= 500;
+    }
+
+    /* Consume a turn */
+    p_ptr->energy_use = 100;
+
     /* Describe what was created */
     object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
     msg_format("You reforge the broken items into %s!", desc);
@@ -6284,6 +6293,18 @@ void reclaim_menu(void)
 
         /* Use up one forge use */
         cave_feat[p_ptr->py][p_ptr->px]--;
+
+        /* Deduct XP cost based on artifact level */
+        {
+            int xp_cost = a_ptr->level * 50;
+            if (p_ptr->new_exp >= xp_cost)
+            {
+                p_ptr->new_exp -= xp_cost;
+            }
+        }
+
+        /* Consume a turn */
+        p_ptr->energy_use = 100;
 
         object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
         msg_format("You reclaim %s from the broken items!", desc);
@@ -6420,6 +6441,18 @@ void masterwork_menu(void)
 
         /* Use up one forge use */
         cave_feat[p_ptr->py][p_ptr->px]--;
+
+        /* Deduct XP cost based on artifact level (premium for masterwork) */
+        {
+            int xp_cost = a_ptr->level * 100;
+            if (p_ptr->new_exp >= xp_cost)
+            {
+                p_ptr->new_exp -= xp_cost;
+            }
+        }
+
+        /* Consume a turn */
+        p_ptr->energy_use = 100;
 
         object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
         msg_format("You create a masterwork: %s!", desc);
