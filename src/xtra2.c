@@ -2107,22 +2107,22 @@ void drop_loot(monster_type* m_ptr)
             // create the Iron Crown of Morgoth
             create_chosen_artefact(ART_MORGOTH_3, y, x, TRUE);
         }
-        // Drop Galvorn Armour of Maeglin
+        // Drop Shadow-steel Armor of Maeglin
         else if (r_ptr->d_char == '@')
         {
-            // create the Armour of Maeglin
+            // create the Armor of Maeglin
             create_chosen_artefact(ART_MAEGLIN, y, x, FALSE);
         }
-        // Drop Iron Spear of Boldog
+        // Drop Hunting Spear of Boldog
         else if (r_ptr->d_char == 'o')
         {
-            // create the Armour of Maeglin
+            // create the Spear of Boldog
             create_chosen_artefact(ART_BOLDOG, y, x, FALSE);
         }
         // Drop Glend
         else if (r_ptr->d_char == 'G')
         {
-            // create the Greatsword 'Glend'
+            // create the Númenórean Blade 'Glend'
             create_chosen_artefact(ART_GLEND, y, x, FALSE);
         }
         // Drop Wolf-Hame of Drauglin
