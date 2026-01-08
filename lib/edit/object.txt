@@ -2321,3 +2321,306 @@ D: Great power sleeps within, waiting to be reawakened.
 # END OF BROKEN ITEM ADDITIONS
 #################################################################
 
+
+#################################################################
+##### TOWER OBJECTS - Discovery XP for Stealth Gameplay #####
+# These items grant experience when discovered, providing
+# a combat-independent progression path for stealth builds.
+# Each object can only be found once per playthrough.
+#################################################################
+
+##### Thráin's Memories (sval 50-57) #####
+# Blue wisps of memory, found in layers 3-7
+# Grant 150 XP each
+
+N:500:& Thráin's Memory~
+G:*:B
+I:2:50:0
+W:6:100:0:0
+A:6/8:9/6:12/6:15/8:18/10
+F:EASY_KNOW
+D:A wisp of pale blue light hovers before you. Within it, you sense
+D: a fragment of tortured memory. "Halls of stone... my father's
+D: throne... gone..." The voice of Thráin II, lost dwarf-king.
+
+N:501:& Thráin's Memory~
+G:*:B
+I:2:51:0
+W:7:100:0:0
+A:7/8:10/6:13/6:16/8
+F:EASY_KNOW
+D:A ghostly memory-wisp pulses sadly. "The key... I hid the key...
+D: where did I hide it?" Thráin's confusion echoes through the ages.
+
+N:502:& Thráin's Memory~
+G:*:B
+I:2:52:0
+W:9:100:0:0
+A:9/8:12/6:15/6:18/8
+F:EASY_KNOW
+D:This memory burns with old pain. "Ambushed... Azanulbizar survivors...
+D: so few of us left..." The capture of a dwarf prince, long ago.
+
+N:503:& Thráin's Memory~
+G:*:B
+I:2:53:0
+W:11:100:0:0
+A:11/10:14/8:17/8
+F:EASY_KNOW
+D:Rage and grief swirl within this memory. "The Ring! He took my Ring!
+D: Durin's heirloom!" Sauron's theft of the last Dwarven Ring.
+
+N:504:& Thráin's Memory~
+G:*:B
+I:2:54:0
+W:12:100:0:0
+A:12/10:15/8:18/8
+F:EASY_KNOW
+D:Screams echo within this dark memory. "Questions... always questions...
+D: I told him nothing!" Thráin's defiance under torture.
+
+N:505:& Thráin's Memory~
+G:*:B
+I:2:55:0
+W:14:100:0:0
+A:14/10:17/8:19/10
+F:EASY_KNOW
+D:Pride blazes in this memory despite the darkness. "My name is Thráin!
+D: Son of Thrór! I am NOT broken!" A dwarf's stubborn courage.
+
+N:506:& Thráin's Memory~
+G:*:B
+I:2:56:0
+W:16:100:0:0
+A:16/10:18/8:20/10
+F:EASY_KNOW
+D:Longing fills this memory. "My son... does Thorin still live?
+D: The line continues?" A father's hope in the darkness.
+
+N:507:& Thráin's Memory~
+G:*:B
+I:2:57:0
+W:19:100:0:0
+A:19/12:20/10
+F:EASY_KNOW
+D:A final spark of hope. "Someone comes... I sense it... dwarf-friend...
+D: rescue?" Thráin's last hope, perhaps for you.
+
+
+##### Shadow Fragments (sval 60-65) #####
+# Dark crystals, found near dangerous monsters
+# Grant 200 XP each
+
+N:510:& Shadow Fragment~
+G:*:D
+I:2:60:0
+W:4:100:1:0
+A:4/12:7/10:10/8
+F:EASY_KNOW
+D:A shard of crystallized darkness, cold as void. Where Sauron's
+D: power concentrates, shadow itself takes solid form.
+
+N:511:& Shadow Fragment~
+G:*:D
+I:2:61:0
+W:8:100:1:0
+A:8/12:11/10:14/8
+F:EASY_KNOW
+D:This fragment of solid shadow seems to drink in light.
+D: You can feel malice radiating from within.
+
+N:512:& Shadow Fragment~
+G:*:D
+I:2:62:0
+W:12:100:1:0
+A:12/15:15/10:18/8
+F:EASY_KNOW
+D:A night-black crystal that hurts to look upon. The Necromancer's
+D: power has pooled here, becoming tangible.
+
+N:513:& Shadow Fragment~
+G:*:D
+I:2:63:0
+W:15:100:1:0
+A:15/15:18/10:20/10
+F:EASY_KNOW
+D:Shadow made solid. This fragment pulses with a heartbeat
+D: that is not your own. Sauron's essence crystallized.
+
+N:514:& Shadow Fragment~
+G:*:D
+I:2:64:0
+W:18:100:1:0
+A:18/20:20/15
+F:EASY_KNOW
+D:A piece of perfect darkness. Looking into it, you see
+D: visions of fire and ruin. Sauron's memories, perhaps.
+
+N:515:& Shadow Fragment~
+G:*:D
+I:2:65:0
+W:20:100:1:0
+A:20/25
+F:EASY_KNOW
+D:They call this "Sauron's Tear" - a drop of pure shadow
+D: shed when the Necromancer first bound himself to this place.
+
+
+##### Ancient Glyphs (sval 70-76) #####
+# Wall inscriptions, found throughout all layers
+# Grant 75 XP each
+
+N:520:& Ancient Glyph~
+G:;:y
+I:2:70:0
+W:2:100:0:0
+A:2/5:5/4:8/4:11/4:14/5
+F:EASY_KNOW
+D:Scratched into the stone: "Beware the watchers - they see in darkness."
+D: A captive's warning, left for those who follow.
+
+N:521:& Ancient Glyph~
+G:;:y
+I:2:71:0
+W:4:100:0:0
+A:4/5:7/4:10/4:13/4:16/5
+F:EASY_KNOW
+D:Tengwar script, elegant despite the crude scratching:
+D: "We are forgotten." An Elvish lament from long ago.
+
+N:522:& Ancient Glyph~
+G:;:y
+I:2:72:0
+W:7:100:0:0
+A:7/5:10/4:13/4:16/4:19/5
+F:EASY_KNOW
+D:Tally marks scratched deep into the stone. Hundreds of them.
+D: Someone counted the days of their imprisonment here.
+
+N:523:& Ancient Glyph~
+G:;:y
+I:2:73:0
+W:10:100:0:0
+A:10/6:13/5:16/5:19/6
+F:EASY_KNOW
+D:A rough map fragment scratched into the wall, showing
+D: what might be an escape route. Hard to read now.
+
+N:524:& Ancient Glyph~
+G:;:y
+I:2:74:0
+W:13:100:0:0
+A:13/6:16/5:19/6
+F:EASY_KNOW
+D:Black Speech characters burned into the stone. Reading them
+D: hurts your eyes, but grants dark knowledge. A curse.
+
+N:525:& Ancient Glyph~
+G:;:y
+I:2:75:0
+W:16:100:0:0
+A:16/8:19/6
+F:EASY_KNOW
+D:A single word in Black Speech: Sauron's name. Seeing it
+D: written sends a chill down your spine.
+
+N:526:& Ancient Glyph~
+G:;:y
+I:2:76:0
+W:19:100:0:0
+A:19/10
+F:EASY_KNOW
+D:"Tell my family I died fighting." A final message, never
+D: delivered. You are the first to read it in centuries.
+
+
+##### Palantír Shards (sval 80-83) #####
+# Rare fragments of the seeing-stone
+# Grant 500 XP each, only in vaults
+
+N:530:& Palantír Shard~
+G:*:v
+I:2:80:0
+W:3:100:1:0
+A:3/50:6/40
+F:EASY_KNOW
+D:A fragment of the great seeing-stone of Amon Sûl, shattered
+D: when Arvedui drowned. Glimpses of Forochel's ice flicker within.
+
+N:531:& Palantír Shard~
+G:*:v
+I:2:81:0
+W:9:100:1:0
+A:9/50:12/40
+F:EASY_KNOW
+D:This shard shows visions of endless plains - the East,
+D: where Sauron's influence spreads. Rhûn under shadow.
+
+N:532:& Palantír Shard~
+G:*:v
+I:2:82:0
+W:15:100:1:0
+A:15/50:18/40
+F:EASY_KNOW
+D:Fire and ash swirl within this fragment. Mordor revealed -
+D: the land where Sauron's true power lies waiting.
+
+N:533:& Palantír Shard~
+G:*:v
+I:2:83:0
+W:20:100:1:0
+A:20/60
+F:EASY_KNOW
+D:Light, pure and silver, gleams within. For an instant you see
+D: the Undying Lands - a glimpse of Valinor's shore.
+
+
+##### Erebor Relics (sval 90-94) #####
+# Treasures from the Lonely Mountain
+# Grant 100 XP each
+
+N:540:& Mithril Brooch~
+G:$:u
+I:2:90:0
+W:4:100:2:0
+A:4/8:7/6:10/6
+F:EASY_KNOW
+D:A brooch bearing the sigil of Erebor - the mountain and seven stars.
+D: Part of the dragon's hoard, stolen to furnish Dol Guldur.
+
+N:541:& Thrór's Coin~
+G:$:u
+I:2:91:0
+W:7:100:1:0
+A:7/8:10/6:13/6
+F:EASY_KNOW
+D:A gold coin bearing King Thrór's face. Currency from a kingdom
+D: that fell to dragonfire. Tribute extracted by Sauron's servants.
+
+N:542:& Dragon-Touched Gem~
+G:$:u
+I:2:92:0
+W:10:100:2:0
+A:10/10:13/8:16/8
+F:EASY_KNOW
+D:A gem that still radiates faint heat - it lay against Smaug's
+D: belly for a century. Warm even in Dol Guldur's cold.
+
+N:543:& Dwarven Chronicle Page~
+G:$:u
+I:2:93:0
+W:13:100:1:0
+A:13/10:16/8:19/10
+F:EASY_KNOW
+D:A page torn from an Erebor chronicle, recording the days
+D: before the fall. History stolen along with gold.
+
+N:544:& Durin's Day Fragment~
+G:$:u
+I:2:94:0
+W:16:100:2:0
+A:16/12:19/10
+F:EASY_KNOW
+D:A piece of the throne-room calendar showing Durin's Day.
+D: The secret door could only open then. Now forgotten.
+

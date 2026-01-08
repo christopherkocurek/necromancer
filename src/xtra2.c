@@ -2535,7 +2535,58 @@ s32b adjusted_mon_exp(const monster_race* r_ptr, bool kill)
         }
         else
         {
-            exp = (mexp) / (mkills + 1);
+            /*
+             * Steeper diminishing returns for repeated kills.
+             * This encourages stealth/avoidance over grinding.
+             *
+             * Old formula: exp = mexp / (mkills + 1)
+             * New formula: exp = mexp / (mkills + 1)^1.5 (approximated)
+             *
+             * Effect on repeated kills of same monster type:
+             *   1st kill: 100% XP
+             *   2nd kill: ~35% XP (was 50%)
+             *   3rd kill: ~19% XP (was 33%)
+             *   4th kill: ~13% XP (was 25%)
+             *   5th kill: ~9%  XP (was 20%)
+             *
+             * This makes first encounters valuable while discouraging
+             * grinding the same enemy types repeatedly.
+             */
+            int divisor = mkills + 1;
+
+            /* Apply 1.5 exponent approximation:
+             * sqrt(divisor^3) = divisor * sqrt(divisor)
+             * We'll use integer math: divisor + divisor/2 for small values,
+             * and divisor * 2 for larger values as a reasonable approximation.
+             */
+            if (mkills == 0)
+            {
+                /* First kill: full XP */
+                exp = mexp;
+            }
+            else if (mkills == 1)
+            {
+                /* Second kill: ~35% (was 50%) */
+                exp = mexp * 35 / 100;
+            }
+            else if (mkills == 2)
+            {
+                /* Third kill: ~19% (was 33%) */
+                exp = mexp * 19 / 100;
+            }
+            else if (mkills <= 5)
+            {
+                /* 4th-6th kill: steep decline */
+                exp = mexp / (divisor * 2);
+            }
+            else
+            {
+                /* 7th+ kill: minimal XP */
+                exp = mexp / (divisor * 3);
+            }
+
+            /* Ensure minimum 1 XP for any non-peaceful kill */
+            if (exp < 1) exp = 1;
         }
 
         if (r_ptr->flags1 & RF1_PEACEFUL)
@@ -2545,6 +2596,7 @@ s32b adjusted_mon_exp(const monster_race* r_ptr, bool kill)
     }
     else
     {
+        /* Encounter XP unchanged - seeing monsters is good for all builds */
         if (r_ptr->flags1 & RF1_UNIQUE)
         {
             exp = mexp;
