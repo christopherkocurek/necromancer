@@ -465,9 +465,10 @@ T:32:0:99  # Helm
 T:45:0:99  # Ring
 T:34:0:99  # Shields
 
-N:101:Channeling
+N:101:Force of Will
 I:5:1:2
-D:You automatically recognise all staves and horns and can use them twice as efficiently.
+D:Your mental strength lets you recognise all staves and horns
+D: and use them twice as efficiently.
 T:32:0:99  # Helm
 T:45:0:99  # Ring
 
@@ -491,13 +492,14 @@ T:23:0:99  # Swords
 T:32:0:99  # Helm
 T:34:0:99  # Shields
 
-N:104:Inner Light
+N:104:Defy Death
 I:5:4:5
-D:Increases the intensity of light within your light radius by 2 points
-D: (without increasing the radius).
+P:5/2
+D:Once per floor, when reduced to 0 HP, make a Will save to survive
+D: with 1 HP. Your determination keeps you fighting beyond mortal limits.
 T:32:0:99  # Helm
-T:39:0:99  # Light Source
-T:36:0:99  # Soft Armour
+T:37:0:99  # Mail
+T:40:0:99  # Amulet
 
 N:105:Indomitable
 I:5:5:5
