@@ -4913,6 +4913,30 @@ void move_player(int dir)
         do_cmd_open_aux(y, x);
     }
 
+    /* Tangled roots block movement but allow sight/projectiles */
+    else if (cave_feat[y][x] == FEAT_TANGLED_ROOTS)
+    {
+        /* Disturb the player */
+        disturb(0, 0);
+
+        /* Notice roots */
+        if (!(cave_info[y][x] & (CAVE_MARK)))
+        {
+            message(MSG_HITWALL, 0,
+                "You feel tangled roots blocking your way.");
+            cave_info[y][x] |= (CAVE_MARK);
+            lite_spot(y, x);
+        }
+        else
+        {
+            message(MSG_HITWALL, 0,
+                "Thick tangled roots block your way.");
+        }
+
+        // store the action type
+        p_ptr->previous_action[0] = ACTION_MISC;
+    }
+
     /* Player can not walk through "walls", but can go through traps */
     else if (!cave_floor_bold(y, x))
     {

@@ -2168,6 +2168,13 @@ static bool do_cmd_tunnel_aux(int y, int x)
     // get the short name of the item
     object_desc(o_name, sizeof(o_name), digger_ptr, FALSE, -1);
 
+    /* Tangled roots - cannot tunnel */
+    if (cave_feat[y][x] == FEAT_TANGLED_ROOTS)
+    {
+        msg_print("The roots are too dense and tough to clear.");
+        return (FALSE);
+    }
+
     /* Granite */
     if (cave_feat[y][x] >= FEAT_WALL_EXTRA)
     {
