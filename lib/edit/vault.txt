@@ -47,7 +47,10 @@
 #   > - down stairs            < - up stairs
 #   + - door                   s - secret door
 #   ^ - trap                   0 - forge          7 - chasm
-#   ~ - poisoned water
+#   , - sunlight patch
+# Forest Terrain (Layer 1):
+#   ~ - poison stream          v - vine floor
+#   r - tangled roots          f - forest floor
 #
 # Monsters:
 #   1-4 - monster +1 to +4 levels
@@ -143,11 +146,11 @@ D:#########
 N:12:Corrupted Grove
 X:6:1:5
 D:##########
-D:#&:.:.:&:#
-D:#:.###.:.#
-D:$..#?#...$
-D:#:.###.:.#
-D:#&:.:.:&:#
+D:#&f.f.f&:#
+D:#f.###.f.#
+D:$vv#?#vv.$
+D:#f.###.f.#
+D:#&f.f.f&:#
 D:##########
 
 N:13:Orc Outpost
@@ -184,13 +187,13 @@ D:###$###
 
 N:16:Tangled Roots
 X:6:1:6
-D:$$$$$$$
-D:$::.::$
-D:$.:.:.$
-D:$::M::$
-D:$.:.:.$
-D:$::.::$
-D:$$$$$$$
+D:rrrrrrr
+D:rv.v.vr
+D:r.vvv.r
+D:rvvMvvr
+D:r.vvv.r
+D:rv.v.vr
+D:rrrrrrr
 
 N:17:Scout Camp
 X:6:2:8
@@ -207,11 +210,11 @@ D:############
 N:18:Poison Pool
 X:6:2:12
 D:.$$$$$$.
-D:$$.~.$$$
-D:$.~~~.$$
-D:$.~M~.$$
-D:$.~~~.$$
-D:$$.~.$$$
+D:$$v~v$$$
+D:$v~~~v$$
+D:$v~M~v$$
+D:$v~~~v$$
+D:$$v~v$$$
 D:.$$$$$$.
 
 
@@ -247,11 +250,11 @@ D:$$$$$$$$
 N:22:Forest Pool
 X:6:1:6
 D:.$$$$$$.
-D:$$...$$$
-D:$..~..$$
-D:$.~~~.$$
-D:$..~..$$
-D:$$...$$$
+D:$$vvv$$$
+D:$v.~.v$$
+D:$v~~~v$$
+D:$v.~.v$$
+D:$$vvv$$$
 D:.$$$$$$.
 
 
@@ -290,11 +293,11 @@ D:..#$#..
 
 N:26:Root Tunnel
 X:6:1:4
-D:#$$$$$$#
-D:#.:..:.#
-D:$......$
-D:#.:..:.#
-D:#$$$$$$#
+D:r$$$$$$r
+D:rvf..fvr
+D:$vvffvv$
+D:rvf..fvr
+D:r$$$$$$r
 
 N:27:Patrol Path
 X:6:2:6

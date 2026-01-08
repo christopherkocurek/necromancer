@@ -2524,6 +2524,34 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
                 break;
             }
 
+            /* Poison stream */
+            case '~':
+            {
+                cave_set_feat(y, x, FEAT_POISON_STREAM);
+                break;
+            }
+
+            /* Vine floor */
+            case 'v':
+            {
+                cave_set_feat(y, x, FEAT_VINE_FLOOR);
+                break;
+            }
+
+            /* Tangled roots */
+            case 'r':
+            {
+                cave_set_feat(y, x, FEAT_TANGLED_ROOTS);
+                break;
+            }
+
+            /* Forest floor */
+            case 'f':
+            {
+                cave_set_feat(y, x, FEAT_FOREST_FLOOR);
+                break;
+            }
+
             /* Not actually part of the vault after all */
             case ' ':
             {
