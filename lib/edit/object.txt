@@ -227,61 +227,60 @@ D: It will shine forever.
 
 ##### Armor #####
 
-N:22:& Robe~
+N:22:& Wanderer's Robe~
 G:(:b
 I:36:2:0
 W:1:0:30:4
 P:0:0d0:1:1d0
 A:5/3:10/10
 F:ENCHANTABLE
+D:A simple robe worn by travelers. It offers little protection but doesn't hinder movement.
 
 
-N:23:Leather Armour~
+N:23:Ranger Leathers~
 G:(:U
 I:36:4:0
 W:1:0:70:18
 P:0:0d0:-1:1d4
 A:1/2
+D:Supple leather armor favored by the Rangers of the North. Quiet and flexible.
 
 
-N:26:Studded Leather~
+N:26:Scout's Armor~
 G:(:U1
 I:36:7:0
 W:2:0:130:200
 P:0:0d0:-2:1d6
 A:2/2
+D:Leather armor reinforced with metal studs. Favored by scouts and skirmishers.
 
 
-N:27:Galvorn Armour~
+N:27:Shadow-steel Armor~
 G:(:D
 I:36:11:0
 W:17:0:70:200
 P:0:0d0:-1:1d8
 A:17/20:22/4
 F:IGNORE_ALL | NO_SMITHING
-D:A suit of armour made of galvorn: a strange shining black metal 
-D:so malleable that it is thin and supple, yet strong enough 
-D:to stop blade and dart.
+D:Armor forged of a strange black metal, supple as leather but strong as mail. Its origins are dark.
 
 
-N:30:& Mail Corslet~
+N:30:& Gondor Corslet~
 G:[:W
 I:37:4:0
 W:5:0:270:750
 P:-1:0d0:-3:2d4
 A:5/2:12/1:20/1
-D:A shirt of armour formed from linked rings.
-D: It comes down to the waist.
+D:A mail shirt of Gondorian make, covering from shoulder to waist.
 
 
-N:31:& Hauberk~
+N:31:& Dwarven Hauberk~
 G:[:s1
 I:37:6:0
 W:7:0:350:900
 P:-2:0d0:-4:2d5
 A:7/3:17/2
-D:A long-sleeved shirt of armour formed from linked rings.
-D: It comes down to the thigh.
+D:A long mail shirt of dwarven craft, protecting from neck to knee.
 
 
 N:38:& Mithril Corslet~
@@ -2278,16 +2277,14 @@ D: A skilled smith with the Reforge ability might salvage
 D: the magic within to create a new enchanted weapon.
 
 
-N:492:& Broken Glowing Armor~
+N:492:& Shattered Elven Mail~
 G:[:B
 I:37:1:0
 W:4:0:50:75
 P:0:0d0:0:0d0
 A:4/4:9/3:14/2:19/2
 F:DAMAGED | NO_SMITHING | EASY_KNOW
-D:Shattered pieces of armor that still shimmer faintly.
-D: A skilled smith with the Reforge ability could work
-D: the remaining magic into new protective gear.
+D:Fragments of elven armor that still glow with faint enchantment. Perhaps it can be reforged.
 
 
 #### Broken Strange Items ####
@@ -2308,16 +2305,14 @@ D: It hums with power that transcends normal enchantment.
 D: A master smith might forge it into something legendary.
 
 
-N:494:& Broken Strange Armor~
+N:494:& Twisted Shadow-plate~
 G:[:v
 I:37:2:0
 W:10:0:80:200
 P:0:0d0:0:0d0
 A:10/12:15/8:20/5
 F:DAMAGED | NO_SMITHING | EASY_KNOW
-D:Twisted pieces of armor that seem to absorb light.
-D: The metal feels ancient and powerful.
-D: Only a master smith could unlock its potential.
+D:Shards of dark armor from some fell creature. The metal seems to shift in the light.
 
 
 N:495:& Broken Strange Jewelry~
