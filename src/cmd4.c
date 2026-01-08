@@ -6462,6 +6462,58 @@ void masterwork_menu(void)
         return;  /* No valid options */
     }
 
+    /* Now show type selection submenu based on category */
+    {
+        char ch;
+
+        if (k_idx_broken == K_IDX_BROKEN_STRANGE_WEAPON)
+        {
+            msg_print("What type? (s)word, (p)olearm, (h)afted, (b)ow, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 's': case 'S': tval_list = sword_tvals; break;
+                case 'p': case 'P': tval_list = polearm_tvals; break;
+                case 'h': case 'H': tval_list = hafted_tvals; break;
+                case 'b': case 'B': tval_list = bow_tvals; break;
+                case 'a': case 'A': tval_list = weapon_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
+        else if (k_idx_broken == K_IDX_BROKEN_STRANGE_ARMOR)
+        {
+            msg_print("What type? (m)ail, (l)ight, sh(i)eld, hel(M), (c)loak, (g)loves, boo(t)s, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 'm': tval_list = mail_tvals; break;
+                case 'l': case 'L': tval_list = soft_armor_tvals; break;
+                case 'i': case 'I': tval_list = shield_tvals; break;
+                case 'M': tval_list = helm_tvals; break;
+                case 'c': case 'C': tval_list = cloak_tvals; break;
+                case 'g': case 'G': tval_list = gloves_tvals; break;
+                case 't': case 'T': tval_list = boots_tvals; break;
+                case 'a': case 'A': tval_list = armor_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
+        else if (k_idx_broken == K_IDX_BROKEN_STRANGE_JEWELRY)
+        {
+            msg_print("What type? (r)ing, a(m)ulet, (a)ny");
+            ch = inkey();
+
+            switch (ch)
+            {
+                case 'r': case 'R': tval_list = ring_tvals; break;
+                case 'm': case 'M': tval_list = amulet_tvals; break;
+                case 'a': case 'A': tval_list = jewelry_tvals; break;
+                default: return;  /* Cancelled */
+            }
+        }
+    }
+
     /* Confirm */
     if (!get_check("Create masterwork from broken items? "))
     {
