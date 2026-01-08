@@ -678,6 +678,18 @@
 /*** Screen Locations ***/
 
 /*
+ * Threat level constants for the Tower Threat Indicator
+ */
+#define THREAT_LOW       1  /* Depths 1-3   (50-150ft)   - Forest Breach */
+#define THREAT_GUARDED   2  /* Depths 4-6   (150-300ft)  - Orc Warrens */
+#define THREAT_ELEVATED  3  /* Depths 7-9   (300-450ft)  - Torture Halls */
+#define THREAT_HIGH      4  /* Depths 10-12 (450-600ft)  - Necropolis */
+#define THREAT_SEVERE    5  /* Depths 13-15 (600-750ft)  - Wraith Domain */
+#define THREAT_CRITICAL  6  /* Depths 16-18 (750-900ft)  - Inner Sanctum */
+#define THREAT_DOOM      7  /* Depths 19-20 (900-1000ft) - Pits of Despair */
+#define THREAT_HUNTED    8  /* Any depth - Pursuit Mode active */
+
+/*
  * Some screen locations for various display routines
  * Currently, row 8 and 15 are the only "blank" rows.
  * That leaves a "border" around the "stat" values.
@@ -700,6 +712,9 @@
 
 #define ROW_SP 11
 #define COL_SP 0 /* "SP xxxxxxxxx" */
+
+#define ROW_THREAT 12
+#define COL_THREAT 0 /* "Threat:xxxxx" */
 
 #define ROW_EQUIPPY 13
 #define COL_EQUIPPY 0 /* equippy chars */
