@@ -4556,10 +4556,23 @@ void py_attack_aux(int y, int x, int attack_type)
                     set_faded(2);
                 }
 
-                // Silent Kill: don't alert nearby monsters when killing unwary enemy
-                if (p_ptr->active_ability[S_STL][STL_SILENT_KILL] && stealth_bonus > 0)
+                // Throat Slit / Silent Kill: don't alert nearby monsters
+                // Throat Slit works on humanoids only (orc, troll, man, elf)
+                // Silent Kill removes the humanoid restriction
+                if (stealth_bonus > 0)
                 {
-                    player_attacked = FALSE;
+                    bool is_humanoid = (r_ptr->flags3 & (RF3_ORC | RF3_TROLL | RF3_MAN | RF3_ELF)) != 0;
+
+                    if (p_ptr->active_ability[S_STL][STL_SILENT_KILL])
+                    {
+                        // Silent Kill: works on any enemy
+                        player_attacked = FALSE;
+                    }
+                    else if (p_ptr->active_ability[S_STL][STL_THROAT_SLIT] && is_humanoid)
+                    {
+                        // Throat Slit: humanoids only
+                        player_attacked = FALSE;
+                    }
                 }
 
                 // deal with 'follow_through' ability

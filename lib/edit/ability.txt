@@ -379,38 +379,48 @@ P:3/0:3/1
 I:3:6:11
 D:You gain a point of dexterity.
 
-N:67:Fade
+N:67:Throat Slit
+P:3/1
+I:3:7:4
+D:You can instantly kill sleeping or unaware humanoid enemies without
+D: alerting nearby monsters. A quick, silent death in the darkness.
+T:21:0:99  # Hafted
+T:22:0:99  # Polearms
+T:23:0:99  # Swords
+T:31:0:99  # Gloves
+
+N:68:Fade
 P:3/1:3/5
-I:3:7:9
+I:3:8:9
 D:When you kill an unaware enemy, you fade into the shadows and
 D: become invisible to other enemies for 2 turns. Chain assassinations.
 T:35:0:99  # Cloak
 T:30:1:1   # Boots
 T:36:0:99  # Soft Armour
 
-N:68:Pilfer
+N:69:Pilfer
 P:3/4
-I:3:8:10
+I:3:9:10
 D:Your kills have a 25% chance to drop an extra item. A thief's
 D: eye for hidden treasures ensures you always profit from your work.
 T:31:0:99  # Gloves
 T:35:0:99  # Cloak
 T:45:0:99  # Ring
 
-N:69:Distraction
+N:70:Distraction
 P:3/0
-I:3:9:6
+I:3:10:6
 D:When an alert enemy misses you by 5 or more, they become confused
 D: for 1 turn. Quick footwork leaves your foes bewildered.
 T:30:1:1   # Boots
 T:35:0:99  # Cloak
 T:36:0:99  # Soft Armour
 
-N:70:Silent Kill
-P:3/1:3/7
-I:3:10:12
-D:Killing an unaware enemy doesn't alert nearby monsters.
-D: True assassination leaves no witnesses. The ultimate stealth skill.
+N:71:Silent Kill
+P:3/7:3/8
+I:3:11:12
+D:Removes the humanoid restriction from Throat Slit. Any sleeping or
+D: unaware enemy can be silently dispatched. The ultimate assassin.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords

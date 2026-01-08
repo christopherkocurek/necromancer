@@ -49,13 +49,13 @@ D: their knowledge of lore is unmatched in Middle-earth.
 N:1:Of Rivendell
 A:Rivendell
 B:Imladris
-F:LOR_AFFINITY
-S:0:0:0:1
-D:The Last Homely House east of the Sea is ruled by Elrond
-D: Half-elven, master of healing and keeper of Vilya. His folk
-D: are loremasters and scholars, preserving the knowledge of
-D: ages past. Many seeking wisdom or refuge come to the hidden
-D: valley of Imladris.
+F:SMT_AFFINITY
+S:0:0:1:0
+D:The Elves of Rivendell are heirs to the craft traditions of
+D: the Noldor who crossed the sea in ages past. Elrond's house
+D: preserves the lore of Celebrimbor, greatest of Elven-smiths.
+D: Their forges still produce works of surpassing beauty, and
+D: they remember the art of ring-making.
 
 N:2:Of Greenwood
 A:Greenwood

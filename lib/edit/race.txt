@@ -41,13 +41,13 @@
 
 V:1.5.0
 
-# - Lothlorien Elf:
-#   - The Galadhrim of Lothlorien
+# - Elf:
+#   - The Eldar of the Third Age
 #   - Stat modifiers -1 +2 +1 +2 (Total: +4)
 #   - Bow proficiency = a bonus of 1 to archery when wielding bows
-#   - Grace-focused, mystical and hidden
+#   - Includes Galadhrim, Rivendell Elves, and Silvan Elves
 
-N:0:Lothlorien Elf
+N:0:Elf
 S:-1:2:1:2
 I:1:100:3000
 H:72:3
@@ -57,10 +57,12 @@ F:BOW_PROFICIENCY
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:37:3:3    # , Fragment of Lembas (3)
 E:23:7:1:1     # | Curved sword (1)
-D:The Galadhrim dwell in the golden wood of Lothlorien under the
-D: protection of the Lady Galadriel. They are secretive and seldom
-D: seen, preferring the shadows of the mallorn trees. Their archery
-D: is legendary, and their grace unmatched among the Free Peoples.
+D:The Elves of Middle-earth have dwindled in the Third Age, but those
+D: who remain are wise and fair. Whether from the golden woods of
+D: Lothlorien, the hidden valley of Rivendell, or the dark forests
+D: of Greenwood, they possess keen senses and ancient knowledge.
+D: They are immortal within the world, and their spirits
+D: do not diminish with age.
 
 # - Man:
 #   - The mortal men of the Third Age
@@ -133,27 +135,5 @@ D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This
 D: form is for playtesting only - the Necromancer himself
 D: trembles before their might.
-
-# - Rivendell Elf:
-#   - The Elves of Imladris
-#   - Stat modifiers -1 +1 +2 +2 (Total: +4)
-#   - Smithing affinity = a bonus when smithing
-#   - Heirs to Noldorin craft traditions
-
-N:4:Rivendell Elf
-S:-1:1:2:2
-I:1:100:3000
-H:72:3
-W:145:8
-C:0|1|2
-F:BOW_PROFICIENCY | SMT_AFFINITY
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:37:3:3    # , Fragment of Lembas (3)
-E:23:7:1:1     # | Curved sword (1)
-D:The Elves of Rivendell are heirs to the craft traditions of the
-D: Noldor who crossed the sea in ages past. Elrond's house preserves
-D: the lore of Celebrimbor, greatest of the Elven-smiths. They are
-D: hardier than their Lothlorien kin, and their forges still produce
-D: works of surpassing beauty. They remember the art of ring-making.
 
 

@@ -491,10 +491,11 @@
 #define STL_OPPORTUNIST 4
 #define STL_VANISH 5
 #define STL_DEX 6
-#define STL_FADE 7
-#define STL_PILFER 8
-#define STL_DISTRACTION 9
-#define STL_SILENT_KILL 10
+#define STL_THROAT_SLIT 7
+#define STL_FADE 8
+#define STL_PILFER 9
+#define STL_DISTRACTION 10
+#define STL_SILENT_KILL 11
 
 /*
  * Perception abilities
