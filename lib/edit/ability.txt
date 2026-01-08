@@ -88,14 +88,14 @@ T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
 
-N:6:Impale
+N:6:Opening Strike
 I:0:6:7
-P:0/0:0/3
-D:When using a polearm or greatsword you can strike through or past
-D: opponents to attack an opponent behind.
-T:23:25:25 # Greatswords
-T:23:30:30 # Mithril Greatswords
-T:22:0:4   # Polearms
+P:0/1
+D:Grants an additional damage die on your first melee attack against
+D: an unwary or sleeping enemy. Your Ranger training pays off.
+T:21:0:99  # Hafted
+T:22:0:99  # Polearms
+T:23:0:99  # Swords
 T:31:0:99  # Gloves
 
 N:7:Subtlety
@@ -109,12 +109,11 @@ T:22:0:99  # Polearms
 T:23:0:99  # Swords
 T:31:0:99  # Gloves
 
-N:8:Whirlwind Attack
+N:8:Controlled Fury
 I:0:8:9
 P:0/3:0/5
-D:Whenever you attack an enemy, you get a free attack on all other
-D: enemies adjacent to you. The original attack must be a regular,
-D: flanking or controlled retreat attack.
+D:When you kill an enemy, you get a free attack on one other
+D: adjacent enemy. Battle momentum carries your blade forward.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
@@ -130,31 +129,31 @@ T:22:0:99  # Polearms
 T:23:0:99  # Swords
 T:31:0:99  # Gloves
 
-N:10:Smite
+N:10:Mighty Blow
 I:0:10:11
 P:0/2:0/4
-D:When using a two-handed weapon, the first main attack you make on your
-D: turn rolls the maximum possible damage to all opponents it hits. If you
-D: make such an attack, you lose a turn to recover.
+D:When using a two-handed weapon, your first attack each turn deals
+D: bonus damage equal to your Strength. If you use this, you lose
+D: a turn to recover from the exertion.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
 
-N:11:Two Weapon Fighting
+N:11:Defensive Stance
 I:0:11:12
-P:0/1:2/2
-D:Allows you to wield a one-handed weapon in your off-hand for an extra attack
-D: (calculated as if you had 3 points less strength and dexterity).
+P:0/1:2/1
+D:When you do not move, you gain +3 evasion and enemies do not gain
+D: flanking bonuses against you. Hold the line like Gondor's defenders.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
-T:31:0:99  # Gloves
+T:34:0:99  # Shields
 
-N:12:Rapid Attack
+N:12:Swift Strikes
 I:0:12:13
 P:0/7:3/4
-D:Grants you an extra melee attack, but your attacks
-D: are calculated as if you had 3 points less strength and dexterity.
+D:When wielding a one-handed weapon, you gain an extra attack but your
+D: attacks are calculated as if you had 3 less Strength and Dexterity.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
