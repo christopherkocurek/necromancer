@@ -355,30 +355,32 @@ F:IGNORE_ALL | MITHRIL
 
 ##### Edged Weapons #####
 
-N:56:& Dagger~
+N:56:& Ranger's Knife~
 G:|:w
 I:23:4:0
 W:1:0:5:10
 P:0:1d5:0:0d0
 A:1/1:10/1
 F:THROWING | MORE_SPECIAL
+D:A keen blade favored by the Dúnedain. Light enough to throw, sharp enough to kill.
 
 
-N:57:& Curved Sword~
+N:57:& Orc-blade~
 G:|:s
 I:23:7:0
 W:2:0:40:10
 P:-1:2d5:1:0d0
 A:2/2
-D:A crude blade, but better than none. It is curved in the orcish style.
+D:A crude scimitar forged in the shadow of Dol Guldur. The edge is notched but hungry.
 
 
-N:60:& Shortsword~
+N:60:& Woodland Blade~
 G:|:w
 I:23:10:0
 W:1:0:20:90
 P:0:1d7:1:0d0
 A:1/1:12/1
+D:A short blade of elven make, favored by the wood-elves for its balance.
 
 
 N:64:& Longsword~
@@ -389,143 +391,154 @@ P:0:2d5:1:0d0
 A:4/1:14/1
 
 
-N:67:& Bastard Sword~
+N:67:& Rohirrim Blade~
 G:|:W
 I:23:21:0
 W:6:0:40:350
 P:-2:3d3:1:0d0
 A:6/2:14/2
 F:HAND_AND_A_HALF
+D:A long sword in the style of the Riddermark. It can be wielded with one or two hands.
 
 
-N:68:& Greatsword~
+N:68:& Númenórean Blade~
 G:|:W
 I:23:25:0
 W:4:0:60:775
 P:-2:3d5:1:0d0
 A:4/1:14/1
 F:TWO_HANDED
+D:A greatsword of ancient design, forged in the style of Westernesse. It requires two hands to wield.
 
 
-N:69:& Mithril Longsword~
+N:69:& Mithril Sword~
 G:|:B
 I:23:28:0
 W:5:0:20:5000
 P:1:2d5:1:0d0
 A:5/80:14/10
 F:IGNORE_ALL | MITHRIL
+D:A longsword forged of true-silver. Light as a feather, hard as dragon-scale.
 
 
-N:70:& Mithril Greatsword~
+N:70:& Mithril Great-blade~
 G:|:B
 I:23:30:0
 W:6:0:40:7000
 P:-2:3d6:1:0d0
 A:6/80:16/15
 F:IGNORE_ALL | TWO_HANDED | MITHRIL
+D:A massive two-handed sword of mithril. Despite its size, it is remarkably light.
 
 
 ##### Axes & Polearms #####
 
-N:71:& Spear~
+N:71:& Hunting Spear~
 G:/:U
 I:22:1:0
 W:1:0:30:36
 P:0:1d9:0:0d0
 A:1/1:10/4
 F:THROWING | HAND_AND_A_HALF | POLEARM
+D:A simple spear used for hunting game. It serves well enough against darker prey.
 
 
-N:72:& Great Spear~
+N:72:& Tower Guard Spear~
 G:/:u
 I:22:2:0
 W:4:0:60:36
 P:1:1d13:1:0d0
 A:4/2:12/4
 F:TWO_HANDED | POLEARM
+D:A tall spear of Gondorian make, used by the Tower Guard in formal ceremonies and battle.
 
 
-N:74:& Glaive~
+N:74:& Morgul Glaive~
 G:/:s
 I:22:4:0
 W:8:0:70:363
 P:-1:2d9:1:0d0
 A:8/2:16/2
 F:TWO_HANDED | POLEARM
+D:A wicked polearm touched by shadow. The blade seems to drink the light.
 
 
-N:76:& Hand Axe~
+N:76:& Woodsman's Axe~
 G:/:s
 I:22:11:0
 W:2:0:10:150
 P:-1:4d2:0:0d0
 A:2/4
 F:AXE
+D:A small axe meant for chopping wood, but deadly when thrown.
 
 
-N:77:& Battle Axe~
+N:77:& Dwarven War-axe~
 G:/:s
 I:22:12:0
 W:4:0:45:304
 P:-3:3d4:0:0d0
 A:4/1:10/1
 F:HAND_AND_A_HALF | AXE
+D:A heavy axe of dwarven craft. The runes on its head are worn but still sharp.
 
 
-N:81:& Great Axe~
+N:81:& Erebor Great-axe~
 G:/:s
 I:22:13:0
 W:8:0:80:334
 P:-4:4d4:0:0d0
 A:8/2:15/1
 F:TWO_HANDED | AXE
+D:A massive axe forged in the halls of Erebor. It requires both hands to wield.
 
 
 ##### Blunt Weapons #####
 
 
-N:86:& Quarterstaff~
+N:86:& Oak Staff~
 G:\:U
 I:21:3:0
 W:1:0:50:200
 P:0:2d5:2:0d0
 A:1/4
 F:TWO_HANDED | ENCHANTABLE | MORE_SPECIAL
+D:A sturdy staff of aged oak. Simple but effective.
 
 
-N:89:& War Hammer~
+N:89:& Dwarven Hammer~
 G:\:D1
 I:21:8:0
 W:6:0:50:225
 P:-2:4d1:0:0d0
 A:4/3
 F:HAND_AND_A_HALF
+D:A heavy hammer of dwarven make. Good for cracking skulls and ore alike.
 
 
 ##### Digging Tools #####
 
 
-N:96:& Shovel~
+N:96:& Miner's Spade~
 G:\:s
 I:20:1:1
 W:5:0:50:10
 P:-3:2d2:0:0d0
 A:5/3:12/3
 F:TUNNEL | TWO_HANDED
-D:It can be equipped as a weapon and allows you to dig through rubble.
+D:A sturdy digging tool. It can also bash skulls in a pinch.
 
 
 # Mattocks are canonically used as weapons by the dwarves
 
-N:98:& Mattock~
+N:98:& Dwarf Mattock~
 G:\:D
 I:20:3:2
 W:10:0:100:700
 P:-5:5d2:0:0d0
 A:10/3
 F:TUNNEL | TWO_HANDED
-D:It can be equipped as a weapon and (usually) allows you to dig through
-D: rubble or quartz.
+D:A heavy pick used by dwarven miners. Excellent for breaking through rock and armor.
 
 
 
@@ -612,12 +625,13 @@ F:INSTA_ART
 
 ##### Bows #####
 
-N:110:& Shortbow~
+N:110:& Silvan Bow~
 G:}:u
 I:19:12:0
 W:1:0:15:50
 P:0:1d7:0:0d0
 A:1/1:11/1
+D:A light bow of wood-elf make. Quick to draw and accurate.
 
 
 N:111:& Longbow~
