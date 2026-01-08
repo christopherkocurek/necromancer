@@ -491,9 +491,9 @@ static void prt_sp(void)
     int len;
 
     if (p_ptr->msp >= 100)
-        put_str("Vce         ", ROW_SP, COL_SP);
+        put_str("Spi         ", ROW_SP, COL_SP);
     else
-        put_str("Voice       ", ROW_SP, COL_SP);
+        put_str("Spirit      ", ROW_SP, COL_SP);
 
     len = sprintf(tmp, "%d:%d", p_ptr->csp, p_ptr->msp);
 

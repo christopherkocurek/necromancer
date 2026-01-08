@@ -1568,7 +1568,7 @@
 #define PR_STATS 0x00000010L /* Display Stats */
 #define PR_ARMOR 0x00000020L /* Display Armor stats */
 #define PR_HP 0x00000040L /* Display Health */
-#define PR_VOICE 0x00000080L /* Display Voice */
+#define PR_VOICE 0x00000080L /* Display Spirit */
 #define PR_SONG 0x00000100L /* Display Song */
 #define PR_DEPTH 0x00000200L /* Display Depth */
 #define PR_EQUIPPY 0x00000400L /* Display Equippy chars */

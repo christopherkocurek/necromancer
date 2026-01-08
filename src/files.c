@@ -1376,9 +1376,9 @@ void display_player_xtra_info(int mode)
     Term_putstr(col, 9 + mod, -1, TERM_WHITE, "Health");
     Term_putstr(col + 8, 9 + mod, -1, TERM_L_BLUE, format("%8s", buf));
 
-    /* Voice */
+    /* Spirit */
     strnfmt(buf, sizeof(buf), "%d:%d", p_ptr->csp, p_ptr->msp);
-    Term_putstr(col, 10 + mod, -1, TERM_WHITE, "Voice");
+    Term_putstr(col, 10 + mod, -1, TERM_WHITE, "Spirit");
     Term_putstr(col + 8, 10 + mod, -1, TERM_L_BLUE, format("%8s", buf));
 
     /* Lore */
