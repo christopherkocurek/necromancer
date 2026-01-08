@@ -187,6 +187,81 @@ T:<tval>:<sval_min>:<sval_max>   # Item types that can have this ability
 - Identified stealth synergies: Ambush (Archery), Lore of Silence (Lore)
 - Note: Smithing tree complete from Alpha 0.2.0
 
-### Next Steps
-1. MEL-001: Research Melee precedents in Third Age
-2. Continue through all skill trees per PRD
+### 2026-01-09 - MEL-001 to MEL-006 Complete
+- Researched Third Age melee precedents
+- Audited all 14 Melee abilities against design principles
+- Changed 5 abilities:
+  - Impale -> Opening Strike (stealth synergy)
+  - Whirlwind Attack -> Controlled Fury (reduced scope)
+  - Smite -> Mighty Blow (changed to +Str bonus)
+  - Two Weapon Fighting -> Defensive Stance (no Tolkien dual-wield)
+  - Rapid Attack -> Swift Strikes (one-handed requirement)
+- Committed changes
+
+### 2026-01-09 - ARC-001 to ARC-006 Complete
+- Audited all 9 Archery abilities
+- Changed 1 ability: Versatility -> Keen Eyes
+- Committed changes
+
+### 2026-01-09 - EVN-001 to EVN-006 Complete
+- Audited all 11 Evasion abilities
+- NO CHANGES NEEDED - excellent Third Age design
+- Committed documentation
+
+### 2026-01-09 - STL-001 to STL-006 Complete
+- Audited all 7 Stealth abilities (CORE TREE)
+- Changed 3 abilities:
+  - Cruel Blow -> Disorienting Strike (crits confuse)
+  - Exchange Places -> Escape Artist (break free, traps don't alert)
+  - Opportunist -> Light Fingers (burglar theft)
+- Committed changes
+
+### 2026-01-09 - PER-001 to PER-006 Complete
+- Audited all 10 Perception abilities
+- Changed 1 ability: Quick Study -> Natural Talent
+- User noted future expansion for "tactical omniscience" vision
+- Committed changes
+
+### 2026-01-09 - WIL-001 to WIL-006 Complete
+- Audited all 11 Will abilities
+- Changed 2 abilities:
+  - Channeling -> Force of Will (renamed)
+  - Inner Light -> Defy Death (replaced duplicate)
+- Committed changes
+
+### 2026-01-09 - LOR-001 to LOR-006 Complete
+- Audited all 14 Lore abilities
+- NO CHANGES NEEDED - exemplary Third Age design
+- Tree is template for future ability design
+- Committed documentation
+
+### 2026-01-09 - SYN-001 to SYN-003 Complete
+- SYN-001: Stealth synergy audit - all trees validated
+- SYN-002: Archetype validation - 8 emergent builds validated
+- SYN-003: Power scale validation - Third Age cap respected
+- Committed validation documents
+
+### 2026-01-09 - FINAL-001 to FINAL-002 Complete
+- Created Alpha 0.3.0 release notes
+- Tagged v0.3.0-alpha
+
+## Summary
+
+**Total Changes**: 12 abilities modified across 5 trees
+- Melee: 5 changes
+- Archery: 1 change
+- Evasion: 0 changes (already excellent)
+- Stealth: 3 changes
+- Perception: 1 change
+- Will: 2 changes
+- Lore: 0 changes (exemplary)
+- Smithing: 0 changes (completed in 0.2.0)
+
+**All Design Principles Validated**:
+1. Third Age power cap: PASS
+2. Stealth universal: PASS (all trees have synergies)
+3. Emergent archetypes: PASS (8 builds validated)
+4. Tolkien precedent: PASS (all abilities traced)
+5. Interesting choices: PASS
+
+## PROJECT COMPLETE - Alpha 0.3.0
