@@ -62,28 +62,6 @@ D: protection of the Lady Galadriel. They are secretive and seldom
 D: seen, preferring the shadows of the mallorn trees. Their archery
 D: is legendary, and their grace unmatched among the Free Peoples.
 
-# - Rivendell Elf:
-#   - The Elves of Imladris
-#   - Stat modifiers -1 +1 +2 +2 (Total: +4)
-#   - Smithing affinity = a bonus when smithing
-#   - Heirs to Noldorin craft traditions
-
-N:4:Rivendell Elf
-S:-1:1:2:2
-I:1:100:3000
-H:72:3
-W:145:8
-C:0|1|2
-F:BOW_PROFICIENCY | SMT_AFFINITY
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:37:3:3    # , Fragment of Lembas (3)
-E:23:7:1:1     # | Curved sword (1)
-D:The Elves of Rivendell are heirs to the craft traditions of the
-D: Noldor who crossed the sea in ages past. Elrond's house preserves
-D: the lore of Celebrimbor, greatest of the Elven-smiths. They are
-D: hardier than their Lothlorien kin, and their forges still produce
-D: works of surpassing beauty. They remember the art of ring-making.
-
 # - Man:
 #   - The mortal men of the Third Age
 #   - Stat modifiers +1 0 +1 0 (Total: +2)
@@ -155,5 +133,27 @@ D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This
 D: form is for playtesting only - the Necromancer himself
 D: trembles before their might.
+
+# - Rivendell Elf:
+#   - The Elves of Imladris
+#   - Stat modifiers -1 +1 +2 +2 (Total: +4)
+#   - Smithing affinity = a bonus when smithing
+#   - Heirs to Noldorin craft traditions
+
+N:4:Rivendell Elf
+S:-1:1:2:2
+I:1:100:3000
+H:72:3
+W:145:8
+C:0|1|2
+F:BOW_PROFICIENCY | SMT_AFFINITY
+E:39:0:3:3     # ~ Wooden Torches (3)
+E:80:37:3:3    # , Fragment of Lembas (3)
+E:23:7:1:1     # | Curved sword (1)
+D:The Elves of Rivendell are heirs to the craft traditions of the
+D: Noldor who crossed the sea in ages past. Elrond's house preserves
+D: the lore of Celebrimbor, greatest of the Elven-smiths. They are
+D: hardier than their Lothlorien kin, and their forges still produce
+D: works of surpassing beauty. They remember the art of ring-making.
 
 
