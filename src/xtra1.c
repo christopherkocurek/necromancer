@@ -519,6 +519,90 @@ static void prt_sp(void)
 }
 
 /*
+ * Get current threat level based on depth
+ */
+static int get_threat_level(void)
+{
+    /* Pursuit mode override */
+    if (p_ptr->on_the_run) return THREAT_HUNTED;
+
+    /* Depth-based threat */
+    if (p_ptr->depth <= 3)  return THREAT_LOW;
+    if (p_ptr->depth <= 6)  return THREAT_GUARDED;
+    if (p_ptr->depth <= 9)  return THREAT_ELEVATED;
+    if (p_ptr->depth <= 12) return THREAT_HIGH;
+    if (p_ptr->depth <= 15) return THREAT_SEVERE;
+    if (p_ptr->depth <= 18) return THREAT_CRITICAL;
+    return THREAT_DOOM;
+}
+
+/*
+ * Get color for threat level
+ */
+static byte get_threat_color(int threat)
+{
+    switch (threat)
+    {
+        case THREAT_LOW:      return TERM_GREEN;
+        case THREAT_GUARDED:  return TERM_YELLOW;
+        case THREAT_ELEVATED: return TERM_ORANGE;
+        case THREAT_HIGH:     return TERM_L_RED;
+        case THREAT_SEVERE:   return TERM_RED;
+        case THREAT_CRITICAL: return TERM_UMBER;
+        case THREAT_DOOM:     return TERM_VIOLET;
+        case THREAT_HUNTED:   return TERM_L_RED;
+        default:              return TERM_WHITE;
+    }
+}
+
+/*
+ * Get label for threat level
+ */
+static cptr get_threat_label(int threat)
+{
+    switch (threat)
+    {
+        case THREAT_LOW:      return "Low";
+        case THREAT_GUARDED:  return "Guard";
+        case THREAT_ELEVATED: return "Elev";
+        case THREAT_HIGH:     return "High";
+        case THREAT_SEVERE:   return "Severe";
+        case THREAT_CRITICAL: return "Crit";
+        case THREAT_DOOM:     return "Doom";
+        case THREAT_HUNTED:   return "HUNTED!";
+        default:              return "???";
+    }
+}
+
+/*
+ * Display the threat indicator
+ */
+static void prt_threat(void)
+{
+    int threat = get_threat_level();
+    byte color = get_threat_color(threat);
+    cptr label = get_threat_label(threat);
+    char buf[13];
+
+    /* Handle HUNTED flash effect */
+    if (threat == THREAT_HUNTED)
+    {
+        /* Alternate color every other turn */
+        if (turn % 2 == 0)
+            color = TERM_WHITE;
+    }
+
+    /* Format: "Threat:Label" (max 12 chars) */
+    strnfmt(buf, sizeof(buf), "Threat:%-5s", label);
+
+    /* Clear the row first */
+    put_str("            ", ROW_THREAT, COL_THREAT);
+
+    /* Display with color */
+    c_put_str(color, buf, ROW_THREAT, COL_THREAT);
+}
+
+/*
  * Prints player's current song (if any)
  */
 static void prt_song(void)
@@ -1195,6 +1279,9 @@ static void prt_frame_basic(void)
 
     /* Spellpoints */
     prt_sp();
+
+    /* Threat indicator */
+    prt_threat();
 
     /* Melee */
     prt_mel();
