@@ -754,7 +754,7 @@ P:0:0d0:0:0d0
 F:SEE_INVIS | SUST_GRA | EASY_KNOW
 F:IGNORE_ALL | NO_SMITHING
 D:A crystal phial filled with the light of Earendil's star, blessed
-D: by the Lady of Lothlorien. You can equip it as a light source with
+D: by the Lady of Lothlórien. You can equip it as a light source with
 D: a radius of 7 squares. It will shine forever.
 
 ##### Amulets #####
@@ -1602,7 +1602,7 @@ W:12:0:1:500
 P:0:0d0:0:0d0
 A:12/8:18/4
 F:EASY_KNOW
-D:The kingsfoil, a powerful healing herb known to the Dunedain.
+D:The kingsfoil, a powerful healing herb known to the Dúnedain.
 D: It cures poison, fear, confusion, and hallucination, and restores
 D: a quarter of your health. It is especially potent against the
 D: shadow-sickness of Dol Guldur. Herbs provide nourishment for about

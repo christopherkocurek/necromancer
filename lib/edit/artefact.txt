@@ -1956,7 +1956,7 @@ D: life force, and the darkness seeps into their soul.
 
 
 ## The Mantle of Stars
-## Third Age - Lothlorien masterwork
+## Third Age - Lothlórien masterwork
 
 N:204:'Mantle of Stars'
 G:(:B
@@ -1965,7 +1965,7 @@ W:18:25:15:60000
 P:0:0d0:2:1d0
 F:STEALTH | GRA | LIGHT | FREE_ACT
 D:A cloak of deepest blue sewn with gems that gleam like
-D: stars. It is the finest work of the weavers of Lothlorien,
+D: stars. It is the finest work of the weavers of Lothlórien,
 D: and those who wear it walk with the grace of the Eldar.
 
 
@@ -2038,10 +2038,10 @@ D: They grant stealth and the ability to see hidden
 D: things, but at a cost to the wearer's vitality.
 
 
-## The Pair of Boots of Lothlorien
+## The Pair of Boots of Lothlórien
 ## Third Age - Elven craft
 
-N:210:of Lothlorien
+N:210:of Lothlórien
 I:30:1:1
 W:10:15:15:30000
 P:0:0d0:1:1d1
@@ -2207,7 +2207,7 @@ D: those you strike, but it slowly devours its wearer.
 
 
 ## The Star of the North
-## Third Age - Dunedain heirloom
+## Third Age - Dúnedain heirloom
 
 N:222:'Star of the North'
 I:40:16:3
@@ -2215,7 +2215,7 @@ W:18:25:1:70000
 P:0:0d0:0:0d0
 F:WILL | GRA | LIGHT | RES_FEAR | RES_COLD
 F:INSTA_ART
-D:A jewel of the Dunedain, a lesser echo of the
+D:A jewel of the Dúnedain, a lesser echo of the
 D: Elendilmir. It shines with cold clear light
 D: and gives courage against the terrors of darkness.
 
