@@ -2525,28 +2525,28 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
             }
 
             /* Poison stream */
-            case '~':
+            case '=':
             {
                 cave_set_feat(y, x, FEAT_POISON_STREAM);
                 break;
             }
 
             /* Vine floor */
-            case 'v':
+            case '-':
             {
                 cave_set_feat(y, x, FEAT_VINE_FLOOR);
                 break;
             }
 
             /* Tangled roots */
-            case 'r':
+            case '|':
             {
                 cave_set_feat(y, x, FEAT_TANGLED_ROOTS);
                 break;
             }
 
             /* Forest floor */
-            case 'f':
+            case '_':
             {
                 cave_set_feat(y, x, FEAT_FOREST_FLOOR);
                 break;
