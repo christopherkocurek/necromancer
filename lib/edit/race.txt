@@ -123,7 +123,9 @@ H:72:3
 W:160:10
 C:0|1|2
 F:BOW_PROFICIENCY | SWORD_PROFICIENCY | AXE_PROFICIENCY
-E:39:0:5:5       # ~ Wooden Torches (5)
+E:39:8:1:1       # ~ Feanorian Lamp (1) - light source
+E:66:3:1:1       # ? Horn of Blasting (1)
+E:80:37:10:10    # , Fragment of Lembas (10)
 E:23:17:1:1      # | Long Sword (1) - equipped
 E:23:1:10:10     # | Broken Glowing Weapon (10)
 E:37:1:10:10     # [ Broken Glowing Armor (10)
