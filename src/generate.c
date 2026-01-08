@@ -3508,6 +3508,108 @@ void make_patches_of_sunlight()
 }
 
 /*
+ * Count adjacent floor tiles for terrain placement
+ */
+static int count_adjacent_floors(int y, int x)
+{
+    int count = 0;
+    int d;
+
+    for (d = 0; d < 8; d++)
+    {
+        int ny = y + ddy_ddd[d];
+        int nx = x + ddx_ddd[d];
+
+        if (cave_floor_bold(ny, nx))
+            count++;
+    }
+
+    return count;
+}
+
+/*
+ * Create poison streams flowing through level
+ */
+static void make_poison_streams(void)
+{
+    int streams = (p_ptr->depth == 1) ? (1 + one_in_(2)) : one_in_(2);
+    int i, y, x, length;
+
+    for (i = 0; i < streams; i++)
+    {
+        /* Start at random floor position */
+        y = rand_range(5, p_ptr->cur_map_hgt - 5);
+        x = rand_range(5, p_ptr->cur_map_wid - 5);
+
+        length = rand_range(15, 40);
+
+        while (length > 0)
+        {
+            if (cave_feat[y][x] == FEAT_FLOOR)
+            {
+                cave_set_feat(y, x, FEAT_POISON_STREAM);
+            }
+
+            /* Wander */
+            y += rand_range(-1, 1);
+            x += rand_range(-1, 1);
+
+            /* Bounds */
+            if (y < 1 || y >= p_ptr->cur_map_hgt - 1) break;
+            if (x < 1 || x >= p_ptr->cur_map_wid - 1) break;
+
+            length--;
+        }
+    }
+}
+
+/*
+ * Apply forest terrain to Layer 1 (depths 1-3)
+ */
+static void make_forest_terrain(void)
+{
+    int y, x;
+    int vine_chance = 25 - (p_ptr->depth * 5);   /* 20, 15, 10% */
+    int root_chance = 14 - (p_ptr->depth * 2);   /* 12, 10, 8% */
+
+    if (p_ptr->depth > 3) return;
+
+    /* Convert terrain */
+    for (y = 1; y < p_ptr->cur_map_hgt - 1; y++)
+    {
+        for (x = 1; x < p_ptr->cur_map_wid - 1; x++)
+        {
+            /* Skip protected areas */
+            if (cave_info[y][x] & (CAVE_ICKY)) continue;
+
+            /* Vine floor */
+            if (cave_feat[y][x] == FEAT_FLOOR)
+            {
+                if (rand_int(100) < vine_chance)
+                {
+                    cave_set_feat(y, x, FEAT_VINE_FLOOR);
+                }
+            }
+
+            /* Tangled roots (edge walls only) */
+            if (cave_feat[y][x] == FEAT_WALL_EXTRA)
+            {
+                if (rand_int(100) < root_chance)
+                {
+                    if (count_adjacent_floors(y, x) > 0)
+                    {
+                        cave_set_feat(y, x, FEAT_TANGLED_ROOTS);
+                    }
+                }
+            }
+        }
+    }
+
+    /* Add poison streams */
+    make_poison_streams();
+}
+
+/*
  * Generate a new dungeon level
  *
  * Note that "dun_body" adds about 4000 bytes of memory to the stack.
@@ -3699,6 +3801,12 @@ static bool cave_gen(void)
     {
         // pick some number of monsters (between 0.5 per room and 1 per room)
         mon_gen = (dun->cent_n + dieroll(dun->cent_n)) / 2;
+    }
+
+    /* Apply Layer 1 forest terrain (depths 1-3) */
+    if (p_ptr->depth <= 3)
+    {
+        make_forest_terrain();
     }
 
     // check dungeon connectivity
