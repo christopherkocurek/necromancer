@@ -5258,6 +5258,38 @@ void move_player(int dir)
             msg_print("You step out of the sunlight.");
         }
 
+        /* Check for poison stream */
+        if (cave_feat[y][x] == FEAT_POISON_STREAM)
+        {
+            msg_print("You wade through the poisoned stream.");
+
+            /* Check for poison resistance */
+            if (!p_ptr->resist_pois)
+            {
+                /* Constitution check vs difficulty 10 */
+                if (skill_check(PLAYER, p_ptr->stat_use[A_CON], 10, NULL) <= 0)
+                {
+                    if (!p_ptr->poisoned)
+                    {
+                        msg_print("The tainted water sickens you!");
+                        set_poisoned(p_ptr->poisoned + 10 + damroll(2, 10));
+                    }
+                }
+            }
+        }
+
+        /* Check for vine floor - message on entry and slow movement */
+        if (cave_feat[y][x] == FEAT_VINE_FLOOR)
+        {
+            if (cave_feat[py][px] != FEAT_VINE_FLOOR)
+            {
+                msg_print("You push through tangled vines.");
+            }
+
+            /* Vine floor increases movement cost by 50% */
+            p_ptr->energy_use = (p_ptr->energy_use * 3) / 2;
+        }
+
         /* New location */
         y = py = p_ptr->py;
         x = px = p_ptr->px;

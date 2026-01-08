@@ -996,6 +996,14 @@ static void prt_terrain(void)
     {
         c_put_str(TERM_YELLOW, "Sunlight", ROW_TERRAIN, COL_TERRAIN);
     }
+    else if (cave_feat[p_ptr->py][p_ptr->px] == FEAT_POISON_STREAM)
+    {
+        c_put_str(TERM_L_GREEN, "Poison", ROW_TERRAIN, COL_TERRAIN);
+    }
+    else if (cave_feat[p_ptr->py][p_ptr->px] == FEAT_VINE_FLOOR)
+    {
+        c_put_str(TERM_GREEN, "Vines", ROW_TERRAIN, COL_TERRAIN);
+    }
     else
     {
         put_str("        ", ROW_TERRAIN, COL_TERRAIN);
