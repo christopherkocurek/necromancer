@@ -482,3 +482,25 @@ G:<:D
 
 N:83:narrow shaft down
 G:>:D
+
+# Layer 1 Forest Breach Terrain
+
+# 0x54 --> poison stream (Layer 1 hazard)
+
+N:84:poison stream
+G:~:G
+
+# 0x55 --> tangled roots (Layer 1 wall variant)
+
+N:85:tangled roots
+G:#:u
+
+# 0x56 --> vine floor (Layer 1 floor variant)
+
+N:86:vine floor
+G:.:g
+
+# 0x57 --> forest floor (Layer 1 decorative)
+
+N:87:forest floor
+G:.:u

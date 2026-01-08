@@ -1053,6 +1053,12 @@
 #define FEAT_FORGE_UNIQUE_HEAD 0x4C /*  */
 #define FEAT_FORGE_UNIQUE_TAIL 0x4F /*  */
 
+/* Layer 1 Forest Breach Terrain */
+#define FEAT_POISON_STREAM  0x54  /* 84 - Poisons on entry */
+#define FEAT_TANGLED_ROOTS  0x55  /* 85 - Blocks move, allows sight/projectiles */
+#define FEAT_VINE_FLOOR     0x56  /* 86 - Slows movement 50% */
+#define FEAT_FOREST_FLOOR   0x57  /* 87 - Decorative brown floor */
+
 // Vaults
 #define MAX_GREATER_VAULTS 8
 
