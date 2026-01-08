@@ -6035,7 +6035,7 @@ void reforge_menu(void)
     {
         msg_print("Reforge into what type?");
         msg_print("  Weapons: (s)word, (p)olearm, (h)afted, (b)ow");
-        msg_print("  Armor: (m)ail, (l)ight armor, s(h)ield, hel(M), (c)loak, (g)loves, boo(t)s");
+        msg_print("  Armor: (m)ail, (l)ight armor, sh(i)eld, hel(M), (c)loak, (g)loves, boo(t)s");
         ch = inkey();
     }
     else if (weapon_count >= 2)
@@ -6045,7 +6045,7 @@ void reforge_menu(void)
     }
     else
     {
-        msg_print("Reforge into: (m)ail, (l)ight, s(H)ield, hel(M), (c)loak, (g)loves, boo(t)s?");
+        msg_print("Reforge into: (m)ail, (l)ight, sh(i)eld, hel(M), (c)loak, (g)loves, boo(t)s?");
         ch = inkey();
     }
 
@@ -6076,7 +6076,7 @@ void reforge_menu(void)
             k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
             tval = TV_SOFT_ARMOR;
             break;
-        case 'H':
+        case 'i': case 'I':
             k_idx_broken = K_IDX_BROKEN_GLOWING_ARMOR;
             tval = TV_SHIELD;
             break;
