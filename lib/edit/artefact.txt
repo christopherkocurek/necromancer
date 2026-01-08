@@ -194,7 +194,7 @@ D: of Durin's Bane, and carries still the majesty of that realm.
 #################################################################
 
 
-## The Robe of Radagast
+## The Wanderer's Robe of Radagast
 ## Third Age - Wizard
 
 N:20:of Radagast
@@ -207,7 +207,7 @@ D: wizard of Rhosgobel. It offers protection against the
 D: venoms and poisons of the creatures he tends.
 
 
-## The Robe of Galadriel
+## The Wanderer's Robe of Galadriel
 ## Third Age
 
 N:21:of Galadriel
@@ -234,7 +234,7 @@ D: yet warm as fur. Those who wear it move with the
 D: swiftness of the Eldar.
 
 
-## The Leather Armour of the Ranger
+## The Ranger Leathers of the Ranger
 ## Third Age - Dúnedain
 ## (ability 3/3 is Exchange Places)
 
@@ -249,7 +249,7 @@ D: It has seen many miles and many battles against
 D: the servants of the Enemy.
 
 
-## The Leather Armour of Halbarad
+## The Ranger Leathers of Halbarad
 ## Third Age - Ranger chieftain
 
 N:25:of Halbarad
@@ -277,7 +277,7 @@ D: Those who wear it learn to fight as they do,
 D: using the forest itself as a weapon.
 
 
-## The Studded Leather of Bard
+## The Scout's Armor of Bard
 ## Third Age - Dale
 ## (ability 5/4 is Inner Light)
 
@@ -292,7 +292,7 @@ D: when he slays Smaug the Golden. For now, it waits
 D: in darkness for its destined bearer.
 
 
-## The Studded Leather of the Beornings
+## The Scout's Armor of the Beornings
 ## Third Age - Beorn's folk
 ## (ability 4/3 is Concentration)
 
@@ -307,7 +307,7 @@ D: Mirkwood and the Misty Mountains. It grants the
 D: wearer something of their fierce determination.
 
 
-## The Galvorn Armour of Eöl
+## The Shadow-steel Armor of Eöl
 ## First Age but survived - appropriate
 ## (automatic drop -- don't move)
 
@@ -328,7 +328,7 @@ D: since then, none of them clean.
 #################################################################
 
 
-## The Mail Corslet of Thranduil
+## The Gondor Corslet of Thranduil
 ## Third Age - Greenwood
 
 N:34:of Thranduil
@@ -341,7 +341,7 @@ D: of silver steel and set with green gems. It has turned
 D: many a spider's fang and orc's blade.
 
 
-## The Mail Corslet of Dáin
+## The Gondor Corslet of Dáin
 ## Third Age - Iron Hills
 
 N:35:of Dáin
@@ -368,7 +368,7 @@ D: as dragon-scales. Such shirts are beyond price, for the
 D: art of their making is all but lost.
 
 
-## The Hauberk of the Tower Guard
+## The Dwarven Hauberk of the Tower Guard
 ## Third Age - Gondor
 
 N:37:of the Tower Guard
@@ -381,7 +381,7 @@ D: of the Citadel of Minas Tirith. Those who wear it
 D: stand firm against any foe.
 
 
-## The Mail Corslet of Celeborn
+## The Gondor Corslet of Celeborn
 ## Third Age - Lothlórien
 ## (ability 2/3 is Crowd Fighting)
 
@@ -396,7 +396,7 @@ D: rings that gleam with the light of Telperion. It
 D: grants strength to stand against many foes.
 
 
-## The Hauberk of Elendil
+## The Dwarven Hauberk of Elendil
 ## Second Age but heirloom
 
 N:40:of Elendil
@@ -430,7 +430,7 @@ D: blessing of Elbereth herself.
 #################################################################
 
 
-## The Round Shield of the Mark
+## The Buckler of the Mark
 ## Third Age - Rohan
 
 N:42:of the Mark
@@ -443,7 +443,7 @@ D: field. Those who carry it ride to battle with courage
 D: undimmed by darkness.
 
 
-## The Round Shield of Glorfindel
+## The Buckler of Glorfindel
 ## Glorfindel returned in Second Age - appropriate
 ## (ability 0/4 is Charge)
 
@@ -472,7 +472,7 @@ D: the North Kingdom. Many enchantments are woven
 D: into its worn surface.
 
 
-## The Kite Shield of Dale
+## The Tower Shield of Dale
 ## Third Age - Dale
 
 N:45:of Dale
@@ -485,7 +485,7 @@ D:A shield of Dale, forged to withstand dragonfire.
 D: It bears the raven standard of that city.
 
 
-## The Kite Shield of Gil-galad
+## The Tower Shield of Gil-galad
 ## Second Age but legendary
 
 N:46:of Gil-galad
@@ -547,7 +547,7 @@ D: wounded by it sicken and fade, becoming wraiths themselves.
 D: To wield it is to invite darkness into your soul.
 
 
-## The Dagger 'Sting'
+## The Ranger's Knife 'Sting'
 ## Third Age - Bilbo will find this later
 
 N:53:'Sting'
@@ -561,7 +561,7 @@ D: It will one day be found by a hobbit in a troll's
 D: cave, but for now it lies in Sauron's hoard.
 
 
-## The Dagger 'Narsil Shard'
+## The Ranger's Knife 'Narsil Shard'
 ## Third Age - broken sword piece
 
 N:54:'Narsil Shard'
@@ -575,7 +575,7 @@ D: fragment of the blade that cut the Ring from Sauron's hand
 D: burns with light hateful to the servants of darkness.
 
 
-## The Curved Sword of Harad
+## The Orc-blade of Harad
 ## Third Age - enemy weapon
 
 N:55:of Harad
@@ -588,7 +588,7 @@ D: Its edge is keen but its purpose is cruel, turned always
 D: against the Free Peoples.
 
 
-## The Curved Sword of the Corsairs
+## The Orc-blade of the Corsairs
 ## Third Age - Umbar
 
 N:56:of the Corsairs
@@ -600,7 +600,7 @@ D:A blade of the Corsairs of Umbar, enemies of Gondor.
 D: It has drunk deeply of blood and hungers for more.
 
 
-## The Shortsword of Haldir
+## The Woodland Blade of Haldir
 ## Third Age - Lothlórien
 
 N:58:of Haldir
@@ -613,7 +613,7 @@ D: guards the borders of the Golden Wood against all
 D: servants of the Enemy.
 
 
-## The Shortsword 'Westernesse'
+## The Woodland Blade 'Westernesse'
 ## Third Age - Dúnedain blade
 
 N:59:'Westernesse'
@@ -626,7 +626,7 @@ D: Dúnedain were mighty. Such blades are deadly to the
 D: servants of Sauron, especially the undead.
 
 
-## The Shortsword of the Grey Company
+## The Woodland Blade of the Grey Company
 ## Third Age - Rangers
 ## (ability 2/8 is Riposte)
 
@@ -695,7 +695,7 @@ D: Sauron's hand but was betrayed by it. It carries both
 D: his strength and his doom.
 
 
-## The Bastard Sword of Gondor
+## The Rohirrim Blade of Gondor
 ## Third Age
 
 N:71:of Gondor
@@ -709,7 +709,7 @@ D: of the White Tree. It has defended the West against
 D: Sauron's servants for generations.
 
 
-## The Bastard Sword 'Gúthwinë'
+## The Rohirrim Blade 'Gúthwinë'
 ## Third Age - Éomer's blade
 
 N:72:'Gúthwinë'
@@ -723,7 +723,7 @@ D: It will one day be wielded by Éomer, but now it
 D: waits for its destined bearer.
 
 
-## The Greatsword 'Herugrim'
+## The Númenórean Blade 'Herugrim'
 ## Third Age - Théoden's blade
 ## (automatic drop -- don't move)
 
@@ -738,7 +738,7 @@ D: "Fierce-sword." It has been long unused, but its
 D: edge remains sharp and its purpose true.
 
 
-## The Greatsword of the Witch-Realm
+## The Númenórean Blade of the Witch-Realm
 ## Third Age - Angmar
 
 N:75:of the Witch-Realm
@@ -751,7 +751,7 @@ D: It was forged to slay the living, but its bearer
 D: is haunted by the spirits of those it has slain.
 
 
-## The Greatsword 'Flame of the West'
+## The Númenórean Blade 'Flame of the West'
 ## Third Age namesake
 
 N:76:'Flame of the West'
@@ -766,7 +766,7 @@ D: to fight the cold servants of the Enemy. Its light
 D: is a beacon of hope, but its heat consumes the weak.
 
 
-## The Mithril Longsword 'Ringil'
+## The Mithril Sword 'Ringil'
 ## First Age - Fingolfin's blade (legendary)
 
 N:80:'Ringil'
@@ -779,7 +779,7 @@ D: It gleams like ice and burns with cold. Such a weapon
 D: in Sauron's hoard is a great prize indeed.
 
 
-## The Mithril Longsword 'Aiglos'
+## The Mithril Sword 'Aiglos'
 ## Second Age - Gil-galad's spear (renamed to sword here)
 
 N:81:'Aiglos'
@@ -792,7 +792,7 @@ D: for the cold light that plays along its edge. None
 D: could stand before it at the Battle of Dagorlad.
 
 
-## The Mithril Greatsword of the Eldar
+## The Mithril Great-blade of the Eldar
 ## Elven craftsmanship
 
 N:83:of the Eldar
@@ -810,7 +810,7 @@ D: of the Shadow.
 #################################################################
 
 
-## The Spear 'Aeglos'
+## The Hunting Spear 'Aeglos'
 ## Second Age - Gil-galad's weapon (proper version)
 
 N:85:'Aeglos'
@@ -824,7 +824,7 @@ D: in the songs of Elves. Orcs and trolls feared its
 D: icy gleam at the Last Alliance.
 
 
-## The Spear of the Eorlingas
+## The Hunting Spear of the Eorlingas
 ## Third Age - Rohan
 ## (automatic drop -- don't move)
 
@@ -841,7 +841,7 @@ D: The Riders of the Mark are famed throughout
 D: Middle-earth for their mounted warfare.
 
 
-## The Spear of the Galadhrim
+## The Hunting Spear of the Galadhrim
 ## Third Age - Lothlórien
 
 N:87:of the Galadhrim
@@ -855,7 +855,7 @@ D: It gleams with pale light and strikes true
 D: against the enemies of the Golden Wood.
 
 
-## The Great Spear of Erebor
+## The Tower Guard Spear of Erebor
 ## Third Age - Dwarven
 
 N:89:of Erebor
@@ -868,7 +868,7 @@ D: made to pierce dragon-scale. It awaits the day
 D: when the Mountain will be reclaimed.
 
 
-## The Great Spear of Morgul
+## The Tower Guard Spear of Morgul
 ## Third Age - Enemy weapon
 
 N:90:of Morgul
@@ -883,7 +883,7 @@ D: is touched with the sorcery of the Nazgûl, and wounds
 D: from it fester with dark magic.
 
 
-## The Hand Axe of the Beornings
+## The Woodsman's Axe of the Beornings
 ## Third Age
 
 N:92:of the Beornings
@@ -896,7 +896,7 @@ D: It has split many an orc-helm and wolf-skull
 D: in defense of their lands.
 
 
-## The Battle Axe of the Iron Hills
+## The Dwarven War-axe of the Iron Hills
 ## Third Age - Dwarven
 
 N:93:of the Iron Hills
@@ -909,7 +909,7 @@ D: war against orcs and trolls. Its weight is terrible
 D: and its edge never dulls.
 
 
-## The Battle Axe of Azanulbizar
+## The Dwarven War-axe of Azanulbizar
 ## Third Age - famous battle
 
 N:94:of Azanulbizar
@@ -922,7 +922,7 @@ D: where the dwarves avenged Thrór's death. It is stained
 D: with orc-blood that will never wash clean.
 
 
-## The Great Axe of Durin's Folk
+## The Erebor Great-axe of Durin's Folk
 ## Third Age - Dwarven heirloom
 
 N:95:of Durin's Folk
@@ -936,7 +936,7 @@ D: before its fall. It carries the strength and stubborn
 D: courage of the dwarves.
 
 
-## The Great Axe 'Baruk Khazâd'
+## The Erebor Great-axe 'Baruk Khazâd'
 ## Dwarvish battle-cry
 ## (ability 5/8 is Vengeance)
 
@@ -951,7 +951,7 @@ D: the battle-cry of Durin's Folk etched into its blade.
 D: It hungers for vengeance against the servants of darkness.
 
 
-## The Glaive of Gondor
+## The Morgul Glaive of Gondor
 ## Third Age
 
 N:99:of Gondor
@@ -964,7 +964,7 @@ D: etched with the White Tree. It has defended
 D: the realm for many generations.
 
 
-## The Glaive of the Woodland Realm
+## The Morgul Glaive of the Woodland Realm
 ## Third Age - Mirkwood
 ## (ability 3/4 is Opportunist)
 ## (ability 0/9 is Zone of Control)
@@ -980,7 +980,7 @@ D: the great spiders of Mirkwood. Its long reach helps
 D: keep the venomous creatures at bay.
 
 
-## The Glaive 'Spider-bane'
+## The Morgul Glaive 'Spider-bane'
 ## Third Age - Mirkwood
 
 N:101:'Spider-bane'
@@ -998,7 +998,7 @@ D: spider-flesh and grants resistance to their venom.
 #################################################################
 
 
-## The Quarterstaff of Gandalf
+## The Oak Staff of Gandalf
 ## Third Age - Wizard's staff
 ## (ability 7/2 is Song of Freedom)
 
@@ -1013,7 +1013,7 @@ D: It is the staff of Gandalf the Grey, and has seen him
 D: through many perils.
 
 
-## The War Hammer of the Longbeards
+## The Dwarven Hammer of the Longbeards
 ## Third Age - Dwarven
 ## (ability 6/5 is Artifice)
 
@@ -1028,7 +1028,7 @@ D: and battle. Its head rings like a bell when it strikes
 D: and its blows shatter stone.
 
 
-## The War Hammer of Nogrod
+## The Dwarven Hammer of Nogrod
 ## First Age origin but survived
 
 N:108:of Nogrod
@@ -1046,7 +1046,7 @@ D: who slew Thingol and stole the Silmaril.
 #################################################################
 
 
-## The Mattock of Khazad-dûm
+## The Dwarf Mattock of Khazad-dûm
 ## Third Age namesake
 
 N:114:of Khazad-dûm
@@ -1064,7 +1064,7 @@ D: was used to mine the mithril that made Khazad-dûm rich.
 #################################################################
 
 
-## The Helm of Elrond
+## The Iron Helm of Elrond
 ## Third Age
 
 N:117:of Elrond
@@ -1077,7 +1077,7 @@ D: and set with a single white gem. It grants wisdom
 D: and healing to its wearer.
 
 
-## The Helm of the Dúnedain
+## The Iron Helm of the Dúnedain
 ## Third Age - Rangers
 ## (ability 4/7 is Listen)
 
@@ -1092,7 +1092,7 @@ D: and listen in the wild. Those who wear it become
 D: aware of danger before it strikes.
 
 
-## The Helm of the Oathbreaker
+## The Iron Helm of the Oathbreaker
 ## Third Age - cursed
 ## (ability 5/8 is Vengeance)
 
@@ -1107,7 +1107,7 @@ D: Dunharrow. Those who broke their oath to Isildur
 D: cannot rest until they fulfill it.
 
 
-## The Great Helm of the Dragonslayer
+## The Tower Helm of the Dragonslayer
 ## Third Age
 
 N:120:of the Dragonslayer
@@ -1120,7 +1120,7 @@ D: courage to face dragonfire and strength to wield
 D: the weapons needed to pierce dragon-scale.
 
 
-## The Great Helm of Angmar
+## The Tower Helm of Angmar
 ## Third Age - Witch-king's realm
 
 N:121:of Angmar
@@ -1171,7 +1171,7 @@ D: against the powers of darkness.
 #################################################################
 
 
-## The Cloak of Lothlórien
+## The Traveler's Cloak of Lothlórien
 ## Third Age - Elven-cloak
 ## (ability 7/7 is Song of the Trees)
 
@@ -1187,7 +1187,7 @@ D: Lothlórien. It shifts and changes color to match
 D: its surroundings, hiding the wearer from unfriendly eyes.
 
 
-## The Cloak of Elrond
+## The Traveler's Cloak of Elrond
 ## Third Age
 
 N:132:of Elrond
@@ -1253,7 +1253,7 @@ D: But beware: such deceptions carry their own price.
 #################################################################
 
 
-## The Shortbow of Lothlórien
+## The Silvan Bow of Lothlórien
 ## Third Age
 ## (ability 1/3 is Ambush)
 
@@ -1268,7 +1268,7 @@ D: It grants its wielder the keen sight of the elves
 D: and the ability to strike from concealment.
 
 
-## The Shortbow 'Death's Whisper'
+## The Silvan Bow 'Death's Whisper'
 ## Third Age
 ## (ability 1/6 is Crippling Shot)
 
@@ -1343,7 +1343,7 @@ D: his jeweled armor.
 #################################################################
 
 
-## The Pair of Boots of Elrond
+## The Traveler's Boots of Elrond
 ## Third Age
 
 N:154:of Elrond
@@ -1356,7 +1356,7 @@ D: long roads. They grant swiftness and sure-footedness
 D: to their wearer.
 
 
-## The Pair of Boots of the Ranger
+## The Traveler's Boots of the Ranger
 ## Third Age - Dúnedain
 ## (ability 4/8 is Master Hunter)
 
@@ -1371,7 +1371,7 @@ D: and stalking in the wild. They leave little trace
 D: and help their wearer move in silence.
 
 
-## The Pair of Boots of the Burglar
+## The Traveler's Boots of the Burglar
 ## Third Age - hint at Bilbo
 ## (ability 2/0 is Dodging)
 ## (ability 3/5 is Vanish)
@@ -1386,7 +1386,7 @@ D: They make no sound and help their wearer
 D: disappear when danger threatens.
 
 
-## The Pair of Greaves of Gondor
+## The Iron Greaves of Gondor
 ## Third Age
 
 N:158:of Gondor
@@ -1399,7 +1399,7 @@ D: firm against the charges of the Enemy. They grant
 D: sure footing and steady nerves.
 
 
-## The Pair of Greaves of the Helcaraxë
+## The Iron Greaves of the Helcaraxë
 ## First Age but survived - legendary
 
 N:159:of the Helcaraxë
@@ -1418,7 +1418,7 @@ D: sustaining their wearer through any trial.
 #################################################################
 
 
-## The Set of Gloves of the Archer
+## The Leather Gloves of the Archer
 ## Third Age - Lothlórien
 ## (ability 1/1 is Fletchery)
 
@@ -1433,7 +1433,7 @@ D: great bows of the Galadhrim. They grant steady aim
 D: and skill in the making of arrows.
 
 
-## The Set of Gloves of the Smith
+## The Leather Gloves of the Smith
 ## Third Age - Dwarven
 ## (ability 6/4 is Expertise)
 
@@ -1448,7 +1448,7 @@ D: and delicate work alike. They grant skill in all
 D: manner of crafting.
 
 
-## The Set of Gloves of the Healer
+## The Leather Gloves of the Healer
 ## Third Age - Rivendell
 ## (ability 0/7 is Subtlety)
 
@@ -1463,7 +1463,7 @@ D: They grant gentle skill in the tending of wounds
 D: and the curing of poisons.
 
 
-## The Set of Gauntlets of the Iron Hills
+## The Iron Gauntlets of the Iron Hills
 ## Third Age - Dwarven
 ## (ability 0/2 is Knockback)
 
@@ -1478,7 +1478,7 @@ D: war. Their weight adds force to every blow, driving
 D: enemies back.
 
 
-## The Set of Gauntlets of the Mark
+## The Iron Gauntlets of the Mark
 ## Third Age - Rohan
 
 N:166:of the Mark
@@ -1982,7 +1982,7 @@ D: Smaug came. It turns aside flame and grants the
 D: wearer something of dwarven endurance.
 
 
-## The Helm of Durin
+## The Iron Helm of Durin
 ## Third Age - Dwarven heirloom
 
 N:206:of Durin
@@ -2038,7 +2038,7 @@ D: They grant stealth and the ability to see hidden
 D: things, but at a cost to the wearer's vitality.
 
 
-## The Pair of Boots of Lothlórien
+## The Traveler's Boots of Lothlórien
 ## Third Age - Elven craft
 
 N:210:of Lothlórien
@@ -2064,7 +2064,7 @@ D: "Throng-cleaver." It has been wielded by the lords
 D: of that house against many foes.
 
 
-## The Dagger 'Noldorin Knife'
+## The Ranger's Knife 'Noldorin Knife'
 ## Third Age - High Elven blade
 
 N:212:'Noldorin Knife'
@@ -2078,7 +2078,7 @@ D: and its blade reveals things hidden from mortal
 D: sight. It gleams with pale light.
 
 
-## The Battle Axe of Erebor
+## The Dwarven War-axe of Erebor
 ## Third Age - Dwarven
 
 N:213:of Erebor
@@ -2091,7 +2091,7 @@ D: It is heavy and keen, and grants strength to cleave
 D: through orcish armor.
 
 
-## The War Hammer 'Hammer of the Longbeards'
+## The Dwarven Hammer 'Hammer of the Longbeards'
 ## Third Age - Dwarven masterwork
 
 N:214:'Hammer of the Longbeards'
