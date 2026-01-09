@@ -1,4 +1,4 @@
-# The Necromancer Beta 1.0.0 Release
+# The Necromancer Beta 1.0.1 Release
 
 *"In the shadows of Mirkwood's eaves, a darkness stirs beneath the leaves..."*
 
@@ -58,4 +58,4 @@ The Necromancer is free software released under the GNU GPL v2. See the included
 
 *Descend into darkness. Face the Shadow. Claim what was lost.*
 
-**The Necromancer Beta 1.0.0** - January 2026
+**The Necromancer Beta 1.0.1** - January 2026

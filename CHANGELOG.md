@@ -1,5 +1,27 @@
 # The Necromancer Changelog
 
+## Version 1.0.1-beta (January 2026)
+
+### New in 1.0.1
+
+#### Flaming Eye Icon
+- New custom icon featuring the Lidless Eye of Sauron
+- Available for all platforms (Windows .ico, macOS .icns, Linux .png)
+- Clean, recognizable design that scales from 16x16 to 1024x1024
+
+#### Complete Player Manual
+- Fully rewritten manual for The Necromancer (replaces Sil-Q manual)
+- Covers all gameplay systems: races, houses, skills, dungeon, monsters, items
+- New sections: Victory Conditions, Stealth Guide
+- Available as PDF in all release packages
+
+#### Documentation Cleanup
+- Removed alpha release notes (0.2.0 - 0.4.4)
+- Reorganized design documents into docs/design/
+- Cleaner repository structure for distribution
+
+---
+
 ## Version 1.0.0-beta (January 2026)
 
 Initial beta release of The Necromancer, forked from Sil-Q 1.5.0.
@@ -42,7 +64,7 @@ Initial beta release of The Necromancer, forked from Sil-Q 1.5.0.
 #### Rebranding
 - Renamed executable from `sil` to `necromancer`
 - Updated window titles and menu items
-- New application icons (placeholder - custom Flaming Eye icon pending)
+- New application icons
 - Updated Info.plist and project files
 
 #### Build System

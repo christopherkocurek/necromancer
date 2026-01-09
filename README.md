@@ -2,7 +2,7 @@
 
 A roguelike adventure set in Tolkien's Third Age of Middle-earth, when the shadow returned to Dol Guldur and the Necromancer claimed his dark tower.
 
-**Version 1.0.0-beta**
+**Version 1.0.1-beta**
 
 ## About the Game
 
