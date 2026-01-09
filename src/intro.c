@@ -130,8 +130,8 @@ static bool scene1_title(void)
         if (intro_delay(40)) return TRUE;
     }
 
-    /* Hold */
-    if (intro_delay(500)) return TRUE;
+    /* Hold longer for dramatic effect */
+    if (intro_delay(1500)) return TRUE;
 
     return FALSE;
 }
@@ -307,82 +307,100 @@ static bool scene4_descent(void)
     /* Quick cuts through dungeon layers */
 
     /* CUT 1: Orc Patrol (100-250ft) */
+    for (frame = 0; frame < 15; frame++)
+    {
+        intro_clear();
+        depth = 100 + (frame * 10);
+        sprintf(depth_str, "Depth: %d ft", depth);
+        Term_putstr(2, 1, -1, TERM_ORANGE, depth_str);
+
+        /* Stone corridor */
+        Term_putstr(10, 4, -1, TERM_SLATE,  "############################");
+        Term_putstr(10, 5, -1, TERM_L_DARK, "#  .  .  .  .  .  .  .  .  #");
+        Term_putstr(10, 6, -1, TERM_L_DARK, "#                          #");
+
+        /* Marching orcs with torches */
+        int orc_x = 12 + (frame % 6);
+        Term_putch(orc_x, 7, TERM_UMBER, 'o');
+        Term_putch(orc_x + 3, 7, TERM_UMBER, 'o');
+        Term_putch(orc_x + 6, 7, TERM_UMBER, 'o');
+        Term_putch(orc_x + 1, 6, TERM_YELLOW, '*'); /* torch */
+
+        Term_putstr(10, 8, -1, TERM_L_DARK, "#                          #");
+        Term_putstr(10, 9, -1, TERM_SLATE,  "############################");
+
+        Term_putstr(15, 12, -1, TERM_UMBER, "-- Orc Patrols --");
+
+        intro_refresh();
+        if (intro_delay(80)) return TRUE;
+    }
+
+    /* Black flash */
+    intro_clear();
+    intro_refresh();
+    if (intro_delay(150)) return TRUE;
+
+    /* CUT 2: Warg Kennels (300-450ft) */
     for (frame = 0; frame < 12; frame++)
     {
         intro_clear();
-        depth = 100 + (frame * 12);
-        sprintf(depth_str, "DEPTH: %dft", depth);
+        depth = 300 + (frame * 12);
+        sprintf(depth_str, "Depth: %d ft", depth);
         Term_putstr(2, 1, -1, TERM_ORANGE, depth_str);
 
-        /* Orc patrol */
-        Term_putstr(5, 5, -1, TERM_L_DARK, "#######################");
-        Term_putstr(5, 6, -1, TERM_L_DARK, "#                     #");
+        /* Cages */
+        Term_putstr(8, 5, -1, TERM_SLATE, "+---------+  +---------+  +---------+");
+        Term_putstr(8, 6, -1, TERM_SLATE, "|         |  |         |  |         |");
 
-        /* Marching orcs - position shifts */
-        int orc_offset = frame % 3;
-        Term_putstr(7 + orc_offset, 7, -1, TERM_UMBER, "o   o   o   o");
-        Term_putstr(7 + orc_offset, 9, -1, TERM_UMBER, "o   o   o   o");
+        /* Wargs pacing */
+        int warg_pos = frame % 4;
+        Term_putch(10 + warg_pos, 7, TERM_UMBER, 'C');
+        Term_putch(23 + warg_pos, 7, TERM_UMBER, 'C');
+        Term_putch(36 + warg_pos, 7, TERM_UMBER, 'C');
 
-        Term_putstr(5, 11, -1, TERM_L_DARK, "#######################");
+        Term_putstr(8, 8, -1, TERM_SLATE, "|         |  |         |  |         |");
+        Term_putstr(8, 9, -1, TERM_SLATE, "+---------+  +---------+  +---------+");
+
+        Term_putstr(15, 12, -1, TERM_UMBER, "-- Warg Kennels --");
 
         intro_refresh();
-        if (intro_delay(100)) return TRUE;
+        if (intro_delay(80)) return TRUE;
     }
 
     /* Black flash */
     intro_clear();
     intro_refresh();
-    if (intro_delay(100)) return TRUE;
+    if (intro_delay(150)) return TRUE;
 
-    /* CUT 2: Torture Chamber (300-500ft) */
-    for (frame = 0; frame < 10; frame++)
+    /* CUT 3: Crypts (550-700ft) */
+    for (frame = 0; frame < 12; frame++)
     {
         intro_clear();
-        depth = 300 + (frame * 20);
-        sprintf(depth_str, "DEPTH: %dft", depth);
+        depth = 550 + (frame * 12);
+        sprintf(depth_str, "Depth: %d ft", depth);
         Term_putstr(2, 1, -1, TERM_ORANGE, depth_str);
 
-        /* Chains */
-        Term_putstr(10, 4, -1, TERM_L_DARK, "|     |     |     |");
-        Term_putstr(10, 5, -1, TERM_L_DARK, "|     |     |     |");
+        /* Tombs */
+        Term_putstr(10, 5, -1, TERM_SLATE, "+---+     +---+     +---+");
+        Term_putstr(10, 6, -1, TERM_SLATE, "|RIP|     |RIP|     |RIP|");
+        Term_putstr(10, 7, -1, TERM_SLATE, "+---+     +---+     +---+");
 
-        /* Implements */
-        Term_putstr(15, 8, -1, TERM_RED, "===X===");
-        Term_putstr(30, 7, -1, TERM_SLATE, "+-----+");
-        Term_putstr(30, 8, -1, TERM_RED,   "| ~~~ |");
-        Term_putstr(30, 9, -1, TERM_SLATE, "+-----+");
-
-        intro_refresh();
-        if (intro_delay(100)) return TRUE;
-    }
-
-    /* Black flash */
-    intro_clear();
-    intro_refresh();
-    if (intro_delay(100)) return TRUE;
-
-    /* CUT 3: Crypts (550-750ft) */
-    for (frame = 0; frame < 10; frame++)
-    {
-        intro_clear();
-        depth = 550 + (frame * 20);
-        sprintf(depth_str, "DEPTH: %dft", depth);
-        Term_putstr(2, 1, -1, TERM_ORANGE, depth_str);
-
-        /* Coffins */
-        Term_putstr(5, 5, -1, TERM_SLATE, "+-------+   +-------+   +-------+");
-        Term_putstr(5, 6, -1, TERM_SLATE, "| ===   |   | ===   |   | ===   |");
-
-        /* Wight rising */
-        if (frame > 5)
+        /* Wight rising from middle tomb */
+        if (frame > 6)
         {
-            Term_putch(20, 6, TERM_L_BLUE, 'W');
+            Term_putch(22, 6, TERM_L_BLUE, 'W');
+            if (frame > 8)
+            {
+                Term_putstr(18, 4, -1, TERM_L_BLUE, "~  W  ~");
+            }
         }
 
-        Term_putstr(5, 7, -1, TERM_SLATE, "+-------+   +-------+   +-------+");
+        /* Ghostly wisps float */
+        int wisp_x = 12 + ((frame * 2) % 20);
+        Term_putch(wisp_x, 10, TERM_L_DARK, '~');
+        Term_putch(wisp_x + 8, 9, TERM_L_DARK, '~');
 
-        /* Ghostly wisps */
-        Term_putstr(10 + (frame % 5), 10, -1, TERM_L_DARK, "~     ~     ~");
+        Term_putstr(15, 13, -1, TERM_L_BLUE, "-- The Crypts --");
 
         intro_refresh();
         if (intro_delay(100)) return TRUE;
@@ -391,21 +409,33 @@ static bool scene4_descent(void)
     /* Black flash */
     intro_clear();
     intro_refresh();
-    if (intro_delay(100)) return TRUE;
+    if (intro_delay(150)) return TRUE;
 
-    /* CUT 4: Deep Darkness (800-1000ft) */
-    for (frame = 0; frame < 10; frame++)
+    /* CUT 4: The Pit (850-1000ft) */
+    for (frame = 0; frame < 15; frame++)
     {
         intro_clear();
-        depth = 800 + (frame * 20);
-        sprintf(depth_str, "DEPTH: %dft", depth);
+        depth = 850 + (frame * 10);
+        sprintf(depth_str, "Depth: %d ft", depth);
         Term_putstr(2, 1, -1, TERM_ORANGE, depth_str);
 
-        /* Almost nothing visible - just hints */
-        if (frame % 3 == 0)
+        /* Darkness - almost nothing visible */
+        Term_putstr(15, 6, -1, TERM_L_DARK, ". . . darkness . . .");
+
+        /* Occasional glints */
+        if (frame % 4 == 0)
         {
-            Term_putch(30 + (frame % 10), 10, TERM_L_DARK, '?');
+            Term_putch(25 + (frame % 8), 10, TERM_YELLOW, '*');
         }
+
+        /* Chains appear in later frames */
+        if (frame > 8)
+        {
+            Term_putstr(20, 8, -1, TERM_L_DARK, "|   |   |");
+            Term_putstr(20, 9, -1, TERM_L_DARK, "|   |   |");
+        }
+
+        Term_putstr(12, 13, -1, TERM_L_DARK, "-- The Deepest Pit --");
 
         intro_refresh();
         if (intro_delay(100)) return TRUE;
@@ -488,39 +518,41 @@ static bool scene5_pit(void)
  * ======================================================================== */
 
 static const char *eye_closed[] = {
-    "                                -------                                        ",
+    "                            ------------                                       ",
     NULL
 };
 
 static const char *eye_opening[] = {
-    "                               .-------.                                       ",
-    "                               '-------'                                       ",
+    "                           __----------__                                      ",
+    "                           ''----------''                                      ",
     NULL
 };
 
 static const char *eye_half[] = {
-    "                              .---------.                                      ",
-    "                             '     |     '                                     ",
-    "                              '---------'                                      ",
+    "                          _.-''------''-._                                     ",
+    "                         (       ||       )                                    ",
+    "                          '-._--------_.-'                                     ",
     NULL
 };
 
 static const char *eye_full[] = {
-    "                    ~^*~         ~*^~                                          ",
-    "                 *^     ~*~   ~*~     ^*                                       ",
-    "              ~*   .-------------.   *~                                        ",
-    "            *~   .'               '.   ~*                                      ",
-    "          ~*   .'    .-------.    '.   *~                                      ",
-    "         *^  .'    .'         '.    '.  ^*                                     ",
-    "        ~*  :    .'      |      '.    :  *~                                    ",
-    "        *^  :    :       |       :    :  ^*                                    ",
-    "        ~*  :    '.      |      .'    :  *~                                    ",
-    "         *^  '.    '.         .'    .'  ^*                                     ",
-    "          ~*   '.    '-------'    .'   *~                                      ",
-    "            *~   '.               .'   ~*                                      ",
-    "              ~*   '-------------'   *~                                        ",
-    "                 *^     ~*~   ~*~     ^*                                       ",
-    "                    ~^*~         ~*^~                                          ",
+    "                                                                               ",
+    "                        *  ~              ~  *                                 ",
+    "                     ^       *    **    *       ^                              ",
+    "                   *    _.--''        ''--._    *                              ",
+    "                  ~  .-'                    '-.  ~                             ",
+    "                 * .'    _.--''------''-._    '. *                             ",
+    "                ~ /   .-'        ||        '-.   \\ ~                           ",
+    "                */   /           ||           \\   \\*                           ",
+    "                ~|  |            ||            |  |~                           ",
+    "                *|  |            ||            |  |*                           ",
+    "                ~|  |            ||            |  |~                           ",
+    "                * \\   \\          ||          /   / *                           ",
+    "                 ~ '.  '-.._     ||     _..-'  .' ~                            ",
+    "                  *  '._    ''--....--''    _.' *                              ",
+    "                   ~    '-._            _.-'    ~                              ",
+    "                     ^      ''--....--''      ^                                ",
+    "                        *  ~              ~  *                                 ",
     NULL
 };
 
@@ -539,7 +571,7 @@ static bool scene6_eye(void)
     /* The pause - pure black, dramatic tension */
     intro_clear();
     intro_refresh();
-    if (intro_delay(800)) return TRUE;
+    if (intro_delay(1000)) return TRUE;
 
     /* Eye opening sequence */
 
@@ -547,10 +579,10 @@ static bool scene6_eye(void)
     intro_clear();
     for (row = 0; eye_closed[row] != NULL; row++)
     {
-        Term_putstr(0, 10 + row, -1, TERM_RED, eye_closed[row]);
+        Term_putstr(0, 11 + row, -1, TERM_RED, eye_closed[row]);
     }
     intro_refresh();
-    if (intro_delay(200)) return TRUE;
+    if (intro_delay(300)) return TRUE;
 
     /* Opening */
     intro_clear();
@@ -559,19 +591,19 @@ static bool scene6_eye(void)
         Term_putstr(0, 10 + row, -1, TERM_RED, eye_opening[row]);
     }
     intro_refresh();
-    if (intro_delay(200)) return TRUE;
+    if (intro_delay(300)) return TRUE;
 
     /* Half open */
     intro_clear();
     for (row = 0; eye_half[row] != NULL; row++)
     {
-        Term_putstr(0, 9 + row, -1, TERM_RED, eye_half[row]);
+        Term_putstr(0, 9 + row, -1, TERM_ORANGE, eye_half[row]);
     }
     intro_refresh();
-    if (intro_delay(200)) return TRUE;
+    if (intro_delay(300)) return TRUE;
 
     /* FULLY OPEN - with flames */
-    for (frame = 0; frame < 20; frame++)
+    for (frame = 0; frame < 25; frame++)
     {
         intro_clear();
 
@@ -594,9 +626,10 @@ static bool scene6_eye(void)
                 }
                 else if (ch == '|')
                 {
-                    char_color = TERM_DARK;  /* Pupil is black */
+                    char_color = TERM_L_DARK;  /* Pupil slit */
                 }
-                else if (ch == '.' || ch == '\'' || ch == ':' || ch == '-')
+                else if (ch == '.' || ch == '\'' || ch == '_' || ch == '-' ||
+                         ch == '(' || ch == ')' || ch == '/' || ch == '\\')
                 {
                     char_color = TERM_RED;  /* Eye structure */
                 }
@@ -607,7 +640,7 @@ static bool scene6_eye(void)
 
                 if (ch != ' ')
                 {
-                    Term_putch(col, 4 + row, char_color, ch);
+                    Term_putch(col, 3 + row, char_color, ch);
                 }
             }
         }
@@ -625,13 +658,13 @@ static bool scene6_eye(void)
  * ======================================================================== */
 
 static const char *eye_medium[] = {
-    "           ~^*~   ~*^~           ",
-    "        *^   .---.   ^*         ",
-    "       *~  .'  |  '.  ~*        ",
-    "       *~  :   |   :  ~*        ",
-    "       *~  '.  |  .'  ~*        ",
-    "        *^   '---'   ^*         ",
-    "           ~*^~   ~^*~          ",
+    "            ~  *  ~             ",
+    "         *   _---_   *         ",
+    "        ~  .'  ||  '.  ~        ",
+    "        * |    ||    | *        ",
+    "        ~  '.  ||  .'  ~        ",
+    "         *   '---'   *          ",
+    "            ~  *  ~             ",
     NULL
 };
 
@@ -640,23 +673,28 @@ static bool scene7_finale(void)
     int frame = 0;
     int row, col;
     bool prompt_bright;
+    char ch;
 
     while (1)
     {
-        /* Check for skip */
-        if (intro_check_skip()) return TRUE;
+        /* Check for keypress (non-blocking) */
+        if (Term_inkey(&ch, FALSE, FALSE) == 0)
+        {
+            /* Key was pressed - exit cleanly */
+            return FALSE;
+        }
 
         intro_clear();
 
         /* Title with flame color cycling */
         const char *title = "THE NECROMANCER";
-        int title_col = (80 - strlen(title)) / 2;
+        int title_col = (80 - (int)strlen(title)) / 2;
         byte title_color = flame_color(frame);
         Term_putstr(title_col, 5, -1, title_color, title);
 
         /* Medium eye with flame animation */
         byte color = flame_color(frame);
-        int eye_start_col = (80 - 33) / 2;
+        int eye_start_col = (80 - 32) / 2;
 
         for (row = 0; eye_medium[row] != NULL; row++)
         {
@@ -664,18 +702,18 @@ static bool scene7_finale(void)
 
             for (col = 0; line[col] != '\0'; col++)
             {
-                char ch = line[col];
+                char c = line[col];
                 byte char_color;
 
-                if (ch == '*' || ch == '^' || ch == '~')
+                if (c == '*' || c == '^' || c == '~')
                 {
                     char_color = color;
                 }
-                else if (ch == '|')
+                else if (c == '|')
                 {
-                    char_color = TERM_DARK;
+                    char_color = TERM_L_DARK;
                 }
-                else if (ch != ' ')
+                else if (c == '.' || c == '\'' || c == '_' || c == '-')
                 {
                     char_color = TERM_RED;
                 }
@@ -684,7 +722,7 @@ static bool scene7_finale(void)
                     continue;  /* Skip spaces */
                 }
 
-                Term_putch(eye_start_col + col, 8 + row, char_color, ch);
+                Term_putch(eye_start_col + col, 8 + row, char_color, c);
             }
         }
 
@@ -705,7 +743,7 @@ static bool scene7_finale(void)
         frame = (frame + 1) % 40;
     }
 
-    return TRUE;
+    return FALSE;
 }
 
 /* ========================================================================
@@ -743,4 +781,7 @@ cleanup:
     /* Clear screen for game */
     intro_clear();
     intro_refresh();
+
+    /* Flush any pending key events to prevent them affecting the menu */
+    Term_flush();
 }
