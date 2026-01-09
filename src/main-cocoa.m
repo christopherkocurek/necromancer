@@ -2564,7 +2564,7 @@ static void Term_init_cocoa(term *t)
         /* Set its title and, for auxiliary terms, tentative size */
         if (termIdx == 0)
         {
-            [window setTitle:@"Sil"]; ////half
+            [window setTitle:@"The Necromancer"]; ////half
         }
         else
         {
@@ -5051,7 +5051,7 @@ extern void fsetfileinfo(cptr pathname, u32b fcreator, u32b ftype)
     NSMenu *windowsMenu = [[NSApplication sharedApplication] windowsMenu];
     [windowsMenu addItem: [NSMenuItem separatorItem]];
 
-    NSMenuItem *angbandItem = [[NSMenuItem alloc] initWithTitle: @"Sil" action: @selector(selectWindow:) keyEquivalent: @"0"];
+    NSMenuItem *angbandItem = [[NSMenuItem alloc] initWithTitle: @"The Necromancer" action: @selector(selectWindow:) keyEquivalent: @"0"];
     [angbandItem setTarget: self];
     [angbandItem setTag: AngbandWindowMenuItemTagBase];
     [windowsMenu addItem: angbandItem];

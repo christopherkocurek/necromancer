@@ -42,7 +42,7 @@
 /*
  * Name of the version/variant
  */
-#define VERSION_NAME "Sil-Q"
+#define VERSION_NAME "The Necromancer"
 
 /*
  * Current version string

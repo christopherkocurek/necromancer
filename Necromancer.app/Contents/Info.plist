@@ -7,9 +7,9 @@
 	<key>CFBundleExecutable</key>
 	<string>necromancer</string>
 	<key>CFBundleDisplayName</key>
-	<string>Necromancer</string>
+	<string>The Necromancer</string>
 	<key>CFBundleName</key>
-	<string>Necromancer</string>
+	<string>The Necromancer</string>
 	<key>CFBundleIconFile</key>
 	<string>Necromancer_Icons</string>
 	<key>CFBundleIdentifier</key>
@@ -19,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.4.3</string>
+	<string>1.0.0-beta</string>
 	<key>CFBundleSignature</key>
 	<string>NECR</string>
 	<key>CFBundleVersion</key>
-	<string>0.4.3</string>
+	<string>1.0.0-beta</string>
 	<key>CGDisableCoalescedUpdates</key>
 	<true/>
 	<key>NSMainNibFile</key>
