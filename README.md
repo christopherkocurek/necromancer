@@ -1,123 +1,70 @@
-# Sil-Q
-Sil-Q is a computer role-playing game with a strong emphasis on discovery and
-tactical combat. It has a simple but rich combat system which allows for a
-great variety of choice.
+# The Necromancer
 
-Sil-Q continues the development of Sil which hasn't been updated for a while.
+A roguelike adventure set in Tolkien's Third Age of Middle-earth, when the shadow returned to Dol Guldur and the Necromancer claimed his dark tower.
 
-## Compiling Instructions
+**Version 1.0.0-beta**
 
-Compiling Sil-Q is not very difficult, and has been tested on Windows, Linux, and OS X.
+## About the Game
 
-Makefiles for various other systems still exist as a legacy from Sil. If you manage
-to build Sil-Q for a system other than Windows, Linux, or OS X please create a git branch
-with any changes necessary, update this file and open a github pull request against
-https://github.com/sil-quirk/sil-q.
+The Necromancer is a tactical roguelike that emphasizes discovery and combat. Descend into the pits of Dol Guldur, face the servants of the Shadow, and seek to claim Thrain's ring, the key, and the map.
 
-The first step is the same on all systems, so do this and then look through
-this file for advice on your specific system. 
+Key features:
+- Deep, tactical combat system with meaningful choices
+- Character development through skills and abilities
+- Permadeath with persistent high scores
+- Based on the Sil/Sil-Q codebase with new content and mechanics
 
-0. Install the Sil source code:
+## Quick Start
 
-   Unzip the file "Sil-src.zip". It will become a folder called "Sil"
-   which contains subfolders called "lib" and "src". Move it to wherever
-   you want to keep it. The src folder contains all the source code
-   while the lib folder contains other files that the game uses.
-   When you are done compiling, the game will be automatically installed
-   in the Sil folder as well.
+### Windows
+1. Download the release package
+2. Extract to any folder
+3. Run `necromancer.exe`
 
+### macOS
+1. Download the release package
+2. Extract and move `Necromancer.app` to Applications (or run from any folder)
+3. Double-click to launch
+4. If prompted about unidentified developer: Right-click > Open > Open
 
-### Linux or Unix with gcc  (tested with Sil-Q)
+### Linux
+1. Download the release package
+2. Extract to any folder
+3. Run `./necromancer` from terminal
 
-   There are several different unix setups for Sil-Q:
+## Controls
 
-   X11: Allows multiple windows, has correct colours.
-   GCU: Works in a terminal using 'curses', has only 16 or 8 colours.
-   CAP: Works even in old terminals, but is monochrome.
+- Movement: Arrow keys or numpad (8-way movement with diagonals)
+- Attack: Move into enemies
+- `?` - Help and keybindings
+- `i` - Inventory
+- `e` - Equipment
+- `c` - Character sheet
+- `m` - Full map
+- `ESC` or `Q` - Save and quit
 
-1. Mess with the Makefile:
+## Feedback and Bug Reports
 
-   Edit Makefile.std in the src directory.
-   Look for the section listing multiple "Variations".
-   Choose the variation that you like best.
-   Remove the # comments from that section's code.
-   Comment out the default section.
+This is a **beta release**. Please report bugs and feedback at:
+https://github.com/sil-quirk/sil-q/issues
 
-2. Compile Sil-Q:
+When reporting bugs, please include:
+- What happened vs. what you expected
+- Steps to reproduce if possible
+- Your character dump (press `|` then `f` to save)
 
-   Run "make -f Makefile.std install" in the src directory.
+## Credits
 
-3. Run Sil-Q:
+The Necromancer is built upon the foundation of Sil and Sil-Q:
+- **Sil** by Scatha and Fingolfin
+- **Sil-Q** maintained by the Sil-Q community
+- Original Angband by Ben Harrison and many contributors
 
-   Go back to the Sil folder and start Sil-Q with "sil".
+## License
 
-### Windows with Cygwin   (tested with Sil-Q)
+This software is released under the GNU General Public License v2.
+See `lib/docs/copying.txt` for full license text.
 
-1. Getting the free Cygwin compiler: 
+---
 
-   Download the free Cygwin compiler. It provides a shell interface very
-   similar to a normal Unix/Linux shell with many useful tools. Install it
-   and start the Cygwin terminal. Make sure to get the 32 bit version.
-
-   Note you will have to ensure "make" and the mingw C compiler are installed
-   as they may not be included in your Cygwin default installation.
-
-2. Compile Sil-Q: 
-
-   In the Cygwin terminal change to the src directory and run 
-   "make -f Makefile.cyg install". 
-   Sil should now be compiled and installed into the Sil folder.  
-   The executable file will be called Sil.exe. 
-
-3. Run Sil-Q: 
-
-   Go back to the Sil folder and run Sil.exe. 
-
-### Windows with Visual Studio 2022 (experimental, tested with Sil-Q on MSVC 2022)
-
-1. Acquire Microsoft Visual Studio 2022.
-
-2. Compile Sil-Q:
-
-   Assuming you have MSVC 2022, this should be as simple as selecting Debug or
-   Release, opening sil-q.sln in the msvc2019 directory and selecting Build Solution
-   from the Build menu.
-
-3. Run Sil-Q:
-
-   Go back to the Sil folder and run Sil.exe.
-
-NOTE: This is a very new and very raw port, and requires testing.
-
-### OS X with Xcode  (tested with Sil-Q; Xcode 11.6 on OS X 10.15.5)
-
-1. Get Xcode from the app store if not installed:
-
-   Use App Store to get Xcode, a free set of development tools from Apple.
-
-2. Compile Sil-Q:
-
-   In a Terminal window, change to the src directory and run
-   "make -f Makefile.cocoa install".
-   Sil-Q should now be compiled and set up as an OS X application, Sil.app,
-   in the folder above the src directory.  You may move Sil.app to wherever
-   you like.
-
-   If you are using an arm-based Mac and want a native application, use
-   "make -f Makefile.cocoa ARCHS=arm64 install"
-   instead of the command given above.  To generate a universal application
-   that will run natively on either x86_64 or arm, use
-   "make -f Makefile.cocoa ARCHS='x86_64 arm64' install".
-   Building for arm likely requires at least Xcode 12.2 or later.  Before
-   building for a different set of architectures, run
-   "make -f Makefile.cocoa clean" to clean up any object files that may not
-   match your new set of selected architectures.
-
-3. Run Sil-Q:
-
-   In a Finder window, navigate to where you placed Sil.app.  Then double
-   click on it to run it.  If you are running 10.15 or later and haven't run
-   Sil-Q or Sil before, you'll see a dialog about granting Sil-Q access to
-   your Documents folder since it wants to place saved games, the high
-   score file, and some other data in Documents/Sil.
-
+*"In the shadows of Mirkwood's eaves, a darkness stirs beneath the leaves..."*
