@@ -151,7 +151,7 @@ cptr option_text[OPT_MAX] = {
     "angband_keyset", /* OPT_angband_keyset */
     "show_intro", /* OPT_show_intro */
     "stop_singing_on_rest", /* OPT_stop_singing_on_rest */
-    NULL, /* xxx always_pickup */
+    "show_death_recap", /* OPT_show_death_recap */
     "forgo_attacking_unwary", /* OPT_forgo_attacking_unwary */
     NULL, /* xxx depth_in_feet */
     NULL, /* xxx stack_force_notes */
@@ -412,7 +412,7 @@ cptr option_desc[OPT_MAX] = {
     "Use a keyset more closely based on Angband", /* OPT_angband_keyset */
     "Play intro animation when game starts", /* OPT_show_intro */
     "Stop singing when you use the rest command", /* OPT_stop_singing_on_rest */
-    NULL, /* xxx always_pickup */
+    "Show death recap with epitaph and stats", /* OPT_show_death_recap */
     "Forgo bonus attacks on non-alert enemies", /* OPT_forgo_attacking_unwary */
     NULL, /* xxx depth_in_feet */
     NULL, /* xxx stack_force_notes */
@@ -673,7 +673,7 @@ const bool option_norm[OPT_MAX] = {
     FALSE, /* OPT_angband_keyset */
     TRUE, /* OPT_show_intro */
     TRUE, /* OPT_stop_singing_on_rest */
-    FALSE, /* xxx always_pickup */
+    TRUE, /* OPT_show_death_recap */
     TRUE, /* OPT_forgo_attacking_unwary */
     FALSE, /* xxx depth_in_feet */
     FALSE, /* xxx stack_force_notes */
@@ -935,8 +935,8 @@ const byte option_page[OPT_PAGE_MAX][OPT_PAGE_PER] = {
     { OPT_forgo_attacking_unwary, OPT_stop_singing_on_rest, OPT_system_beep,
         OPT_quick_messages, OPT_auto_more, OPT_easy_main_menu,
         OPT_hjkl_movement, OPT_angband_keyset, OPT_hitpoint_warning,
-        OPT_know_monster_info, OPT_show_intro, OPT_NONE, OPT_NONE, OPT_NONE,
-        OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE },
+        OPT_know_monster_info, OPT_show_intro, OPT_show_death_recap, OPT_NONE,
+        OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE },
 
     /*** Disturbance ***/
 

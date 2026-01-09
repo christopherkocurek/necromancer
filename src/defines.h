@@ -2423,7 +2423,7 @@
 #define OPT_angband_keyset 2
 #define OPT_show_intro 3
 #define OPT_stop_singing_on_rest 4
-// xxx always_pickup
+#define OPT_show_death_recap 5
 #define OPT_forgo_attacking_unwary 6
 #define OPT_delay_factor 10
 #define OPT_hitpoint_warning 11
@@ -2562,6 +2562,7 @@
 #define angband_keyset op_ptr->opt[OPT_angband_keyset]
 #define show_intro op_ptr->opt[OPT_show_intro]
 #define stop_singing_on_rest op_ptr->opt[OPT_stop_singing_on_rest]
+#define show_death_recap op_ptr->opt[OPT_show_death_recap]
 #define always_pickup FALSE // Sil-x: removing this option for now
 #define forgo_attacking_unwary op_ptr->opt[OPT_forgo_attacking_unwary]
 #define depth_in_feet op_ptr->opt[OPT_depth_in_feet]
@@ -3209,6 +3210,22 @@
  * Should be the same as MSG_MAX for compatibility reasons.
  */
 #define SOUND_MAX MSG_MAX
+
+/*
+ * Music track IDs for The Necromancer
+ */
+#define MUSIC_NONE          0
+#define MUSIC_MAIN_THEME    1   /* 01_main_theme - Intro, title, menu */
+#define MUSIC_MIRKWOOD      2   /* 02_mirkwood - Layers 1-2 */
+#define MUSIC_ORC_WARRENS   3   /* 03_orc_warrens - Layers 2-3 */
+#define MUSIC_NECROPOLIS    4   /* 04_necropolis - Layer 4 */
+#define MUSIC_WRAITH_DOMAIN 5   /* 05_wraith_domain - Layers 5-6 */
+#define MUSIC_THE_PIT       6   /* 06_the_pit - Layer 7 */
+#define MUSIC_EYE_AWAKENS   7   /* 07_eye_awakens - Alert stinger (one-shot) */
+#define MUSIC_PURSUIT       8   /* 08_pursuit - Chase mode */
+#define MUSIC_VICTORY       9   /* 09_victory - Escape success */
+#define MUSIC_DEATH        10   /* 10_death - Player death */
+#define MUSIC_MAX          11
 
 /*
  * Maximum number of macro trigger names

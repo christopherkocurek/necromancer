@@ -10,6 +10,46 @@
 
 #include "angband.h"
 
+#if defined(MACH_O_CARBON) && defined(COCOA)
+/*
+ * Update background music based on current dungeon depth.
+ * Called when entering a new level.
+ *
+ * Track mapping based on The Necromancer PRD:
+ *   Layers 1-2 (depth 1-100ft): Mirkwood
+ *   Layers 2-3 (depth 150-350ft): Orc Warrens
+ *   Layer 4 (depth 400-500ft): Necropolis
+ *   Layers 5-6 (depth 550-700ft): Wraith Domain
+ *   Layer 7 (depth 750ft+): The Pit
+ */
+static void update_dungeon_music(void)
+{
+    int depth = p_ptr->depth;
+    int track;
+
+    /* Surface/town - no dungeon music, keep main theme if playing */
+    if (depth == 0) {
+        return;
+    }
+
+    /* Map depth to music track */
+    if (depth <= 2) {
+        track = MUSIC_MIRKWOOD;        /* Layers 1-2: 50-100ft */
+    } else if (depth <= 7) {
+        track = MUSIC_ORC_WARRENS;     /* Layers 2-3: 150-350ft */
+    } else if (depth <= 10) {
+        track = MUSIC_NECROPOLIS;      /* Layer 4: 400-500ft */
+    } else if (depth <= 14) {
+        track = MUSIC_WRAITH_DOMAIN;   /* Layers 5-6: 550-700ft */
+    } else {
+        track = MUSIC_THE_PIT;         /* Layer 7: 750ft+ (Sauron's lair) */
+    }
+
+    /* Play the track (music_play handles avoiding restart of same track) */
+    music_play(track);
+}
+#endif /* MACH_O_CARBON && COCOA */
+
 /*
  * Return a "feeling" (or NULL) about an item.  Method 1 (Weak).
  * Sil - this method can't distinguish artefacts from ego items
@@ -2477,6 +2517,13 @@ static void process_player(void)
 
     playerturn++;
 
+    /* Track stealth streak for death recap */
+    p_ptr->stealth_streak_current++;
+    if (p_ptr->stealth_streak_current > p_ptr->stealth_streak_max)
+    {
+        p_ptr->stealth_streak_max = p_ptr->stealth_streak_current;
+    }
+
     depth_counter_increment = 85 - (playerturn / 850);
     depth_counter_increment += 3 * (p_ptr->depth - min_depth());
 
@@ -3080,6 +3127,11 @@ void play_game(bool new_game)
     if (!character_dungeon)
         generate_cave();
 
+#if defined(MACH_O_CARBON) && defined(COCOA)
+    /* Start dungeon music based on depth */
+    update_dungeon_music();
+#endif
+
     /* Character is now "complete" */
     character_generated = TRUE;
 
@@ -3224,6 +3276,11 @@ void play_game(bool new_game)
 
         /* Make a new level */
         generate_cave();
+
+#if defined(MACH_O_CARBON) && defined(COCOA)
+        /* Update music for new depth */
+        update_dungeon_music();
+#endif
     }
 
     /* Close stuff */

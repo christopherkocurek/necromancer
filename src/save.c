@@ -928,6 +928,37 @@ static void wr_extra(void)
     wr_byte(p_ptr->on_the_run);
     wr_byte(p_ptr->morgoth_slain);
     wr_u16b(p_ptr->escaped);
+
+    /* Death sequence tracking - combat */
+    wr_s32b(p_ptr->damage_dealt_total);
+    wr_s16b(p_ptr->biggest_hit);
+    wr_s16b(p_ptr->biggest_enemy_killed);
+    wr_s16b(p_ptr->biggest_enemy_seen);
+    wr_string(p_ptr->killer_name);
+    wr_s16b(p_ptr->killer_idx);
+
+    /* Death sequence tracking - stealth */
+    wr_u16b(p_ptr->enemies_avoided);
+    wr_u16b(p_ptr->times_detected);
+    wr_u16b(p_ptr->stealth_streak_current);
+    wr_u16b(p_ptr->stealth_streak_max);
+    wr_u16b(p_ptr->silent_kills);
+    wr_u16b(p_ptr->doors_closed);
+
+    /* Death sequence tracking - journey */
+    wr_s16b(p_ptr->rarest_item_depth);
+    wr_u16b(p_ptr->lore_notes_found);
+    wr_u16b(p_ptr->potions_quaffed);
+    wr_u16b(p_ptr->herbs_consumed);
+    wr_u16b(p_ptr->stairs_descended);
+    wr_u16b(p_ptr->stairs_ascended);
+
+    /* Death sequence tracking - achievements */
+    wr_byte(p_ptr->saw_sauron);
+    wr_byte(p_ptr->found_thrain);
+    wr_byte(p_ptr->stole_ring);
+    wr_byte(p_ptr->killed_nazgul);
+
     wr_u16b(p_ptr->noscore);
     wr_u16b(p_ptr->smithing_leftover);
     wr_byte(p_ptr->unique_forge_made);

@@ -99,6 +99,9 @@ void do_cmd_eat_food(object_type* default_o_ptr, int default_item)
     /* Take a turn */
     p_ptr->energy_use = 100;
 
+    /* Track herbs consumed for death recap */
+    p_ptr->herbs_consumed++;
+
     // store the action type
     p_ptr->previous_action[0] = ACTION_MISC;
 
@@ -211,6 +214,9 @@ void do_cmd_quaff_potion(object_type* default_o_ptr, int default_item)
 
     /* Take a turn */
     p_ptr->energy_use = 100;
+
+    /* Track potions quaffed for death recap */
+    p_ptr->potions_quaffed++;
 
     // store the action type
     p_ptr->previous_action[0] = ACTION_MISC;

@@ -1,0 +1,146 @@
+# Death Stats Recap Screen Layout
+# Full screen design: 80 columns x 24 rows
+# ASCII borders, clean typography, organized sections
+
+# === FULL LAYOUT ===
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              Y O U R   T A L E                               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║                    "Procedural epitaph goes here"                            ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  THE FALLEN                          │  BLOOD SPILLED                        ║
+║  ──────────                          │  ─────────────                        ║
+║  Character Name                      │  Enemies slain: XXX                   ║
+║  Race of House                       │  Biggest kill: Monster Name           ║
+║  Slain by: Killer Name               │  Damage dealt: X,XXX                  ║
+║  Depth: XXX feet                     │  Biggest hit: XX                      ║
+║  Turns survived: X,XXX               │                                       ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  SHADOWS WALKED                      │  THE JOURNEY                          ║
+║  ──────────────                      │  ───────────                          ║
+║  Enemies avoided: XX                 │  Stairs descended: XX                 ║
+║  Times detected: XX                  │  Stairs ascended: XX                  ║
+║  Longest stealth: XXX turns          │  Potions quaffed: XX                  ║
+║  Silent kills: XX                    │  Herbs consumed: XX                   ║
+║  Doors closed: XX                    │  Rarest find: Item Name               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  MOMENTS OF NOTE: * Achievement 1  * Achievement 2  * Achievement 3         ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║            [Enter] New Game      [M] Menu      [S] Save Screenshot           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+# === SECTION BREAKDOWN ===
+
+[HEADER]
+Row 0-2: Title "YOUR TALE" centered in double-line box
+Color: WHITE on BLACK, border in GRAY
+
+[EPITAPH]
+Row 3-5: Procedural epitaph in quotes, centered
+Color: LIGHT_GRAY or YELLOW for emphasis
+Wraps if longer than 60 chars
+
+[LEFT COLUMN - IDENTITY]
+Rows 6-12: "THE FALLEN"
+- Character name (from op_ptr->full_name)
+- Race of House (from race and house data)
+- Slain by: killer_name
+- Depth: p_ptr->depth * 50 feet
+- Turns survived: playerturn
+
+[RIGHT COLUMN - COMBAT]
+Rows 6-12: "BLOOD SPILLED"
+- Enemies slain: total kill count (need to sum l_list[].pkills)
+- Biggest kill: r_info[biggest_enemy_killed].name
+- Damage dealt: damage_dealt_total
+- Biggest hit: biggest_hit
+
+[LEFT COLUMN - STEALTH]
+Rows 13-19: "SHADOWS WALKED"
+- Enemies avoided: enemies_avoided
+- Times detected: times_detected
+- Longest stealth: stealth_streak_max
+- Silent kills: silent_kills
+- Doors closed: doors_closed
+
+[RIGHT COLUMN - JOURNEY]
+Rows 13-19: "THE JOURNEY"
+- Stairs descended: stairs_descended
+- Stairs ascended: stairs_ascended
+- Potions quaffed: potions_quaffed
+- Herbs consumed: herbs_consumed
+- Rarest find: k_info[rarest_item_depth].name (item at that level)
+
+[ACHIEVEMENTS]
+Row 20: "MOMENTS OF NOTE" - Dynamic achievements
+Format: * Achievement text (space separated)
+Examples:
+- "Glimpsed Sauron" (if saw_sauron)
+- "Found Thráin" (if found_thrain)
+- "Slew a Nazgûl" (if killed_nazgul)
+- "Stole a Ring of Power" (if stole_ring)
+Color: YELLOW or GOLD for achievements
+
+[FOOTER]
+Row 21-22: Navigation options
+- [Enter] New Game - starts character creation
+- [M] Menu - returns to main menu
+- [S] Save Screenshot - saves recap to file (if implemented)
+Color: GRAY text, WHITE for key letters
+
+
+# === COLOR SCHEME ===
+
+Border chars (═║╔╗╚╝╠╣╦╩╬): GRAY or DARK_GRAY
+Section titles: WHITE or YELLOW
+Labels: GRAY
+Values: WHITE
+Epitaph: LIGHT_BLUE or YELLOW (subtle emphasis)
+Achievements: YELLOW stars, WHITE text
+Footer keys: YELLOW brackets, WHITE text
+
+
+# === IMPLEMENTATION NOTES ===
+
+1. Use Term_putch for borders (extended ASCII or Unicode box drawing)
+2. Use Term_putstr for text sections
+3. Calculate total kills by summing l_list[i].pkills for all monsters
+4. For "biggest kill", use r_info[p_ptr->biggest_enemy_killed].name
+5. Achievement section is dynamic - only show achievements that are TRUE
+6. If no achievements, show "None to speak of..." in gray
+7. Screen should fit in 80x24 terminal (standard roguelike size)
+8. Consider adding scroll if more achievements than fit on one line
+
+# === EXAMPLE WITH REAL DATA ===
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              Y O U R   T A L E                               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║                 "Survived Sauron. Killed by a giant rat."                    ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  THE FALLEN                          │  BLOOD SPILLED                        ║
+║  ──────────                          │  ─────────────                        ║
+║  Beren the Bold                      │  Enemies slain: 47                    ║
+║  Man of the House of Beor            │  Biggest kill: Khamûl the Nazgûl      ║
+║  Slain by: a giant rat               │  Damage dealt: 1,892                  ║
+║  Depth: 650 feet                     │  Biggest hit: 34                      ║
+║  Turns survived: 5,234               │                                       ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  SHADOWS WALKED                      │  THE JOURNEY                          ║
+║  ──────────────                      │  ───────────                          ║
+║  Enemies avoided: 23                 │  Stairs descended: 13                 ║
+║  Times detected: 8                   │  Stairs ascended: 0                   ║
+║  Longest stealth: 142 turns          │  Potions quaffed: 7                   ║
+║  Silent kills: 5                     │  Herbs consumed: 12                   ║
+║  Doors closed: 31                    │  Rarest find: Boots of Leaping        ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  MOMENTS OF NOTE: * Glimpsed Sauron and lived  * Slew a Nazgûl               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║            [Enter] New Game      [M] Menu      [S] Save Screenshot           ║
+╚══════════════════════════════════════════════════════════════════════════════╝

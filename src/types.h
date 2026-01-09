@@ -876,6 +876,38 @@ struct player_type
     u16b escaped; /* Player has escaped Angband */
     u16b panic_save; /* Panic save */
 
+    /*** Death sequence tracking ***/
+
+    /* Combat stats */
+    s32b damage_dealt_total;      /* Total damage dealt to enemies */
+    s16b biggest_hit;             /* Largest single hit dealt */
+    s16b biggest_enemy_killed;    /* Monster race index of toughest kill */
+    s16b biggest_enemy_seen;      /* Monster race index of toughest seen */
+    char killer_name[80];         /* Name of monster that killed player */
+    s16b killer_idx;              /* Monster race index of killer */
+
+    /* Stealth stats */
+    u16b enemies_avoided;         /* Monsters that lost track of player */
+    u16b times_detected;          /* Times spotted by monsters */
+    u16b stealth_streak_current;  /* Current undetected turns */
+    u16b stealth_streak_max;      /* Longest stealth streak */
+    u16b silent_kills;            /* Kills without alerting others */
+    u16b doors_closed;            /* Doors closed behind player */
+
+    /* Journey stats */
+    s16b rarest_item_depth;       /* Native depth of rarest item found */
+    u16b lore_notes_found;        /* Number of lore notes read */
+    u16b potions_quaffed;         /* Potions consumed */
+    u16b herbs_consumed;          /* Herbs eaten */
+    u16b stairs_descended;        /* Stairs going down */
+    u16b stairs_ascended;         /* Stairs going up */
+
+    /* Achievement flags for death recap */
+    byte saw_sauron;              /* Seen the Necromancer */
+    byte found_thrain;            /* Found Thrain's remains/Ring */
+    byte stole_ring;              /* Took Ring of Thrain */
+    byte killed_nazgul;           /* Killed a Nazgul */
+
     u16b noscore; /* Cheating flags */
 
     bool is_dead; /* Player is dead */

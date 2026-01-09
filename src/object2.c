@@ -5193,6 +5193,22 @@ s16b inven_carry(object_type* o_ptr, bool combine_ammo)
     /* Count the items */
     p_ptr->inven_cnt++;
 
+    /* Track rarest item depth for death recap */
+    {
+        object_kind* k_ptr = &k_info[j_ptr->k_idx];
+        if (k_ptr->level > p_ptr->rarest_item_depth)
+        {
+            p_ptr->rarest_item_depth = k_ptr->level;
+        }
+    }
+
+    /* Track if player stole the Ring of Thráin */
+    if (j_ptr->name1 >= ART_RING_OF_THRAIN_0 &&
+        j_ptr->name1 <= ART_RING_OF_THRAIN_3)
+    {
+        p_ptr->stole_ring = TRUE;
+    }
+
     /* Recalculate bonuses */
     p_ptr->update |= (PU_BONUS);
 

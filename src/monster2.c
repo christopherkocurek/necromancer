@@ -1688,6 +1688,24 @@ void update_mon(int m_idx, bool full)
         if (l_ptr->tsights < MAX_SHORT)
             l_ptr->tsights++;
 
+        /* Track biggest enemy seen for death recap */
+        if (r_ptr->level > r_info[p_ptr->biggest_enemy_seen].level)
+        {
+            p_ptr->biggest_enemy_seen = m_ptr->r_idx;
+        }
+
+        /* Track if player saw Sauron for death recap */
+        if (m_ptr->r_idx == R_IDX_SAURON)
+        {
+            p_ptr->saw_sauron = TRUE;
+        }
+
+        /* Track if player found Thráin for death recap */
+        if (m_ptr->r_idx == R_IDX_THRAIN)
+        {
+            p_ptr->found_thrain = TRUE;
+        }
+
         // If the player encounters a Unique for the first time, write a note.
         if (r_ptr->flags1 & RF1_UNIQUE)
         {

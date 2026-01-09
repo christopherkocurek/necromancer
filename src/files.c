@@ -3193,6 +3193,11 @@ void do_cmd_escape(void)
     /* set the escaped flag */
     p_ptr->escaped = TRUE;
 
+#if defined(MACH_O_CARBON) && defined(COCOA)
+    /* Play victory music */
+    music_play_oneshot(MUSIC_VICTORY);
+#endif
+
     /* Flush input */
     flush();
 
@@ -4870,6 +4875,16 @@ static void close_game_aux(void)
     high_score the_score;
     int choice = 0, highlight = 1;
 
+#if defined(MACH_O_CARBON) && defined(COCOA)
+    /* Play death or victory music based on outcome */
+    if (p_ptr->escaped) {
+        /* Victory music already played in do_cmd_escape */
+    } else {
+        /* Play death music */
+        music_play_oneshot(MUSIC_DEATH);
+    }
+#endif
+
     /* Dump bones file */
     // make_bones();
 
@@ -4918,7 +4933,21 @@ static void close_game_aux(void)
     }
 
     /* You are dead */
-    print_tomb(&the_score);
+    if (p_ptr->escaped)
+    {
+        /* Escaped - use traditional tomb display */
+        print_tomb(&the_score);
+    }
+    else if (show_death_recap)
+    {
+        /* Died - play the dramatic death sequence */
+        play_death_sequence();
+    }
+    else
+    {
+        /* Died - use traditional tomb display */
+        print_tomb(&the_score);
+    }
 
     /* Flush all input keys */
     flush();

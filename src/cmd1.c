@@ -525,6 +525,10 @@ void set_alertness(monster_type* m_ptr, int alertness)
                 // Dump a message
                 msg_format("%^s wakes up and notices you.", m_name);
 
+                // Track detection for death recap
+                p_ptr->times_detected++;
+                p_ptr->stealth_streak_current = 0;
+
                 // disturb the player
                 disturb(1, 0);
 
@@ -559,6 +563,10 @@ void set_alertness(monster_type* m_ptr, int alertness)
             {
                 // Dump a message
                 msg_format("%^s notices you.", m_name);
+
+                // Track detection for death recap
+                p_ptr->times_detected++;
+                p_ptr->stealth_streak_current = 0;
 
                 // disturb the player
                 disturb(1, 0);
@@ -626,6 +634,9 @@ void set_alertness(monster_type* m_ptr, int alertness)
             {
                 // Dump a message
                 msg_format("%^s becomes unwary.", m_name);
+
+                // Track enemies avoided for death recap
+                p_ptr->enemies_avoided++;
 
                 // redisplay the monster
                 redisplay = TRUE;

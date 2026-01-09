@@ -479,6 +479,9 @@ bool make_attack_normal(monster_type* m_ptr)
     monster_race* r_ptr = &r_info[m_ptr->r_idx];
     monster_lore* l_ptr = &l_list[m_ptr->r_idx];
 
+    /* Track current attacker for death recap */
+    current_attacker_idx = m_ptr->r_idx;
+
     int i, k, heal;
     int do_cut, do_stun;
 
@@ -2132,6 +2135,9 @@ bool make_attack_ranged(monster_type* m_ptr, int attack)
 
     monster_race* r_ptr = &r_info[m_ptr->r_idx];
     monster_lore* l_ptr = &l_list[m_ptr->r_idx];
+
+    /* Track current attacker for death recap */
+    current_attacker_idx = m_ptr->r_idx;
 
     char m_name[80];
     char m_poss[80];

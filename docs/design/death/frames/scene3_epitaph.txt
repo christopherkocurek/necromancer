@@ -1,0 +1,187 @@
+# Death Animation - Scene 3: Epitaph Text
+# Duration: ~3 seconds (30 frames at 100ms each)
+# Description: Somber text fades in line by line on black screen
+
+# Colors: DARK_GRAY fading to WHITE for text
+# Background: BLACK throughout
+
+# === FRAMES 1-5: Black screen pause ===
+
+[FRAME 1-5] delay=200 each
+# Complete black, building anticipation
+# Allows scene 2 darkness to settle
+
+# === FRAMES 6-15: First line fades in ===
+# "You died in the Tower of the Necromancer."
+
+[FRAME 6] delay=100 color=DARK_GRAY
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 7] delay=100 color=GRAY
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 8-10] delay=150 each color=WHITE
+# Text stabilizes
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+
+
+
+
+
+
+
+
+
+
+# === FRAMES 11-15: Pause to let first line sink in ===
+
+[FRAME 11-15] delay=200 each
+# Hold on first line
+# (same as frame 10)
+
+# === FRAMES 16-25: Second line fades in below ===
+# "No one is coming to save your bones..."
+
+[FRAME 16] delay=100 color=DARK_RED
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+                         No one is coming to save your bones...
+
+
+
+
+
+
+
+
+
+
+[FRAME 17] delay=100 color=DARK_RED
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+                         No one is coming to save your bones...
+
+
+
+
+
+
+
+
+
+
+[FRAME 18-20] delay=150 each color=RED
+# Second line stabilizes in dim red
+
+
+
+
+
+
+
+
+
+                     You died in the Tower of the Necromancer.
+
+
+                         No one is coming to save your bones...
+
+
+
+
+
+
+
+
+
+
+# === FRAMES 21-30: Hold both lines, then fade to black ===
+
+[FRAME 21-25] delay=200 each
+# Hold on both lines for emotional impact
+
+[FRAME 26-28] delay=150 each
+# Begin fading text out (reverse color sequence)
+# WHITE -> GRAY -> DARK_GRAY
+
+[FRAME 29-30] delay=200 each
+# Fade to black
+# Screen completely dark, ready for Scene 4 (Tombstone)
+
+# Notes for implementation:
+# - Text should be centered horizontally
+# - Use Term_putstr with appropriate color codes
+# - Consider subtle flicker effect on "Necromancer"
+# - The ellipsis "..." should appear one dot at a time for extra drama
+# - Transition to Scene 4 should be seamless (black to black)

@@ -82,6 +82,7 @@ extern u32b seed_flavor;
 extern s16b num_repro;
 extern s16b object_level;
 extern s16b monster_level;
+extern s16b current_attacker_idx;  /* Monster r_idx currently attacking player */
 extern char summon_kin_type;
 extern s32b turn;
 extern s32b playerturn;
@@ -226,6 +227,18 @@ extern cptr ANGBAND_DIR_PREF;
 extern cptr ANGBAND_DIR_USER;
 extern cptr ANGBAND_DIR_XTRA;
 extern cptr ANGBAND_DIR_SCRIPT;
+
+/* Music system (main-cocoa.m) */
+#if defined(MACH_O_CARBON) && defined(COCOA)
+extern void music_play(int track);
+extern void music_play_oneshot(int track);
+extern void music_stop(void);
+extern void music_stop_fade(float seconds);
+extern void music_set_volume(float vol);
+extern void music_set_enabled(int enabled);
+extern int music_get_current_track(void);
+#endif /* MACH_O_CARBON && COCOA */
+
 extern bool item_tester_full;
 extern byte item_tester_tval;
 extern bool (*item_tester_hook)(const object_type*);
@@ -532,6 +545,13 @@ extern bool has_ring_of_thrain(void);
 extern bool has_key_to_erebor(void);
 extern bool has_map_to_erebor(void);
 extern bool can_escape_dol_guldur(void);
+
+/* death.c */
+extern cptr generate_epitaph(void);
+extern void show_tombstone(void);
+extern void display_death_recap(void);
+extern char death_recap_input(void);
+extern void play_death_sequence(void);
 
 /* generate.c */
 extern void place_monster_by_flag(

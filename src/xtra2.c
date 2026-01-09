@@ -2637,6 +2637,14 @@ bool mon_take_hit(int m_idx, int dam, cptr note, int who)
     /* Hurt it */
     m_ptr->hp -= dam;
 
+    /* Track damage dealt by player */
+    if (who < 0 && dam > 0)
+    {
+        p_ptr->damage_dealt_total += dam;
+        if (dam > p_ptr->biggest_hit)
+            p_ptr->biggest_hit = dam;
+    }
+
     /* It is dead now */
     if (m_ptr->hp <= 0)
     {
@@ -2696,6 +2704,24 @@ bool mon_take_hit(int m_idx, int dam, cptr note, int who)
 
         /* Generate treasure */
         monster_death(m_idx);
+
+        /* Track biggest enemy killed by player */
+        if (who < 0 && r_ptr->level > r_info[p_ptr->biggest_enemy_killed].level)
+        {
+            p_ptr->biggest_enemy_killed = m_ptr->r_idx;
+        }
+
+        /* Track if player killed a Nazgûl (Khamûl) */
+        if (who < 0 && m_ptr->r_idx == R_IDX_KHAMUL)
+        {
+            p_ptr->killed_nazgul = TRUE;
+        }
+
+        /* Track silent kills - killed before alerting others */
+        if (who < 0 && m_ptr->alertness < ALERTNESS_ALERT)
+        {
+            p_ptr->silent_kills++;
+        }
 
         /* Auto-recall only if visible or unique */
         if (m_ptr->ml || (r_ptr->flags1 & (RF1_UNIQUE)))

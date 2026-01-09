@@ -1,0 +1,150 @@
+# Death Animation - Scene 2: Consumed by Shadow
+# Duration: ~3 seconds (30 frames at 100ms each)
+# Description: The Eye appears, shadow tendrils consume screen, Eye blinks satisfied
+
+# === THE EYE ASCII ART ===
+# Inspired by intro.c implementation
+
+[EYE_CLOSED]
+                                 _.-````'-._
+                              ,-'            `-.
+                            ,'                  `.
+                          ,'                      `,
+                         /                          \
+                        ;                            ;
+                       ;                              ;
+                       |                              |
+                       ;                              ;
+                        \                            /
+                         `.                        ,'
+                           `.                    ,'
+                             `-.            _.-'
+                                `-._    _.-'
+                                    ````
+
+[EYE_OPEN]
+                                 _.-````'-._
+                              ,-'            `-.
+                            ,'    _.----._      `.
+                          ,'    ,'        `.      `,
+                         /    ,'    ___     `.      \
+                        ;    /    ,'   `.    \      ;
+                       ;    ;    (   @   )    ;      ;
+                       |    ;     `.___,'    ;      |
+                       ;    \               /       ;
+                        \    `.           ,'       /
+                         `.    `-._____.-'       ,'
+                           `.                  ,'
+                             `-.            _.-'
+                                `-._    _.-'
+                                    ````
+
+# === FRAMES 1-10: Eye appears from darkness ===
+
+[FRAME 1-3] delay=300
+# Black screen, tension builds
+
+[FRAME 4-6] delay=100
+# Eye fades in gradually (using gray tones)
+
+[FRAME 7] delay=500 color=FLAME
+# Eye fully visible, glowing
+
+
+
+
+
+
+
+
+
+                                 _.-````'-._
+                              ,-'            `-.
+                            ,'    _.----._      `.
+                          ,'    ,'        `.      `,
+                         /    ,'    ___     `.      \
+                        ;    /    ,'   `.    \      ;
+                       ;    ;    (   @   )    ;      ;
+                       |    ;     `.___,'    ;      |
+                       ;    \               /       ;
+                        \    `.           ,'       /
+                         `.    `-._____.-'       ,'
+                           `.                  ,'
+                             `-.            _.-'
+                                `-._    _.-'
+                                    ````
+
+
+# === FRAMES 11-25: Shadow tendrils crawl across screen ===
+# Use block characters: ░▒▓█
+# Tendrils originate from Eye and spread outward
+
+[FRAME 11] delay=100
+# First tendrils emerge from bottom of Eye
+
+                                 _.-````'-._
+                              ,-'            `-.
+                            ,'    _.----._      `.
+                          ,'    ,'        `.      `,
+                         /    ,'    ___     `.      \
+                        ;    /    ,'   `.    \      ;
+                       ;    ;    (   @   )    ;      ;
+                       |    ;     `.___,'    ;      |
+                       ;    \               /       ;
+                        \    `.           ,'       /
+                         `.    `-._____.-'       ,'
+                           `.        ░           ,'
+                             `-.  ░░░░░     _.-'
+                                `-._░░░░_.-'
+                                    ````
+                                     ▒▒
+                                    ▒▒▒▒
+
+[FRAME 12-15] delay=100 each
+# Tendrils spread further, reaching edges
+
+[FRAME 16-20] delay=100 each
+# Tendrils fill screen progressively
+# Eye remains visible in center
+
+[FRAME 21-24] delay=100 each
+# Screen nearly consumed by shadow
+# Only Eye pupil visible
+
+[FRAME 25] delay=100
+# Almost complete darkness except for Eye's glow
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   @   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+# === FRAMES 26-30: Eye blinks, satisfied ===
+
+[FRAME 26] delay=200
+# Eye closes halfway (satisfied blink)
+
+[FRAME 27] delay=100
+# Eye nearly closed
+
+[FRAME 28] delay=200
+# Eye fully closed - all is dark
+
+████████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████████████████████████████████████████████
+
+[FRAME 29-30] delay=300 each
+# Complete darkness, hold for beat before epitaph
+
+# Notes for implementation:
+# - Eye uses same flame coloring as intro animation
+# - Shadow tendrils use DARK_GRAY/BLACK alternating
+# - Pupil '@' should glow orange/red
+# - Final frames transition to solid black for Scene 3

@@ -1,0 +1,123 @@
+# Death Animation - Scene 4: Tombstone
+# Duration: ~3 seconds
+# Description: Procedural epitaph displayed in gravestone frame
+
+# === TOMBSTONE ASCII ART ===
+# Simple, elegant design that frames the epitaph
+# 80 columns wide, fits terminal
+
+[TOMBSTONE_FRAME]
+                              .-------------------.
+                             /                     \
+                            /                       \
+                           |                         |
+                           |        R. I. P.         |
+                           |                         |
+                           |  .-------------------.  |
+                           | |                     | |
+                           | |   "EPITAPH LINE 1   | |
+                           | |    EPITAPH LINE 2"  | |
+                           | |                     | |
+                           |  '-------------------'  |
+                           |                         |
+                           |      CHARACTER NAME     |
+                           |    of RACE and HOUSE    |
+                           |                         |
+                           |    Depth: XXX feet      |
+                           |                         |
+                          _|_________________________|_
+                         |___________________________|
+                               |             |
+                              _|_           _|_
+                             |___|         |___|
+
+# === ALTERNATIVE TOMBSTONE (simpler, ASCII-only) ===
+
+[TOMBSTONE_SIMPLE]
+
+                                _______________
+                               /               \
+                              /     R.I.P.      \
+                             |                   |
+                             |  "Epitaph goes    |
+                             |   here, wrapped   |
+                             |   to fit width"   |
+                             |                   |
+                             |   Name of Char    |
+                             |   Race - House    |
+                             |                   |
+                             |   Depth: XXX ft   |
+                            _|___________________|_
+                           |_____________________|
+
+
+# === ANIMATION SEQUENCE ===
+
+[FRAME 1-5] delay=150 each
+# Tombstone fades in from black
+# Using gray tones: DARK_GRAY -> GRAY -> WHITE
+
+[FRAME 6] delay=200 color=GRAY
+# Tombstone outline visible
+
+                                _______________
+                               /               \
+                              /     R.I.P.      \
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                             |                   |
+                            _|___________________|_
+                           |_____________________|
+
+
+[FRAME 7-10] delay=150 each
+# Epitaph text fades in (procedurally generated)
+# Color: DARK_GRAY -> WHITE
+
+[FRAME 11-15] delay=200 each
+# Character details fade in below epitaph
+# Name, Race/House, Depth
+
+[FRAME 16] delay=500
+# Full tombstone visible, hold for reading
+
+                                _______________
+                               /               \
+                              /     R.I.P.      \
+                             |                   |
+                             |  "He came. He    |
+                             |   saw. He died." |
+                             |                   |
+                             |   Gorlim the      |
+                             |   Unfaithful      |
+                             |   Man of Beor     |
+                             |                   |
+                             |  Depth: 350 ft   |
+                            _|___________________|_
+                           |_____________________|
+
+
+[FRAME 17-30] delay=100 each
+# Hold, then begin transition to stats recap
+# "But your tale is not forgotten..."
+# Text appears below tombstone
+
+[TRANSITION TEXT] delay=200 color=GRAY
+
+                              But your tale is not forgotten...
+
+
+# Notes for implementation:
+# - Epitaph is dynamically inserted from generate_epitaph()
+# - Character name from p_ptr->name
+# - Race/House from player race and house
+# - Depth from p_ptr->depth
+# - Wrap epitaph text to fit within tombstone frame (~20 chars per line)
+# - Use quotes around epitaph for emphasis
+# - Transition text leads into Scene 5 / Stats Recap

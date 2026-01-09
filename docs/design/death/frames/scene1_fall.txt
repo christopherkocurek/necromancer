@@ -1,0 +1,269 @@
+# Death Animation - Scene 1: The Fall
+# Duration: ~2 seconds (20 frames at 100ms each)
+# Description: Player character (@) crumbles/dissolves, red flash, darkness creeps in
+
+# Frame format: 80x24 terminal, centered content
+# Colors: RED flash, then WHITE->DARK_GRAY->BLACK fade
+
+# === FRAME 1-3: Red Flash ===
+# Screen flashes solid red momentarily
+
+[FRAME 1] delay=50 bgcolor=RED
+# Full screen red flash - clear everything
+
+[FRAME 2] delay=50 bgcolor=RED
+# Flash continues
+
+[FRAME 3] delay=100 bgcolor=BLACK
+# Cut to black with @ still visible center
+
+
+
+
+
+
+
+
+
+
+                                        @
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 4] delay=100 color=WHITE
+# @ begins to shake/fragment
+
+
+
+
+
+
+
+
+
+
+                                       @.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 5] delay=100 color=GRAY
+# @ fragments more
+
+
+
+
+
+
+
+
+
+
+                                      .@..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 6] delay=100 color=GRAY
+# @ dissolving, pieces falling
+
+
+
+
+
+
+
+
+
+
+                                      .*@*.
+                                        .
+
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 7] delay=100 color=GRAY
+# @ crumbling further
+
+
+
+
+
+
+
+
+
+
+                                      ..*..
+                                       .*.
+                                        .
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 8] delay=100 color=DARK_GRAY
+# @ nearly gone, particles falling
+
+
+
+
+
+
+
+
+
+
+                                       ...
+                                       .*.
+                                        ..
+                                        .
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 9] delay=100 color=DARK_GRAY
+# Particles settling
+
+
+
+
+
+
+
+
+
+
+
+                                        ..
+                                        .
+                                        .
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 10] delay=100 color=DARK_GRAY
+# Darkness begins creeping in from edges
+
+
+
+
+
+
+
+
+
+
+
+                                        .
+                                        .
+
+
+
+
+
+
+
+
+
+
+
+
+# === FRAMES 11-20: Darkness creeps in ===
+# Vignette effect using block characters
+
+[FRAME 11] delay=100
+# Edges begin to darken with vignette
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[FRAME 12-20] delay=100 each
+# Vignette continues inward until screen is black
+# Using block characters: ░▒▓█
+
+# Note: Implementation will use Term_putch with color codes
+# Screen progressively darkens from edges toward center
+# Final frame is completely black, ready for Scene 2

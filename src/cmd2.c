@@ -302,6 +302,7 @@ void do_cmd_go_up(void)
 
     // another staircase has been used...
     p_ptr->stairs_taken++;
+    p_ptr->stairs_ascended++;
     p_ptr->staircasiness += 1000;
 
     /* Remember disconnected stairs */
@@ -455,6 +456,7 @@ void do_cmd_go_down(void)
 
     // another staircase has been used...
     p_ptr->stairs_taken++;
+    p_ptr->stairs_descended++;
     p_ptr->staircasiness += 1000;
 
     /* Remember disconnected stairs */
@@ -1594,6 +1596,9 @@ static bool do_cmd_close_aux(int y, int x)
 
     /* Update the visuals */
     p_ptr->update |= (PU_UPDATE_VIEW | PU_MONSTERS);
+
+    /* Track doors closed for death recap */
+    p_ptr->doors_closed++;
 
     /* Sound */
     sound(MSG_SHUTDOOR);

@@ -76,6 +76,7 @@ u32b seed_flavor; /* Hack -- consistent object colors */
 s16b num_repro; /* Current reproducer count */
 s16b object_level; /* Current object creation level */
 s16b monster_level; /* Current monster creation level */
+s16b current_attacker_idx; /* Monster r_idx currently attacking player */
 
 char summon_kin_type; /* Hack -- See summon_specific() */
 

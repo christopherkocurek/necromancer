@@ -613,6 +613,13 @@ void take_hit(int dam, cptr kb_str)
                 "%s (while hallucinating)", kb_str);
         }
 
+        /* Store killer name for death recap */
+        my_strcpy(p_ptr->killer_name, kb_str, sizeof(p_ptr->killer_name));
+
+        /* Store killer monster index for death recap (0 if not a monster) */
+        p_ptr->killer_idx = current_attacker_idx;
+        current_attacker_idx = 0;  /* Reset for next attack */
+
         /* Note death */
         p_ptr->is_dead = TRUE;
 
