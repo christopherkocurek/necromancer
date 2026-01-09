@@ -48,15 +48,15 @@ LIBS = `gtk-config --libs`
 #
 # Default target.
 #
-all: sil
+all: necromancer
 
 
 #
 # Install the game.
 #
 
-install: sil
-	cp sil ..
+install: necromancer
+	cp necromancer ..
 
 
 #
@@ -64,7 +64,7 @@ install: sil
 #
 
 sil: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o sil $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o necromancer $(OBJS) $(LIBS)
 
 
 #
@@ -72,7 +72,7 @@ sil: $(OBJS)
 #
 
 clean:
-	-rm -f *.o sil
+	-rm -f *.o necromancer
 
 
 #

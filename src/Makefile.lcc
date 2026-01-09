@@ -65,8 +65,8 @@ OBJS=\
 	birth.obj \
 	sil.res
 
-sil.exe:	$(OBJS)
-	$(LINKER)  -subsystem windows -o $(SIL_PATH)\sil.exe $(OBJS) $(LIBS)
+necromancer.exe:	$(OBJS)
+	$(LINKER)  -subsystem windows -o $(SIL_PATH)\necromancer.exe $(OBJS) $(LIBS)
 
 # Build Z-VIRT.C
 Z-VIRT_C=\

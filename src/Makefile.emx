@@ -39,10 +39,10 @@ NICE		= nice -i -n -30
 
 default: all depends :-)
 
-install: ..\sil.exe ..\aclient.exe ..\startwnd.cmd
+install: ..\necromancer.exe ..\aclient.exe ..\startwnd.cmd
 
 clean:
-	-+@ del sil.exe
+	-+@ del necromancer.exe
 	-+@ del aclient.exe
 	-+@ del depends
 	-+@ del _state.mk
@@ -73,7 +73,7 @@ OBJS = \
 .c.o:
 	$(NICE) $(CC) $(CFLAGS) -c $*.c
 
-all .PHONY: sil.exe aclient.exe 
+all .PHONY: necromancer.exe aclient.exe 
 	+@echo. 
 	+@echo Now type 
 	+@echo. 
@@ -88,7 +88,7 @@ all .PHONY: sil.exe aclient.exe
 	+@echo working executables.
 	+@echo. 
 
-EXPFILES = sil.exe;aclient.exe;patches.txt;readme;startwnd.cmd
+EXPFILES = necromancer.exe;aclient.exe;patches.txt;readme;startwnd.cmd
 
 ..\exp\$(EXPORT) .PHONY .IGNORE: install patches
 # Needs 4OS2!
@@ -145,9 +145,9 @@ depends .IGNORE: $(OBJS)
 	+ echo. > depends
 	+ for %a in (*.d) type %a >> depends
 
-..\sil.exe: sil.exe
-	+ copy sil.exe ..
-	emxbind -s ..\sil.exe
+..\necromancer.exe: necromancer.exe
+	+ copy necromancer.exe ..
+	emxbind -s ..\necromancer.exe
 
 ..\aclient.exe: aclient.exe
 	+ copy aclient.exe ..
@@ -169,8 +169,8 @@ ECF=>> ..\startwnd.cmd
 	$(EC) delay                                                            $(ECF)
 	$(EC) sil %1 %2 %3 %4 %5 %6 %7 %8 %9                                   $(ECF)
 
-sil.exe: sil.a main.o main-emx.o main-epm.o
-	$(CC) -o sil.exe main.o main-emx.o sil.a $(LFLAGS) 
+necromancer.exe: sil.a main.o main-emx.o main-epm.o
+	$(CC) -o necromancer.exe main.o main-emx.o sil.a $(LFLAGS) 
 
 sil.a: $(OBJS)
 	$(AR) r sil.a $(OBJS)

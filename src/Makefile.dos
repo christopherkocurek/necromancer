@@ -71,12 +71,12 @@ LIBS = -lpc -lalleg
 # Targets
 #
 
-default: sil.exe
+default: necromancer.exe
 
-install: sil.exe
-	copy sil.exe ..
+install: necromancer.exe
+	copy necromancer.exe ..
 
-all: sil.exe
+all: necromancer.exe
 	@echo All done.  Use 'make install' to install.
 
 
@@ -84,7 +84,7 @@ all: sil.exe
 # Link executables
 #
 
-sil.exe: $(OBJS)
+necromancer.exe: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBS)
 
 

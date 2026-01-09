@@ -80,7 +80,7 @@ default: sil
 install: sil movebin cleanobjs lineendings
 
 movebin:
-	mv -f sil.exe ../sil.exe
+	mv -f necromancer.exe ../necromancer.exe
 
 lineendings:
 	./unix2doslib
@@ -89,7 +89,7 @@ cleanobjs:
 	rm -f $(EXOBJS)
 
 cleanbin:
-	rm -f sil.exe
+	rm -f necromancer.exe
 
 clean:	cleanobjs cleanbin
 
