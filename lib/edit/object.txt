@@ -1155,6 +1155,68 @@ D:It darkens an area with a radius of 7 squares, plus the entire room
 D: if you are currently in one.
 
 
+##### Wands #####
+
+
+N:220:& Wand~ of Frost
+G:-:w
+I:56:0:0
+W:6:0:10:150
+P:0:0d0:0:0d0
+A:6/3:12/2
+D:It fires a bolt of frost that deals 2d4 cold damage
+D: and may slow its target.
+
+
+N:221:& Wand~ of Fire
+G:-:r
+I:56:1:0
+W:7:0:10:175
+P:0:0d0:0:0d0
+A:7/3:13/2
+D:It fires a bolt of fire that deals 2d5 fire damage.
+
+
+N:222:& Wand~ of Slowing
+G:-:B
+I:56:2:0
+W:5:0:10:125
+P:0:0d0:0:0d0
+A:5/3:11/2
+D:It fires a ray that slows its target for several turns.
+D: Excellent for stealth builds.
+
+
+N:223:& Wand~ of Light
+G:-:y
+I:56:3:0
+W:4:0:10:100
+P:0:0d0:0:0d0
+A:4/2:10/2
+D:It fires a beam of light that deals 1d6 damage to
+D: light-sensitive creatures and illuminates the area.
+
+
+N:224:& Wand~ of Fear
+G:-:s
+I:56:4:0
+W:8:0:10:200
+P:0:0d0:0:0d0
+A:8/4:14/3
+D:It fires a wave of terror that causes its target to flee.
+D: Requires a Will save to resist.
+
+
+N:225:& Wand~ of Sleep
+G:-:p
+I:56:5:0
+W:9:0:10:225
+P:0:0d0:0:0d0
+A:9/4:15/3
+D:It fires a ray of slumber that puts its target to sleep.
+D: Requires a Will save to resist. Excellent for stealth builds.
+
+
 ##### Horns #####
 
 N:240:Terror
@@ -1199,14 +1261,28 @@ D: In addition to the compass directions, brave souls can
 D: aim it up (<) or down (>).
 
 
-N:250:Warning
+N:250:Challenge
 G:?:d
 I:66:4:0
-W:7:0:10:0
+W:7:0:10:100
 P:0:0d0:0:0d0
-A:7/12
+A:7/6
 F:EASY_KNOW
-D:It rings out a challenge to your foes. 
+D:It rings out a challenge to your foes, filling you with
+D: battle-fury (+1 Str/Con, -1 Dex/Gra) for 20 turns. Alerts
+D: nearby enemies but grants the courage to face them.
+
+
+N:251:& Flute~ of the Fairy
+G:?:s
+I:66:5:0
+W:10:0:3:200
+P:0:0d0:0:0d0
+A:10/4:16/3
+F:EASY_KNOW
+D:A delicate silver flute. Its haunting melody conjures
+D: concealing mists in a radius around you, blocking line
+D: of sight for those within. Much quieter than horns.
 
 
 ##### Potions #####
@@ -1257,14 +1333,15 @@ D:It cures stunning, confusion, and hallucination; and ends
 D: your rage. 
 
 
-N:318:Healing
+N:318:Cordial of the Wise
 G:!:d
 I:75:5:100
 W:9:0:5:300
 P:0:0d0:0:0d0
 A:9/1:15/1
 F:EASY_KNOW
-D:It heals all cuts and restores half your health.
+D:A soothing draught favored by healers and loremasters.
+D: It heals all cuts and restores half your health.
 
 
 N:319:Voice
@@ -1319,48 +1396,63 @@ F:EASY_KNOW
 D:It grants you temporary resistance to fire and cold for 20d4 turns.
 
 
-N:327:Strength
+N:324:Shadows
+G:!:d
+I:75:11:100
+W:8:0:5:150
+P:0:0d0:0:0d0
+A:8/2:14/2
+F:EASY_KNOW
+D:A dark liquid that cloaks you in shadow. It grants temporary
+D: invisibility and dims your light for 15d4 turns.
+
+
+N:327:Draught of Might
 G:!:d
 I:75:14:100
 W:6:0:5:200
 P:0:0d0:0:0d0
 A:6/2:12/2
 F:EASY_KNOW
-D:It grants a bonus of +3 to strength for 20d4 turns,
-D: restoring strength in the process.
+D:A potent brew that fills the limbs with strength. It grants
+D: a bonus of +3 to strength for 20d4 turns, restoring strength
+D: in the process.
 
 
-N:328:Dexterity
+N:328:Nimble-wine
 G:!:d
 I:75:15:100
 W:7:0:5:200
 P:0:0d0:0:0d0
 A:7/2:13/2
 F:EASY_KNOW
-D:It grants a bonus of +3 to dexterity for 20d4 turns,
-D: restoring dexterity in the process.
+D:An Elvish cordial that quickens the hands and feet. It grants
+D: a bonus of +3 to dexterity for 20d4 turns, restoring dexterity
+D: in the process.
 
 
-N:329:Constitution
+N:329:Hardy-brew
 G:!:d
 I:75:16:100
 W:8:0:5:200
 P:0:0d0:0:0d0
 A:8/2:14/2
 F:EASY_KNOW
-D:It grants a bonus of +3 to constitution for 20d4 turns,
-D: restoring constitution in the process.
+D:A thick dwarven tonic that fortifies the body. It grants
+D: a bonus of +3 to constitution for 20d4 turns, restoring
+D: constitution in the process.
 
 
-N:330:Grace
+N:330:Starlight Elixir
 G:!:d
 I:75:17:100
 W:9:0:5:200
 P:0:0d0:0:0d0
 A:9/2:15/2
 F:EASY_KNOW
-D:It grants a bonus of +3 to grace for 20d4 turns,
-D: restoring grace in the process.
+D:A shimmering draught that heightens awareness of the unseen.
+D: It grants a bonus of +3 to grace for 20d4 turns, restoring
+D: grace in the process.
 
 ##
 
@@ -1493,31 +1585,30 @@ F:IGNORE_ALL | EASY_KNOW
 
 ##### Herbs #####
 
-# Do not move Herb of Rage from this location, used by quests.
+# Do not move Orc-rage Mushroom from this location, used by quests.
 
-N:380:Rage
+N:380:& Orc-rage Mushroom~
 G:,:d
 I:80:0:250
 W:3:0:1:25
 P:0:0d0:0:0d0
 A:3/2:9/1:15/4
 F:EASY_KNOW
-D:It sends you into a dark rage
-D: (+1 Str/Con, -1 Dex/Gra, special melee attack, resistance to fear)
-D: for 10d4 turns.
-D: Herbs provide nourishment for about 250
-D: turns under normal conditions. 
+D:A dark fungus favored by orc berserkers. It sends you into a
+D: dark rage (+1 Str/Con, -1 Dex/Gra, special melee attack,
+D: resistance to fear) for 10d4 turns. Provides nourishment
+D: for about 250 turns under normal conditions. 
 
 
-N:381:Sustenance
+N:381:Waymeal
 G:,:d
 I:80:1:0
 W:5:0:1:50
 P:0:0d0:0:0d0
 A:3/2:13/1
 F:EASY_KNOW
-D:It provides nourishment for about 2000 turns
-D: under normal conditions. 
+D:A compact traveler's herb that staves off hunger. It provides
+D: nourishment for about 2000 turns under normal conditions. 
 
 # Do not move Herb of Terror from this location, used by quests.
 
@@ -1534,16 +1625,16 @@ D: Herbs provide nourishment for about 250
 D: turns under normal conditions.
 
 
-N:383:Healing
+N:383:& Healer's Herb~
 G:,:d
 I:80:3:250
 W:7:0:1:75
 P:0:0d0:0:0d0
 A:7/2:17/2
 F:EASY_KNOW
-D:It cures all cuts and heals half of your health.
-D:  Herbs provide nourishment for
-D: about 250 turns under normal conditions. 
+D:A medicinal herb known to healers of the West. It cures all
+D: cuts and heals half of your health. Provides nourishment
+D: for about 250 turns under normal conditions. 
 
 
 N:384:Restoration
@@ -1631,14 +1722,15 @@ D: shadow-sickness of Dol Guldur. Herbs provide nourishment for about
 D: 250 turns under normal conditions.
 
 
-N:399:& Piece~ of Dark Bread
+N:399:& Piece~ of Travel Bread
 G:,:s
 I:80:35:1500
 W:7:0:5:2
 P:0:0d0:0:0d0
 A:7/2:13/1
 F:EASY_KNOW
-D:It provides nourishment for about 1,500 turns under normal conditions. 
+D:Simple travel rations, filling but unremarkable. It provides
+D: nourishment for about 1,500 turns under normal conditions. 
 
 
 N:400:& Strip~ of Dried Meat
@@ -1659,7 +1751,82 @@ P:0:0d0:0:0d0
 A:7/4:18/2
 F:EASY_KNOW
 D:It restores a point of grace if it has been drained.  It provides
-D: nourishment for about 3,000 turns under normal conditions. 
+D: nourishment for about 3,000 turns under normal conditions.
+
+
+N:403:& Cake~ of Cram
+G:,:W
+I:80:38:2000
+W:5:0:3:5
+P:0:0d0:0:0d0
+A:5/3:11/2:17/1
+F:EASY_KNOW
+D:Dense waybread from Dale. Filling but bland. It provides
+D: nourishment for about 2,000 turns under normal conditions.
+
+
+N:404:& Pipe-weed~
+G:,:g
+I:80:11:250
+W:3:0:1:15
+P:0:0d0:0:0d0
+A:3/2:9/1:15/1
+F:EASY_KNOW
+D:Fine Longbottom Leaf, the best pipe-weed in the Southfarthing.
+D: A few puffs steady the nerves, curing fear and granting +3
+D: Grace for 30 turns. Creates a tell-tale wisp of smoke.
+D: Provides nourishment for about 250 turns.
+
+
+##### Improved Herbs (Alchemy Crafting) #####
+
+
+N:405:& Concentrated Healer's Herb~
+G:,:G
+I:80:20:250
+W:99:0:1:200
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A potent concentrate of healing herbs. It cures all cuts
+D: and heals three-quarters of your health. Created by combining
+D: two Healer's Herbs with Alchemy. Provides nourishment for
+D: about 250 turns.
+
+
+N:406:& Potent Athelas~
+G:,:G
+I:80:21:250
+W:99:0:1:600
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A powerful preparation of kingsfoil. It cures poison, fear,
+D: confusion, and hallucination, heals half your health, and cures
+D: all shadow-sickness. Created by combining two Athelas with
+D: Alchemy. Provides nourishment for about 250 turns.
+
+
+N:407:& Concentrated Waymeal~
+G:,:G
+I:80:22:0
+W:99:0:1:150
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A dense concentrate of traveler's herbs. Created by combining
+D: two Waymeals with Alchemy. It provides nourishment for about
+D: 4,000 turns under normal conditions.
+
+
+N:408:& Potent Orc-rage Mushroom~
+G:,:v
+I:80:23:250
+W:99:0:1:100
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A highly concentrated fungal preparation. It sends you into a
+D: powerful rage (+2 Str/Con, -2 Dex/Gra, special melee attack,
+D: resistance to fear) for 15d4 turns. Created by combining two
+D: Orc-rage Mushrooms with Alchemy. Provides nourishment for
+D: about 250 turns.
 
 
 ##### Various #####
@@ -2644,4 +2811,89 @@ A:16/12:19/10
 F:EASY_KNOW
 D:A piece of the throne-room calendar showing Durin's Day.
 D: The secret door could only open then. Now forgotten.
+
+
+##### Dol Guldur Records (sval 100-107) #####
+# Found throughout dungeon, grant 500 XP each
+# Prisoner accounts, orc reports, historical fragments
+
+N:550:& Prisoner's Account~
+G:~:u
+I:2:100:0
+W:3:80:0:0
+A:3/10:6/8:9/6
+F:EASY_KNOW
+D:"Day 47. The screaming stopped. I don't know if that's better or worse.
+D: The guards speak of someone called the Necromancer. They fear him
+D: almost as much as we do." The scratched words of a forgotten captive.
+
+N:551:& Prisoner's Account~
+G:~:u
+I:2:101:0
+W:5:80:0:0
+A:5/10:8/8:11/6
+F:EASY_KNOW
+D:"They took Aldor today. He came back wrong. His eyes... empty.
+D: He serves them now. The shadow takes everything eventually."
+D: The last entry is smeared with something dark.
+
+N:552:& Orc Report~
+G:~:R
+I:2:102:0
+W:7:80:0:0
+A:7/10:10/8:13/6
+F:EASY_KNOW
+D:"Prisoners ready for questioning. One dwarf still resists - the old one
+D: with the beard-rings. Master says he knows about mountain. We break
+D: him soon." Crude orkish script, decades old.
+
+N:553:& Orc Report~
+G:~:R
+I:2:103:0
+W:9:80:0:0
+A:9/10:12/8:15/6
+F:EASY_KNOW
+D:"Patrols increased. Master senses something. Grey Wanderer spotted
+D: near forest edge again. All guards to stations." The orcs'
+D: fear of Gandalf is palpable even in writing.
+
+N:554:& Historical Fragment~
+G:~:W
+I:2:104:0
+W:11:80:0:0
+A:11/10:14/8:17/6
+F:EASY_KNOW
+D:"...and so the fortress of Dol Guldur was built upon the hill
+D: of Amon Lanc, where once the Silvan Elves held court. The shadow
+D: came slowly, driving them north..." An elvish chronicle, half-burned.
+
+N:555:& Historical Fragment~
+G:~:W
+I:2:105:0
+W:13:80:0:0
+A:13/10:16/8:18/6
+F:EASY_KNOW
+D:"The White Council debated long. Was it truly Sauron returned?
+D: Saruman urged caution. Gandalf pushed for assault. In the end,
+D: nothing was done." A wizard's notes, abandoned here.
+
+N:556:& Necromancer Sighting~
+G:~:D
+I:2:106:0
+W:15:80:0:0
+A:15/12:18/10
+F:EASY_KNOW
+D:"I saw him today. Not a man - a shadow that wears the shape of one.
+D: Where he walks, torches dim. Where he looks, courage dies.
+D: I understand now why the elves fled." Written in a trembling hand.
+
+N:557:& Necromancer Sighting~
+G:~:D
+I:2:107:0
+W:17:80:0:0
+A:17/12:19/10
+F:EASY_KNOW
+D:"He spoke to me. Or rather, spoke through me - I felt his voice
+D: in my skull. 'WHERE IS THE RING?' Over and over. Even now I hear
+D: it echoing. He searches for something precious." A final testament.
 

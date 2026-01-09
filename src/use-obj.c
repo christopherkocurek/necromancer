@@ -181,6 +181,73 @@ static bool eat_food(object_type* o_ptr, bool* ident)
         *ident = TRUE;
         break;
     }
+
+    case SV_FOOD_CRAM:
+    {
+        msg_print("It is dense and rather bland, but filling.");
+        *ident = TRUE;
+        break;
+    }
+
+    case SV_FOOD_PIPEWEED:
+    {
+        msg_print("You take a few calming puffs. A wisp of smoke rises.");
+        /* Calms the nerves - removes fear and grants temporary grace bonus */
+        if (p_ptr->afraid)
+        {
+            (void)set_afraid(0);
+            msg_print("Your fears fade away.");
+        }
+        /* Small grace bonus represents mental clarity */
+        (void)set_tmp_gra(p_ptr->tmp_gra + 30);
+        /* Small perception penalty from smoke */
+        monster_perception(FALSE, FALSE, -5);
+        *ident = TRUE;
+        break;
+    }
+
+    /* Improved herbs from Alchemy combining */
+    case SV_FOOD_CONCENTRATED_HEALING:
+    {
+        msg_print("The concentrated essence fills you with healing power.");
+        *ident = TRUE;
+        set_cut(0);  /* Cures all cuts */
+        hp_player(75 + medicine_bonus(75), TRUE, TRUE);  /* Heals 75% */
+        break;
+    }
+
+    case SV_FOOD_POTENT_ATHELAS:
+    {
+        msg_print("The potent kingsfoil restores your vitality.");
+        *ident = TRUE;
+        /* Cures various ailments */
+        (void)set_poisoned(0);
+        (void)set_afraid(0);
+        (void)set_confused(0);
+        (void)set_image(0);
+        /* Heals 50% */
+        hp_player(50 + medicine_bonus(50), TRUE, TRUE);
+        break;
+    }
+
+    case SV_FOOD_CONCENTRATED_WAYMEAL:
+    {
+        msg_print("The concentrated waymeal is incredibly filling.");
+        *ident = TRUE;
+        /* Nutrition is handled by pval (4000) */
+        break;
+    }
+
+    case SV_FOOD_POTENT_RAGE:
+    {
+        msg_print("Overwhelming fury surges through your veins!");
+        *ident = TRUE;
+        /* Stronger rage effect - 15d4 turns with bonus strength */
+        (void)set_rage(p_ptr->rage + damroll(15, 4));
+        /* Additional temporary strength boost */
+        (void)set_tmp_str(p_ptr->tmp_str + damroll(10, 4));
+        break;
+    }
     }
 
     /* Food can feed the player */
@@ -328,6 +395,22 @@ static bool quaff_potion(object_type* o_ptr, bool* ident)
             *ident = TRUE;
         }
         if (set_oppose_cold(p_ptr->oppose_cold + damroll(20, 4)))
+        {
+            *ident = TRUE;
+        }
+        break;
+    }
+
+    case SV_POTION_SHADOWS:
+    {
+        msg_print("Shadows wrap around you like a cloak.");
+        /* Grant temporary invisibility (faded effect) */
+        if (set_faded(p_ptr->faded + damroll(15, 4)))
+        {
+            *ident = TRUE;
+        }
+        /* Dim your light */
+        if (set_darkened(p_ptr->darkened + damroll(15, 4)))
         {
             *ident = TRUE;
         }
@@ -632,6 +715,80 @@ static bool use_staff(object_type* o_ptr, bool* ident)
     return (use_charge);
 }
 
+/*
+ * Use a wand - targeted magic device with many charges
+ * Wands require a direction and fire bolts at targets.
+ */
+static bool use_wand(object_type* o_ptr, bool* ident)
+{
+    int dir;
+    int gra_score = p_ptr->skill_use[S_WIL];  /* Use Will for wand accuracy */
+
+    /* Get a direction, allow cancel */
+    if (!get_aim_dir(&dir, 0))
+        return (FALSE);
+
+    /* Analyze the wand */
+    switch (o_ptr->sval)
+    {
+    case SV_WAND_FROST:
+    {
+        /* Cold bolt: 2d4 damage, can slow target */
+        msg_print("A bolt of frost streaks from the wand!");
+        if (fire_bolt(GF_COLD, dir, 2, 4, gra_score))
+            *ident = TRUE;
+        break;
+    }
+
+    case SV_WAND_FIRE:
+    {
+        /* Fire bolt: 2d5 damage */
+        msg_print("A bolt of fire streaks from the wand!");
+        if (fire_bolt(GF_FIRE, dir, 2, 5, gra_score))
+            *ident = TRUE;
+        break;
+    }
+
+    case SV_WAND_SLOWING:
+    {
+        /* Slow bolt: slows target */
+        msg_print("A ray of slowing energy shoots from the wand!");
+        if (fire_bolt(GF_SLOW, dir, 0, 0, gra_score))
+            *ident = TRUE;
+        break;
+    }
+
+    case SV_WAND_LIGHT:
+    {
+        /* Light bolt: illuminates and damages light-sensitive creatures */
+        msg_print("A beam of light shoots from the wand!");
+        if (fire_bolt(GF_LIGHT, dir, 1, 6, gra_score))
+            *ident = TRUE;
+        break;
+    }
+
+    case SV_WAND_FEAR:
+    {
+        /* Fear bolt: causes target to flee */
+        msg_print("A wave of terror emanates from the wand!");
+        if (fire_bolt(GF_FEAR, dir, 0, 0, gra_score))
+            *ident = TRUE;
+        break;
+    }
+
+    case SV_WAND_SLEEP:
+    {
+        /* Sleep bolt: puts target to sleep */
+        msg_print("A ray of slumber shoots from the wand!");
+        if (fire_bolt(GF_SLEEP, dir, 0, 0, gra_score))
+            *ident = TRUE;
+        break;
+    }
+    }
+
+    return (TRUE);
+}
+
 static bool play_instrument(object_type* o_ptr, bool* ident)
 {
     int voice_cost = p_ptr->active_ability[S_WIL][WIL_CHANNELING] ? 10 : 20;
@@ -909,14 +1066,36 @@ static bool play_instrument(object_type* o_ptr, bool* ident)
 
     case SV_HORN_WARNING:
     {
-        // fires an inert beam so it looks like all other horns
+        // Horn of Challenge - now grants battle-fury
         fire_arc(GF_NOTHING, dir, 0, 0, will_score, 3, 90);
 
-        /* Make a lot of noise */
-        monster_perception(TRUE, FALSE, -40);
+        /* Make noise (less than before) */
+        monster_perception(TRUE, FALSE, -20);
 
         // Makes nearby monsters aggressive
-        *ident = make_aggressive();
+        make_aggressive();
+
+        // Grant temporary rage (battle-fury)
+        msg_print("Battle-fury fills your heart!");
+        (void)set_rage(p_ptr->rage + 20);
+
+        *ident = TRUE;
+
+        break;
+    }
+
+    case SV_HORN_FAIRY:
+    {
+        /* Flute of the Fairy - creates concealing mist */
+        msg_print("A haunting melody fills the air as mist rises around you.");
+
+        /* Create darkness/mist in radius 3 around player */
+        (void)darken_area(0, 0, 3);
+
+        /* Much quieter than horns - just a small perception penalty */
+        monster_perception(FALSE, FALSE, -5);
+
+        *ident = TRUE;
 
         break;
     }
@@ -1426,6 +1605,12 @@ bool use_object(object_type* o_ptr, bool* ident)
     case TV_STAFF:
     {
         used = use_staff(o_ptr, ident);
+        break;
+    }
+
+    case TV_WAND:
+    {
+        used = use_wand(o_ptr, ident);
         break;
     }
 

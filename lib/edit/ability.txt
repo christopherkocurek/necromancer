@@ -462,8 +462,9 @@ T:40:0:99  # Amulet
 
 N:84:Alchemy
 I:4:4:5
-D:Lets you determine the purpose of all herbs and potions you encounter.
-D: A scholar's knowledge of the natural world.
+D:Lets you identify all herbs and potions. Your knowledge of
+D: natural compounds also allows you to create improved herbs:
+D: combine two identical herbs to produce a more potent version.
 T:32:0:99  # Helm
 T:45:0:99  # Ring
 

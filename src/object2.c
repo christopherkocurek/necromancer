@@ -176,6 +176,49 @@ static bool kind_is_damaged_item(int k_idx)
 }
 
 /*
+ * Determine if a template is a harmful consumable that has been identified.
+ * Once a player has identified a harmful potion or herb, it won't spawn again.
+ */
+static bool kind_is_harmful_consumable_identified(int k_idx)
+{
+    object_kind* k_ptr = &k_info[k_idx];
+
+    /* Only check if the item is aware (identified) */
+    if (!k_ptr->aware)
+        return FALSE;
+
+    /* Check harmful potions */
+    if (k_ptr->tval == TV_POTION)
+    {
+        switch (k_ptr->sval)
+        {
+        case SV_POTION_SLOWNESS:
+        case SV_POTION_POISON:
+        case SV_POTION_BLINDNESS:
+        case SV_POTION_CONFUSION:
+        case SV_POTION_DEC_DEX:
+        case SV_POTION_DEC_GRA:
+            return TRUE;
+        }
+    }
+
+    /* Check harmful food/herbs */
+    if (k_ptr->tval == TV_FOOD)
+    {
+        switch (k_ptr->sval)
+        {
+        case SV_FOOD_HUNGER:
+        case SV_FOOD_ENTRANCEMENT:
+        case SV_FOOD_WEAKNESS:
+        case SV_FOOD_SICKNESS:
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+/*
  * Hack -- determine if a template is not a damaged item or skeleton
  *
  */
@@ -591,6 +634,13 @@ void get_obj_num_prep(void)
     /* Scan the allocation table */
     for (i = 0; i < alloc_kind_size; i++)
     {
+        /* Never spawn identified harmful consumables */
+        if (kind_is_harmful_consumable_identified(table[i].index))
+        {
+            table[i].prob2 = 0;
+            continue;
+        }
+
         /* Accept objects which pass the restriction, if any */
         if (!get_obj_num_hook)
         {
@@ -902,6 +952,10 @@ static s32b object_value_base(const object_type* o_ptr)
         case TV_STAFF:
             return (70L);
 
+        /* Un-aware Wands */
+        case TV_WAND:
+            return (50L);
+
         /* Un-aware Rods */
         case TV_HORN:
             return (90L);
@@ -1061,8 +1115,9 @@ static s32b object_value_real(const object_type* o_ptr)
     /* Analyze the item */
     switch (o_ptr->tval)
     {
-    /* Staffs */
+    /* Staffs and Wands */
     case TV_STAFF:
+    case TV_WAND:
     {
         /* Pay extra for charges, depending on standard number of
          * charges.  Handle new-style wands correctly.
@@ -1254,8 +1309,9 @@ bool object_similar(const object_type* o_ptr, const object_type* j_ptr)
         break;
     }
 
-    /* Staves */
+    /* Staves and Wands */
     case TV_STAFF:
+    case TV_WAND:
     {
         /* Don't merge as it messes with charges etc. */
         return (FALSE);
@@ -2013,6 +2069,36 @@ static void charge_staff(object_type* o_ptr)
 }
 
 /*
+ * Charge a new wand. Wands have more charges than staffs but weaker effects.
+ */
+static void charge_wand(object_type* o_ptr)
+{
+    int mult = CHANNELING_CHARGE_MULTIPLIER;
+
+    switch (o_ptr->sval)
+    {
+    case SV_WAND_FROST:
+        o_ptr->pval = mult * damroll(5, 4);  /* 5-20 charges */
+        break;
+    case SV_WAND_FIRE:
+        o_ptr->pval = mult * damroll(4, 4);  /* 4-16 charges */
+        break;
+    case SV_WAND_SLOWING:
+        o_ptr->pval = mult * damroll(4, 3);  /* 4-12 charges */
+        break;
+    case SV_WAND_LIGHT:
+        o_ptr->pval = mult * damroll(6, 4);  /* 6-24 charges */
+        break;
+    case SV_WAND_FEAR:
+        o_ptr->pval = mult * damroll(3, 4);  /* 3-12 charges */
+        break;
+    case SV_WAND_SLEEP:
+        o_ptr->pval = mult * damroll(2, 5);  /* 2-10 charges */
+        break;
+    }
+}
+
+/*
  *
  * Determines the theme of a chest.  This function is called
  * from chest_death when the chest is being opened. JG
@@ -2361,6 +2447,14 @@ static void a_m_aux_4(object_type* o_ptr, int level, bool fine, bool special)
     {
         /* Hack -- charge staffs */
         charge_staff(o_ptr);
+
+        break;
+    }
+
+    case TV_WAND:
+    {
+        /* Charge wands - more charges than staves but weaker effects */
+        charge_wand(o_ptr);
 
         break;
     }

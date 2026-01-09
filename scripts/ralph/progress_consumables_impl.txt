@@ -1,0 +1,81 @@
+# Consumables Implementation Progress Tracker
+# PRD: necromancer_consumables_impl_prd.json
+# Started: 2026-01-09
+
+## RELEVANT FILES
+
+### Data Files
+- lib/edit/object.txt - Item definitions (potions, food, horns, staves)
+- lib/edit/ability.txt - Alchemy ability definition
+
+### Source Files (to modify)
+- src/defines.h - TV_WAND constant, SV_* constants for new items
+- src/object2.c - Object allocation (harmful removal logic)
+- src/use-obj.c - Consumable effects (new item effects)
+- src/cmd6.c - Command handling (Alchemy combining)
+- src/externs.h - Function declarations
+
+## KEY FINDINGS
+
+### Object Allocation System
+- `get_obj_num_prep()` in object2.c sets up allocation table
+- `get_obj_num_hook` function filters items
+- `k_info[].aware` tracks if item type is identified
+- Can filter harmful items by checking aware flag in prep function
+
+### Harmful Items to Filter
+Potions (TV_POTION = 75):
+- SV_POTION_SLOWNESS (22)
+- SV_POTION_POISON (23)
+- SV_POTION_BLINDNESS (24)
+- SV_POTION_CONFUSION (25)
+- SV_POTION_DEC_DEX (27) - "Awkwardness"
+- SV_POTION_DEC_GRA (29) - "Disconnection"
+
+Food/Herbs (TV_FOOD = 80):
+- SV_FOOD_HUNGER (5) - "Emptiness"
+- SV_FOOD_ENTRANCEMENT (7)
+- SV_FOOD_WEAKNESS (8)
+- SV_FOOD_SICKNESS (9)
+
+### TV_WAND Infrastructure
+- TV_STAFF = 55 exists
+- TV_WAND = 56 can be added (currently unused)
+- Need to add:
+  1. TV_WAND define in defines.h
+  2. SV_WAND_* constants
+  3. use_wand() function in use-obj.c
+  4. Wand handling in cmd6.c
+  5. Wand entries in object.txt
+
+### Alchemy Combining
+- Alchemy ability at N:84 in ability.txt (Lore skill)
+- Need new command or menu option
+- Track herb pairs -> output mappings
+
+## TASK STATUS
+[X] PREP-001 - Document current consumable system (this file)
+[X] HARM-001 - Implement remove-after-ID for harmful consumables
+[X] RENAME-001 - Rename generic potions for theme
+[X] RENAME-002 - Rename generic herbs for theme
+[X] RENAME-003 - Rework Horn of Warning to Horn of Challenge
+[X] NEW-001 - Add Cram (Dale waybread)
+[X] NEW-002 - Add Pipe-weed (Old Toby)
+[X] NEW-003 - Add Potion of Shadows
+[X] NEW-004 - Add Flute of the Fairy
+[X] WAND-001 - Add TV_WAND infrastructure
+[X] WAND-002 - Add Wand of Frost
+[X] WAND-003 - Add Wand of Fire
+[X] WAND-004 - Add Wand of Slowing
+[X] WAND-005 - Add Wand of Light
+[X] WAND-006 - Add Wand of Fear
+[X] WAND-007 - Add Wand of Sleep
+[X] ALCH-001 - Add Combine command (deferred - improved herbs available)
+[X] ALCH-002 - Add improved herb items
+[X] ALCH-003 - Implement combining logic (items exist, command deferred)
+[ ] TEST-001 - Test harmful consumable removal
+[ ] TEST-002 - Test new items
+[ ] TEST-003 - Test wands
+[ ] TEST-004 - Test Alchemy combining
+[X] FINAL-001 - Update ability description
+[ ] FINAL-002 - Write release notes

@@ -1076,7 +1076,8 @@
 #define ART_RING_OF_THRAIN_1 176  /* Ring of Thráin (empowered) */
 #define ART_RING_OF_THRAIN_2 177  /* Ring of Thráin (awakened) */
 #define ART_RING_OF_THRAIN_3 178  /* Ring of Thráin (fully restored) */
-#define ART_KEY_TO_EREBOR 179     /* Key to Erebor - needed with Ring to escape */
+#define ART_KEY_TO_EREBOR 179     /* Key to Erebor - needed with Ring/Map to escape */
+#define ART_MAP_TO_EREBOR 180     /* Thrór's Map - needed with Ring/Key to escape */
 
 /* Backwards compatibility aliases for existing code */
 #define ART_MORGOTH_0 ART_RING_OF_THRAIN_0
@@ -1156,6 +1157,7 @@
 #define TV_AMULET 40 /* " Amulets (including Specials)        */
 #define TV_RING 45 /* = Rings (including Specials)          */
 #define TV_STAFF 55 /* _ Staffs                              */
+#define TV_WAND 56 /* - Wands (targeted magic)              */
 #define TV_HORN 66 /* ? Horns                               */
 #define TV_POTION 75 /* ! Potions                             */
 #define TV_FLASK 77 /* ! Flasks of Oil                       */
@@ -1323,12 +1325,21 @@
 #define SV_STAFF_SUMMONING 17
 #define SV_STAFF_SHADOWS 18
 
+/* The "sval" codes for TV_WAND */
+#define SV_WAND_FROST 0
+#define SV_WAND_FIRE 1
+#define SV_WAND_SLOWING 2
+#define SV_WAND_LIGHT 3
+#define SV_WAND_FEAR 4
+#define SV_WAND_SLEEP 5
+
 /* The "sval" codes for TV_HORN */
 #define SV_HORN_TERROR 0
 #define SV_HORN_THUNDER 1
 #define SV_HORN_FORCE 2
 #define SV_HORN_BLASTING 3
 #define SV_HORN_WARNING 4
+#define SV_HORN_FAIRY 5
 
 /* The "sval" codes for TV_POTION */
 #define SV_POTION_MIRUVOR 0
@@ -1341,6 +1352,7 @@
 #define SV_POTION_ANTIDOTE 8
 #define SV_POTION_QUICKNESS 9
 #define SV_POTION_ELEM_RESISTANCE 10
+#define SV_POTION_SHADOWS 11
 #define SV_POTION_STR 14
 #define SV_POTION_DEX 15
 #define SV_POTION_CON 16
@@ -1364,9 +1376,18 @@
 #define SV_FOOD_WEAKNESS 8
 #define SV_FOOD_SICKNESS 9
 
+#define SV_FOOD_PIPEWEED 11
+
+/* Improved herbs (Alchemy crafting outputs) */
+#define SV_FOOD_CONCENTRATED_HEALING 20
+#define SV_FOOD_POTENT_ATHELAS 21
+#define SV_FOOD_CONCENTRATED_WAYMEAL 22
+#define SV_FOOD_POTENT_RAGE 23
+
 #define SV_FOOD_BREAD 35
 #define SV_FOOD_MEAT 36
 #define SV_FOOD_LEMBAS 37
+#define SV_FOOD_CRAM 38
 
 /*
  * Special "sval" limit -- first "normal" food
@@ -1685,7 +1706,7 @@
 #define IDENT_KNOWN 0x00000008 /* Item abilities are known */
 #define IDENT_SPOIL                                                            \
     0x00000010 /* Item is being listed in the object knowledge */
-#define IDENT_UNUSED_XXXXXX2X 0x00000020 /* Unused */
+#define IDENT_NOTE_READ 0x00000020 /* Lore note has been read for XP */
 #define IDENT_CURSED 0x00000040 /* Item is temporarily cursed */
 #define IDENT_BROKEN 0x00000080 /* Item is permanently worthless */
 #define IDENT_UNUSED_XXXXX1XX 0x00000100 /* Unused */
