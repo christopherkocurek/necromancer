@@ -117,7 +117,7 @@ void do_cmd_go_up(void)
     /* Ironman */
     if (birth_ironman && !can_escape_dol_guldur())
     {
-        msg_print("You have vowed to not return until you hold the Ring of Thrain and the Key to Erebor.");
+        msg_print("You have vowed to not return until you hold the Ring, the Key, and the Map.");
         return;
     }
 
@@ -154,6 +154,8 @@ void do_cmd_go_up(void)
             msg_print("You need the Ring of Thrain to escape.");
         if (!has_key_to_erebor())
             msg_print("You need the Key to Erebor to escape.");
+        if (!has_map_to_erebor())
+            msg_print("You need Thrór's Map to escape.");
 
         return;
     }

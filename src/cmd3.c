@@ -171,6 +171,18 @@ void do_cmd_use_item(void)
     case TV_NOTE:
     {
         note_info_screen(o_ptr);
+
+        /* Grant XP on first read of lore notes */
+        if (!(o_ptr->ident & IDENT_NOTE_READ))
+        {
+            /* Mark as read (need non-const pointer) */
+            object_type* note_ptr = &inventory[item];
+            note_ptr->ident |= IDENT_NOTE_READ;
+
+            /* Grant experience */
+            msg_print("You gain insight from reading this lore.");
+            gain_exp(500);
+        }
         break;
     }
     case TV_METAL:
@@ -712,6 +724,14 @@ void do_cmd_wield(object_type* default_o_ptr, int default_item)
         o_ptr->ident |= (IDENT_SENSE);
     }
 
+    /* Ring of Thráin forces Deep Memory (Song of Delvings) */
+    if ((o_ptr->name1 >= ART_RING_OF_THRAIN_0)
+        && (o_ptr->name1 <= ART_RING_OF_THRAIN_3))
+    {
+        msg_print("The Ring whispers secrets of the deep places...");
+        change_song(SNG_DELVINGS);
+    }
+
     if (weapon_less_effective)
     {
         /* Describe it */
@@ -812,6 +832,20 @@ void do_cmd_takeoff(object_type* default_o_ptr, int default_item)
 
     // store the action type
     p_ptr->previous_action[0] = ACTION_MISC;
+
+    /* Ring of Thráin: stop Deep Memory when removed */
+    if ((o_ptr->name1 >= ART_RING_OF_THRAIN_0)
+        && (o_ptr->name1 <= ART_RING_OF_THRAIN_3))
+    {
+        if (p_ptr->song1 == SNG_DELVINGS)
+        {
+            msg_print("The Ring's whispers fade from your mind.");
+            p_ptr->song1 = SNG_NOTHING;
+            p_ptr->song_duration = 0;
+            p_ptr->redraw |= (PR_SONG);
+            p_ptr->update |= (PU_BONUS);
+        }
+    }
 
     /* Take off the item */
     (void)inven_takeoff(item, 255);

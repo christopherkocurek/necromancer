@@ -207,17 +207,21 @@ void do_thrain_quest(monster_type* m_ptr)
 
         if (p_ptr->thrain_quest >= 3)
         {
-            /* Final success - give the Key */
+            /* Final success - give the Key and Map */
             msg_print("With trembling hands, Thrain presses a cold iron key into your palm.");
-            msg_print("\"The door... beneath the mountain... find it...\"");
+            msg_print("He draws out a worn parchment covered in moon-letters.");
+            msg_print("\"The door... beneath the mountain... my father's map shows the way...\"");
 
             /* Create and give the Key to Erebor */
             create_chosen_artefact(ART_KEY_TO_EREBOR, p_ptr->py, p_ptr->px, TRUE);
 
+            /* Create and give Thror's Map */
+            create_chosen_artefact(ART_MAP_TO_EREBOR, p_ptr->py, p_ptr->px, TRUE);
+
             p_ptr->thrain_given_key = TRUE;
 
             /* Add note */
-            do_cmd_note("Received the Key to Erebor from Thrain", p_ptr->depth);
+            do_cmd_note("Received the Key and Map from Thrain", p_ptr->depth);
         }
         else
         {
@@ -5293,11 +5297,18 @@ void move_player(int dir)
                 /* Constitution check vs difficulty 10 */
                 if (skill_check(PLAYER, p_ptr->stat_use[A_CON], 10, NULL) <= 0)
                 {
+                    /* Apply poison (stacks with existing poison) */
+                    int poison_amount = 5 + damroll(1, 10);
+
                     if (!p_ptr->poisoned)
                     {
                         msg_print("The tainted water sickens you!");
-                        set_poisoned(p_ptr->poisoned + 10 + damroll(2, 10));
                     }
+                    else
+                    {
+                        msg_print("The poison worsens!");
+                    }
+                    set_poisoned(p_ptr->poisoned + poison_amount);
                 }
             }
         }
@@ -5386,6 +5397,14 @@ void move_player(int dir)
             if (o_ptr->tval == TV_NOTE)
             {
                 note_info_screen(o_ptr);
+
+                /* Grant XP on first read of lore notes */
+                if (!(o_ptr->ident & IDENT_NOTE_READ))
+                {
+                    o_ptr->ident |= IDENT_NOTE_READ;
+                    msg_print("You gain insight from reading this lore.");
+                    gain_exp(500);
+                }
             }
         }
     }

@@ -529,6 +529,7 @@ extern void prt_mini_screenshot(int col, int row);
 extern int silmarils_possessed(void);
 extern bool has_ring_of_thrain(void);
 extern bool has_key_to_erebor(void);
+extern bool has_map_to_erebor(void);
 extern bool can_escape_dol_guldur(void);
 
 /* generate.c */
@@ -775,6 +776,7 @@ extern void song_of_binding(monster_type* m_ptr);
 extern void song_of_piercing(monster_type* m_ptr);
 extern void song_of_oaths(monster_type* m_ptr);
 extern void hatch_spider(monster_type* m_ptr);
+extern bool ring_of_thrain_equipped(void);
 extern void change_song(int song);
 extern bool singing(int song);
 extern void sing(void);

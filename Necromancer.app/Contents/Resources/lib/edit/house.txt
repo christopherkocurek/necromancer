@@ -1,0 +1,141 @@
+# File: house.txt
+#
+# This file is used to create the "lib/data/house.raw" file, which is
+# used to initialize the "player house" information for The Necromancer.
+#
+# Do not modify this file unless you know exactly what you are doing,
+# unless you wish to risk possible system crashes and broken savefiles.
+#
+#
+# === Understanding house.txt ===
+#
+# N: house number : house name
+# A: alternate house name
+# B: short house name
+# F: house flag
+# S: str : dex : con : gra
+#
+# 'N' indicates the beginning of an entry. The serial number must
+#     increase for each new house.
+#
+# 'A' is the alternate house name, so it can be used in the form:
+#     Caranthir of <house name>
+#
+# 'B' is the short house name when it needs to be displayed in
+#     a small space.
+#
+# 'F' is the house flags, which modify certain skills
+#
+# 'S' is the bonuses to stats: Str, Dex, Con, Gra
+
+
+# Version stamp (required)
+
+V:1.5.0
+
+# === Elf Houses (for race 0) ===
+
+N:0:Of Lothlorien
+A:Lothlorien
+B:Lorien
+F:LOR_AFFINITY
+S:0:0:0:1
+D:The Galadhrim dwell in the golden wood of Lothlorien, protected
+D: by the power of Galadriel and Celeborn. They are the most
+D: magical of the remaining elves, keepers of ancient wisdom
+D: and the light of the Elder Days. Their arrows fly true and
+D: their knowledge of lore is unmatched in Middle-earth.
+
+N:1:Of Rivendell
+A:Rivendell
+B:Imladris
+F:SMT_AFFINITY
+S:0:0:1:0
+D:The Elves of Rivendell are heirs to the craft traditions of
+D: the Noldor who crossed the sea in ages past. Elrond's house
+D: preserves the lore of Celebrimbor, greatest of Elven-smiths.
+D: Their forges still produce works of surpassing beauty, and
+D: they remember the art of ring-making.
+
+N:2:Of Greenwood
+A:Greenwood
+B:Silvan
+F:STL_AFFINITY
+S:0:1:0:0
+D:The Silvan Elves of Greenwood the Great dwell under King
+D: Thranduil in halls carved beneath the forest. They are
+D: less wise in lore than their western kin, but unmatched
+D: in woodcraft and stealth. The shadow of Dol Guldur has
+D: darkened their realm, and they know well the Enemy's servants.
+
+# === Man Houses (for race 1) ===
+
+N:3:Dunedain
+A:the Dunedain
+B:Ranger
+F:PER_AFFINITY
+S:0:1:0:1
+D:The Rangers of the North are the last remnant of the kingdom
+D: of Arnor, descendants of the kings of Numenor. They wander
+D: the wild lands, protecting the innocent from evil they never
+D: see. Long-lived and keen-eyed, they are skilled trackers
+D: and deadly foes of the servants of Sauron.
+
+N:4:Of Rohan
+A:Rohan
+B:Rohirrim
+F:EVN_AFFINITY
+S:1:0:0:0
+D:The Rohirrim are the horse-lords of the Mark, dwelling on
+D: the green plains between Fangorn and the White Mountains.
+D: They are fierce warriors and unmatched riders, loyal allies
+D: of Gondor. Their ancestors came from the north, and they
+D: still sing songs of Eorl the Young.
+
+N:5:Of Gondor
+A:Gondor
+B:Gondorian
+F:MEL_AFFINITY
+S:0:0:1:0
+D:Gondor is the great southern kingdom of the Dunedain,
+D: founded by Elendil's sons after the fall of Numenor.
+D: Its soldiers are disciplined and well-trained, guarding
+D: the borders of the West against Mordor's shadow. The
+D: Tower Guard of Minas Tirith are the elite of the realm.
+
+# === Dwarf Houses (for race 2) ===
+
+N:6:Of Khazad-dum
+A:Khazad-dum
+B:Moria
+F:LOR_AFFINITY
+S:0:0:0:1
+D:The exiles of Khazad-dum remember the glory days before
+D: Durin's Bane awoke. They are keepers of ancient dwarven
+D: lore and secrets, preserving knowledge from the greatest
+D: of all dwarven mansions. Though their home is lost to
+D: shadow, they dream of its reclamation.
+
+N:7:Of Erebor
+A:Erebor
+B:Erebor
+F:SMT_AFFINITY
+S:0:0:1:0
+D:The dwarves of Erebor were driven from the Lonely Mountain
+D: by Smaug the Golden. Now scattered in exile, they await
+D: the day they might reclaim their home. The smiths of
+D: Erebor crafted wonders, including the Arkenstone, and
+D: their skill with forge and anvil is renowned.
+
+N:8:Of the Iron Hills
+A:the Iron Hills
+B:Iron Hills
+F:MEL_AFFINITY
+S:1:0:0:0
+D:Dain Ironfoot rules the dwarves of the Iron Hills, east
+D: of Erebor. They are a martial folk, hardened by constant
+D: battle against orcs and other foes. Their warriors are
+D: among the fiercest of all dwarven-kind, and their axes
+D: have drunk deep of orc-blood.
+
+

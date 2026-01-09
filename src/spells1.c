@@ -5105,6 +5105,25 @@ void hatch_spider(monster_type* m_ptr)
 }
 
 /*
+ * Check if the Ring of Thráin is currently equipped.
+ * Returns TRUE if any variant of the ring is worn on either ring finger.
+ */
+bool ring_of_thrain_equipped(void)
+{
+    object_type* left = &inventory[INVEN_LEFT];
+    object_type* right = &inventory[INVEN_RIGHT];
+
+    if ((left->name1 >= ART_RING_OF_THRAIN_0)
+        && (left->name1 <= ART_RING_OF_THRAIN_3))
+        return TRUE;
+    if ((right->name1 >= ART_RING_OF_THRAIN_0)
+        && (right->name1 <= ART_RING_OF_THRAIN_3))
+        return TRUE;
+
+    return FALSE;
+}
+
+/*
  *  Allows you to change the song you are singing to a new one.
  *  If you have the ability 'woven themes' and try to sing a different song,
  *  it will add it as a theme or change the current theme.
@@ -5117,6 +5136,14 @@ void change_song(int song)
 {
     int song_to_change;
     int old_song;
+
+    /* Ring of Thráin forces Deep Memory (SNG_DELVINGS) - cannot change away */
+    if (ring_of_thrain_equipped() && (p_ptr->song1 == SNG_DELVINGS)
+        && (song != SNG_DELVINGS))
+    {
+        msg_print("The Ring's whispers fill your mind - you cannot stop.");
+        return;
+    }
 
     if (p_ptr->active_ability[S_LOR][SNG_WOVEN_THEMES]
         && (p_ptr->song1 != SNG_NOTHING) && (song != SNG_NOTHING))

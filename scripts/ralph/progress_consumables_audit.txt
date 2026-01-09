@@ -62,21 +62,39 @@ Effect: "Lets you determine the purpose of all herbs and potions you encounter"
 Type: Knowledge/identification ability, NOT a crafting system
 Skill tree: Part of Lore abilities (I:4:4:5)
 
-## TASK STATUS
+## TASK STATUS - COMPLETED 2026-01-09
 [X] PREP-001 - Create progress tracker
-[ ] AUDIT-001 - Catalog all potions
-[ ] AUDIT-002 - Catalog all scrolls (will document HORNS instead)
-[ ] AUDIT-003 - Catalog all food and herbs
-[ ] AUDIT-004 - Catalog all staves
-[ ] AUDIT-005 - Catalog all wands (will document as NOT IMPLEMENTED)
-[ ] AUDIT-006 - Audit Alchemy ability
-[ ] AUDIT-007 - Audit device/magic item system
-[ ] RESEARCH-001 - Research roguelike consumable systems
-[ ] RESEARCH-002 - Research Tolkien consumables
-[ ] EVAL-001 - Evaluate potions
-[ ] EVAL-002 - Evaluate scrolls/horns
-[ ] EVAL-003 - Evaluate food/herbs
-[ ] EVAL-004 - Evaluate staves
-[ ] ANALYSIS-001 - Alchemy crafting potential
-[ ] ANALYSIS-002 - Staff vs wand distinction
-[ ] FINAL-001 - Generate master audit report
+[X] AUDIT-001 - Catalog all potions
+[X] AUDIT-002 - Catalog all horns (scrolls don't exist)
+[X] AUDIT-003 - Catalog all food and herbs
+[X] AUDIT-004 - Catalog all staves
+[X] AUDIT-005 - Catalog all wands (documented as NOT IMPLEMENTED)
+[X] AUDIT-006 - Audit Alchemy ability
+[X] AUDIT-007 - Audit device/magic item system
+[X] RESEARCH-001 - Research roguelike consumable systems
+[X] RESEARCH-002 - Research Tolkien consumables
+[X] EVAL-001 - Evaluate potions
+[X] EVAL-002 - Evaluate horns
+[X] EVAL-003 - Evaluate food/herbs
+[X] EVAL-004 - Evaluate staves
+[X] ANALYSIS-001 - Alchemy crafting potential
+[X] ANALYSIS-002 - Staff vs wand distinction
+[X] FINAL-001 - Generate master audit report
+
+## OUTPUT FILES GENERATED
+- docs/design/consumables/potions_catalog.md
+- docs/design/consumables/scrolls_catalog.md (actually horns)
+- docs/design/consumables/food_herbs_catalog.md
+- docs/design/consumables/staves_catalog.md
+- docs/design/consumables/wands_catalog.md
+- docs/design/consumables/alchemy_audit.md
+- docs/design/consumables/device_system_audit.md
+- docs/design/consumables/roguelike_research.md
+- docs/design/consumables/tolkien_research.md
+- docs/design/consumables/potions_evaluation.md
+- docs/design/consumables/scrolls_evaluation.md (actually horns)
+- docs/design/consumables/food_herbs_evaluation.md
+- docs/design/consumables/staves_evaluation.md
+- docs/design/consumables/alchemy_crafting_analysis.md
+- docs/design/consumables/staff_wand_analysis.md
+- docs/design/consumables/CONSUMABLES_AUDIT_REPORT.md (MAIN DELIVERABLE)

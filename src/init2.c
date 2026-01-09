@@ -1560,7 +1560,7 @@ extern void display_introduction(void)
     Term_putstr(14, 12, -1, TERM_WHITE,
         "  Face the servants of the Shadow.                     ");
     Term_putstr(14, 13, -1, TERM_WHITE,
-        "    Claim Thrain's ring and the key to Erebor.         ");
+        "    Claim Thrain's ring, the key, and the map.         ");
 
     /* Flush it */
     Term_fresh();

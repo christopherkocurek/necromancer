@@ -3220,7 +3220,7 @@ void do_cmd_escape(void)
     // make a note about quest items
     if (can_escape_dol_guldur())
     {
-        do_cmd_note("You escaped with the Ring of Thrain and the Key to Erebor!", p_ptr->depth);
+        do_cmd_note("You escaped with the Ring, the Key, and Thror's Map!", p_ptr->depth);
         do_cmd_note("The Lonely Mountain awaits its rightful heirs.", p_ptr->depth);
     }
     else if (has_ring_of_thrain())
@@ -3230,6 +3230,10 @@ void do_cmd_escape(void)
     else if (has_key_to_erebor())
     {
         do_cmd_note("You brought back the Key to Erebor.", p_ptr->depth);
+    }
+    else if (has_map_to_erebor())
+    {
+        do_cmd_note("You brought back Thror's Map.", p_ptr->depth);
     }
     else
     {
@@ -3795,7 +3799,7 @@ extern void display_single_score(
     {
         if (the_score->silmarils[0] >= '1')
         {
-            my_strcat(out_val, ", who recovered the Ring of Thrain and the Key to Erebor", sizeof(out_val));
+            my_strcat(out_val, ", who recovered the Ring, the Key, and Thror's Map", sizeof(out_val));
         }
     }
 
@@ -4069,12 +4073,28 @@ extern bool has_key_to_erebor(void)
 }
 
 /*
+ * The Necromancer: Check if player has Thrór's Map
+ */
+extern bool has_map_to_erebor(void)
+{
+    int i;
+
+    for (i = 0; i < INVEN_TOTAL; i++)
+    {
+        if ((&inventory[i])->name1 == ART_MAP_TO_EREBOR)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
  * The Necromancer: Check if player can escape Dol Guldur
- * Requires BOTH the Ring of Thráin AND the Key to Erebor
+ * Requires the Ring of Thráin, Key to Erebor, AND Thrór's Map
  */
 extern bool can_escape_dol_guldur(void)
 {
-    return has_ring_of_thrain() && has_key_to_erebor();
+    return has_ring_of_thrain() && has_key_to_erebor() && has_map_to_erebor();
 }
 
 /*

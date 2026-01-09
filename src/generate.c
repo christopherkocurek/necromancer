@@ -2367,7 +2367,8 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
         for (dx = 0; dx < xmax; dx++, t++)
         {
             // Barrow wights can't be deeper than level 12
-            if ((*t == 'W') && (p_ptr->depth > 12))
+            // Exception: SAURON_DEPTH throne room uses 'W' for guards
+            if ((*t == 'W') && (p_ptr->depth > 12) && (p_ptr->depth != SAURON_DEPTH))
             {
                 // msg_print("Skipped a barrow wight vault.");
                 return (FALSE);
@@ -2919,6 +2920,13 @@ static bool build_vault(int y0, int x0, vault_type* v_ptr, bool flip_d)
             case 'V':
             {
                 place_monster_one(y, x, R_IDX_SAURON, TRUE, TRUE, NULL);
+                break;
+            }
+
+            /* Thráin's Shade (quest NPC) */
+            case 'J':
+            {
+                place_monster_one(y, x, R_IDX_THRAIN, TRUE, TRUE, NULL);
                 break;
             }
             }
@@ -3986,7 +3994,16 @@ static void throne_gen(void)
     /*set the permanent walls*/
     set_perm_boundry();
 
-    build_type9(16, 38);
+    if (!build_type9(16, 38))
+    {
+        /* Vault failed - create a minimal safe room with stairs */
+        msg_print("Warning: Throne room vault failed to generate!");
+        cave_set_feat(16, 38, FEAT_FLOOR);
+        cave_set_feat(16, 39, FEAT_FLOOR);
+        cave_set_feat(17, 38, FEAT_FLOOR);
+        cave_set_feat(17, 39, FEAT_FLOOR);
+        cave_set_feat(16, 38, FEAT_LESS);
+    }
 
     /* Find an up staircase - search entire map for any FEAT_LESS */
     for (y = 0; y < p_ptr->cur_map_hgt; y++)
