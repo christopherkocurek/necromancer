@@ -169,6 +169,7 @@ void flavor_init(void)
     flavor_assign_random(TV_RING);
     flavor_assign_random(TV_AMULET);
     flavor_assign_random(TV_STAFF);
+    flavor_assign_random(TV_WAND);
     flavor_assign_random(TV_HORN);
     flavor_assign_random(TV_FOOD);
     flavor_assign_random(TV_POTION);
