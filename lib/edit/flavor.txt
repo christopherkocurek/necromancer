@@ -290,6 +290,10 @@ N:105:66
 G:?:U1
 D:Engraved
 
+N:106:66
+G:?:s
+D:Delicate
+
 ##### Herbs #####
 
 N:121:80
