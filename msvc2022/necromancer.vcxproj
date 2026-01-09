@@ -200,7 +200,7 @@ copy Release\necromancer.exe ..\necromancer.exe</Command>
     <ClCompile Include="..\src\z-virt.c" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\sil.rc" />
+    <ResourceCompile Include="..\src\necromancer.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

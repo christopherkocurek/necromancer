@@ -1,4 +1,4 @@
-/* File: sil.rc */
+/* File: necromancer.rc */
 
 ANGBAND MENU
 {
@@ -16,7 +16,7 @@ ANGBAND MENU
 	{
 		POPUP "&Visibility"
 		{
-			MENUITEM "Sil", 200
+			MENUITEM "Main", 200
 			MENUITEM "Inventory", 201
 			MENUITEM "Equipment", 202
 			MENUITEM "Combat Rolls", 203
@@ -28,7 +28,7 @@ ANGBAND MENU
 
 		POPUP "&Font"
 		{
-			MENUITEM "Sil", 210
+			MENUITEM "Main", 210
 			MENUITEM "Inventory", 211
 			MENUITEM "Equipment", 212
 			MENUITEM "Combat Rolls", 213
@@ -55,5 +55,5 @@ ANGBAND MENU
 
 }
 
-ANGBAND ICON "sil.ico"
+ANGBAND ICON "necromancer.ico"
 
