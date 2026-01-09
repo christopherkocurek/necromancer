@@ -437,50 +437,56 @@ cptr generate_epitaph(void)
 void show_tombstone(void)
 {
     int row = 2;
+    int center = 40;
     cptr epitaph = generate_epitaph();
     char buf[120];
+    int len;
 
     /* Clear screen */
     Term_clear();
 
-    /* Draw tombstone ASCII art */
-    c_put_str(TERM_SLATE, "                              .-------------------.", row++, 10);
-    c_put_str(TERM_SLATE, "                             /                     \\", row++, 10);
-    c_put_str(TERM_SLATE, "                            /       R. I. P.        \\", row++, 10);
-    c_put_str(TERM_SLATE, "                           |                         |", row++, 10);
+    /* Draw tombstone ASCII art - properly centered */
+    c_put_str(TERM_SLATE, ".-------------------.", row++, center - 10);
+    c_put_str(TERM_SLATE, "/                     \\", row++, center - 12);
+    c_put_str(TERM_SLATE, "/       R. I. P.        \\", row++, center - 13);
+    c_put_str(TERM_SLATE, "|                         |", row++, center - 14);
 
     /* Epitaph in quotes, centered */
     row++;
     strnfmt(buf, sizeof(buf), "\"%s\"", epitaph);
-    c_put_str(TERM_L_BLUE, buf, row++, 40 - strlen(buf)/2);
+    len = strlen(buf);
+    c_put_str(TERM_L_BLUE, buf, row++, center - len/2);
     row++;
 
     /* Character name */
-    c_put_str(TERM_WHITE, op_ptr->full_name, row++, 40 - strlen(op_ptr->full_name)/2);
+    len = strlen(op_ptr->full_name);
+    c_put_str(TERM_WHITE, op_ptr->full_name, row++, center - len/2);
 
     /* Race and House */
     strnfmt(buf, sizeof(buf), "%s of %s",
             p_name + p_info[p_ptr->prace].name,
             c_name + c_info[p_ptr->phouse].alt_name);
-    c_put_str(TERM_SLATE, buf, row++, 40 - strlen(buf)/2);
+    len = strlen(buf);
+    c_put_str(TERM_SLATE, buf, row++, center - len/2);
 
     row++;
 
     /* Depth */
     strnfmt(buf, sizeof(buf), "Depth: %d feet", p_ptr->depth * 50);
-    c_put_str(TERM_SLATE, buf, row++, 40 - strlen(buf)/2);
+    len = strlen(buf);
+    c_put_str(TERM_SLATE, buf, row++, center - len/2);
 
     row++;
-    c_put_str(TERM_SLATE, "                           |___________________________|", row++, 10);
-    c_put_str(TERM_SLATE, "                          |___________________________|", row++, 10);
+    c_put_str(TERM_SLATE, "|___________________________|", row++, center - 14);
+    c_put_str(TERM_SLATE, "|___________________________|", row++, center - 14);
 
     row += 2;
 
     /* Transition text */
-    c_put_str(TERM_L_DARK, "But your tale is not forgotten...", row++, 24);
+    c_put_str(TERM_L_DARK, "But your tale is not forgotten...", row++, center - 17);
 
     row += 2;
-    c_put_str(TERM_SLATE, "[Press any key to continue]", row, 27);
+    c_put_str(TERM_SLATE, "[Press any key to continue]", row, center - 13);
 
     /* Wait for keypress */
     Term_fresh();
@@ -614,9 +620,10 @@ void display_death_recap(void)
     row++;
     c_put_str(TERM_L_BLUE, "========================================================================", row++, 1);
 
-    /* Footer */
+    /* Footer - menu options */
     row++;
-    c_put_str(TERM_SLATE, "        [Enter] New Game      [M] Menu      [Esc] Quit", row, 1);
+    c_put_str(TERM_WHITE, "  [a] Scores  [b] Inventory  [c] Dungeon  [d] Messages  [e] Character", row++, 1);
+    c_put_str(TERM_WHITE, "  [f] Notes   [g] Save Sheet                    [Enter] New  [Esc] Quit", row++, 1);
 
     /* Wait for input */
     Term_fresh();
@@ -625,33 +632,61 @@ void display_death_recap(void)
 
 /*
  * Handle the death recap screen input
- * Returns: 'n' for new game, 'm' for menu, 'q' for quit
+ * Returns: menu choice (1-8) matching final_menu choices, or 0 for no action yet
+ * 1=scores, 2=inventory, 3=dungeon, 4=messages, 5=character, 6=notes, 7=save, 8=exit
+ * Special: 9=new game (start new character)
  */
-char death_recap_input(void)
+int death_recap_input(void)
 {
     char ch;
 
-    while (TRUE)
+    ch = inkey();
+
+    switch (ch)
     {
-        ch = inkey();
+        case 'a':
+        case 'A':
+            return 1;  /* View scores */
 
-        switch (ch)
-        {
-            case '\r':
-            case '\n':
-            case 'n':
-            case 'N':
-                return 'n';  /* New game */
+        case 'b':
+        case 'B':
+            return 2;  /* View inventory */
 
-            case 'm':
-            case 'M':
-                return 'm';  /* Menu */
+        case 'c':
+        case 'C':
+            return 3;  /* View dungeon */
 
-            case ESCAPE:
-            case 'q':
-            case 'Q':
-                return 'q';  /* Quit */
-        }
+        case 'd':
+        case 'D':
+            return 4;  /* View messages */
+
+        case 'e':
+        case 'E':
+            return 5;  /* View character */
+
+        case 'f':
+        case 'F':
+            return 6;  /* Add note */
+
+        case 'g':
+        case 'G':
+            return 7;  /* Save character sheet */
+
+        case '\r':
+        case '\n':
+        case 'n':
+        case 'N':
+            return 9;  /* New game */
+
+        case ESCAPE:
+        case 'q':
+        case 'Q':
+        case 'h':
+        case 'H':
+            return 8;  /* Exit/Quit */
+
+        default:
+            return 0;  /* No action */
     }
 }
 
@@ -659,18 +694,26 @@ char death_recap_input(void)
 /*
  * Play the full death sequence.
  * This is the main entry point called when player dies.
+ * Returns: menu choice to be handled by caller
+ * 1-8 = standard menu choices, 9 = new game
  */
-void play_death_sequence(void)
+int play_death_sequence(void)
 {
-    /* Skip animation if disabled (could add config option) */
-    /* For now, go straight to tombstone and recap */
+    int choice;
 
     /* Show the tombstone with epitaph */
     show_tombstone();
 
-    /* Show the stats recap */
-    display_death_recap();
+    /* Show the stats recap and handle input loop */
+    while (TRUE)
+    {
+        display_death_recap();
+        choice = death_recap_input();
 
-    /* Handle input (new game, menu, or quit) */
-    /* Note: The actual handling of the choice is done by the caller */
+        /* Return non-zero choices to be handled by caller */
+        if (choice > 0)
+        {
+            return choice;
+        }
+    }
 }

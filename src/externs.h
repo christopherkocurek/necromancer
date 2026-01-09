@@ -550,8 +550,8 @@ extern bool can_escape_dol_guldur(void);
 extern cptr generate_epitaph(void);
 extern void show_tombstone(void);
 extern void display_death_recap(void);
-extern char death_recap_input(void);
-extern void play_death_sequence(void);
+extern int death_recap_input(void);
+extern int play_death_sequence(void);
 
 /* generate.c */
 extern void place_monster_by_flag(

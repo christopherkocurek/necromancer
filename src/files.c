@@ -4940,8 +4940,8 @@ static void close_game_aux(void)
     }
     else if (show_death_recap)
     {
-        /* Died - play the dramatic death sequence */
-        play_death_sequence();
+        /* Died - show tombstone first, then get first menu choice */
+        show_tombstone();
     }
     else
     {
@@ -4958,7 +4958,28 @@ static void close_game_aux(void)
     /* Loop */
     while (!wants_to_quit)
     {
-        choice = final_menu(&highlight);
+        /* Use new death recap menu or old menu */
+        if (!p_ptr->escaped && show_death_recap)
+        {
+            display_death_recap();
+            choice = death_recap_input();
+
+            /* Handle "new game" (choice 9) - restart */
+            if (choice == 9)
+            {
+                /* For now, treat as quit - user can start new from menu */
+                wants_to_quit = TRUE;
+                break;
+            }
+
+            /* Ignore invalid/zero choices */
+            if (choice == 0)
+                continue;
+        }
+        else
+        {
+            choice = final_menu(&highlight);
+        }
 
         switch (choice)
         {
