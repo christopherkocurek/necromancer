@@ -5294,22 +5294,29 @@ void move_player(int dir)
             /* Check for poison resistance */
             if (!p_ptr->resist_pois)
             {
-                /* Constitution check vs difficulty 10 */
-                if (skill_check(PLAYER, p_ptr->stat_use[A_CON], 10, NULL) <= 0)
-                {
-                    /* Apply poison (stacks with existing poison) */
-                    int poison_amount = 5 + damroll(1, 10);
+                int poison_amount;
 
-                    if (!p_ptr->poisoned)
-                    {
-                        msg_print("The tainted water sickens you!");
-                    }
-                    else
-                    {
-                        msg_print("The poison worsens!");
-                    }
-                    set_poisoned(p_ptr->poisoned + poison_amount);
+                /* Constitution check vs difficulty 15 - pass = less poison */
+                if (skill_check(PLAYER, p_ptr->stat_use[A_CON], 15, NULL) > 0)
+                {
+                    /* Passed check: minor poison */
+                    poison_amount = 2 + damroll(1, 4);
                 }
+                else
+                {
+                    /* Failed check: full poison */
+                    poison_amount = 5 + damroll(1, 10);
+                }
+
+                if (!p_ptr->poisoned)
+                {
+                    msg_print("The tainted water sickens you!");
+                }
+                else
+                {
+                    msg_print("The poison worsens!");
+                }
+                set_poisoned(p_ptr->poisoned + poison_amount);
             }
         }
 
