@@ -149,7 +149,7 @@
 /*
  * Maximum amount of starting equipment
  */
-#define MAX_START_ITEMS 8
+#define MAX_START_ITEMS 16
 
 /*
  * Number of tval/min-sval/max-sval slots per ego_item

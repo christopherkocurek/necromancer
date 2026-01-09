@@ -131,6 +131,12 @@ E:23:1:10:10     # | Broken Glowing Weapon (10)
 E:37:1:10:10     # [ Broken Glowing Armor (10)
 E:23:2:10:10     # | Broken Strange Weapon (10)
 E:37:2:10:10     # [ Broken Strange Armor (10)
+E:56:0:1:1       # - Wand of Frost (1)
+E:56:1:1:1       # - Wand of Fire (1)
+E:56:2:1:1       # - Wand of Slowing (1)
+E:56:3:1:1       # - Wand of Light (1)
+E:56:4:1:1       # - Wand of Fear (1)
+E:56:5:1:1       # - Wand of Sleep (1)
 D:The Istari are Maiar spirits sent to Middle-earth in the
 D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This

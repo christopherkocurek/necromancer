@@ -1754,6 +1754,17 @@ D:It restores a point of grace if it has been drained.  It provides
 D: nourishment for about 3,000 turns under normal conditions.
 
 
+N:402:& Flask~ of oil
+G:!:y1
+I:77:0:3000
+W:7:0:10:3
+P:0:0d0:0:0d0
+A:7/2:13/1:19/1
+F:EASY_KNOW
+D:It can be used to fuel a brass lantern with 3,000 turns of light,
+D: up to a maximum of 7,000 turns of light.
+
+
 N:403:& Cake~ of Cram
 G:,:W
 I:80:38:2000
@@ -1779,17 +1790,6 @@ D: Provides nourishment for about 250 turns.
 
 
 ##### Various #####
-
-
-N:402:& Flask~ of oil
-G:!:y1
-I:77:0:3000
-W:7:0:10:3
-P:0:0d0:0:0d0
-A:7/2:13/1:19/1
-F:EASY_KNOW
-D:It can be used to fuel a brass lantern with 3,000 turns of light,
-D: up to a maximum of 7,000 turns of light.
 
 
 N:410:& Piece~ of Mithril

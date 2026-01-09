@@ -638,6 +638,12 @@ static void player_outfit(void)
             i_ptr->pval = 8; /* max charges for testing */
         }
 
+        /* give wands charges for playtesting */
+        if (i_ptr->tval == TV_WAND)
+        {
+            i_ptr->pval = 5; /* 5 charges for testing */
+        }
+
         object_known(i_ptr);
 
         /*put it in the inventory*/
