@@ -1,0 +1,131 @@
+================================================================================
+                    SCENE 5: THRÁIN'S PRISON
+                    Duration: 4 seconds (40 frames @ 10 FPS)
+================================================================================
+
+DESCRIPTION:
+The deepest pit. A dwarf figure (h) slumped in chains against a wall.
+Dim. A glint of gold nearby (the Ring? the Key?).
+The dwarf stirs slightly. Text whispers across screen: "The last of the Seven..."
+
+================================================================================
+                         PRISON PIT LAYOUT
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|                                                                              |
+|     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓          |
+|     ▓                                                             ▓          |
+|     ▓                                                             ▓          |
+|     ▓                                                             ▓          |
+|     ▓                        DEPTH: 1000ft                        ▓          |
+|     ▓                                                             ▓          |
+|     ▓                                                             ▓          |
+|     ▓      ─┼─                                                    ▓          |
+|     ▓       │                                                     ▓          |
+|     ▓       h           <- Thráin, slumped                        ▓          |
+|     ▓      /│\                                                    ▓          |
+|     ▓                                                             ▓          |
+|     ▓                 *       <- Gold glint                       ▓          |
+|     ▓                                                             ▓          |
+|     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓          |
+|                                                                              |
+|                                                                              |
+|                    "The last of the Seven..."                                |
+|                                                                              |
++------------------------------------------------------------------------------+
+```
+
+================================================================================
+                         FRAME SEQUENCE
+================================================================================
+
+FRAMES 1-10: Establish the pit (static, dim)
+- Just the pit walls and darkness
+- Depth counter: 1000ft
+
+FRAMES 11-15: Thráin becomes visible
+- Figure emerges from darkness
+- Chains visible: ─┼─
+
+FRAMES 16-25: Gold glint appears
+- * appears and pulses (TERM_YELLOW)
+- Draws eye to the Ring
+
+FRAMES 26-30: Thráin stirs
+- Figure moves slightly
+- Head lifts (h -> H?)
+
+FRAMES 31-40: Whispered text
+- "The last of the Seven..." appears letter by letter
+- Bottom of screen, italic feeling
+
+================================================================================
+                         THRÁIN FIGURE DETAIL
+================================================================================
+
+Slumped position:
+```
+      ─┼─         <- Chain attached to wall
+       │
+       h          <- Head bowed
+      /│\         <- Arms chained
+```
+
+Stirring position:
+```
+      ─┼─
+       │
+       H          <- Head raised
+      /│\
+```
+
+COLORS:
+- Thráin (h/H): TERM_UMBER (brown, dwarven)
+- Chains (─┼─│): TERM_L_DARK
+- Body: TERM_L_DARK
+
+================================================================================
+                         GOLD GLINT ANIMATION
+================================================================================
+
+The gold item (*) pulses to draw attention:
+- Frames 16, 18, 20, 22, 24: TERM_YELLOW (bright)
+- Frames 17, 19, 21, 23, 25: TERM_L_UMBER (dim)
+
+Creates "glinting" effect like light catching gold.
+
+================================================================================
+                         WHISPERED TEXT
+================================================================================
+
+Text: "The last of the Seven..."
+
+Appears letter-by-letter, slowly:
+- Position: Row 20, centered
+- Color: TERM_SLATE (ghostly gray)
+- Speed: 1 character every 2 frames (slower than title)
+
+Effect: Feels like a whisper, a memory, a doom
+
+================================================================================
+                         ATMOSPHERIC DETAILS
+================================================================================
+
+Optional embellishments:
+- Dripping water animation (│ -> │. -> │)
+- Rat scurrying in corner (r moving)
+- Distant sound indicator ("...")
+
+Overall feeling: Despair, finality, the weight of years of torture.
+This is where Thráin has been for FIVE YEARS.
+
+================================================================================
+                         TRANSITION TO SCENE 6
+================================================================================
+
+FRAMES 38-40: Screen darkens
+- Everything fades to black
+- Gold glint is LAST thing to fade
+- Sets up the dramatic Eye reveal

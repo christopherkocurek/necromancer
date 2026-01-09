@@ -2421,7 +2421,7 @@
 #define OPT_hjkl_movement 0
 #define OPT_quick_messages 1
 #define OPT_angband_keyset 2
-// xxx carry_query
+#define OPT_show_intro 3
 #define OPT_stop_singing_on_rest 4
 // xxx always_pickup
 #define OPT_forgo_attacking_unwary 6
@@ -2560,7 +2560,7 @@
 #define hjkl_movement op_ptr->opt[OPT_hjkl_movement]
 #define quick_messages op_ptr->opt[OPT_quick_messages]
 #define angband_keyset op_ptr->opt[OPT_angband_keyset]
-// xxx carry_query
+#define show_intro op_ptr->opt[OPT_show_intro]
 #define stop_singing_on_rest op_ptr->opt[OPT_stop_singing_on_rest]
 #define always_pickup FALSE // Sil-x: removing this option for now
 #define forgo_attacking_unwary op_ptr->opt[OPT_forgo_attacking_unwary]

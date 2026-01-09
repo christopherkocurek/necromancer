@@ -1,0 +1,177 @@
+================================================================================
+                    SCENE 4: THE DESCENT
+                    Duration: 5 seconds (50 frames @ 10 FPS)
+================================================================================
+
+DESCRIPTION:
+Camera descends through dungeon layers. Quick cuts showing:
+- Orc patrol (o's marching)
+- Torture chamber (chains, implements)
+- Crypts (coffin shapes)
+Each layer darker. Depth counter: 100ft... 500ft... 900ft...
+
+================================================================================
+                         QUICK CUT STRUCTURE
+================================================================================
+
+FRAMES 1-12: ORC PATROL (100-250ft)
+FRAMES 13-24: TORTURE CHAMBER (300-500ft)
+FRAMES 25-36: CRYPTS (550-750ft)
+FRAMES 37-50: DEEP DARKNESS (800-1000ft)
+
+Each section has depth counter overlay in corner.
+
+================================================================================
+                    CUT 1: ORC PATROL (100-250ft)
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|  DEPTH: 150ft                                                                |
+|                                                                              |
+|     #######################                                                  |
+|     #                     #                                                  |
+|     #   o   o   o   o     ################                                   |
+|     #                                    #                                   |
+|     #   o   o   o   o         @          #    <- orcs (o) player hidden (@)  |
+|     #                                    #                                   |
+|     #   o   o   o   o     ################                                   |
+|     #                     #                                                  |
+|     #######################                                                  |
+|                                                                              |
++------------------------------------------------------------------------------+
+```
+
+ANIMATION: Orcs march in formation, shifting positions each frame.
+- Frame 1: o's at position A
+- Frame 2: o's shifted right
+- Frame 3-12: Continue patrol pattern
+
+COLORS:
+- Walls (#): TERM_L_DARK
+- Orcs (o): TERM_UMBER
+- Player (@): TERM_WHITE (briefly visible, hiding)
+- Depth text: TERM_ORANGE
+
+================================================================================
+                    CUT 2: TORTURE CHAMBER (300-500ft)
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|  DEPTH: 400ft                                                                |
+|                                                                              |
+|     ╥     ╥     ╥     ╥                 Chains hanging from ceiling          |
+|     │     │     │     │                                                      |
+|     │     │     │     │                                                      |
+|                                                                              |
+|        ═══╪═══     ┌─────┐     Rack        Table with implements             |
+|           │        │ ~~~ │                                                   |
+|                    └─────┘                                                   |
+|                                                                              |
+|     *         *         *       Scattered items (bones? tools?)              |
+|                                                                              |
++------------------------------------------------------------------------------+
+```
+
+ANIMATION:
+- Chains sway slightly (╥ position shifts)
+- Torch flicker (lighting changes)
+
+COLORS:
+- Chains: TERM_L_DARK
+- Implements: TERM_RED (blood?)
+- Background: Darker than before
+
+================================================================================
+                    CUT 3: CRYPTS (550-750ft)
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|  DEPTH: 650ft                                                                |
+|                                                                              |
+|     ┌───────┐   ┌───────┐   ┌───────┐                                        |
+|     │ ═══   │   │ ═══   │   │ ═══   │     Sarcophagi                         |
+|     │       │   │   W   │   │       │     One has Wight (W) rising!          |
+|     └───────┘   └───────┘   └───────┘                                        |
+|                                                                              |
+|     ┌───────┐   ┌───────┐   ┌───────┐                                        |
+|     │ ═══   │   │ ═══   │   │ ═══   │                                        |
+|     │       │   │       │   │       │                                        |
+|     └───────┘   └───────┘   └───────┘                                        |
+|                                                                              |
+|           ~           ~           ~         Ghostly wisps                    |
++------------------------------------------------------------------------------+
+```
+
+ANIMATION:
+- Wight (W) rises from coffin over frames
+- Ghostly wisps (~) drift
+
+COLORS:
+- Coffins: TERM_SLATE
+- Wight: TERM_L_BLUE (ethereal)
+- Wisps: TERM_L_DARK
+- Background: Very dark
+
+================================================================================
+                    CUT 4: DEEP DARKNESS (800-1000ft)
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|  DEPTH: 950ft                                                                |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                          Almost nothing visible                              |
+|                                                                              |
+|                               ?                                              |
+|                                                                              |
+|                          Just hints of shapes                                |
+|                                                                              |
+|                       Something moves in the dark...                         |
+|                                                                              |
+|                                                                              |
++------------------------------------------------------------------------------+
+```
+
+ANIMATION:
+- Nearly black screen
+- Occasional shape glimpses
+- Depth counter approaches 1000ft
+
+COLORS:
+- Almost all TERM_DARK
+- Occasional TERM_L_DARK glimpse
+
+================================================================================
+                         DEPTH COUNTER ANIMATION
+================================================================================
+
+Position: Top-left corner
+Format: "DEPTH: XXXft"
+
+Counter increases as scene progresses:
+- Frames 1-12: 100ft -> 250ft
+- Frames 13-24: 300ft -> 500ft
+- Frames 25-36: 550ft -> 750ft
+- Frames 37-50: 800ft -> 1000ft
+
+Visual style: Numbers "tick" up rapidly during transitions
+
+================================================================================
+                         TRANSITION EFFECTS
+================================================================================
+
+Between each cut:
+- 2-frame black flash
+- Creates "quick cut" feeling
+- Jarring, disorienting (intentional)
+
+Example:
+- Frame 12: Orc patrol
+- Frame 13: BLACK
+- Frame 14: BLACK
+- Frame 15: Torture chamber appears

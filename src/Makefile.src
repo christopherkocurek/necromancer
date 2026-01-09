@@ -6,7 +6,7 @@
 #
 
 NAME = Necromancer
-VERSION = 0.4.3
+VERSION = 1.0.1-beta
 COPYRIGHT = Christopher Kocurek
 PROG = necromancer
 
@@ -38,4 +38,4 @@ ANGFILES = \
   	 birth.o load.o squelch.o \
   	 wizard1.o wizard2.o obj-info.o \
   	 generate.o dungeon.o init1.o init2.o randart.o \
-  	 use-obj.o 
+  	 use-obj.o intro.o 

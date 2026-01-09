@@ -149,7 +149,7 @@ cptr option_text[OPT_MAX] = {
     "hjkl_movement", /* OPT_hjkl_movement */
     "quick_messages", /* OPT_quick_messages */
     "angband_keyset", /* OPT_angband_keyset */
-    NULL, /* xxx carry_query */
+    "show_intro", /* OPT_show_intro */
     "stop_singing_on_rest", /* OPT_stop_singing_on_rest */
     NULL, /* xxx always_pickup */
     "forgo_attacking_unwary", /* OPT_forgo_attacking_unwary */
@@ -410,7 +410,7 @@ cptr option_desc[OPT_MAX] = {
     "Move with hjkl etc. (use ^ for underlying keys)", /* OPT_hjkl_movement */
     "Dismiss '-more-' and 'y/n' prompts with any key", /* OPT_quick_messages */
     "Use a keyset more closely based on Angband", /* OPT_angband_keyset */
-    NULL, /* xxx carry_query */
+    "Play intro animation when game starts", /* OPT_show_intro */
     "Stop singing when you use the rest command", /* OPT_stop_singing_on_rest */
     NULL, /* xxx always_pickup */
     "Forgo bonus attacks on non-alert enemies", /* OPT_forgo_attacking_unwary */
@@ -671,7 +671,7 @@ const bool option_norm[OPT_MAX] = {
     FALSE, /* OPT_hjkl_movement */
     TRUE, /* OPT_quick_messages */
     FALSE, /* OPT_angband_keyset */
-    FALSE, /* xxx carry_query */
+    TRUE, /* OPT_show_intro */
     TRUE, /* OPT_stop_singing_on_rest */
     FALSE, /* xxx always_pickup */
     TRUE, /* OPT_forgo_attacking_unwary */
@@ -935,8 +935,8 @@ const byte option_page[OPT_PAGE_MAX][OPT_PAGE_PER] = {
     { OPT_forgo_attacking_unwary, OPT_stop_singing_on_rest, OPT_system_beep,
         OPT_quick_messages, OPT_auto_more, OPT_easy_main_menu,
         OPT_hjkl_movement, OPT_angband_keyset, OPT_hitpoint_warning,
-        OPT_know_monster_info, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE,
-        OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE },
+        OPT_know_monster_info, OPT_show_intro, OPT_NONE, OPT_NONE, OPT_NONE,
+        OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE },
 
     /*** Disturbance ***/
 

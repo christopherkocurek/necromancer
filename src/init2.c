@@ -1538,6 +1538,16 @@ static void init_angband_aux(cptr why)
 
 extern void display_introduction(void)
 {
+    /* Track first run - always show intro on initial startup */
+    static bool first_run = TRUE;
+
+    /* Play the animated intro sequence if enabled or first run */
+    if (first_run || show_intro)
+    {
+        play_intro_animation();
+        first_run = FALSE;
+    }
+
     /* Clear screen */
     Term_clear();
 

@@ -1,0 +1,156 @@
+================================================================================
+                    SCENE 1: TITLE FADE
+                    Duration: 3 seconds (30 frames @ 10 FPS)
+================================================================================
+
+DESCRIPTION:
+Black screen. "THE NECROMANCER" fades in letter by letter in fiery colors.
+Subtitle "A Tale of Dol Guldur" appears below in dim gray.
+
+SCREEN: 80x24, all black background
+
+TITLE TEXT (centered at row 10):
+"THE NECROMANCER" = 15 characters
+Center position: column 32
+
+SUBTITLE TEXT (centered at row 13):
+"A Tale of Dol Guldur" = 20 characters
+Center position: column 30
+
+================================================================================
+                         FRAME SEQUENCE
+================================================================================
+
+FRAMES 1-3: Pure black (500ms pause for drama)
+
+FRAME 4: "T" appears
+                                T
+
+FRAME 5: "TH" appears
+                                TH
+
+FRAME 6: "THE" appears
+                                THE
+
+FRAME 7: "THE " appears (space)
+                                THE
+
+FRAME 8: "THE N" appears
+                                THE N
+
+FRAME 9: "THE NE" appears
+                                THE NE
+
+FRAME 10: "THE NEC" appears
+                                THE NEC
+
+FRAME 11: "THE NECR" appears
+                                THE NECR
+
+FRAME 12: "THE NECRO" appears
+                                THE NECRO
+
+FRAME 13: "THE NECROM" appears
+                                THE NECROM
+
+FRAME 14: "THE NECROMA" appears
+                                THE NECROMA
+
+FRAME 15: "THE NECROMAN" appears
+                                THE NECROMAN
+
+FRAME 16: "THE NECROMANCE" appears
+                                THE NECROMANCE
+
+FRAME 17: "THE NECROMANCER" complete
+                                THE NECROMANCER
+
+FRAMES 18-22: Hold title, pulse colors (RED->ORANGE->YELLOW->ORANGE->RED)
+
+FRAME 23: Subtitle starts "A"
+                                THE NECROMANCER
+
+                                A
+
+FRAME 24-28: Subtitle types out letter by letter
+                                THE NECROMANCER
+
+                             A Tale of Dol Guldur
+
+FRAMES 29-30: Hold complete title card
+
+================================================================================
+                         COLOR SPECIFICATION
+================================================================================
+
+TITLE "THE NECROMANCER":
+- Base: TERM_ORANGE (3)
+- Pulse cycle: TERM_RED (4) -> TERM_ORANGE (3) -> TERM_YELLOW (11)
+- Each letter can have slight color variation for "flame" effect
+
+SUBTITLE "A Tale of Dol Guldur":
+- Color: TERM_L_DARK (8) or TERM_SLATE (2)
+- Static, no animation
+
+BACKGROUND:
+- Pure black (TERM_DARK)
+
+================================================================================
+                       PROCEDURAL IMPLEMENTATION
+================================================================================
+
+Rather than 30 static frames, implement procedurally:
+
+```c
+void scene1_title(void) {
+    const char *title = "THE NECROMANCER";
+    const char *subtitle = "A Tale of Dol Guldur";
+    int title_col = 32;
+    int title_row = 10;
+    int sub_col = 30;
+    int sub_row = 13;
+
+    // Black pause
+    Term_clear();
+    delay(500);
+
+    // Type title letter by letter
+    for (int i = 0; i < strlen(title); i++) {
+        Term_putch(title_col + i, title_row, TERM_ORANGE, title[i]);
+        Term_fresh();
+        delay(100);
+        if (check_skip()) return;
+    }
+
+    // Pulse title 5 times
+    byte colors[] = {TERM_RED, TERM_ORANGE, TERM_YELLOW, TERM_ORANGE, TERM_RED};
+    for (int c = 0; c < 5; c++) {
+        Term_putstr(title_col, title_row, -1, colors[c], title);
+        Term_fresh();
+        delay(100);
+        if (check_skip()) return;
+    }
+
+    // Type subtitle
+    for (int i = 0; i < strlen(subtitle); i++) {
+        Term_putch(sub_col + i, sub_row, TERM_SLATE, subtitle[i]);
+        Term_fresh();
+        delay(50);
+        if (check_skip()) return;
+    }
+
+    // Hold
+    delay(500);
+}
+```
+
+================================================================================
+                         FINAL FRAME APPEARANCE
+================================================================================
+
+Row 10:                         THE NECROMANCER
+Row 11:
+Row 12:
+Row 13:                      A Tale of Dol Guldur
+
+(All other rows blank/black)

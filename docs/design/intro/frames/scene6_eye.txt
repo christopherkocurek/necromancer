@@ -1,0 +1,225 @@
+================================================================================
+                    SCENE 6: THE LIDLESS EYE
+                    Duration: 4 seconds (40 frames @ 10 FPS)
+================================================================================
+
+DESCRIPTION:
+Camera pulls back rapidly. Screen goes dark. Beat of silence.
+Then: The Eye opens. Massive ASCII eye fills the screen.
+Vertical slit pupil, flames surrounding it. IT SEES YOU.
+Hold for dramatic effect.
+
+THIS IS THE CLIMAX OF THE INTRO.
+
+================================================================================
+                         FRAME SEQUENCE
+================================================================================
+
+FRAMES 1-5: Rapid pullback (zoom out effect)
+FRAMES 6-10: Pure black (silence, tension)
+FRAMES 11-20: Eye OPENS (the reveal)
+FRAMES 21-40: Eye fully open, flames flicker (hold)
+
+================================================================================
+                    FRAMES 1-5: PULLBACK
+================================================================================
+
+Quick frames showing "camera" pulling back from prison pit:
+
+FRAME 1: Close on Thráin (from previous scene)
+FRAME 2: Pit view, smaller
+FRAME 3: Dungeon corridor
+FRAME 4: Fortress exterior (tiny)
+FRAME 5: Just a dot of light, then BLACK
+
+================================================================================
+                    FRAMES 6-10: THE PAUSE
+================================================================================
+
+Pure black screen. 500ms of nothing.
+
+This is critical for dramatic effect.
+The player wonders: "Is that it? Is it over?"
+
+Then...
+
+================================================================================
+                    FRAMES 11-20: EYE OPENS
+================================================================================
+
+FRAME 11: A single horizontal line (the slit)
+```
+
+
+
+
+                                ───────
+
+
+```
+
+FRAME 12: Slit widens slightly
+```
+
+
+
+                               .───────.
+
+
+
+```
+
+FRAME 13: Eye shape forming
+```
+
+
+                              .─────────.
+                              '─────────'
+
+
+```
+
+FRAME 14: Inner structure visible
+```
+
+                             .───────────.
+                            '     |      '
+                             '───────────'
+
+```
+
+FRAME 15: More detail
+```
+                            .─────────────.
+                           '      |       '
+                           .      |       .
+                            '─────────────'
+```
+
+FRAME 16: Nearly open
+```
+                           .───────────────.
+                          '       |        '
+                         :        |         :
+                          .       |        .
+                           '───────────────'
+```
+
+FRAME 17-18: FULLY OPEN - no flames yet
+```
+                          .─────────────────.
+                        .'                   '.
+                       .'     .───────.       '.
+                      :      :    |    :       :
+                      :      :    |    :       :
+                       '.     '───────'       .'
+                        '.                   .'
+                          '─────────────────'
+```
+
+FRAME 19-20: FLAMES IGNITE
+```
+                    ~^*~         ~*^~
+                 *^     ~*~   ~*~     ^*
+              ~*   .─────────────.   *~
+            *~   .'               '.   ~*
+          ~*   .'    .───────.    '.   *~
+         *^  :      :    |    :      :  ^*
+         *^  :      :    |    :      :  ^*
+          ~*   '.    '───────'    .'   *~
+            *~   '.               .'   ~*
+              ~*   '─────────────'   *~
+                 *^     ~*~   ~*~     ^*
+                    ~^*~         ~*^~
+```
+
+================================================================================
+                    FRAMES 21-40: THE HOLD
+================================================================================
+
+Eye stays fully open. Flames animate (cycle through 4 patterns).
+
+FLAME CYCLE:
+- Frame 21: Pattern A (flames up)
+- Frame 22: Pattern B (flames angled)
+- Frame 23: Pattern C (flames spread)
+- Frame 24: Pattern D (flames settle)
+- Frame 25: Pattern A (repeat)
+- ... continues
+
+The pupil (|) can pulse:
+- Odd frames: single line |
+- Even frames: double line ||
+
+Creates sense of the Eye FOCUSING on viewer.
+
+================================================================================
+                         THE COMPLETE EYE
+================================================================================
+
+```
+                    ~^*~         ~*^~
+                 *^     ~*~   ~*~     ^*
+              ~*   .─────────────.   *~
+            *~   .'               '.   ~*
+          ~*   .'    .───────.    '.   *~
+         *^  .'    .'         '.    '.  ^*
+        ~*  :    .'      |      '.    :  *~
+        *^  :    :       |       :    :  ^*
+        ~*  :    '.      |      .'    :  *~
+         *^  '.    '.         .'    .'  ^*
+          ~*   '.    '───────'    .'   *~
+            *~   '.               .'   ~*
+              ~*   '─────────────'   *~
+                 *^     ~*~   ~*~     ^*
+                    ~^*~         ~*^~
+```
+
+Centered on 80x24 screen:
+- Start row: 5
+- Start column: 20
+
+================================================================================
+                         COLOR SPECIFICATION
+================================================================================
+
+FLAMES (*^~):
+Cycle through:
+- TERM_RED (4)
+- TERM_ORANGE (3)
+- TERM_YELLOW (11)
+- TERM_ORANGE (3)
+- (repeat)
+
+EYE STRUCTURE (.-':):
+- TERM_RED (4) - the eye itself is fiery
+
+PUPIL (|):
+- TERM_DARK (0) or TERM_L_DARK (8)
+- Pure darkness - the void within
+
+BACKGROUND:
+- TERM_DARK (0) - absolute black
+
+================================================================================
+                         SOUND DESIGN NOTES
+================================================================================
+
+If sound is ever added:
+- Frames 1-5: Rushing wind (pullback)
+- Frames 6-10: Silence (deafening)
+- Frame 11: Low rumble begins
+- Frame 19: BOOM (flames ignite)
+- Frames 21+: Crackling fire, heartbeat
+
+================================================================================
+                         THE PSYCHOLOGICAL EFFECT
+================================================================================
+
+This scene should make the player feel:
+1. The terror of being SEEN by ultimate evil
+2. The power of Sauron, represented by his symbol
+3. "Oh no, what have I gotten into?"
+4. Excitement to face this challenge
+
+The Eye doesn't blink. It doesn't look away. IT SEES YOU.

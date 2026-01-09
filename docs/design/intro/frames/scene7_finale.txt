@@ -1,0 +1,202 @@
+================================================================================
+                    SCENE 7: TITLE REDUX / FINALE
+                    Duration: 3+ seconds (loops until keypress)
+================================================================================
+
+DESCRIPTION:
+Eye shrinks to center of screen. "THE NECROMANCER" appears in flame colors
+above it. "Press any key to begin" pulses below. Eye continues to flicker.
+This is the "attract mode" that loops until player presses a key.
+
+================================================================================
+                         FINAL TITLE SCREEN
+================================================================================
+
+```
++------------------------------------------------------------------------------+
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                          THE NECROMANCER                                     |
+|                                                                              |
+|                            ~^*~   ~*^~                                       |
+|                         *^   .---.   ^*                                      |
+|                        *~  .'  |  '.  ~*                                     |
+|                        *~  :   |   :  ~*                                     |
+|                        *~  '.  |  .'  ~*                                     |
+|                         *^   '---'   ^*                                      |
+|                            ~*^~   ~^*~                                       |
+|                                                                              |
+|                       A Tale of Dol Guldur                                   |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                      [ Press any key to begin ]                              |
+|                                                                              |
+|                                                                              |
++------------------------------------------------------------------------------+
+```
+
+================================================================================
+                         ELEMENT POSITIONS
+================================================================================
+
+TITLE "THE NECROMANCER":
+- Row: 5
+- Column: 27 (centered)
+- Color: TERM_ORANGE with flame cycling
+
+MEDIUM EYE:
+- Rows: 7-13
+- Centered horizontally
+- Flames animate
+
+SUBTITLE "A Tale of Dol Guldur":
+- Row: 15
+- Column: 28 (centered)
+- Color: TERM_SLATE
+
+PROMPT "[ Press any key to begin ]":
+- Row: 20
+- Column: 25 (centered)
+- Color: Pulses TERM_WHITE <-> TERM_L_DARK
+
+================================================================================
+                         ANIMATION LOOP
+================================================================================
+
+This scene LOOPS until keypress:
+
+FRAMES 1-4: Flame pattern A
+FRAMES 5-8: Flame pattern B
+FRAMES 9-12: Flame pattern C
+FRAMES 13-16: Flame pattern D
+FRAMES 17-20: Prompt bright
+FRAMES 21-24: Flame pattern A
+FRAMES 25-28: Prompt dim
+FRAMES 29-30: Loop back to frame 1
+
+Approximately 3 seconds per loop.
+
+================================================================================
+                         TITLE FLAME EFFECT
+================================================================================
+
+"THE NECROMANCER" has animated color:
+
+Loop through colors for each letter with offset:
+```
+T - Frame 0: RED,    Frame 1: ORANGE, Frame 2: YELLOW...
+H - Frame 0: ORANGE, Frame 1: YELLOW, Frame 2: RED...
+E - Frame 0: YELLOW, Frame 1: RED,    Frame 2: ORANGE...
+```
+
+Creates "rippling flame" effect across the title.
+
+================================================================================
+                         MEDIUM EYE (SIMPLIFIED)
+================================================================================
+
+```
+           ~^*~   ~*^~
+        *^   .---.   ^*
+       *~  .'  |  '.  ~*
+       *~  :   |   :  ~*
+       *~  '.  |  .'  ~*
+        *^   '---'   ^*
+           ~*^~   ~^*~
+```
+
+Flames cycle same as Scene 6.
+Pupil (|) can pulse.
+
+================================================================================
+                         PROMPT PULSE EFFECT
+================================================================================
+
+"[ Press any key to begin ]"
+
+BRIGHT (frames 17-20, 1-4):
+- Color: TERM_WHITE
+- Brackets visible
+
+DIM (frames 21-28, 5-16):
+- Color: TERM_L_DARK
+- Still readable but subdued
+
+Creates gentle "press me" pulse without being annoying.
+
+================================================================================
+                         TRANSITION OUT
+================================================================================
+
+When player presses any key:
+1. Brief flash (screen goes TERM_WHITE for 1 frame)
+2. Fade to black (2-3 frames)
+3. Load main menu
+
+Alternative: No flash, just immediate cut to menu.
+
+================================================================================
+                         COMPLETE FRAME EXAMPLE
+================================================================================
+
+```
+
+
+
+
+                          THE NECROMANCER
+
+                            ~^*~   ~*^~
+                         *^   .---.   ^*
+                        *~  .'  |  '.  ~*
+                        *~  :   |   :  ~*
+                        *~  '.  |  .'  ~*
+                         *^   '---'   ^*
+                            ~*^~   ~^*~
+
+                       A Tale of Dol Guldur
+
+
+
+
+                      [ Press any key to begin ]
+
+
+
+
+```
+
+================================================================================
+                         IMPLEMENTATION NOTES
+================================================================================
+
+This is the "idle" screen. Unlike other scenes:
+- No timeout - loops forever
+- Constantly checks for keypress
+- Should be efficient (not burning CPU)
+
+```c
+void scene7_finale(void) {
+    int frame = 0;
+
+    while (1) {
+        // Check for key
+        if (check_for_keypress()) {
+            return;  // Exit to main menu
+        }
+
+        // Draw frame
+        draw_title_screen(frame);
+
+        // Delay
+        Term_xtra(TERM_XTRA_DELAY, 100);  // 10 FPS
+
+        // Next frame (loop at 30)
+        frame = (frame + 1) % 30;
+    }
+}
+```

@@ -1,0 +1,215 @@
+================================================================================
+                        THE LIDLESS EYE - ASCII ART
+                    Key Visual Asset for The Necromancer
+================================================================================
+
+DESIGN NOTES:
+- Vertical cat-eye pupil (the "lidless" quality)
+- Surrounded by flames (fire characters: * ^ ~ in orange/red/yellow)
+- Ominous, watching, seeing YOU
+- Must work at multiple sizes
+- Colors: pupil=black/dark, iris=orange/red, flames=cycling orange/yellow/red
+
+================================================================================
+                              LARGE EYE (20x12)
+                         For Scene 6 - The Big Reveal
+================================================================================
+
+                    ~^*~         ~*^~
+                 *^     ~*~   ~*~     ^*
+              ~*   .-------------.   *~
+            *~   .'               '.   ~*
+          ~*   .'    .-------.    '.   *~
+         *^  .'    .'         '.    '.  ^*
+        ~*  :    .'      |      '.    :  *~
+        *^  :    :       |       :    :  ^*
+        ~*  :    '.      |      .'    :  *~
+         *^  '.    '.         .'    .'  ^*
+          ~*   '.    '-------'    .'   *~
+            *~   '.               .'   ~*
+              ~*   '-------------'   *~
+                 *^     ~*~   ~*~     ^*
+                    ~^*~         ~*^~
+
+COLOR MAP (Large):
+- Outer flames (*^~): TERM_ORANGE, TERM_YELLOW, TERM_RED (cycling)
+- Eye outline (.'-:): TERM_RED
+- Iris space (inner area): TERM_ORANGE
+- Pupil (|): TERM_L_DARK or TERM_DARK
+
+================================================================================
+                           MEDIUM EYE (16x8)
+                       For Scene 7 - Title Screen
+================================================================================
+
+               *^~*       *~^*
+            ~*   .-------.   *~
+          *~   .'         '.   ~*
+         *^  .'      |      '.  ^*
+         *^  '.      |      .'  ^*
+          *~   '.         .'   ~*
+            ~*   '-------'   *~
+               *^~*       *~^*
+
+================================================================================
+                            SMALL EYE (10x5)
+                         For Icon/Compact Use
+================================================================================
+
+          *~.---.~*
+         *.'  |  '.*
+         *.   |   .*
+         *'.     '.*
+          *~'---'~*
+
+================================================================================
+                      ANIMATED FLAME VARIATIONS
+           Each frame cycles flame characters and colors
+================================================================================
+
+FRAME 1 (flames pointing up):
+                    ~^*~         ~*^~
+                 *^     ~~*   *~~     ^*
+
+FRAME 2 (flames angled):
+                    *~^*         *^~*
+                 ^*     *~*   *~*     *^
+
+FRAME 3 (flames spreading):
+                    ^*~^         ^~*^
+                 ~*     ^*~   ~*^     *~
+
+FRAME 4 (return):
+                    ~*^~         ~^*~
+                 *~     ~^*   *^~     ~*
+
+FLAME CHARACTER CYCLE:
+  Frame 0: * (asterisk)
+  Frame 1: ^ (caret)
+  Frame 2: ~ (tilde)
+  Frame 3: * (back to start)
+
+COLOR CYCLE:
+  Frame 0: TERM_RED
+  Frame 1: TERM_ORANGE
+  Frame 2: TERM_YELLOW
+  Frame 3: TERM_ORANGE
+  (repeat)
+
+================================================================================
+                           EYE OPENING SEQUENCE
+                   For dramatic reveal in Scene 6
+================================================================================
+
+FRAME 1 - Closed (just a slit):
+
+                         -------
+
+FRAME 2 - Barely open:
+
+                        .-------.
+                        '-------'
+
+FRAME 3 - Quarter open:
+
+                       .---------.
+                      .'    |    '.
+                       '---------'
+
+FRAME 4 - Half open:
+
+                      .-----------.
+                     .'     |     '.
+                     '.     |     .'
+                      '-----------'
+
+FRAME 5 - Three-quarter:
+
+                     .-------------.
+                   .'       |       '.
+                  :         |         :
+                   '.       |       .'
+                     '-------------'
+
+FRAME 6 - FULLY OPEN (hold):
+
+                    ~^*~         ~*^~
+                 *^     ~*~   ~*~     ^*
+              ~*   .-------------.   *~
+            *~   .'               '.   ~*
+          ~*   .'    .-------.    '.   *~
+         *^  .'    .'         '.    '.  ^*
+        ~*  :    .'      |      '.    :  *~
+        *^  :    :       |       :    :  ^*
+        ~*  :    '.      |      .'    :  *~
+         *^  '.    '.         .'    .'  ^*
+          ~*   '.    '-------'    .'   *~
+            *~   '.               .'   ~*
+              ~*   '-------------'   *~
+                 *^     ~*~   ~*~     ^*
+                    ~^*~         ~*^~
+
+================================================================================
+                        ALTERNATIVE DESIGNS
+================================================================================
+
+DESIGN B - More Geometric:
+
+                 *****.-----.*****
+               **   .'       '.   **
+              *   .'     |     '.   *
+              *   :      |      :   *
+              *   '.     |     .'   *
+               **   '.       .'   **
+                 *****'-----'*****
+
+DESIGN C - Simpler/Bolder:
+
+                    ( * * * )
+                  (           )
+                 (      |      )
+                  (     |     )
+                    ( * * * )
+
+DESIGN D - With Flame Border:
+
+            ~*~*~*~*~.---------.~*~*~*~*~
+           *        (    ||    )        *
+           ~       (     ||     )       ~
+           *        (    ||    )        *
+            ~*~*~*~*~'---------'~*~*~*~*~
+
+================================================================================
+                         IMPLEMENTATION NOTES
+================================================================================
+
+1. The Large Eye is approximately 20 chars wide x 15 rows tall
+   - Center it on 80x24 screen: start at column 30, row 5
+
+2. For animation, only the flame characters need to change
+   - Eye structure stays static
+   - Cycle flame chars: * -> ^ -> ~ -> *
+   - Cycle flame colors: RED -> ORANGE -> YELLOW -> ORANGE
+
+3. The pupil (|) can subtly "pulse" by alternating between:
+   - Single line: |
+   - Double line: ||
+   - Creates subtle "focusing" effect
+
+4. Eye opening sequence needs ~6 frames at 150ms each = ~1 second
+
+5. For maximum impact:
+   - Screen goes BLACK first (1 second pause)
+   - Eye opens slowly
+   - Holds fully open with flames flickering
+   - Player should feel WATCHED
+
+================================================================================
+                           CHOSEN DESIGN
+                     (for implementation)
+================================================================================
+
+Using LARGE EYE (Design A) for Scene 6 reveal
+Using MEDIUM EYE for Scene 7 title screen
+
+The flame animation will use 4 frame cycle with procedural color shifting.

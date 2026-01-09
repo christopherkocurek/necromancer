@@ -119,6 +119,9 @@ depgen:
 ./use-obj.o: use-obj.c angband.h h-basic.h h-config.h h-system.h h-type.h \
   h-define.h z-util.h z-virt.h z-form.h z-rand.h z-term.h config.h \
   defines.h types.h externs.h
+./intro.o: intro.c angband.h h-basic.h h-config.h h-system.h h-type.h \
+  h-define.h z-util.h z-virt.h z-form.h z-rand.h z-term.h config.h \
+  defines.h types.h externs.h
 ./z-util.o: z-util.c z-util.h h-basic.h h-config.h h-system.h h-type.h \
   h-define.h
 ./z-virt.o: z-virt.c z-virt.h h-basic.h h-config.h h-system.h h-type.h \

@@ -545,6 +545,9 @@ extern void generate_cave(void);
 extern void init_file_paths(char* path);
 extern void display_introduction(void);
 extern void init_angband(void);
+
+/* intro.c */
+extern void play_intro_animation(void);
 extern void autoinscribe_clean(void);
 extern void autoinscribe_init(void);
 extern void re_init_some_things(void);

@@ -1,0 +1,142 @@
+================================================================================
+                    SCENE 2: MIRKWOOD FOREST
+                    Duration: 4 seconds (40 frames @ 10 FPS)
+================================================================================
+
+DESCRIPTION:
+Dense forest of ASCII trees. Camera pans right through the forest.
+Trees get darker, more twisted. Fog rolls in. Sense of encroaching darkness.
+
+TECHNIQUE: Horizontal scrolling - draw wide forest, show 80-char window that moves
+
+================================================================================
+                         ASCII TREE ELEMENTS
+================================================================================
+
+HEALTHY TREES (left side, greens):
+    ^         /\        ♠         ♣
+   /|\       /||\      /|\       /|\
+   /|\      //||\\     |||       |||
+    |         ||        |         |
+
+TWISTED TREES (right side, darker):
+    ~^        /~\       ,^,       `^`
+   /~\       /~~\      /|~\      ~|~
+   |~|       |~~|      ||~|      |~|
+    |         ||        |         |
+
+FOG CHARACTERS: . · ░ (increasing density)
+
+================================================================================
+                    FULL FOREST (160 chars wide)
+                    Scroll window shows 80 at a time
+================================================================================
+
+ROW 0-3: Sky (dark blue to black gradient as we scroll right)
+
+ROW 4:   ^    /\   ^     /\    ^   ~^   /~\  `^`  ,^,  ~^~  `~`
+ROW 5:  /|\  /||\  /|\  //\\  /~\  /~\  /~~\ ~|~  /|~\ ~~~  `~`
+ROW 6:  /|\  //\\  |||  //\\  |~|  |~|  |~~| |~|  ||~| ~~~  ~~~
+ROW 7:   |    ||    |    ||    |    |    ||   |    |   ~~~  ~~~
+
+ROW 8-11: More trees, varied heights
+
+ROW 12-15: Ground with roots, rocks
+           ___...---'''___...---___~~~---___~~~
+
+ROW 16-20: Ground detail, fog accumulates
+           . · . ░ ░ ░░░ ░░░░░
+
+================================================================================
+                         SCROLL SEQUENCE
+================================================================================
+
+FRAME 1: Show columns 0-79 (healthy green forest)
+FRAME 10: Show columns 20-99 (some darkening)
+FRAME 20: Show columns 40-119 (twisted trees appear)
+FRAME 30: Show columns 60-139 (fog thick, trees dark)
+FRAME 40: Show columns 80-159 (nearly black, fog everywhere)
+
+================================================================================
+                         COLOR PROGRESSION
+================================================================================
+
+LEFT SIDE (frames 1-10):
+- Trees: TERM_GREEN, TERM_L_GREEN
+- Ground: TERM_UMBER
+- Sky: TERM_BLUE
+
+MIDDLE (frames 11-25):
+- Trees: TERM_GREEN -> TERM_L_DARK
+- Ground: TERM_UMBER -> TERM_L_DARK
+- Sky: TERM_BLUE -> TERM_L_DARK
+- Fog: TERM_L_DARK (sparse)
+
+RIGHT SIDE (frames 26-40):
+- Trees: TERM_L_DARK, TERM_DARK
+- Ground: TERM_DARK
+- Sky: TERM_DARK
+- Fog: TERM_SLATE (dense)
+
+================================================================================
+                    SIMPLIFIED IMPLEMENTATION
+================================================================================
+
+Instead of complex scrolling, use 4 keyframes with crossfade:
+
+KEYFRAME A (Healthy Forest):
+```
+         ^     /\      ^      /\     ^     /\      ^
+        /|\   /||\    /|\    //\\   /|\   /||\    /|\
+        /|\   //\\    |||    //\\   /|\   //\\    |||
+         |     ||      |      ||     |     ||      |
+    ___...___...___...___...___...___...___...___...___
+```
+Color: All TERM_GREEN / TERM_L_GREEN
+
+KEYFRAME B (Transitioning):
+```
+         ^     /\     ~^     /~\    `^     /\      ~^
+        /|\   /||\   /~\    /~~\   ~|~   /||\    /~\
+        /|\   //\\   |~|    |~~|   |~|   //\\    |~|
+         |     ||     |      ||     |     ||      |
+    ___...___...___~~~___~~~___~~~___...___~~~___~~~___
+    .  ·  .   ░   .  ░  ·   ░░  .   ░  ·   ░░  .
+```
+Color: Mix of TERM_GREEN and TERM_L_DARK
+
+KEYFRAME C (Dark Forest):
+```
+        ~^    /~\    `^`    ~^~    `~`   /~\    ~^~
+       /~\   /~~\   ~|~    ~~~    `~`   /~~\   ~~~
+       |~|   |~~|   |~|    ~~~    ~~~   |~~|   ~~~
+        |     ||     |      |      |     ||     |
+    ~~~___~~~___~~~___~~~___~~~___~~~___~~~___~~~___
+    ░░ ░░░ ░░ ░░░░ ░░ ░░░ ░░ ░░░░ ░░ ░░░ ░░ ░░░░
+```
+Color: TERM_L_DARK / TERM_SLATE
+
+KEYFRAME D (Fog Engulfs - transition to next scene):
+```
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+```
+Color: TERM_SLATE fading to TERM_L_DARK
+
+================================================================================
+                         PROCEDURAL CODE
+================================================================================
+
+```c
+void scene2_forest(void) {
+    // Draw 4 keyframes with smooth transitions
+    // Use fog density as transition effect
+
+    draw_forest_keyframe(FOREST_HEALTHY, 0);   // 10 frames
+    transition_fog(10, 30);                      // fog increases
+    draw_forest_keyframe(FOREST_TWISTED, 30);  // 10 frames
+    transition_fog(50, 90);                      // fog engulfs
+    // Fade to black/fog for next scene
+}
+```
