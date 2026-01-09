@@ -5717,7 +5717,7 @@ void html_screenshot(cptr name)
     fprintf(htm, "<HTML>\n");
     fprintf(htm, "<HEAD>\n");
     fprintf(
-        htm, "<META NAME=\"GENERATOR\" Content=\"Sil %s\">\n", VERSION_STRING);
+        htm, "<META NAME=\"GENERATOR\" Content=\"The Necromancer %s\">\n", VERSION_STRING);
     fprintf(htm, "<TITLE>%s</TITLE>\n", name);
     fprintf(htm, "</HEAD>\n");
     fprintf(htm, "<BODY TEXT=\"#FFFFFF\" BGCOLOR=\"#000000\">");
