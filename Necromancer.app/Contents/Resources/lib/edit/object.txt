@@ -1778,57 +1778,6 @@ D: Grace for 30 turns. Creates a tell-tale wisp of smoke.
 D: Provides nourishment for about 250 turns.
 
 
-##### Improved Herbs (Alchemy Crafting) #####
-
-
-N:405:& Concentrated Healer's Herb~
-G:,:G
-I:80:20:250
-W:99:0:1:200
-P:0:0d0:0:0d0
-F:EASY_KNOW | INSTA_ART
-D:A potent concentrate of healing herbs. It cures all cuts
-D: and heals three-quarters of your health. Created by combining
-D: two Healer's Herbs with Alchemy. Provides nourishment for
-D: about 250 turns.
-
-
-N:406:& Potent Athelas~
-G:,:G
-I:80:21:250
-W:99:0:1:600
-P:0:0d0:0:0d0
-F:EASY_KNOW | INSTA_ART
-D:A powerful preparation of kingsfoil. It cures poison, fear,
-D: confusion, and hallucination, heals half your health, and cures
-D: all shadow-sickness. Created by combining two Athelas with
-D: Alchemy. Provides nourishment for about 250 turns.
-
-
-N:407:& Concentrated Waymeal~
-G:,:G
-I:80:22:0
-W:99:0:1:150
-P:0:0d0:0:0d0
-F:EASY_KNOW | INSTA_ART
-D:A dense concentrate of traveler's herbs. Created by combining
-D: two Waymeals with Alchemy. It provides nourishment for about
-D: 4,000 turns under normal conditions.
-
-
-N:408:& Potent Orc-rage Mushroom~
-G:,:v
-I:80:23:250
-W:99:0:1:100
-P:0:0d0:0:0d0
-F:EASY_KNOW | INSTA_ART
-D:A highly concentrated fungal preparation. It sends you into a
-D: powerful rage (+2 Str/Con, -2 Dex/Gra, special melee attack,
-D: resistance to fear) for 15d4 turns. Created by combining two
-D: Orc-rage Mushrooms with Alchemy. Provides nourishment for
-D: about 250 turns.
-
-
 ##### Various #####
 
 
@@ -1867,6 +1816,57 @@ D:The wood of the mallorn burns bright but briefly.
 D: You can equip it as a light source with a radius of 3 squares.
 D: It may also be used to fuel another wooden torch, up to a
 D: maximum of 100 turns of light.
+
+
+##### Improved Herbs (Alchemy Crafting) #####
+
+
+N:412:& Concentrated Healer's Herb~
+G:,:G
+I:80:20:250
+W:99:0:1:200
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A potent concentrate of healing herbs. It cures all cuts
+D: and heals three-quarters of your health. Created by combining
+D: two Healer's Herbs with Alchemy. Provides nourishment for
+D: about 250 turns.
+
+
+N:413:& Potent Athelas~
+G:,:G
+I:80:21:250
+W:99:0:1:600
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A powerful preparation of kingsfoil. It cures poison, fear,
+D: confusion, and hallucination, heals half your health, and cures
+D: all shadow-sickness. Created by combining two Athelas with
+D: Alchemy. Provides nourishment for about 250 turns.
+
+
+N:414:& Concentrated Waymeal~
+G:,:G
+I:80:22:0
+W:99:0:1:150
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A dense concentrate of traveler's herbs. Created by combining
+D: two Waymeals with Alchemy. It provides nourishment for about
+D: 4,000 turns under normal conditions.
+
+
+N:415:& Potent Orc-rage Mushroom~
+G:,:v
+I:80:23:250
+W:99:0:1:100
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A highly concentrated fungal preparation. It sends you into a
+D: powerful rage (+2 Str/Con, -2 Dex/Gra, special melee attack,
+D: resistance to fear) for 15d4 turns. Created by combining two
+D: Orc-rage Mushrooms with Alchemy. Provides nourishment for
+D: about 250 turns.
 
 
 #### Damaged items ####
