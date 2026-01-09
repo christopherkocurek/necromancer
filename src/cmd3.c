@@ -201,6 +201,11 @@ void do_cmd_use_item(void)
         do_cmd_activate_staff(o_ptr, item);
         break;
     }
+    case TV_WAND:
+    {
+        do_cmd_use_wand(o_ptr, item);
+        break;
+    }
     case TV_HORN:
     {
         do_cmd_play_instrument(o_ptr, item);

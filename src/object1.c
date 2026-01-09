@@ -721,6 +721,18 @@ void object_desc(
         break;
     }
 
+    /* Wands */
+    case TV_WAND:
+    {
+        /* Color the object */
+        modstr = flavor_text + flavor_info[k_ptr->flavor].text;
+        if (aware)
+            append_name = TRUE;
+        basenm = (flavor ? "& # Wand~" : "& Wand~");
+
+        break;
+    }
+
     /* Horns */
     case TV_HORN:
     {

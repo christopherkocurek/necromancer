@@ -474,6 +474,133 @@ void do_cmd_activate_staff(object_type* default_o_ptr, int default_item)
 }
 
 /*
+ * Use a wand
+ */
+void do_cmd_use_wand(object_type* default_o_ptr, int default_item)
+{
+    int item;
+
+    bool ident;
+
+    object_type* o_ptr;
+
+    bool use_charge;
+
+    cptr q, s;
+
+    // use specified item if possible
+    if (default_o_ptr != NULL)
+    {
+        o_ptr = default_o_ptr;
+        item = default_item;
+    }
+    /* Get an item */
+    else
+    {
+        /* Restrict choices to wands */
+        item_tester_tval = TV_WAND;
+
+        /* Get an item */
+        q = "Aim which wand? ";
+        s = "You have no wand to aim.";
+        if (!get_item(&item, q, s, (USE_INVEN | USE_FLOOR)))
+            return;
+
+        /* Get the item (in the pack) */
+        if (item >= 0)
+        {
+            o_ptr = &inventory[item];
+        }
+
+        /* Get the item (on the floor) */
+        else
+        {
+            o_ptr = &o_list[0 - item];
+        }
+    }
+
+    if (o_ptr->ident & (IDENT_EMPTY))
+    {
+        msg_print("The wand has no charges left.");
+        return;
+    }
+
+    /* Take a turn */
+    p_ptr->energy_use = 100;
+
+    // store the action type
+    p_ptr->previous_action[0] = ACTION_MISC;
+
+    /* Not identified yet */
+    ident = FALSE;
+
+    /* Notice empty wands */
+    if ((o_ptr->pval <= 1 && (!p_ptr->active_ability[S_WIL][WIL_CHANNELING]))
+        || o_ptr->pval <= 0)
+    {
+        flush();
+        msg_print("The wand has no charges left.");
+        o_ptr->ident |= (IDENT_EMPTY);
+        p_ptr->notice |= (PN_COMBINE | PN_REORDER);
+        p_ptr->window |= (PW_INVEN);
+        return;
+    }
+
+    /* Sound */
+    sound(MSG_ZAP);
+
+    /* Use the wand */
+    use_charge = use_object(o_ptr, &ident);
+
+    // Break the truce
+    break_truce(FALSE);
+
+    /* Combine / Reorder the pack (later) */
+    p_ptr->notice |= (PN_COMBINE | PN_REORDER);
+
+    /* Tried the item */
+    object_tried(o_ptr);
+
+    /* An identification was made */
+    if (ident && !object_aware_p(o_ptr))
+    {
+        object_aware(o_ptr);
+    }
+
+    /* Window stuff */
+    p_ptr->window |= (PW_INVEN | PW_EQUIP);
+
+    /* Hack -- some uses are "free" */
+    if (!use_charge)
+        return;
+
+    /* Use a single charge if channeling, otherwise double */
+    if (p_ptr->active_ability[S_WIL][WIL_CHANNELING])
+    {
+        o_ptr->pval--;
+    }
+    else
+    {
+        o_ptr->pval -= CHANNELING_CHARGE_MULTIPLIER;
+    }
+
+    // mark times used
+    o_ptr->xtra1++;
+
+    /* Describe charges in the pack */
+    if (item >= 0)
+    {
+        inven_item_charges(item);
+    }
+
+    /* Describe charges on the floor */
+    else
+    {
+        floor_item_charges(0 - item);
+    }
+}
+
+/*
  * Hook to determine if an object is activatable
  */
 static bool item_tester_hook_activate(const object_type* o_ptr)
