@@ -1861,7 +1861,7 @@ typedef struct smithing_cost_type
     int armoursmith;
     int jeweller;
     int enchantment;
-    int artifice;
+    int custom_artifact;
 } smithing_cost_type;
 
 smithing_cost_type smithing_cost;
@@ -2937,7 +2937,7 @@ int object_difficulty(object_type* o_ptr)
     smithing_cost.armoursmith = 0;
     smithing_cost.jeweller = 0;
     smithing_cost.enchantment = 0;
-    smithing_cost.artifice = 0;
+    smithing_cost.custom_artifact = 0;
 
     // extract object flags
     object_flags(o_ptr, &f1, &f2, &f3);
@@ -3471,7 +3471,7 @@ int object_difficulty(object_type* o_ptr)
     }
     if (smith_o_ptr->name1 && !p_ptr->active_ability[S_SMT][SMT_RECLAIM])
     {
-        smithing_cost.artifice = 1;
+        smithing_cost.custom_artifact = 1;
     }
     if (smith_o_ptr->name2 && !p_ptr->active_ability[S_SMT][SMT_REFORGE])
     {
@@ -3479,11 +3479,14 @@ int object_difficulty(object_type* o_ptr)
     }
     if (p_ptr->active_ability[S_SMT][SMT_EXPERTISE])
     {
-        smithing_cost.str = 0;
-        smithing_cost.dex = 0;
-        smithing_cost.con = 0;
-        smithing_cost.gra = 0;
-        smithing_cost.exp = 0;
+        /* Tiered discount: 50% at Smithing 6-9, 75% at Smithing 10+ */
+        int discount = (p_ptr->skill_base[S_SMT] >= 10) ? 75 : 50;
+
+        smithing_cost.str = smithing_cost.str * (100 - discount) / 100;
+        smithing_cost.dex = smithing_cost.dex * (100 - discount) / 100;
+        smithing_cost.con = smithing_cost.con * (100 - discount) / 100;
+        smithing_cost.gra = smithing_cost.gra * (100 - discount) / 100;
+        smithing_cost.exp = smithing_cost.exp * (100 - discount) / 100;
     }
 
     return (dif);
@@ -3648,9 +3651,9 @@ void prt_object_difficulty(void)
         Term_putstr(COL_SMT4 + 2, 10 + costs, -1, TERM_RED, "Enchantment");
         costs++;
     }
-    if (smithing_cost.artifice)
+    if (smithing_cost.custom_artifact)
     {
-        Term_putstr(COL_SMT4 + 2, 10 + costs, -1, TERM_RED, "Artifice");
+        Term_putstr(COL_SMT4 + 2, 10 + costs, -1, TERM_RED, "Custom Artifact");
         costs++;
     }
     if (smithing_cost.uses > 0)
@@ -3859,7 +3862,7 @@ bool affordable(object_type* o_ptr)
 
     if (smithing_cost.weaponsmith || smithing_cost.armoursmith
         || smithing_cost.jeweller || smithing_cost.enchantment
-        || smithing_cost.artifice)
+        || smithing_cost.custom_artifact)
         can_afford = FALSE;
 
     return (can_afford);
@@ -6145,24 +6148,58 @@ void reforge_menu(void)
         return;
     }
 
-    /* Pick random ego for that tval/sval */
-    ego_idx = pick_random_ego(tval, sval);
-
-    /* Create the item */
-    i_ptr = &object_type_body;
-    object_wipe(i_ptr);
-    object_prep(i_ptr, lookup_kind(tval, sval));
-
-    /* Apply enchantment if found */
-    if (ego_idx > 0)
+    /* Reforge Mastery allows one reroll */
     {
-        i_ptr->name2 = ego_idx;
-        object_into_special(i_ptr, p_ptr->skill_use[S_SMT], TRUE);
-    }
+        bool can_reroll = p_ptr->active_ability[S_SMT][SMT_REFORGE_MASTERY];
+        bool done = FALSE;
 
-    /* Make it known */
-    i_ptr->ident |= (IDENT_KNOWN);
-    object_known(i_ptr);
+        while (!done)
+        {
+            /* Pick random ego for that tval/sval */
+            ego_idx = pick_random_ego(tval, sval);
+
+            /* Create the item */
+            i_ptr = &object_type_body;
+            object_wipe(i_ptr);
+            object_prep(i_ptr, lookup_kind(tval, sval));
+
+            /* Apply enchantment if found */
+            if (ego_idx > 0)
+            {
+                i_ptr->name2 = ego_idx;
+                object_into_special(i_ptr, p_ptr->skill_use[S_SMT], TRUE);
+            }
+
+            /* Make it known for display */
+            i_ptr->ident |= (IDENT_KNOWN);
+            object_known(i_ptr);
+
+            /* Show the result and offer reroll if available */
+            object_desc(desc, sizeof(desc), i_ptr, TRUE, 3);
+
+            if (can_reroll)
+            {
+                char prompt[120];
+                strnfmt(prompt, sizeof(prompt), "Result: %s. Accept or (r)eroll?", desc);
+                msg_print(prompt);
+                ch = inkey();
+
+                if (ch == 'r' || ch == 'R')
+                {
+                    msg_print("You attempt another forging...");
+                    can_reroll = FALSE;  /* Only one reroll allowed */
+                }
+                else
+                {
+                    done = TRUE;
+                }
+            }
+            else
+            {
+                done = TRUE;
+            }
+        }
+    }
 
     /* Give to player */
     inven_carry(i_ptr, TRUE);
@@ -6170,10 +6207,10 @@ void reforge_menu(void)
     /* Use up one forge use */
     cave_feat[p_ptr->py][p_ptr->px]--;
 
-    /* Deduct XP cost (500 for enchanted item) */
-    if (p_ptr->new_exp >= 500)
+    /* Deduct XP cost (600 for enchanted item) */
+    if (p_ptr->new_exp >= 600)
     {
-        p_ptr->new_exp -= 500;
+        p_ptr->new_exp -= 600;
     }
 
     /* Consume a turn */
@@ -6327,8 +6364,76 @@ void reclaim_menu(void)
         return;
     }
 
-    /* Pick random artifact from category */
-    art_idx = pick_random_artifact(tval_list, FALSE);
+    /* Reclaim Mastery: Pick 1 of 3 random artifacts */
+    if (p_ptr->active_ability[S_SMT][SMT_RECLAIM_MASTERY])
+    {
+        int candidates[3];
+        char ch;
+        int valid_count = 0;
+        int i;
+
+        /* Generate up to 3 unique artifact candidates */
+        for (i = 0; i < 3; i++)
+        {
+            int candidate = pick_random_artifact(tval_list, FALSE);
+            if (candidate > 0)
+            {
+                /* Check if already in list */
+                bool duplicate = FALSE;
+                int j;
+                for (j = 0; j < valid_count; j++)
+                {
+                    if (candidates[j] == candidate)
+                    {
+                        duplicate = TRUE;
+                        break;
+                    }
+                }
+                if (!duplicate)
+                {
+                    candidates[valid_count] = candidate;
+                    valid_count++;
+                }
+            }
+        }
+
+        if (valid_count == 0)
+        {
+            msg_print("No suitable artifact could be reclaimed.");
+            return;
+        }
+
+        /* Display options */
+        msg_print("Choose an artifact to reclaim:");
+        for (i = 0; i < valid_count; i++)
+        {
+            char buf[100];
+            artefact_type* a = &a_info[candidates[i]];
+            strnfmt(buf, sizeof(buf), "  %c) %s (level %d)", 'a' + i, a->name, a->level);
+            msg_print(buf);
+        }
+
+        /* Get choice */
+        ch = inkey();
+        if (ch >= 'a' && ch < 'a' + valid_count)
+        {
+            art_idx = candidates[ch - 'a'];
+        }
+        else if (ch >= 'A' && ch < 'A' + valid_count)
+        {
+            art_idx = candidates[ch - 'A'];
+        }
+        else
+        {
+            msg_print("Cancelled.");
+            return;
+        }
+    }
+    else
+    {
+        /* Normal: Pick single random artifact from category */
+        art_idx = pick_random_artifact(tval_list, FALSE);
+    }
 
     if (art_idx > 0)
     {
@@ -6385,7 +6490,8 @@ void reclaim_menu(void)
 }
 
 /*
- * Masterwork menu - combine 4 Broken Strange items into best artifact.
+ * Masterwork menu - combine Broken Strange items into best artifact.
+ * Master Smith ability reduces required items from 4 to 2.
  */
 void masterwork_menu(void)
 {
@@ -6396,6 +6502,9 @@ void masterwork_menu(void)
     object_type* i_ptr;
     object_type object_type_body;
 
+    /* Master Smith ability reduces required items from 4 to 2 */
+    int required_items = p_ptr->active_ability[S_SMT][SMT_MASTER] ? 2 : 4;
+
     /* Determine which type of broken strange item to use */
     int weapon_count = count_broken_item(K_IDX_BROKEN_STRANGE_WEAPON);
     int armor_count = count_broken_item(K_IDX_BROKEN_STRANGE_ARMOR);
@@ -6403,9 +6512,9 @@ void masterwork_menu(void)
     int num_choices = 0;
 
     /* Count available choices */
-    if (weapon_count >= 4) num_choices++;
-    if (armor_count >= 4) num_choices++;
-    if (jewelry_count >= 4) num_choices++;
+    if (weapon_count >= required_items) num_choices++;
+    if (armor_count >= required_items) num_choices++;
+    if (jewelry_count >= required_items) num_choices++;
 
     /* Show choice menu if 2+ categories available */
     if (num_choices >= 2)
@@ -6414,25 +6523,25 @@ void masterwork_menu(void)
         char prompt[80];
         char opts[40] = "";
 
-        if (weapon_count >= 4) strcat(opts, "(w)eapon ");
-        if (armor_count >= 4) strcat(opts, "(a)rmor ");
-        if (jewelry_count >= 4) strcat(opts, "(j)ewelry ");
+        if (weapon_count >= required_items) strcat(opts, "(w)eapon ");
+        if (armor_count >= required_items) strcat(opts, "(a)rmor ");
+        if (jewelry_count >= required_items) strcat(opts, "(j)ewelry ");
 
         strnfmt(prompt, sizeof(prompt), "Masterwork from: %s?", opts);
         msg_print(prompt);
         ch = inkey();
 
-        if ((ch == 'w' || ch == 'W') && weapon_count >= 4)
+        if ((ch == 'w' || ch == 'W') && weapon_count >= required_items)
         {
             k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
             tval_list = weapon_tvals;
         }
-        else if ((ch == 'a' || ch == 'A') && armor_count >= 4)
+        else if ((ch == 'a' || ch == 'A') && armor_count >= required_items)
         {
             k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
             tval_list = armor_tvals;
         }
-        else if ((ch == 'j' || ch == 'J') && jewelry_count >= 4)
+        else if ((ch == 'j' || ch == 'J') && jewelry_count >= required_items)
         {
             k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
             tval_list = jewelry_tvals;
@@ -6442,17 +6551,17 @@ void masterwork_menu(void)
             return;  /* Cancelled */
         }
     }
-    else if (weapon_count >= 4)
+    else if (weapon_count >= required_items)
     {
         k_idx_broken = K_IDX_BROKEN_STRANGE_WEAPON;
         tval_list = weapon_tvals;
     }
-    else if (armor_count >= 4)
+    else if (armor_count >= required_items)
     {
         k_idx_broken = K_IDX_BROKEN_STRANGE_ARMOR;
         tval_list = armor_tvals;
     }
-    else if (jewelry_count >= 4)
+    else if (jewelry_count >= required_items)
     {
         k_idx_broken = K_IDX_BROKEN_STRANGE_JEWELRY;
         tval_list = jewelry_tvals;
@@ -6520,8 +6629,8 @@ void masterwork_menu(void)
         return;
     }
 
-    /* Consume 4 broken items */
-    if (!consume_broken_items(k_idx_broken, 4))
+    /* Consume broken items (2 with Master Smith, 4 otherwise) */
+    if (!consume_broken_items(k_idx_broken, required_items))
     {
         msg_print("Failed to consume broken items!");
         return;
@@ -6656,7 +6765,7 @@ int smithing_menu_aux(int* highlight)
     valid_attr
         = (p_ptr->active_ability[S_SMT][SMT_RECLAIM]) ? TERM_WHITE : TERM_RED;
     Term_putstr(COL_SMT1, 4, -1,
-        valid[SMT_MENU_ARTEFACT - 1] ? valid_attr : TERM_L_DARK, "c) Artifice");
+        valid[SMT_MENU_ARTEFACT - 1] ? valid_attr : TERM_L_DARK, "c) Custom Artifact");
     Term_putstr(COL_SMT1, 5, -1,
         valid[SMT_MENU_NUMBERS - 1] ? TERM_WHITE : TERM_L_DARK, "d) Numbers");
     Term_putstr(COL_SMT1, 6, -1,
@@ -6701,7 +6810,7 @@ int smithing_menu_aux(int* highlight)
         Term_putstr(COL_SMT2 + 2, 3, -1, TERM_SLATE, "to the base item.");
         if (smith_o_ptr->name1)
             Term_putstr(COL_SMT2 + 2, 5, -1, TERM_L_DARK,
-                "(not compatible with Artifice)");
+                "(not compatible with Custom Artifact)");
         if (enchant_then_numbers)
         {
             Term_putstr(COL_SMT2 + 2, 5, -1, TERM_L_DARK,

@@ -609,8 +609,8 @@ T:31:0:99  # Gloves
 N:123:Reforge
 I:6:3:5
 D:Allows you to combine two Broken Glowing items at a forge
-D: to create an enchanted item of that type. You choose the
-D: enchantment from all available types.
+D: to create a randomly enchanted item of that type. Costs
+D: 600 experience points.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
@@ -618,7 +618,8 @@ N:124:Expertise
 I:6:4:6
 P:6/3
 D:Reduces the time taken to forge an item by half and
-D: negates all experience and stat costs.
+D: reduces experience and stat costs by 50%. At Smithing
+D: 10 or higher, reduction increases to 75%.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
@@ -643,6 +644,37 @@ T:31:0:99  # Gloves
 N:127:Grace
 I:6:7:10
 D:You gain a point of grace.
+
+N:128:Reforge Mastery
+I:6:8:12
+P:6/3
+D:When using Reforge, you may reject the random result
+D: once and reroll. You must accept the second result.
+T:21:8:8   # Hafted (War Hammer only)
+T:31:0:99  # Gloves
+
+N:129:Salvage
+I:6:9:14
+P:6/8
+D:When equipment would be destroyed by acid, fire, or
+D: breakage, there is a 50% chance to recover it as a
+D: Broken Glowing item instead of losing it entirely.
+
+N:130:Reclaim Mastery
+I:6:10:16
+P:6/5
+D:When using Reclaim, you are shown three random artifacts
+D: of the chosen type and may select which one to create.
+T:21:8:8   # Hafted (War Hammer only)
+T:31:0:99  # Gloves
+
+N:131:Master Smith
+I:6:11:20
+P:6/6
+D:Your legendary skill allows you to create Masterwork
+D: items with only 2 Broken Strange items instead of 4.
+T:21:8:8   # Hafted (War Hammer only)
+T:31:0:99  # Gloves
 
 # Lore ---------------------------------------------
 

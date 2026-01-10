@@ -558,6 +558,10 @@
 #define SMT_RECLAIM 5
 #define SMT_MASTERWORK 6
 #define SMT_GRA 7
+#define SMT_REFORGE_MASTERY 8
+#define SMT_SALVAGE 9
+#define SMT_RECLAIM_MASTERY 10
+#define SMT_MASTER 11
 
 /*
  * Songs
