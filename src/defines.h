@@ -186,6 +186,27 @@
 #define MORGOTH_DEPTH SAURON_DEPTH  /* Backwards compatibility alias */
 
 /*
+ * XP Multiplier for game balance tuning.
+ *
+ * This controls the rate of experience gain from all sources:
+ * monster kills, encounters, descent, identification, etc.
+ *
+ * 100 = Standard Sil-Q experience rate (1.0x)
+ * 130 = +30% boost (1.3x) - The Necromancer default
+ *
+ * The Necromancer uses 130 (30% boost) to address XP economy issues
+ * that made the game feel punishing and forced hyper-specialization.
+ * This boost enables viable skill spreads and meaningful progression.
+ *
+ * For difficulty modes:
+ *   Easy:      150 (+50%)
+ *   Standard:  130 (+30%) [default]
+ *   Challenge: 100 (original Sil-Q rate)
+ *   Hardcore:   80 (-20%)
+ */
+#define XP_MULTIPLIER 130
+
+/*
  * Locations of various monsters in the monster.txt file
  */
 

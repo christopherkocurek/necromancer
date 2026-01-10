@@ -1,3 +1,25 @@
+- The Necromancer Beta 1.0.2 (XP Balance Update) ------------------------------------------------
+
+- Experience System Rebalanced (+30% XP Boost)
+    - All experience gains increased by 30% to improve build viability
+    - Affects: monster kills, encounters, descent, identification, lore
+    - Players can now afford viable skill spreads without hyper-specialization
+    - Will/Perception are now affordable as "survival tax" skills
+    - Multiple build archetypes (combat, stealth, hybrid) are now viable
+    - XP_MULTIPLIER define in src/defines.h allows easy tuning
+
+- Balance Design Goals
+    - Combat builds should reach Melee 8 + Evasion 7 by depth 300ft
+    - Stealth builds should reach Stealth 8 + Evasion 6 by depth 300ft
+    - Core builds should be "online" by depth 500ft
+    - Deaths should feel like tactical mistakes, not XP starvation
+
+- Technical Details
+    - XP multiplier applied in gain_exp() function (src/xtra2.c)
+    - Configurable via XP_MULTIPLIER in src/defines.h
+    - Future difficulty modes can adjust: Easy (150), Standard (130), Challenge (100)
+
+
 - Sil-Q 1.5.0 --------------------------------------------------------------------------------------------
 
 - Mac support greatly improved thanks to backwardsEric

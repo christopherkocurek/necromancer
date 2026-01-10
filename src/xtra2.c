@@ -1748,6 +1748,11 @@ void check_experience(void)
 
 /*
  * Gain experience
+ *
+ * Applies the XP_MULTIPLIER from defines.h to all experience gains.
+ * Default multiplier is 130 (+30% XP) for The Necromancer's balanced
+ * progression curve. This affects all XP sources: kills, encounters,
+ * descent, identification, and lore.
  */
 void gain_exp(s32b amount)
 {
@@ -1755,6 +1760,12 @@ void gain_exp(s32b amount)
     {
         return;
     }
+
+    /* Apply XP multiplier for game balance */
+    /* Uses integer math: amount * 130 / 100 for +30% boost */
+#if XP_MULTIPLIER != 100
+    amount = (amount * XP_MULTIPLIER) / 100;
+#endif
 
     /* Gain some experience */
     p_ptr->exp += amount;
