@@ -4487,6 +4487,79 @@ void place_random_door(int y, int x)
 }
 
 /*
+ * Place broken items near a forge.
+ * Before depth 500ft (depth <= 10): 3 Broken Glowing items (50% weapon, 50% armor)
+ * After depth 500ft (depth > 10): 3 Broken Strange items (weapon, armor, or jewelry)
+ */
+static void place_forge_items(int y, int x)
+{
+    int i;
+    object_type forge_obj;
+    int k_idx;
+
+    /* k_idx values for broken items */
+    #define K_IDX_BROKEN_GLOWING_WEAPON  491
+    #define K_IDX_BROKEN_GLOWING_ARMOR   492
+    #define K_IDX_BROKEN_STRANGE_WEAPON  493
+    #define K_IDX_BROKEN_STRANGE_ARMOR   494
+    #define K_IDX_BROKEN_STRANGE_JEWELRY 495
+
+    /* Place 3 items near the forge */
+    for (i = 0; i < 3; i++)
+    {
+        /* Clear the object */
+        object_wipe(&forge_obj);
+
+        /* Determine item type based on depth */
+        if (p_ptr->depth <= 10)
+        {
+            /* Before 500ft: Broken Glowing items (50% weapon, 50% armor) */
+            if (one_in_(2))
+            {
+                k_idx = K_IDX_BROKEN_GLOWING_WEAPON;
+            }
+            else
+            {
+                k_idx = K_IDX_BROKEN_GLOWING_ARMOR;
+            }
+        }
+        else
+        {
+            /* After 500ft: Broken Strange items (weapon, armor, or jewelry) */
+            int roll = rand_int(3);
+            if (roll == 0)
+            {
+                k_idx = K_IDX_BROKEN_STRANGE_WEAPON;
+            }
+            else if (roll == 1)
+            {
+                k_idx = K_IDX_BROKEN_STRANGE_ARMOR;
+            }
+            else
+            {
+                k_idx = K_IDX_BROKEN_STRANGE_JEWELRY;
+            }
+        }
+
+        /* Create the object */
+        object_prep(&forge_obj, k_idx);
+
+        /* Mark it as known */
+        object_aware(&forge_obj);
+        object_known(&forge_obj);
+
+        /* Drop it near the forge */
+        drop_near(&forge_obj, 0, y, x);
+    }
+
+    #undef K_IDX_BROKEN_GLOWING_WEAPON
+    #undef K_IDX_BROKEN_GLOWING_ARMOR
+    #undef K_IDX_BROKEN_STRANGE_WEAPON
+    #undef K_IDX_BROKEN_STRANGE_ARMOR
+    #undef K_IDX_BROKEN_STRANGE_JEWELRY
+}
+
+/*
  * Place a random type of forge at the given location.
  */
 void place_forge(int y, int x)
@@ -4546,6 +4619,9 @@ void place_forge(int y, int x)
         if (cheat_room)
             msg_print("Forge.");
     }
+
+    /* Place broken items near the forge */
+    place_forge_items(y, x);
 }
 
 /*
