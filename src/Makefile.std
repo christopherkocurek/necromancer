@@ -111,9 +111,11 @@ CC = gcc
 
 ##
 ## Standard -- "main-x11.c" & "main-gcu.c"
+## Works on most modern Linux systems (Debian, Ubuntu, Linux Mint, etc.)
 ##
-CFLAGS = -Wall -O1 -pipe -g -D"USE_X11" -D"USE_GCU"
-LIBS = -lX11 -lcurses
+CFLAGS = -Wall -O2 -pipe -g -D"USE_X11" -D"USE_GCU" -D"USE_NCURSES"
+LIBS = -lX11 -lncurses
+LDFLAGS ?=
 
 
 ##
@@ -259,10 +261,10 @@ install: necromancer
 
 
 #
-# Build the "Sil" program
+# Build the "necromancer" program
 #
 
-sil: $(OBJS)
+necromancer: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o necromancer $(OBJS) $(LIBS)
 
 

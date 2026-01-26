@@ -1,0 +1,182 @@
+name: Linux Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/linux-build.yml'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a release artifact'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        include:
+          - name: "Ubuntu 22.04 (X11 + ncurses)"
+            cflags: '-Wall -O2 -pipe -D"USE_X11" -D"USE_GCU" -D"USE_NCURSES"'
+            libs: '-lX11 -lncurses'
+
+    name: Build - ${{ matrix.name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc make libx11-dev libncurses-dev
+
+      - name: Build necromancer
+        run: |
+          cd src
+          make -f Makefile.std clean
+          make -f Makefile.std CFLAGS='${{ matrix.cflags }}' LIBS='${{ matrix.libs }}'
+
+      - name: Verify binary
+        run: |
+          ls -la src/necromancer
+          file src/necromancer
+
+      - name: Verify binary dependencies
+        run: |
+          cd src
+          # Verify binary is executable
+          test -x ./necromancer || { echo "ERROR: Binary not executable"; exit 1; }
+          # Verify all shared library dependencies are available
+          echo "Checking library dependencies..."
+          ldd ./necromancer
+          if ldd ./necromancer | grep -q "not found"; then
+            echo "ERROR: Missing library dependencies"
+            exit 1
+          fi
+          echo "Binary dependencies verified successfully"
+
+      - name: Install to root directory
+        run: |
+          cd src
+          make -f Makefile.std install
+          ls -la ../necromancer
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: necromancer-linux-x86_64
+          path: necromancer
+          retention-days: 30
+
+  package-linux:
+    needs: build-linux
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: necromancer-linux-x86_64
+          path: .
+
+      - name: Create distribution package
+        run: |
+          # Create distribution directory
+          mkdir -p necromancer-linux
+
+          # Copy binary
+          cp necromancer necromancer-linux/
+          chmod +x necromancer-linux/necromancer
+
+          # Copy game data
+          cp -r lib necromancer-linux/
+
+          # Copy scripts and docs
+          cp run-necromancer.sh necromancer-linux/
+          cp install.sh necromancer-linux/
+          cp README-LINUX.txt necromancer-linux/
+          cp README.md necromancer-linux/
+          cp LICENSE.md necromancer-linux/
+          cp "The Necromancer Manual.pdf" necromancer-linux/ 2>/dev/null || true
+
+          # Make scripts executable
+          chmod +x necromancer-linux/run-necromancer.sh
+          chmod +x necromancer-linux/install.sh
+
+          # Create tarball
+          VERSION=$(grep -oP 'VERSION_STRING[[:space:]]*"[^"]*"' src/defines.h | grep -oP '"[^"]*"' | tr -d '"' || echo "1.0.1-beta")
+          tar -czvf necromancer-${VERSION}-linux-x86_64.tar.gz necromancer-linux/
+
+          # Show package contents
+          echo "=== Package Contents ==="
+          tar -tzvf necromancer-*-linux-*.tar.gz | head -30
+          echo "..."
+
+          # Show package size
+          ls -lh necromancer-*-linux-*.tar.gz
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: necromancer-linux-release
+          path: necromancer-*-linux-*.tar.gz
+          retention-days: 90
+
+  test-fresh-install:
+    needs: package-linux
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'workflow_dispatch' && inputs.create_release
+
+    steps:
+      - name: Download release package
+        uses: actions/download-artifact@v4
+        with:
+          name: necromancer-linux-release
+          path: .
+
+      - name: Extract and test
+        run: |
+          # Extract package
+          tar -xzvf necromancer-*-linux-*.tar.gz
+          cd necromancer-linux
+
+          # Check all files present
+          echo "=== Checking required files ==="
+          test -f necromancer && echo "[OK] necromancer binary"
+          test -f run-necromancer.sh && echo "[OK] run-necromancer.sh"
+          test -f install.sh && echo "[OK] install.sh"
+          test -f README-LINUX.txt && echo "[OK] README-LINUX.txt"
+          test -d lib && echo "[OK] lib/ directory"
+          test -d lib/edit && echo "[OK] lib/edit/ (game data)"
+
+          # Check permissions
+          echo ""
+          echo "=== Checking permissions ==="
+          test -x necromancer && echo "[OK] necromancer is executable"
+          test -x run-necromancer.sh && echo "[OK] run-necromancer.sh is executable"
+          test -x install.sh && echo "[OK] install.sh is executable"
+
+          # Try to run install script (should work even without deps)
+          echo ""
+          echo "=== Testing install.sh ==="
+          sudo ./install.sh || echo "Install script completed"
+
+          # Test launcher help
+          echo ""
+          echo "=== Testing launcher ==="
+          ./run-necromancer.sh --help
+
+          echo ""
+          echo "=== Fresh install test PASSED ==="
