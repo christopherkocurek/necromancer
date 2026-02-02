@@ -1,138 +1,272 @@
-# Tile Rendering Fix - Ralph Loop Prompt
+# Map Engine Rewrite - Ralph Loop Prompt
 
 ## Branch
 `fix/tile-rendering-clean` (clean state from origin/linux)
 
 ## Goal
-Make 64x64 Necromancer tiles work with the existing rendering system by using simple font-based cell sizing and letting Core Graphics scale tiles to fit.
-
-## Background
-
-This game (The Necromancer) is forked from Sil-Q, an Angband variant. The Cocoa frontend uses a terminal-style grid where:
-- The entire screen is a grid of uniform cells (cols × rows)
-- Cell size is determined by font metrics (`tileSize` property)
-- When graphics are enabled, tiles are drawn into these cells
-- Core Graphics automatically scales source images to fit destination rects
-
-The game has three graphics modes:
-1. **None (ASCII)** - Text only
-2. **Original 16x16** - 16x16 pixel tiles
-3. **Necromancer 64x64** - 64x64 pixel tiles (new, not working)
-
-The 16x16 mode works because tiles are scaled from 16x16 to ~13px cells.
-The 64x64 mode should work the same way - tiles scaled from 64x64 to ~13px cells.
+Rewrite the map rendering system to support large 64x64 tiles at NATIVE SIZE while keeping the sidebar text readable. The game must be fun and accessible for players who don't want tiny tiles or ASCII.
 
 ## The Problem
 
-Previous attempts tried to make 64x64 cells for the map while keeping 13px cells for text. This is fundamentally incompatible with Angband's uniform grid architecture. The solution is simpler: keep uniform font-based cells and let tiles scale.
+Angband's terminal architecture uses a uniform grid where every cell is the same size. This forces a choice:
+- Small cells (~13px): Text readable, but 64x64 tiles scaled down to 13px (too small)
+- Large cells (64px): Tiles at native size, but text spread out with 64px spacing (unreadable)
 
-## Files to Modify
+## The Solution: Dual-Region Rendering
 
-1. `src/main-cocoa.m` - Main rendering code
-2. `src/Makefile.cocoa` - Add 64x64 tileset to install
-3. `src/defines.h` - Already has `GRAPHICS_NECROMANCER_64` defined
+Separate the screen into two independently-rendered regions:
 
-## Implementation Steps
+1. **Sidebar Region** (columns 0-12): Rendered with font-based cell size (~13px)
+2. **Map Region** (columns 13+): Rendered with tile-based cell size (64x64)
 
-### Step 1: Verify defines.h has the graphics constant
-Check that `GRAPHICS_NECROMANCER_64` is defined (value 4).
+This requires significant changes to the rendering pipeline.
 
-### Step 2: Update Makefile.cocoa
-Add this line after the 16x16_microchasm.png copy (around line 135):
+## Architecture Overview
+
+```
++------------------+----------------------------------------+
+|                  |                                        |
+|    SIDEBAR       |              MAP AREA                  |
+|   (Text cells)   |           (Tile cells)                 |
+|    ~13px wide    |            64px wide                   |
+|                  |                                        |
+|  - Player name   |     [64x64 tiles rendered at          |
+|  - Stats         |      native size, showing              |
+|  - Health/Spirit |      detailed dungeon graphics]        |
+|  - Equipment     |                                        |
+|                  |                                        |
++------------------+----------------------------------------+
+     13 columns              Variable columns
+     ~169px wide             Based on window size
+```
+
+## Implementation Plan
+
+### Phase 1: Create Separate Layer for Map Tiles
+
+Instead of rendering everything to a single `angbandLayer`, create:
+- `textLayer` - For sidebar and message areas (font-based sizing)
+- `mapLayer` - For the dungeon map (tile-based sizing)
+
+### Phase 2: Modify Cell Positioning
+
+Create a new method `absoluteRectForTileAtX:Y:` that:
+- For columns 0-12: Returns rect at `x * textCellWidth`
+- For columns 13+: Returns rect at `sidebarWidth + (x-13) * tileCellWidth`
+
+### Phase 3: Split Rendering in Term_xtra_cocoa_fresh
+
+The main rendering function needs to:
+1. Render text changes (CELL_CHANGE_TEXT, CELL_CHANGE_WIPE) to textLayer using font metrics
+2. Render tile changes (CELL_CHANGE_TILE) to mapLayer using tile dimensions
+3. Composite both layers for final display
+
+### Phase 4: Handle Window Sizing
+
+Window size calculations must account for:
+- Sidebar: `SIDEBAR_COLS * textCellSize.width`
+- Map: `mapCols * tileCellSize.width`
+- Total width: sidebar + map
+- Height: `rows * MAX(textCellSize.height, tileCellSize.height)`
+
+### Phase 5: Handle Row Heights
+
+Two options for row heights:
+- **Option A**: Uniform row height = MAX(text, tile) - Simpler but wastes vertical space
+- **Option B**: Text rows at text height, map rows at tile height - Complex, may cause alignment issues
+
+Recommend Option A for initial implementation.
+
+## Key Files to Modify
+
+### src/main-cocoa.m
+
+#### Constants to Add (near top)
+```objc
+#define SIDEBAR_COLS 13
+#define MAP_START_COL 13
+```
+
+#### New Properties in AngbandContext
+```objc
+@property CGLayerRef mapLayer;      // Layer for tile rendering
+@property (readonly) NSSize mapTileSize;  // Size of tiles (64x64)
+```
+
+#### New Methods to Add
+```objc
+// Returns the pixel rect for a cell, accounting for dual-region layout
+- (NSRect)absoluteRectForCellAtX:(int)x Y:(int)y;
+
+// Returns cell size for a given column (text size for sidebar, tile size for map)
+- (NSSize)cellSizeForColumn:(int)x;
+
+// Sidebar width in pixels
+- (CGFloat)sidebarPixelWidth;
+```
+
+#### Methods to Modify
+- `baseSize` - Calculate width as sidebar + map widths
+- `updateImage` - Create/manage both layers
+- `rectInImageForTileAtX:Y:` - Use absolute positioning
+- `drawRect:inView:` - Composite both layers
+- `resizeTerminalWithContentRect:` - Handle hybrid widths
+- `constrainWindowSize:` - Handle hybrid widths
+
+#### Term_xtra_cocoa_fresh Modifications
+The tile rendering section (CELL_CHANGE_TILE case) must:
+- Calculate destination rect at tile size (64x64)
+- Position correctly in the map region
+
+The text rendering section must:
+- Calculate destination rect at text size
+- Position correctly (sidebar uses text size, map area uses tile size)
+
+### src/Makefile.cocoa
+Add the 64x64 tileset to install:
 ```make
 @cp ../lib/xtra/graf/64x64_necromancer.png $(APPRES)/lib/xtra/graf
 ```
 
-### Step 3: In main-cocoa.m, ensure these things are correct:
+## Detailed Implementation Steps
 
-#### 3a. The graphics loading code (around line 2900-2930)
-There should be a case for `GRAPHICS_NECROMANCER_64` that:
-- Loads `64x64_necromancer.png` from the graf directory
-- Sets `pict_cell_width = 64` and `pict_cell_height = 64`
-
-#### 3b. Cell sizing uses ONLY font-based tileSize
-Search for any methods like `cellSize`, `effectiveCellSize`, `textCellSize`, `tileCellSize` and REMOVE them.
-
-The following methods should use `self.tileSize` directly (NOT any zoom or tile-based sizing):
-- `baseSize` - should be: `self.cols * self.tileSize.width`, `self.rows * self.tileSize.height`
-- `rectInImageForTileAtX:Y:` - should use `self.tileSize` for positioning and dimensions
-- `resizeTerminalWithContentRect:saveToDefaults:` - should use `self.tileSize`
-- `constrainWindowSize:` - should use `self.tileSize`
-
-#### 3c. Remove any SIDEBAR_COLS or hybrid cell logic
-Delete any code that tries to use different cell sizes for different screen regions.
-
-#### 3d. Remove any zoom-related code
-Delete:
-- `tile_zoom_level` variable
-- `get_tile_zoom_scale()` function
-- `AngbandTileZoomDefaultsKey` constant
-- `setTileZoom:` method
-- `prepareTileZoomMenu` method
-- `handle_tile_zoom_change()` function
-- Any menu validation for zoom
-
-### Step 4: Verify tile rendering uses Core Graphics scaling
-
-In `Term_pict_cocoa` or `draw_image_tile`, verify that:
-- Source rect uses `graf_width` × `graf_height` (64×64 for the source tile)
-- Destination rect uses cell size from `rectInImageForTileAtX:Y:` (font-based, ~13×13)
-- Core Graphics handles the scaling automatically
-
-The `draw_image_tile` function should look something like:
+### Step 1: Add mapTileSize property
 ```objc
-static void draw_image_tile(
-    NSGraphicsContext *nsContext,
-    CGContextRef ctx,
-    CGImageRef image,
-    NSRect srcRect,    // 64x64 from tileset
-    NSRect dstRect,    // 13x13 cell on screen
-    NSCompositingOperation
-) {
-    // CGContextDrawImage scales automatically
+// In AngbandContext interface
+@property (readonly) NSSize mapTileSize;
+
+// In implementation, add getter
+- (NSSize)mapTileSize {
+    if (graphics_are_enabled() && pict_cell_width > 0 && pict_cell_height > 0) {
+        return NSMakeSize(pict_cell_width, pict_cell_height);
+    }
+    return self.tileSize; // Fallback to text size
 }
 ```
 
-### Step 5: Graphics menu should have Necromancer 64x64 option
+### Step 2: Add absolute positioning method
+```objc
+- (NSRect)absoluteRectForCellAtX:(int)x Y:(int)y {
+    NSSize textCell = self.tileSize;
+    NSSize mapCell = [self mapTileSize];
+    CGFloat rowHeight = MAX(textCell.height, mapCell.height);
 
-In `menuNeedsUpdate:` or wherever the Graphics menu is built, ensure there's an item:
-- Title: "Necromancer 64x64"
-- Tag: `GRAPHICS_NECROMANCER_64`
+    CGFloat xPos;
+    CGFloat cellWidth;
 
-## Testing
+    if (x < SIDEBAR_COLS) {
+        // Sidebar: text-sized cells
+        xPos = x * textCell.width;
+        cellWidth = textCell.width;
+    } else {
+        // Map: tile-sized cells
+        CGFloat sidebarWidth = SIDEBAR_COLS * textCell.width;
+        xPos = sidebarWidth + (x - SIDEBAR_COLS) * mapCell.width;
+        cellWidth = mapCell.width;
+    }
 
-After building (`make -f Makefile.cocoa clean && make -f Makefile.cocoa install`):
+    return NSMakeRect(
+        xPos + self.borderSize.width,
+        y * rowHeight + self.borderSize.height,
+        cellWidth,
+        rowHeight
+    );
+}
+```
 
-1. Launch game
-2. Settings → Graphics → None (ASCII) - Text should render normally
-3. Settings → Graphics → Original 16x16 - Tiles should display, scaled to font size
-4. Settings → Graphics → Necromancer 64x64 - Tiles should display, scaled to font size
-5. Sidebar text should be readable in all modes
-6. Window resize should work in all modes
+### Step 3: Update baseSize
+```objc
+- (NSSize)baseSize {
+    NSSize textCell = self.tileSize;
+    NSSize mapCell = [self mapTileSize];
 
-## Reference
+    int sidebarCols = MIN(SIDEBAR_COLS, self.cols);
+    int mapCols = MAX(0, self.cols - SIDEBAR_COLS);
 
-The working sil-q implementation is at:
-`/Users/christopherkocurek/dev/active/games/sil-q/src/main-cocoa.m`
+    CGFloat width = sidebarCols * textCell.width + mapCols * mapCell.width;
+    CGFloat rowHeight = MAX(textCell.height, mapCell.height);
+    CGFloat height = self.rows * rowHeight;
 
-Key methods to reference:
-- `baseSize` (around line 1734)
-- `rectInImageForTileAtX:Y:` (around line 2174)
-- `Term_pict_cocoa` for tile rendering
+    return NSMakeSize(
+        floor(width + 2 * self.borderSize.width),
+        floor(height + 2 * self.borderSize.height)
+    );
+}
+```
+
+### Step 4: Update rectInImageForTileAtX:Y:
+Replace with call to absoluteRectForCellAtX:Y:
+```objc
+- (NSRect)rectInImageForTileAtX:(int)x Y:(int)y {
+    return [self absoluteRectForCellAtX:x Y:y];
+}
+```
+
+### Step 5: Update Term_xtra_cocoa_fresh tile rendering
+
+In the CELL_CHANGE_TILE case, the destination rect comes from rectInImageForTileAtX:Y: which now returns the correct 64x64 rect for map cells.
+
+The source rect uses graf_width/graf_height (64x64).
+The destination rect uses the absolute positioning (64x64 for map area).
+No scaling needed - 1:1 rendering.
+
+### Step 6: Update text rendering
+
+Text in the sidebar renders at text cell size.
+Text in the map area (rare, but possible) renders at tile cell size - the font will appear small relative to the cell, which is fine.
+
+### Step 7: Update window resize logic
+```objc
+- (void)resizeTerminalWithContentRect:(NSRect)contentRect saveToDefaults:(BOOL)saveToDefaults {
+    NSSize textCell = self.tileSize;
+    NSSize mapCell = [self mapTileSize];
+    CGFloat rowHeight = MAX(textCell.height, mapCell.height);
+
+    CGFloat availWidth = contentRect.size.width - 2 * self.borderSize.width;
+    CGFloat sidebarWidth = SIDEBAR_COLS * textCell.width;
+
+    int newCols;
+    if (availWidth <= sidebarWidth) {
+        newCols = (int)ceil(availWidth / textCell.width);
+    } else {
+        int mapCols = (int)floor((availWidth - sidebarWidth) / mapCell.width);
+        newCols = SIDEBAR_COLS + mapCols;
+    }
+
+    int newRows = (int)floor((contentRect.size.height - 2 * self.borderSize.height) / rowHeight);
+
+    // ... rest of resize logic
+}
+```
+
+## Testing Checklist
+
+1. [ ] ASCII mode: Text renders correctly, normal spacing
+2. [ ] 16x16 mode: Tiles render, sidebar text readable
+3. [ ] 64x64 mode: Tiles render at NATIVE 64x64 size, sidebar text readable
+4. [ ] Window resize works in all modes
+5. [ ] Mouse clicks map to correct cells (if mouse is enabled)
+6. [ ] No visual artifacts at sidebar/map boundary
+7. [ ] Messages at top of screen render correctly
+8. [ ] Status bar at bottom renders correctly
 
 ## Success Criteria
 
-- All three graphics modes work
-- Text is always at normal font spacing
-- Tiles are scaled to fit font-sized cells (they will appear small, ~13px)
-- No crashes or rendering artifacts
-- Window resize works properly
+- 64x64 tiles display at full native resolution (detailed, beautiful)
+- Sidebar text is normal size and readable
+- The game is visually appealing and accessible
+- No crashes or rendering glitches
+- Players can enjoy the detailed tile art
+
+## Reference Files
+
+- Clean sil-q implementation: `/Users/christopherkocurek/dev/active/games/sil-q/src/main-cocoa.m`
+- Current (broken) necromancer: Check git stash or origin/linux
+- 64x64 tileset: `/Users/christopherkocurek/dev/active/games/necromancer-linux-port/lib/xtra/graf/64x64_necromancer.png`
 
 ## Notes
 
-The 64x64 tiles will appear small (scaled to ~13px) but this is CORRECT behavior.
-If larger tiles are desired in the future, that requires either:
-1. A larger base font
-2. A complete rewrite of the rendering architecture to separate text and tile regions
-
-Do NOT attempt hybrid cell sizing - it doesn't work with Angband's architecture.
+- This is a significant architectural change - take it step by step
+- Test frequently during implementation
+- The key insight is ABSOLUTE POSITIONING - each cell's pixel position depends on which region it's in
+- Don't try to maintain the old uniform-grid assumption - it doesn't work for this use case
