@@ -232,7 +232,7 @@ func _spawn_monsters(depth: int) -> void:
 		# Don't spawn too close to stairs up
 		var stairs_up := level.find_stairs_up()
 		if stairs_up != Vector2i(-1, -1):
-			var dist := max(abs(spawn_pos.x - stairs_up.x), abs(spawn_pos.y - stairs_up.y))
+			var dist: int = max(abs(spawn_pos.x - stairs_up.x), abs(spawn_pos.y - stairs_up.y))
 			if dist < 5:
 				continue
 

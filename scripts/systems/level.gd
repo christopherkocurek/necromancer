@@ -12,7 +12,7 @@ signal generation_complete(width: int, height: int)
 # Tile data
 var terrain: Array[int] = []  # Flat array, index = y * width + x
 var explored: Array[bool] = []
-var visible: Array[bool] = []
+var tile_visibility: Array[bool] = []
 
 # Entities
 var entities: Array[Entity] = []
@@ -47,8 +47,8 @@ func _initialize_arrays() -> void:
 	terrain.fill(Tile.VOID)
 	explored.resize(size)
 	explored.fill(false)
-	visible.resize(size)
-	visible.fill(false)
+	tile_visibility.resize(size)
+	tile_visibility.fill(false)
 
 # ============================================================================
 # TERRAIN ACCESS
@@ -88,18 +88,18 @@ func is_explored(pos: Vector2i) -> bool:
 		return false
 	return explored[pos.y * width + pos.x]
 
-func is_visible(pos: Vector2i) -> bool:
+func is_tile_visible(pos: Vector2i) -> bool:
 	if not is_in_bounds(pos):
 		return false
-	return visible[pos.y * width + pos.x]
+	return tile_visibility[pos.y * width + pos.x]
 
 func set_explored(pos: Vector2i, value: bool = true) -> void:
 	if is_in_bounds(pos):
 		explored[pos.y * width + pos.x] = value
 
-func set_visible(pos: Vector2i, value: bool) -> void:
+func set_tile_visible(pos: Vector2i, value: bool) -> void:
 	if is_in_bounds(pos):
-		visible[pos.y * width + pos.x] = value
+		tile_visibility[pos.y * width + pos.x] = value
 		if value:
 			set_explored(pos, true)
 
@@ -126,7 +126,7 @@ func get_entities_in_radius(center: Vector2i, radius: int) -> Array[Entity]:
 	var result: Array[Entity] = []
 	for entity in entities:
 		if entity.is_alive:
-			var dist := max(abs(entity.grid_position.x - center.x),
+			var dist: int = max(abs(entity.grid_position.x - center.x),
 						   abs(entity.grid_position.y - center.y))
 			if dist <= radius:
 				result.append(entity)
@@ -143,7 +143,7 @@ func get_monsters() -> Array[Monster]:
 # ITEM MANAGEMENT
 # ============================================================================
 
-func add_item_at(pos: Vector2i, item: Resource) -> void:
+func add_item_at(pos: Vector2i, item: Variant) -> void:
 	if not items_on_ground.has(pos):
 		items_on_ground[pos] = []
 	items_on_ground[pos].append(item)
@@ -151,7 +151,7 @@ func add_item_at(pos: Vector2i, item: Resource) -> void:
 func get_items_at(pos: Vector2i) -> Array:
 	return items_on_ground.get(pos, [])
 
-func remove_item_at(pos: Vector2i, item: Resource) -> bool:
+func remove_item_at(pos: Vector2i, item: Variant) -> bool:
 	if items_on_ground.has(pos):
 		var items: Array = items_on_ground[pos]
 		var idx := items.find(item)
@@ -176,30 +176,30 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 
 func _get_atlas_coords_for_tile(tile: int) -> Vector2i:
 	# Map tile types to positions in the 64x64 tileset
-	# These will need to be adjusted based on your actual tileset layout
+	# Coordinates from user's tileset configuration
 	match tile:
 		Tile.VOID:
-			return Vector2i(0, 0)
+			return Vector2i(4, 60)
 		Tile.FLOOR:
-			return Vector2i(1, 2)  # Stone floor
+			return Vector2i(8, 60)
 		Tile.WALL:
-			return Vector2i(0, 2)  # Stone wall
+			return Vector2i(0, 56)
 		Tile.DOOR_CLOSED:
-			return Vector2i(2, 2)
+			return Vector2i(0, 56)  # TODO: find door tile
 		Tile.DOOR_OPEN:
-			return Vector2i(3, 2)
+			return Vector2i(8, 60)  # TODO: find door tile
 		Tile.STAIRS_DOWN:
-			return Vector2i(4, 2)
+			return Vector2i(16, 48)
 		Tile.STAIRS_UP:
-			return Vector2i(5, 2)
+			return Vector2i(24, 48)
 		Tile.CHASM:
-			return Vector2i(6, 2)
+			return Vector2i(4, 60)  # TODO: find chasm tile
 		Tile.RUBBLE:
-			return Vector2i(7, 2)
+			return Vector2i(8, 60)  # TODO: find rubble tile
 		Tile.FORGE:
-			return Vector2i(8, 2)
+			return Vector2i(8, 60)  # TODO: find forge tile
 		_:
-			return Vector2i(0, 0)
+			return Vector2i(4, 60)
 
 func rebuild_tilemap() -> void:
 	if not terrain_layer:
@@ -218,7 +218,7 @@ func rebuild_tilemap() -> void:
 
 func update_fov(center: Vector2i, radius: int) -> void:
 	# Clear visibility
-	visible.fill(false)
+	tile_visibility.fill(false)
 
 	# Simple raycasting FOV
 	for angle in range(360):
@@ -235,7 +235,7 @@ func update_fov(center: Vector2i, radius: int) -> void:
 			if not is_in_bounds(check_pos):
 				break
 
-			set_visible(check_pos, true)
+			set_tile_visible(check_pos, true)
 
 			if not is_transparent(check_pos):
 				break
@@ -246,7 +246,7 @@ func update_fov(center: Vector2i, radius: int) -> void:
 func update_entity_visibility() -> void:
 	for entity in entities:
 		if entity is Monster:
-			entity.visible = is_visible(entity.grid_position)
+			entity.visible = is_tile_visible(entity.grid_position)
 
 # ============================================================================
 # PATHFINDING
@@ -262,7 +262,7 @@ func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	while not open_set.is_empty():
 		# Find node with lowest f_score
 		var current := open_set[0]
-		var lowest_f := f_score.get(current, INF)
+		var lowest_f: float = f_score.get(current, INF)
 		for node in open_set:
 			var f: float = f_score.get(node, INF)
 			if f < lowest_f:
@@ -299,7 +299,7 @@ func _get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 	]
 
 	for dir in directions:
-		var neighbor := pos + dir
+		var neighbor: Vector2i = pos + dir
 		if is_passable(neighbor):
 			neighbors.append(neighbor)
 

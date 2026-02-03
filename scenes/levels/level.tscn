@@ -1,14 +1,16 @@
-[gd_scene load_steps=2 format=3 uid="uid://crnv5m8k2x4hd"]
+[gd_scene format=3 uid="uid://crnv5m8k2x4hd"]
 
-[ext_resource type="Script" path="res://scripts/systems/level.gd" id="1_level"]
+[ext_resource type="Script" uid="uid://bljv6unk7ywxq" path="res://scripts/systems/level.gd" id="1_level"]
+[ext_resource type="TileSet" uid="uid://dy3rb26hmf80g" path="res://assets/sprites/necromancer_64x64_v1.tres" id="2_bovvr"]
 
-[node name="Level" type="Node2D"]
+[node name="Level" type="Node2D" unique_id=1266957464]
 script = ExtResource("1_level")
 
-[node name="TerrainLayer" type="TileMapLayer" parent="."]
+[node name="TerrainLayer" type="TileMapLayer" parent="." unique_id=910961359]
+tile_set = ExtResource("2_bovvr")
 
-[node name="Items" type="Node2D" parent="."]
+[node name="Items" type="Node2D" parent="." unique_id=1886124235]
 
-[node name="Entities" type="Node2D" parent="."]
+[node name="Entities" type="Node2D" parent="." unique_id=139004567]
 
-[node name="Effects" type="Node2D" parent="."]
+[node name="Effects" type="Node2D" parent="." unique_id=1523210937]
