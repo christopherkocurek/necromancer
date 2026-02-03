@@ -44,7 +44,7 @@ APPNAME = $(NAME).app
 EXE = $(PROG)
 
 OBJS = $(BASEOBJS)
-OSX_OBJS = main-cocoa.o
+OSX_OBJS = main-cocoa.o cocoa/NecroTileRenderer.o cocoa/NecroTestView.o cocoa/NecroGameBridge.o cocoa/NecroMapViewport.o
 
 
 
@@ -71,6 +71,7 @@ $(EXE): $(EXE).o $(OSX_OBJS)
 
 clean:
 	-rm -f $(OBJS) $(EXE) $(addprefix $(EXE).o.,$(ARCHS)) $(EXE).o $(OSX_OBJS)
+	-rm -f cocoa/*.o
 
 
 #
@@ -80,6 +81,24 @@ clean:
 main-cocoa.o : main-cocoa.m
 	@printf "%10s %-20s (objective-c)\n" CC $<
 	$(CC) $(CFLAGS) $(OBJ_CFLAGS) -c -o $@ $<
+
+# Necromancer tile renderer components
+cocoa/NecroTileRenderer.o : cocoa/NecroTileRenderer.m cocoa/NecroTileRenderer.h
+	@printf "%10s %-20s (objective-c)\n" CC $<
+	$(CC) $(CFLAGS) $(OBJ_CFLAGS) -I cocoa -c -o $@ $<
+
+cocoa/NecroTestView.o : cocoa/NecroTestView.m cocoa/NecroTestView.h cocoa/NecroTileRenderer.h
+	@printf "%10s %-20s (objective-c)\n" CC $<
+	$(CC) $(CFLAGS) $(OBJ_CFLAGS) -I cocoa -c -o $@ $<
+
+cocoa/NecroGameBridge.o : cocoa/NecroGameBridge.m cocoa/NecroGameBridge.h
+	@printf "%10s %-20s (objective-c)\n" CC $<
+	$(CC) $(CFLAGS) $(OBJ_CFLAGS) -I cocoa -c -o $@ $<
+
+cocoa/NecroMapViewport.o : cocoa/NecroMapViewport.m cocoa/NecroMapViewport.h cocoa/NecroTileRenderer.h cocoa/NecroGameBridge.h
+	@printf "%10s %-20s (objective-c)\n" CC $<
+	$(CC) $(CFLAGS) $(OBJ_CFLAGS) -I cocoa -c -o $@ $<
+
 %.o : %.c
 	@printf "%10s %-20s\n" CC $<
 	$(CC) $(JUST_C) $(CFLAGS) -c -o $@ $<
@@ -133,6 +152,7 @@ install: $(EXE) $(ICONFILES) $(PLIST)
 	@cp ../lib/pref/*.prf $(APPRES)/lib/pref
 	@cp ../lib/xtra/tutorial $(APPRES)/lib/xtra
 	@cp ../lib/xtra/graf/16x16_microchasm.png $(APPRES)/lib/xtra/graf
+	@cp ../lib/xtra/graf/64x64_necromancer.png $(APPRES)/lib/xtra/graf
 
 	install -m 755 $(EXE) $(APPBIN)
 	install -m 644 $(ICONFILES) $(APPRES)

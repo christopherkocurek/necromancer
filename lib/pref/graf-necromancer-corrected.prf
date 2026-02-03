@@ -1,0 +1,120 @@
+# File: graf-necromancer-corrected.prf
+# Purpose: CORRECTED tile mappings for Necromancer 64x64 tileset
+#
+# Format: TYPE:ID:0xROW/0xCOL
+# Row/Col are offset by 0x80 (128)
+#
+# Note: This file was corrected by visual inspection of 64x64_necromancer.png
+# The original graf-necromancer.prf had incorrect row assignments.
+
+# ==============================================================================
+# Row 0 (0x80): Terrain - Floors and Basic
+# ==============================================================================
+F:0:0x80/0x80    # Darkness/void (col 0)
+F:1:0x80/0x81    # Stone floor (col 1)
+F:9:0x80/0x82    # Stone floor variant (col 2)
+
+# ==============================================================================
+# Row 1 (0x81): Terrain - Walls, Stairs, Doors
+# ==============================================================================
+F:56:0x81/0x80   # Wall tile (col 0)
+F:80:0x80/0x83   # Stairs up (row 0, col 3)
+F:81:0x81/0x83   # Stairs down
+
+# Doors appear to be in row 1-2 area
+F:4:0x81/0x86    # Open door
+F:5:0x81/0x87    # Broken door
+F:32:0x81/0x85   # Closed door
+
+# ==============================================================================
+# Row 2 (0x82): Terrain - Traps and Features
+# ==============================================================================
+F:16:0x82/0x84   # Trap: weakened floor
+F:17:0x82/0x85   # Trap: pit
+F:12:0x82/0x80   # Dark pool
+F:13:0x82/0x81   # Morgul runes
+
+# ==============================================================================
+# Row 7 (0x87): Player Characters and Dark Humanoids
+# Based on visual inspection - row 7 has dark-robed humanoid figures
+# ==============================================================================
+R:0:0x87/0x80    # Player Elf - dark robed figure (col 0)
+R:1:0x87/0x81    # Player Man (col 1)
+R:2:0x87/0x82    # Player Dwarf (col 2)
+R:3:0x87/0x83    # Player Alternate (col 3)
+
+# ==============================================================================
+# Row 8 (0x88): Beasts and Creatures
+# bear, crow, bat, snake, spider visible in this row
+# ==============================================================================
+R:12:0x88/0x80   # Giant Rat / Bear-like creature (col 0)
+R:14:0x88/0x81   # Crebain / Crow (col 1)
+R:16:0x88/0x82   # Giant Bat (col 2)
+R:19:0x88/0x83   # Swamp Adder / Snake (col 3)
+R:11:0x88/0x84   # Mirkwood Spider (col 4)
+R:17:0x88/0x85   # Web Spinner (col 5)
+
+# ==============================================================================
+# Row 9 (0x89): Orcs and Humanoid Warriors
+# ==============================================================================
+R:18:0x89/0x80   # Orc Scout (col 0)
+R:31:0x89/0x81   # Orc Slave (col 1)
+R:32:0x89/0x82   # Orc Soldier (col 2)
+R:33:0x89/0x83   # Orc Crossbowman (col 3)
+R:34:0x89/0x84   # Warg (col 4)
+R:35:0x89/0x85   # Orc Thrallmaster (col 5)
+R:36:0x89/0x86   # Orc Captain (col 6)
+R:37:0x89/0x87   # Warg Rider (col 7)
+R:38:0x89/0x88   # Hill Troll (col 8)
+R:39:0x89/0x89   # Gashnak (col 9)
+R:40:0x89/0x8A   # Orc Warchief (col 10)
+
+# ==============================================================================
+# Row 10 (0x8A): Skeletons and Undead
+# ==============================================================================
+R:71:0x8A/0x80   # Skeleton (col 0)
+R:72:0x8A/0x81   # Skeleton Warrior (col 1)
+R:73:0x8A/0x82   # Zombie (col 2)
+R:74:0x8A/0x83   # Wight (col 3)
+R:75:0x8A/0x84   # Corpse-candle (col 4)
+R:52:0x8A/0x85   # Ghoul (col 5)
+R:58:0x8A/0x86   # Ghast (col 6)
+R:76:0x8A/0x87   # Necromancer Adept (col 7)
+R:77:0x8A/0x88   # Barrow-wight (col 8)
+
+# ==============================================================================
+# Row 11 (0x8B): Spectral/Wraith Creatures
+# ==============================================================================
+R:91:0x8B/0x80   # Phantom (col 0)
+R:92:0x8B/0x81   # Shadow (col 1)
+R:94:0x8B/0x82   # Wraith (col 2)
+R:97:0x8B/0x83   # Vampire Thrall (col 3)
+R:98:0x8B/0x84   # Wailing Horror (col 4)
+R:51:0x8B/0x85   # Dark Acolyte (col 5)
+R:54:0x8B/0x86   # Easterling Warrior (col 6)
+R:55:0x8B/0x87   # Dark Sorcerer (col 7)
+
+# ==============================================================================
+# Row 12 (0x8C): Bosses and Powerful Creatures
+# ==============================================================================
+R:79:0x8C/0x80   # Grishnakh (col 0)
+R:99:0x8C/0x81   # Uvatha (col 1)
+R:111:0x8C/0x82  # Black Numenorean (col 2)
+R:112:0x8C/0x83  # Olog-hai (col 3)
+R:113:0x8C/0x84  # Vampire (col 4)
+R:115:0x8C/0x85  # Vampire Lord (col 5)
+R:118:0x8C/0x86  # Khamul (col 6)
+R:131:0x8C/0x87  # Elite Olog-hai (col 7)
+R:134:0x8C/0x88  # Thrain's Shade (col 8)
+R:135:0x8C/0x89  # Sauron (col 9)
+
+# ==============================================================================
+# Additional creatures as found
+# ==============================================================================
+R:13:0x88/0x86   # Black Squirrel
+R:15:0x88/0x87   # Tanglethorn
+R:53:0x89/0x8B   # Mirk-troll
+R:56:0x8B/0x88   # Tortured Wretch
+R:57:0x8B/0x89   # Easterling Champion
+R:59:0x8C/0x8A   # Karvag
+R:60:0x8C/0x8B   # Master Sorcerer

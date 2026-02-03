@@ -40,6 +40,9 @@
 
 /* Mac headers */
 #import "cocoa/AppDelegate.h"
+#import "cocoa/NecroTileRenderer.h"
+#import "cocoa/NecroTestView.h"
+#import "cocoa/NecroMapViewport.h"
 #include <Carbon/Carbon.h> /* For keycodes */
 
 static NSString * const AngbandDirectoryNameLib = @"lib";
@@ -94,6 +97,119 @@ static BOOL game_is_finished = NO;
 
 /** Our frames per second (e.g. 60). A value of 0 means unthrottled. */
 static int frames_per_second;
+
+/** Necromancer tile test window (for development) */
+static NSWindow *necroTestWindow = nil;
+static NecroTileRenderer *necroTileRenderer = nil;
+static NecroTestView *necroTestView = nil;
+
+/**
+ * Open or bring to front the Necromancer tile test window.
+ * This is for Phase 1 development testing only.
+ */
+static void openNecroTestWindow(void)
+{
+    if (necroTestWindow) {
+        [necroTestWindow makeKeyAndOrderFront:nil];
+        return;
+    }
+
+    // Build path to tileset
+    NSString *tilesetPath = [NSString stringWithFormat:@"%s/graf/64x64_necromancer.png",
+                             ANGBAND_DIR_XTRA];
+
+    // Create the tile renderer
+    necroTileRenderer = [[NecroTileRenderer alloc] initWithTilesetPath:tilesetPath
+                                                              tileSize:64];
+    if (!necroTileRenderer) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"Failed to Load Tile Renderer";
+        alert.informativeText = [NSString stringWithFormat:
+            @"Could not load tileset from: %@", tilesetPath];
+        [alert runModal];
+        return;
+    }
+
+    // Create the test window
+    NSRect windowRect = NSMakeRect(100, 100, 800, 600);
+    NSUInteger styleMask = NSTitledWindowMask | NSClosableWindowMask |
+                           NSResizableWindowMask | NSMiniaturizableWindowMask;
+    necroTestWindow = [[NSWindow alloc] initWithContentRect:windowRect
+                                                  styleMask:styleMask
+                                                    backing:NSBackingStoreBuffered
+                                                      defer:NO];
+    [necroTestWindow setTitle:@"Necromancer Tile Test (Phase 1)"];
+    [necroTestWindow setReleasedWhenClosed:NO];
+
+    // Create the test view
+    NSRect viewRect = [[necroTestWindow contentView] bounds];
+    necroTestView = [[NecroTestView alloc] initWithFrame:viewRect
+                                            tileRenderer:necroTileRenderer];
+    [necroTestWindow setContentView:necroTestView];
+
+    // Show the window
+    [necroTestWindow makeKeyAndOrderFront:nil];
+
+    NSLog(@"[Necromancer] Test window opened. Press +/- to zoom, R to refresh, M for game map.");
+}
+
+/** Necromancer map viewport window (for development) */
+static NSWindow *necroViewportWindow = nil;
+static NecroMapViewport *necroMapViewport = nil;
+
+/**
+ * Open the Necromancer map viewport window.
+ * This shows the new player-centered viewport with full zoom/look mode.
+ */
+static void openNecroViewportWindow(void)
+{
+    if (necroViewportWindow) {
+        [necroViewportWindow makeKeyAndOrderFront:nil];
+        return;
+    }
+
+    // Build path to tileset
+    NSString *tilesetPath = [NSString stringWithFormat:@"%s/graf/64x64_necromancer.png",
+                             ANGBAND_DIR_XTRA];
+
+    // Create the tile renderer (reuse existing if available)
+    if (!necroTileRenderer) {
+        necroTileRenderer = [[NecroTileRenderer alloc] initWithTilesetPath:tilesetPath
+                                                                  tileSize:64];
+    }
+
+    if (!necroTileRenderer) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"Failed to Load Tile Renderer";
+        alert.informativeText = [NSString stringWithFormat:
+            @"Could not load tileset from: %@", tilesetPath];
+        [alert runModal];
+        return;
+    }
+
+    // Create the viewport window
+    NSRect windowRect = NSMakeRect(150, 150, 1024, 768);
+    NSUInteger styleMask = NSTitledWindowMask | NSClosableWindowMask |
+                           NSResizableWindowMask | NSMiniaturizableWindowMask;
+    necroViewportWindow = [[NSWindow alloc] initWithContentRect:windowRect
+                                                      styleMask:styleMask
+                                                        backing:NSBackingStoreBuffered
+                                                          defer:NO];
+    [necroViewportWindow setTitle:@"Necromancer Map Viewport (Phase 3)"];
+    [necroViewportWindow setReleasedWhenClosed:NO];
+
+    // Create the viewport
+    NSRect viewRect = [[necroViewportWindow contentView] bounds];
+    necroMapViewport = [[NecroMapViewport alloc] initWithFrame:viewRect
+                                                  tileRenderer:necroTileRenderer];
+    [necroMapViewport setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    [necroViewportWindow setContentView:necroMapViewport];
+
+    // Show the window
+    [necroViewportWindow makeKeyAndOrderFront:nil];
+
+    NSLog(@"[Necromancer] Viewport window opened. +/- zoom, ; look mode, G grid.");
+}
 
 @class AngbandView;
 
@@ -2893,6 +3009,28 @@ static errr Term_xtra_cocoa_react(void)
                     pict_cell_width = 16;
                     pict_cell_height = 16;
                 }
+            } else if (arg_graphics == GRAPHICS_NECROMANCER)
+            {
+                NSString *img_path = [NSString
+                    stringWithFormat:@"%s/graf/64x64_necromancer.png", ANGBAND_DIR_XTRA];
+                pict_image = create_angband_image(img_path);
+
+                /* If we failed to create the image, revert to ASCII. */
+                if (! pict_image) {
+                    arg_graphics = GRAPHICS_NONE;
+                    [[NSUserDefaults angbandDefaults]
+                        setInteger:GRAPHICS_NONE
+                        forKey:AngbandGraphicsDefaultsKey];
+
+                    NSAlert *alert = [[NSAlert alloc] init];
+                    alert.messageText = @"Failed to Load Tile Set";
+                    alert.informativeText =
+                        @"Could not load the Necromancer 64x64 tile set.  Switching back to ASCII.";
+                    [alert runModal];
+                } else {
+                    pict_cell_width = 64;
+                    pict_cell_height = 64;
+                }
             } else if (arg_graphics != GRAPHICS_NONE) {
                 arg_graphics = GRAPHICS_NONE;
                 [[NSUserDefaults angbandDefaults]
@@ -4810,16 +4948,34 @@ extern void fsetfileinfo(cptr pathname, u32b fcreator, u32b ftype)
 {
     /* Hack -- Forget messages */
     msg_flag = FALSE;
-    
+
     /* Save the game */
     do_cmd_save_game();
-    
+
     /*
      * Record the current save file so we can select it by default next time.
      * It's a little sketchy that this only happens when we save through the
      * menu; ideally game-triggered saves would trigger it too.
      */
     record_current_savefile();
+}
+
+/**
+ * Open the Necromancer tile renderer test window.
+ * This is for development testing of Phase 1.
+ */
+- (IBAction)openTileTest:(id)sender
+{
+    openNecroTestWindow();
+}
+
+/**
+ * Open the Necromancer map viewport window.
+ * This is for development testing of Phase 3.
+ */
+- (IBAction)openMapViewport:(id)sender
+{
+    openNecroViewportWindow();
 }
 
 /* Entry point for initializing Angband */
@@ -5218,6 +5374,17 @@ extern void fsetfileinfo(cptr pathname, u32b fcreator, u32b ftype)
 
     item = [menu addItemWithTitle:@"MicroChasm's Tiles" action:action keyEquivalent:@""];
     [item setTag:GRAPHICS_MICROCHASM];
+
+    item = [menu addItemWithTitle:@"Necromancer 64x64" action:action keyEquivalent:@""];
+    [item setTag:GRAPHICS_NECROMANCER];
+
+    /* Add separator and test items for development */
+    [menu addItem:[NSMenuItem separatorItem]];
+    item = [menu addItemWithTitle:@"Test Tile Renderer..." action:@selector(openTileTest:) keyEquivalent:@"t"];
+    [item setKeyEquivalentModifierMask:NSCommandKeyMask | NSShiftKeyMask];
+
+    item = [menu addItemWithTitle:@"Map Viewport..." action:@selector(openMapViewport:) keyEquivalent:@"m"];
+    [item setKeyEquivalentModifierMask:NSCommandKeyMask | NSShiftKeyMask];
 }
 
 /**
@@ -5267,8 +5434,41 @@ extern void fsetfileinfo(cptr pathname, u32b fcreator, u32b ftype)
 
 int main(int argc, char* argv[])
 {
-    NSApplicationMain(argc, (void*)argv);    
+    NSApplicationMain(argc, (void*)argv);
     return (0);
+}
+
+/*
+ * Stub implementations for music functions
+ * TODO: Implement actual music playback using AVFoundation
+ */
+void music_play(int track) {
+    /* Stub - music not yet implemented */
+}
+
+void music_play_oneshot(int track) {
+    /* Stub - music not yet implemented */
+}
+
+void music_stop(void) {
+    /* Stub - music not yet implemented */
+}
+
+void music_stop_fade(float seconds) {
+    /* Stub - music not yet implemented */
+}
+
+void music_set_volume(float vol) {
+    /* Stub - music not yet implemented */
+}
+
+void music_set_enabled(int enabled) {
+    /* Stub - music not yet implemented */
+}
+
+int music_get_current_track(void) {
+    /* Stub - music not yet implemented */
+    return -1;
 }
 
 #endif /* MACINTOSH || MACH_O_CARBON */
