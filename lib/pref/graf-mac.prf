@@ -11,3 +11,7 @@
 ?:[EQU $GRAF new]
 %:graf-new.prf
 
+# Necromancer 64x64 tiles
+?:[EQU $GRAF necromancer]
+%:graf-necromancer-corrected.prf
+

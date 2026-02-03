@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Tileset Analysis - The Necromancer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: #d4c8b8;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #ff6600;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #c9a227;
+            margin: 30px 0 15px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #4a4a5c;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            color: #6b8ea6;
+            margin: 20px 0 10px 0;
+            font-size: 14px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        /* Tile grid styles */
+        .tile-grid {
+            display: grid;
+            gap: 0;
+            margin: 10px auto;
+            width: fit-content;
+            border: 1px solid #2a2a3a;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .tile {
+            width: 64px;
+            height: 64px;
+        }
+
+        .tile-sm {
+            width: 48px;
+            height: 48px;
+        }
+
+        /* ============================================
+           ACTUAL NECROMANCER 64x64 TILESET
+           Tileset: 64x64 pixels per tile
+           Format: 0x{row}/0x{col} from graf-necromancer.prf
+           Row offset = (hex - 0x80) * 64
+           Col offset = (hex - 0x80) * 64
+           ============================================ */
+
+        .necro-tile {
+            background-image: url('../../../lib/xtra/graf/64x64_necromancer.png');
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* 64px tiles (native size) */
+        .nt-64 {
+            width: 64px;
+            height: 64px;
+            background-size: auto; /* native size */
+        }
+
+        /* 48px tiles (scaled down) */
+        .nt-48 {
+            width: 48px;
+            height: 48px;
+            background-size: 75%; /* scale down */
+        }
+
+        /* 32px tiles for room layouts */
+        .nt-32 {
+            width: 32px;
+            height: 32px;
+            background-size: 50%;
+        }
+
+        /*
+         * Necromancer tile positions (from graf-necromancer.prf)
+         * F:0 (darkness)    = 0x80/0x80 = row 0, col 0 = 0px, 0px
+         * F:1 (floor)       = 0x80/0x81 = row 0, col 1 = 0px, 64px
+         * F:9 (daylight)    = 0x80/0x82 = row 0, col 2 = 0px, 128px
+         * F:31 (bloodstain) = 0x80/0x83 = row 0, col 3 = 0px, 192px
+         * F:86 (vine floor) = 0x80/0x84 = row 0, col 4 = 0px, 256px
+         * F:56 (wall)       = 0x81/0x80 = row 1, col 0 = 64px, 0px
+         * F:48 (hidden)     = 0x81/0x81 = row 1, col 1 = 64px, 64px
+         * F:85 (roots)      = 0x81/0x82 = row 1, col 2 = 64px, 128px
+         * F:29 (bars)       = 0x81/0x83 = row 1, col 3 = 64px, 192px
+         * F:32 (door)       = 0x81/0x84 = row 1, col 4 = 64px, 256px
+         * F:4 (open door)   = 0x81/0x85 = row 1, col 5 = 64px, 320px
+         * F:80 (stairs up)  = 0x82/0x80 = row 2, col 0 = 128px, 0px
+         * F:81 (stairs dn)  = 0x82/0x81 = row 2, col 1 = 128px, 64px
+         */
+
+        /* Native 64px positions */
+        .nt-darkness    { background-position: 0px 0px; }           /* F:0 */
+        .nt-floor       { background-position: -64px 0px; }         /* F:1 */
+        .nt-daylight    { background-position: -128px 0px; }        /* F:9 */
+        .nt-bloodstain  { background-position: -192px 0px; }        /* F:31 */
+        .nt-vine-floor  { background-position: -256px 0px; }        /* F:86 */
+        .nt-pit         { background-position: -320px 0px; }        /* F:2 */
+        .nt-rune        { background-position: -384px 0px; }        /* F:3 */
+        .nt-forest      { background-position: -448px 0px; }        /* F:87 */
+
+        .nt-wall        { background-position: 0px -64px; }         /* F:56 */
+        .nt-hidden      { background-position: -64px -64px; }       /* F:48 */
+        .nt-roots       { background-position: -128px -64px; }      /* F:85 */
+        .nt-bars        { background-position: -192px -64px; }      /* F:29 */
+        .nt-door        { background-position: -256px -64px; }      /* F:32 */
+        .nt-door-open   { background-position: -320px -64px; }      /* F:4 */
+        .nt-door-broken { background-position: -384px -64px; }      /* F:5 */
+        .nt-warded1     { background-position: -448px -64px; }      /* F:6 */
+
+        .nt-stairs-up   { background-position: 0px -128px; }        /* F:80 */
+        .nt-stairs-down { background-position: -64px -128px; }      /* F:81 */
+        .nt-shaft-up    { background-position: -128px -128px; }     /* F:82 */
+        .nt-shaft-down  { background-position: -192px -128px; }     /* F:83 */
+        .nt-forge       { background-position: -256px -128px; }     /* F:64 */
+        .nt-dark-pool   { background-position: -320px -128px; }     /* F:12 */
+        .nt-morgul      { background-position: -384px -128px; }     /* F:13 */
+
+        /* 32px scaled positions (half size) */
+        .nt-32.nt-darkness    { background-position: 0px 0px; }
+        .nt-32.nt-floor       { background-position: -32px 0px; }
+        .nt-32.nt-daylight    { background-position: -64px 0px; }
+        .nt-32.nt-bloodstain  { background-position: -96px 0px; }
+        .nt-32.nt-vine-floor  { background-position: -128px 0px; }
+        .nt-32.nt-pit         { background-position: -160px 0px; }
+        .nt-32.nt-forest      { background-position: -224px 0px; }
+
+        .nt-32.nt-wall        { background-position: 0px -32px; }
+        .nt-32.nt-hidden      { background-position: -32px -32px; }
+        .nt-32.nt-roots       { background-position: -64px -32px; }
+        .nt-32.nt-bars        { background-position: -96px -32px; }
+        .nt-32.nt-door        { background-position: -128px -32px; }
+        .nt-32.nt-door-open   { background-position: -160px -32px; }
+
+        .nt-32.nt-stairs-up   { background-position: 0px -64px; }
+        .nt-32.nt-stairs-down { background-position: -32px -64px; }
+        .nt-32.nt-forge       { background-position: -128px -64px; }
+
+        /* NEW proposed colors - the solution */
+        .new-darkness { background: #2a1a2a; }
+        .new-floor { background: #5a5a6a; }
+        .new-floor-highlight { background: #6a6a7a; }
+        .new-wall { background: #3a3a4c; }
+        .new-wall-highlight { background: #4a4a5c; }
+        .new-door { background: #5c4033; }
+        .new-sunlight { background: #c9c990; }
+
+        /* Problem/solution boxes */
+        .problem-box {
+            background: #1a0a0a;
+            border: 1px solid #8b0000;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .solution-box {
+            background: #0a1a0a;
+            border: 1px solid #00aa00;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .insight {
+            background: linear-gradient(135deg, #2a1a2a 0%, #1a1a2e 100%);
+            border-left: 4px solid #ff6600;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .insight strong { color: #ff6600; }
+
+        /* Sprite showcase */
+        .sprite-showcase {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 20px;
+            background: #0a0a12;
+            border-radius: 8px;
+        }
+
+        .sprite-item {
+            text-align: center;
+        }
+
+        .sprite-item .label {
+            font-size: 10px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .bad-label { color: #ff4444; }
+        .good-label { color: #44ff44; }
+
+        .annotation {
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Contrast strip */
+        .contrast-strip {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .strip-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .strip-label {
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* Room comparison */
+        .room-comparison {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .room-panel {
+            text-align: center;
+        }
+
+        .room-panel h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        /* Luminosity scale */
+        .lum-scale {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .lum-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .lum-bar {
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .lum-percent {
+            width: 50px;
+            text-align: right;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Player/monster overlays */
+        .tile-overlay {
+            position: relative;
+        }
+
+        .has-player::after {
+            content: "@";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+        }
+
+        .has-monster::after {
+            content: "o";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #7fff00;
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Environmental Tileset Analysis</h1>
+    <p class="subtitle">The Necromancer - 64x64 Tileset Environmental Review</p>
+
+    <!-- ACTUAL SPRITE SHOWCASE -->
+    <h2>1. Current Necromancer Environmental Tiles (64x64)</h2>
+
+    <div class="sprite-showcase">
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-darkness"></div>
+            <div class="label">Darkness<br>F:0</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-floor"></div>
+            <div class="label">Stone Floor<br>F:1</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-wall"></div>
+            <div class="label">Dark Wall<br>F:56</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-door"></div>
+            <div class="label">Iron Door<br>F:32</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-door-open"></div>
+            <div class="label">Open Door<br>F:4</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-stairs-up"></div>
+            <div class="label">Stairs Up<br>F:80</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-stairs-down"></div>
+            <div class="label">Stairs Down<br>F:81</div>
+        </div>
+    </div>
+
+    <h3>Additional Terrain</h3>
+    <div class="sprite-showcase">
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-daylight"></div>
+            <div class="label">Daylight<br>F:9</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-bloodstain"></div>
+            <div class="label">Bloodstain<br>F:31</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-vine-floor"></div>
+            <div class="label">Vine Floor<br>F:86</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-pit"></div>
+            <div class="label">Pit<br>F:2</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-rune"></div>
+            <div class="label">Rune<br>F:3</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-forest"></div>
+            <div class="label">Forest<br>F:87</div>
+        </div>
+    </div>
+
+    <h3>Walls & Barriers</h3>
+    <div class="sprite-showcase">
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-wall"></div>
+            <div class="label">Wall<br>F:56</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-hidden"></div>
+            <div class="label">Hidden<br>F:48</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-roots"></div>
+            <div class="label">Roots<br>F:85</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-bars"></div>
+            <div class="label">Bars<br>F:29</div>
+        </div>
+        <div class="sprite-item">
+            <div class="necro-tile nt-64 nt-warded1"></div>
+            <div class="label">Warded<br>F:6</div>
+        </div>
+    </div>
+
+    <!-- THE PROBLEM -->
+    <h2>2. The Core Problem: Floor vs Wall Contrast</h2>
+
+    <div class="problem-box">
+        <strong style="color: #ff4444;">Look at the floor and wall tiles side by side:</strong><br>
+        Do they have enough contrast? Can you instantly tell "passable" from "blocked"?
+    </div>
+
+    <div class="contrast-strip">
+        <div class="strip-cell">
+            <div class="necro-tile nt-64 nt-darkness"></div>
+            <div class="strip-label">DARKNESS</div>
+        </div>
+        <div class="strip-cell">
+            <div class="necro-tile nt-64 nt-floor"></div>
+            <div class="strip-label">FLOOR</div>
+        </div>
+        <div class="strip-cell">
+            <div class="necro-tile nt-64 nt-wall"></div>
+            <div class="strip-label">WALL</div>
+        </div>
+        <div class="strip-cell">
+            <div class="necro-tile nt-64 nt-door"></div>
+            <div class="strip-label">DOOR</div>
+        </div>
+    </div>
+
+    <p class="annotation">
+        <strong>Question:</strong> When squinting, does the floor clearly "pop" as lighter than the wall?<br>
+        The luminosity hierarchy should be: Darkness (darkest) < Wall < Floor (lightest passable)
+    </p>
+
+    <!-- ROOM LAYOUT -->
+    <h2>3. Room Layout Test - Actual Tiles</h2>
+
+    <p style="text-align: center; margin-bottom: 20px;">
+        This is what the game looks like with the current 64x64 tileset:
+    </p>
+
+    <div class="room-comparison">
+        <div class="room-panel">
+            <h4>Current Necromancer Tileset (32px scaled)</h4>
+            <div class="tile-grid" style="grid-template-columns: repeat(12, 32px);">
+                <!-- Row 1 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <!-- Row 2 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <!-- Row 3 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor tile-overlay has-player"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-darkness"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor tile-overlay has-monster"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <!-- Row 4 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-door"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-door"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <!-- Row 5 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-stairs-up"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-darkness"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-floor"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <!-- Row 6 -->
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-darkness"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-wall"></div>
+                <div class="tile necro-tile nt-32 nt-darkness"></div>
+                <div class="tile necro-tile nt-32 nt-darkness"></div>
+            </div>
+            <p class="annotation">
+                Squint your eyes: Can you instantly see the room boundaries?
+            </p>
+        </div>
+    </div>
+
+    <!-- COMPARISON WITH PROPOSED FIX -->
+    <h2>4. Proposed Luminosity Fix (Reference)</h2>
+
+    <div class="insight">
+        <strong>The Rule:</strong> Floors must be LIGHTER than walls. Walls must be LIGHTER than darkness.
+        This creates instant visual hierarchy: light = passable, dark = blocked.
+    </div>
+
+    <div class="room-comparison">
+        <div class="room-panel">
+            <h4 class="good-label">Correct Luminosity (Solid Colors)</h4>
+            <div class="tile-grid" style="grid-template-columns: repeat(12, 32px);">
+                <!-- Row 1 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <!-- Row 2 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <!-- Row 3 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor tile-overlay has-player" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-darkness" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor tile-overlay has-monster" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <!-- Row 4 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-door" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-door" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <!-- Row 5 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor-highlight" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-darkness" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-floor" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <!-- Row 6 -->
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-darkness" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-wall" style="width:32px;height:32px;"></div>
+                <div class="tile new-darkness" style="width:32px;height:32px;"></div>
+                <div class="tile new-darkness" style="width:32px;height:32px;"></div>
+            </div>
+            <p class="annotation">
+                Room shapes are instantly visible: Light = walkable, Dark = blocked
+            </p>
+        </div>
+    </div>
+
+    <!-- LUMINOSITY SCALE -->
+    <h2>5. Required Luminosity Values</h2>
+
+    <div class="lum-scale">
+        <div class="lum-row">
+            <span class="lum-percent">90%</span>
+            <div class="lum-bar" style="background: #c9c990; width: 90%; color: #0a0a12;">Sunlight / Daylight</div>
+        </div>
+        <div class="lum-row">
+            <span class="lum-percent">68%</span>
+            <div class="lum-bar" style="background: #5a5a6a; width: 68%;">FLOOR - #5a5a6a (must be lighter than wall!)</div>
+        </div>
+        <div class="lum-row">
+            <span class="lum-percent">50%</span>
+            <div class="lum-bar" style="background: #5c4033; width: 50%;">Doors (interactive)</div>
+        </div>
+        <div class="lum-row">
+            <span class="lum-percent">30%</span>
+            <div class="lum-bar" style="background: #3a3a4c; width: 30%;">WALL - #3a3a4c (must be darker than floor!)</div>
+        </div>
+        <div class="lum-row">
+            <span class="lum-percent">15%</span>
+            <div class="lum-bar" style="background: #2a1a2a; width: 15%;">DARKNESS - #2a1a2a (not pure black)</div>
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <h2>6. Assessment & Action Items</h2>
+
+    <div class="solution-box">
+        <strong style="color: #44ff44;">Review the current tiles and determine:</strong>
+        <ol style="margin-top: 10px; margin-left: 20px; line-height: 2;">
+            <li>Is the <strong>floor tile (F:1)</strong> clearly LIGHTER than the wall tile (F:56)?</li>
+            <li>Is the <strong>wall tile (F:56)</strong> clearly LIGHTER than darkness (F:0)?</li>
+            <li>At a glance, can you tell where the <strong>passable space</strong> is?</li>
+            <li>Does the <strong>floor have a center-bright / edge-dark</strong> pattern (concave feel)?</li>
+            <li>Does the <strong>wall have a top-light / bottom-dark</strong> gradient (depth)?</li>
+        </ol>
+    </div>
+
+    <div class="problem-box">
+        <strong style="color: #ff4444;">If the answer to 1-3 is "no", the environmental tiles need to be regenerated with:</strong>
+        <ul style="margin-top: 10px; margin-left: 20px;">
+            <li>Floor: ~68% average luminosity (lighter!)</li>
+            <li>Wall: ~30-35% average luminosity (darker than floor)</li>
+            <li>Darkness: ~15% luminosity (Shadow Purple #2a1a2a, not black)</li>
+            <li>Minimum 1.5:1 contrast ratio between floor and wall</li>
+        </ul>
+    </div>
+
+    <p style="text-align: center; margin-top: 40px; color: #888; font-size: 12px;">
+        Tileset: 64x64_necromancer.png | See environmental_spec.md for full details
+    </p>
+
+</body>
+</html>

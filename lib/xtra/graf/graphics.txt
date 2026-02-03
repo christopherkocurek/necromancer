@@ -52,3 +52,8 @@ N:5:Shockbolt's tiles
 I:64:64:64x64.png
 P:shock
 X:1:29:31
+
+N:6:Necromancer 64x64
+I:64:64:64x64_necromancer.png
+P:necromancer
+X:1:0:0

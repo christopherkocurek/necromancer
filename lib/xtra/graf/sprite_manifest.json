@@ -1,0 +1,812 @@
+{
+  "version": "1.0",
+  "target_size": 64,
+  "created": "2026-02-01T16:10:49.775770",
+  "sprites": {
+    "R:0": {
+      "status": "completed",
+      "name": "Player Elf",
+      "filename": "final/player/p_0_elf.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:11:17.596568"
+    },
+    "R:1": {
+      "status": "completed",
+      "name": "Player Man",
+      "filename": "final/player/p_1_man.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:11:56.436527"
+    },
+    "R:2": {
+      "status": "completed",
+      "name": "Player Dwarf",
+      "filename": "final/player/p_2_dwarf.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:12:36.386489"
+    },
+    "R:3": {
+      "status": "completed",
+      "name": "Player Alternate",
+      "filename": "final/player/p_3_alt.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:13:22.970790"
+    },
+    "R:11": {
+      "status": "completed",
+      "name": "Mirkwood Spider",
+      "filename": "final/monsters/m_011_mirkwood_spider.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:14:03.739407"
+    },
+    "R:12": {
+      "status": "completed",
+      "name": "Giant Rat",
+      "filename": "final/monsters/m_012_giant_rat.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:14:44.506629"
+    },
+    "R:13": {
+      "status": "completed",
+      "name": "Black Squirrel",
+      "filename": "final/monsters/m_013_black_squirrel.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:15:25.325977"
+    },
+    "R:14": {
+      "status": "completed",
+      "name": "Crebain",
+      "filename": "final/monsters/m_014_crebain.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:16:06.231464"
+    },
+    "R:15": {
+      "status": "completed",
+      "name": "Tanglethorn",
+      "filename": "final/monsters/m_015_tanglethorn.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:16:48.290586"
+    },
+    "R:16": {
+      "status": "completed",
+      "name": "Giant Bat",
+      "filename": "final/monsters/m_016_giant_bat.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:17:30.736974"
+    },
+    "R:17": {
+      "status": "completed",
+      "name": "Web Spinner",
+      "filename": "final/monsters/m_017_web_spinner.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:18:08.549284"
+    },
+    "R:18": {
+      "status": "completed",
+      "name": "Orc Scout",
+      "filename": "final/monsters/m_018_orc_scout.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:18:55.113377"
+    },
+    "R:31": {
+      "status": "completed",
+      "name": "Orc Slave",
+      "filename": "final/monsters/m_031_orc_slave.png",
+      "completed": "2026-02-01T17:47:21.004835"
+    },
+    "R:32": {
+      "status": "completed",
+      "name": "Orc Soldier",
+      "filename": "final/monsters/m_032_orc_soldier.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:20:27.910606"
+    },
+    "R:33": {
+      "status": "completed",
+      "name": "Orc Crossbowman",
+      "filename": "final/monsters/m_033_orc_crossbowman.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:22:21.780449"
+    },
+    "R:34": {
+      "status": "completed",
+      "name": "Warg",
+      "filename": "final/monsters/m_034_warg.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:23:01.968700"
+    },
+    "R:35": {
+      "status": "completed",
+      "name": "Orc Thrallmaster",
+      "filename": "final/monsters/m_035_orc_thrallmaster.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:41:27.240320"
+    },
+    "R:36": {
+      "status": "completed",
+      "name": "Orc Captain",
+      "filename": "final/monsters/m_036_orc_captain.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:24:53.914497"
+    },
+    "R:37": {
+      "status": "completed",
+      "name": "Warg Rider",
+      "filename": "final/monsters/m_037_warg_rider.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:25:35.040941"
+    },
+    "R:38": {
+      "status": "completed",
+      "name": "Hill Troll",
+      "filename": "final/monsters/m_038_hill_troll.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:26:19.571751"
+    },
+    "R:39": {
+      "status": "completed",
+      "name": "Gashnak Warg-lord",
+      "filename": "final/monsters/m_039_gashnak.png",
+      "completed": "2026-02-01T17:48:00.369298"
+    },
+    "R:40": {
+      "status": "completed",
+      "name": "Orc Warchief",
+      "filename": "final/monsters/m_040_orc_warchief.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:28:04.470326"
+    },
+    "R:51": {
+      "status": "completed",
+      "name": "Dark Acolyte",
+      "filename": "final/monsters/m_051_dark_acolyte.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:28:42.997773"
+    },
+    "R:52": {
+      "status": "completed",
+      "name": "Ghoul",
+      "filename": "final/monsters/m_052_ghoul.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:42:32.399848"
+    },
+    "R:53": {
+      "status": "completed",
+      "name": "Mirk-troll",
+      "filename": "final/monsters/m_053_mirk_troll.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:30:28.756345"
+    },
+    "R:54": {
+      "status": "completed",
+      "name": "Easterling Warrior",
+      "filename": "final/monsters/m_054_easterling_warrior.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:31:12.003080"
+    },
+    "R:55": {
+      "status": "completed",
+      "name": "Dark Sorcerer",
+      "filename": "final/monsters/m_055_dark_sorcerer.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:31:52.906214"
+    },
+    "R:56": {
+      "status": "completed",
+      "name": "Tortured Wretch",
+      "filename": "final/monsters/m_056_tortured_wretch.png",
+      "completed": "2026-02-01T17:48:41.367025"
+    },
+    "R:57": {
+      "status": "completed",
+      "name": "Easterling Champion",
+      "filename": "final/monsters/m_057_easterling_champion.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:33:38.480000"
+    },
+    "R:58": {
+      "status": "completed",
+      "name": "Ghast",
+      "filename": "final/monsters/m_058_ghast.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:34:18.149658"
+    },
+    "R:59": {
+      "status": "completed",
+      "name": "Karvag the Torturer",
+      "filename": "final/monsters/m_059_karvag.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:43:39.317753"
+    },
+    "R:60": {
+      "status": "completed",
+      "name": "Master Sorcerer",
+      "filename": "final/monsters/m_060_master_sorcerer.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:36:06.367304"
+    },
+    "R:71": {
+      "status": "completed",
+      "name": "Skeleton",
+      "filename": "final/monsters/m_071_skeleton.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:36:45.821356"
+    },
+    "R:72": {
+      "status": "completed",
+      "name": "Skeleton Warrior",
+      "filename": "final/monsters/m_072_skeleton_warrior.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:37:29.054878"
+    },
+    "R:73": {
+      "status": "completed",
+      "name": "Zombie",
+      "filename": "final/monsters/m_073_zombie.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:44:26.211603"
+    },
+    "R:74": {
+      "status": "completed",
+      "name": "Wight",
+      "filename": "final/monsters/m_074_wight.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:39:10.671223"
+    },
+    "R:75": {
+      "status": "completed",
+      "name": "Corpse-candle",
+      "filename": "final/monsters/m_075_corpse_candle.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:39:52.268523"
+    },
+    "R:76": {
+      "status": "completed",
+      "name": "Necromancer Adept",
+      "filename": "final/monsters/m_076_necromancer_adept.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:40:33.995118"
+    },
+    "R:77": {
+      "status": "completed",
+      "name": "Barrow-wight",
+      "filename": "final/monsters/m_077_barrow_wight.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:41:18.547133"
+    },
+    "R:79": {
+      "status": "completed",
+      "name": "Grishnakh Crypt Lord",
+      "filename": "final/monsters/m_079_grishnakh.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:42:04.936616"
+    },
+    "R:91": {
+      "status": "completed",
+      "name": "Phantom",
+      "filename": "final/monsters/m_091_phantom.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:42:50.763701"
+    },
+    "R:92": {
+      "status": "completed",
+      "name": "Shadow",
+      "filename": "final/monsters/m_092_shadow.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:43:32.143660"
+    },
+    "R:94": {
+      "status": "completed",
+      "name": "Wraith",
+      "filename": "final/monsters/m_094_wraith.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:44:14.134941"
+    },
+    "R:97": {
+      "status": "completed",
+      "name": "Vampire Thrall",
+      "filename": "final/monsters/m_097_vampire_thrall.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:45:09.055190"
+    },
+    "R:98": {
+      "status": "completed",
+      "name": "Wailing Horror",
+      "filename": "final/monsters/m_098_wailing_horror.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:45:53.332621"
+    },
+    "R:99": {
+      "status": "completed",
+      "name": "Uvatha the Horseman",
+      "filename": "final/monsters/m_099_uvatha.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:46:33.110146"
+    },
+    "R:111": {
+      "status": "completed",
+      "name": "Black Numenorean",
+      "filename": "final/monsters/m_111_black_numenorean.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:47:16.358961"
+    },
+    "R:112": {
+      "status": "completed",
+      "name": "Olog-hai",
+      "filename": "final/monsters/m_112_olog_hai.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:47:58.063050"
+    },
+    "R:113": {
+      "status": "completed",
+      "name": "Vampire",
+      "filename": "final/monsters/m_113_vampire.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:48:42.825286"
+    },
+    "R:115": {
+      "status": "completed",
+      "name": "Vampire Lord",
+      "filename": "final/monsters/m_115_vampire_lord.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:49:22.074868"
+    },
+    "R:118": {
+      "status": "completed",
+      "name": "Khamul",
+      "filename": "final/monsters/m_118_khamul.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:50:01.090196"
+    },
+    "R:131": {
+      "status": "completed",
+      "name": "Elite Olog-hai",
+      "filename": "final/monsters/m_131_elite_olog_hai.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:50:43.118360"
+    },
+    "R:134": {
+      "status": "completed",
+      "name": "Thrains Shade",
+      "filename": "final/monsters/m_134_thrains_shade.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:51:22.641829"
+    },
+    "R:135": {
+      "status": "completed",
+      "name": "Sauron",
+      "filename": "final/monsters/m_135_sauron.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:52:02.545930"
+    },
+    "F:0": {
+      "status": "completed",
+      "name": "Darkness",
+      "filename": "final/terrain/t_00_darkness.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:52:40.342737"
+    },
+    "F:1": {
+      "status": "completed",
+      "name": "Stone Floor",
+      "filename": "final/terrain/t_01_stone_floor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:53:19.745635"
+    },
+    "F:9": {
+      "status": "completed",
+      "name": "Fading Daylight",
+      "filename": "final/terrain/t_09_fading_daylight.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:53:57.155599"
+    },
+    "F:31": {
+      "status": "completed",
+      "name": "Bloodstain",
+      "filename": "final/terrain/t_31_bloodstain.png",
+      "attempts": "retry",
+      "completed": "2026-02-01T17:45:50.690985"
+    },
+    "F:86": {
+      "status": "completed",
+      "name": "Vine Floor",
+      "filename": "final/terrain/t_86_vine_floor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:55:51.059345"
+    },
+    "F:56": {
+      "status": "completed",
+      "name": "Dark Stone Wall",
+      "filename": "final/terrain/t_56_dark_stone_wall.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:56:27.323298"
+    },
+    "F:48": {
+      "status": "completed",
+      "name": "Hidden Passage",
+      "filename": "final/terrain/t_48_hidden_passage.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:57:06.169180"
+    },
+    "F:85": {
+      "status": "completed",
+      "name": "Tangled Roots",
+      "filename": "final/terrain/t_85_tangled_roots.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:57:45.306937"
+    },
+    "F:29": {
+      "status": "completed",
+      "name": "Prison Bars",
+      "filename": "final/terrain/t_29_prison_bars.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:58:22.572510"
+    },
+    "F:32": {
+      "status": "completed",
+      "name": "Iron Door",
+      "filename": "final/terrain/t_32_iron_door.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:59:02.206868"
+    },
+    "F:4": {
+      "status": "completed",
+      "name": "Open Door",
+      "filename": "final/terrain/t_04_open_door.png",
+      "attempts": 1,
+      "completed": "2026-02-01T16:59:40.962966"
+    },
+    "F:5": {
+      "status": "completed",
+      "name": "Shattered Door",
+      "filename": "final/terrain/t_05_shattered_door.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:00:19.454473"
+    },
+    "F:6": {
+      "status": "completed",
+      "name": "Warded Door",
+      "filename": "final/terrain/t_06_warded_door.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:00:58.047747"
+    },
+    "F:80": {
+      "status": "completed",
+      "name": "Stairs Up",
+      "filename": "final/terrain/t_80_stairs_up.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:01:42.047646"
+    },
+    "F:81": {
+      "status": "completed",
+      "name": "Stairs Down",
+      "filename": "final/terrain/t_81_stairs_down.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:02:18.032750"
+    },
+    "F:82": {
+      "status": "completed",
+      "name": "Shaft Up",
+      "filename": "final/terrain/t_82_shaft_up.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:02:57.578594"
+    },
+    "F:83": {
+      "status": "completed",
+      "name": "Shaft Down",
+      "filename": "final/terrain/t_83_shaft_down.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:03:36.093042"
+    },
+    "F:64": {
+      "status": "completed",
+      "name": "Orc Forge",
+      "filename": "final/terrain/t_64_orc_forge.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:04:14.626916"
+    },
+    "F:12": {
+      "status": "completed",
+      "name": "Dark Pool",
+      "filename": "final/terrain/t_12_dark_pool.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:04:55.366533"
+    },
+    "F:13": {
+      "status": "completed",
+      "name": "Morgul Runes",
+      "filename": "final/terrain/t_13_morgul_runes.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:05:37.301013"
+    },
+    "F:16": {
+      "status": "completed",
+      "name": "Weakened Floor",
+      "filename": "final/terrain/t_16_weakened_floor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:06:21.757551"
+    },
+    "F:17": {
+      "status": "completed",
+      "name": "Jagged Pit",
+      "filename": "final/terrain/t_17_jagged_pit.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:07:00.482762"
+    },
+    "F:20": {
+      "status": "completed",
+      "name": "Noxious Fumes",
+      "filename": "final/terrain/t_20_noxious_fumes.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:07:44.090542"
+    },
+    "F:22": {
+      "status": "completed",
+      "name": "Orc Alarm",
+      "filename": "final/terrain/t_22_orc_alarm.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:08:22.013599"
+    },
+    "F:26": {
+      "status": "completed",
+      "name": "Thick Web",
+      "filename": "final/terrain/t_26_thick_web.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:09:09.910854"
+    },
+    "F:27": {
+      "status": "completed",
+      "name": "Falling Stones",
+      "filename": "final/terrain/t_27_falling_stones.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:09:49.670955"
+    },
+    "I:sword": {
+      "status": "completed",
+      "name": "Sword",
+      "filename": "final/items/i_sword.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:10:38.284898"
+    },
+    "I:polearm": {
+      "status": "completed",
+      "name": "Polearm",
+      "filename": "final/items/i_polearm.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:11:18.856895"
+    },
+    "I:blunt": {
+      "status": "completed",
+      "name": "Blunt Weapon",
+      "filename": "final/items/i_blunt.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:11:59.083432"
+    },
+    "I:bow": {
+      "status": "completed",
+      "name": "Bow",
+      "filename": "final/items/i_bow.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:12:35.965601"
+    },
+    "I:armor": {
+      "status": "completed",
+      "name": "Body Armor",
+      "filename": "final/items/i_armor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:13:16.113488"
+    },
+    "I:shield": {
+      "status": "completed",
+      "name": "Shield",
+      "filename": "final/items/i_shield.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:13:56.054731"
+    },
+    "I:helm": {
+      "status": "completed",
+      "name": "Helmet",
+      "filename": "final/items/i_helm.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:14:40.086950"
+    },
+    "I:misc_armor": {
+      "status": "completed",
+      "name": "Miscellaneous Armor",
+      "filename": "final/items/i_misc_armor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:15:21.411404"
+    },
+    "I:potion": {
+      "status": "completed",
+      "name": "Potion",
+      "filename": "final/items/i_potion.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:15:59.392345"
+    },
+    "I:herb": {
+      "status": "completed",
+      "name": "Herb/Food",
+      "filename": "final/items/i_herb.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:16:38.100546"
+    },
+    "I:ring": {
+      "status": "completed",
+      "name": "Ring",
+      "filename": "final/items/i_ring.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:17:18.659760"
+    },
+    "I:staff": {
+      "status": "completed",
+      "name": "Staff",
+      "filename": "final/items/i_staff.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:17:56.524845"
+    },
+    "E:arrow": {
+      "status": "completed",
+      "name": "Arrow Projectile",
+      "filename": "final/effects/e_arrow.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:18:32.371145"
+    },
+    "E:fire": {
+      "status": "completed",
+      "name": "Fire Effect",
+      "filename": "final/effects/e_fire.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:19:12.000075"
+    },
+    "E:darkness": {
+      "status": "completed",
+      "name": "Darkness Effect",
+      "filename": "final/effects/e_darkness.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:19:48.056263"
+    },
+    "E:impact": {
+      "status": "completed",
+      "name": "Impact Effect",
+      "filename": "final/effects/e_impact.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:20:26.266893"
+    },
+    "U:pile": {
+      "status": "completed",
+      "name": "Item Pile",
+      "filename": "final/ui/u_item_pile.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:21:02.534608"
+    },
+    "U:light": {
+      "status": "completed",
+      "name": "Light Source",
+      "filename": "final/ui/u_light_source.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:21:40.094751"
+    },
+    "U:cursor": {
+      "status": "completed",
+      "name": "Cursor",
+      "filename": "final/ui/u_cursor.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:22:15.867304"
+    },
+    "U:poison": {
+      "status": "completed",
+      "name": "Poisoned Status",
+      "filename": "final/ui/u_status_poison.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:22:51.877064"
+    },
+    "U:wounded": {
+      "status": "completed",
+      "name": "Wounded Status",
+      "filename": "final/ui/u_status_wounded.png",
+      "attempts": 1,
+      "completed": "2026-02-01T17:23:30.661824"
+    },
+    "F:2": {
+      "status": "completed",
+      "name": "Bottomless Pit",
+      "filename": "final/terrain/t_02_bottomless_pit.png"
+    },
+    "F:3": {
+      "status": "completed",
+      "name": "Protective Rune",
+      "filename": "final/terrain/t_03_protective_rune.png"
+    },
+    "F:7": {
+      "status": "completed",
+      "name": "Warded Door Power 2",
+      "filename": "final/terrain/t_07_warded_door_2.png"
+    },
+    "F:8": {
+      "status": "completed",
+      "name": "Warded Door Power 3",
+      "filename": "final/terrain/t_08_warded_door_3.png"
+    },
+    "F:14": {
+      "status": "completed",
+      "name": "Shadow Brazier",
+      "filename": "final/terrain/t_14_shadow_brazier.png"
+    },
+    "F:18": {
+      "status": "completed",
+      "name": "Poisoned Spike Pit",
+      "filename": "final/terrain/t_18_poisoned_spikes.png"
+    },
+    "F:19": {
+      "status": "completed",
+      "name": "Poison Needle Trap",
+      "filename": "final/terrain/t_19_poison_needle.png"
+    },
+    "F:21": {
+      "status": "completed",
+      "name": "Mind Fog",
+      "filename": "final/terrain/t_21_mind_fog.png"
+    },
+    "F:23": {
+      "status": "completed",
+      "name": "Blinding Glyph",
+      "filename": "final/terrain/t_23_blinding_glyph.png"
+    },
+    "F:24": {
+      "status": "completed",
+      "name": "Rusted Caltrops",
+      "filename": "final/terrain/t_24_caltrops.png"
+    },
+    "F:25": {
+      "status": "completed",
+      "name": "Bat Roost",
+      "filename": "final/terrain/t_25_bat_roost.png"
+    },
+    "F:28": {
+      "status": "completed",
+      "name": "Pool of Filth",
+      "filename": "final/terrain/t_28_pool_filth.png"
+    },
+    "F:30": {
+      "status": "completed",
+      "name": "Chains",
+      "filename": "final/terrain/t_30_chains.png"
+    },
+    "F:84": {
+      "status": "completed",
+      "name": "Poison Stream",
+      "filename": "final/terrain/t_84_poison_stream.png"
+    },
+    "F:87": {
+      "status": "completed",
+      "name": "Forest Floor",
+      "filename": "final/terrain/t_87_forest_floor.png"
+    },
+    "I:arrow": {
+      "status": "completed",
+      "name": "Arrow Bundle",
+      "filename": "final/items/i_arrow.png"
+    },
+    "I:torch": {
+      "status": "completed",
+      "name": "Torch",
+      "filename": "final/items/i_torch.png"
+    },
+    "I:lantern": {
+      "status": "completed",
+      "name": "Lantern",
+      "filename": "final/items/i_lantern.png"
+    },
+    "I:amulet": {
+      "status": "completed",
+      "name": "Amulet",
+      "filename": "final/items/i_amulet.png"
+    },
+    "I:horn": {
+      "status": "completed",
+      "name": "Horn",
+      "filename": "final/items/i_horn.png"
+    }
+  },
+  "updated": "2026-02-01T17:45:50.691014"
+}

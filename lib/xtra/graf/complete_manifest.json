@@ -1,0 +1,1258 @@
+{
+  "version": "2.0",
+  "created": "2026-02-03T12:21:42.080831",
+  "sprites": {
+    "F:0": {
+      "status": "completed",
+      "filename": "t_00_darkness",
+      "row": 0,
+      "col": 0,
+      "type": "floor",
+      "has_dark": false,
+      "completed": "2026-02-03T12:22:17.405529"
+    },
+    "F:1": {
+      "status": "completed",
+      "filename": "t_01_stone_floor",
+      "row": 0,
+      "col": 2,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:22:58.602663"
+    },
+    "F:9": {
+      "status": "completed",
+      "filename": "t_09_fading_daylight",
+      "row": 0,
+      "col": 4,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:23:32.631191"
+    },
+    "F:31": {
+      "status": "completed",
+      "filename": "t_31_bloodstain",
+      "row": 0,
+      "col": 6,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:24:03.573880"
+    },
+    "F:86": {
+      "status": "completed",
+      "filename": "t_86_vine_floor",
+      "row": 0,
+      "col": 8,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:24:43.824395"
+    },
+    "F:87": {
+      "status": "completed",
+      "filename": "t_87_forest_floor",
+      "row": 0,
+      "col": 10,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:25:14.438933"
+    },
+    "F:49": {
+      "status": "completed",
+      "filename": "t_49_rubble",
+      "row": 0,
+      "col": 14,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T12:26:19.641232"
+    },
+    "F:56": {
+      "status": "completed",
+      "filename": "t_56_dark_stone_wall",
+      "row": 1,
+      "col": 0,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T12:26:51.251623"
+    },
+    "F:48": {
+      "status": "completed",
+      "filename": "t_48_hidden_passage",
+      "row": 1,
+      "col": 2,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T12:27:26.427501"
+    },
+    "F:85": {
+      "status": "completed",
+      "filename": "t_85_tangled_roots",
+      "row": 1,
+      "col": 4,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T12:28:06.330914"
+    },
+    "F:30": {
+      "status": "completed",
+      "filename": "t_30_chains",
+      "row": 1,
+      "col": 8,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T12:29:01.142883"
+    },
+    "F:51": {
+      "status": "completed",
+      "filename": "t_51_quartz_vein",
+      "row": 1,
+      "col": 10,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T12:29:33.332336"
+    },
+    "F:32": {
+      "status": "completed",
+      "filename": "t_32_iron_door",
+      "row": 2,
+      "col": 0,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:30:08.213384"
+    },
+    "F:4": {
+      "status": "completed",
+      "filename": "t_04_open_door",
+      "row": 2,
+      "col": 2,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:30:38.940478"
+    },
+    "F:5": {
+      "status": "completed",
+      "filename": "t_05_shattered_door",
+      "row": 2,
+      "col": 4,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:31:13.318578"
+    },
+    "F:6": {
+      "status": "completed",
+      "filename": "t_06_warded_door",
+      "row": 2,
+      "col": 6,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:31:50.767891"
+    },
+    "F:7": {
+      "status": "completed",
+      "filename": "t_07_warded_door_2",
+      "row": 2,
+      "col": 8,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:32:27.580678"
+    },
+    "F:8": {
+      "status": "completed",
+      "filename": "t_08_warded_door_3",
+      "row": 2,
+      "col": 10,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:33:06.233797"
+    },
+    "F:33": {
+      "status": "completed",
+      "filename": "t_33_locked_door",
+      "row": 2,
+      "col": 12,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:33:40.876990"
+    },
+    "F:40": {
+      "status": "completed",
+      "filename": "t_40_jammed_door",
+      "row": 2,
+      "col": 14,
+      "type": "door",
+      "has_dark": true,
+      "completed": "2026-02-03T12:34:14.954057"
+    },
+    "F:80": {
+      "status": "completed",
+      "filename": "t_80_stairs_up",
+      "row": 3,
+      "col": 0,
+      "type": "stairs",
+      "has_dark": true,
+      "completed": "2026-02-03T12:35:05.158849"
+    },
+    "F:81": {
+      "status": "completed",
+      "filename": "t_81_stairs_down",
+      "row": 3,
+      "col": 2,
+      "type": "stairs",
+      "has_dark": true,
+      "completed": "2026-02-03T12:35:39.388995"
+    },
+    "F:82": {
+      "status": "completed",
+      "filename": "t_82_shaft_up",
+      "row": 3,
+      "col": 4,
+      "type": "stairs",
+      "has_dark": true,
+      "completed": "2026-02-03T12:36:16.214539"
+    },
+    "F:83": {
+      "status": "completed",
+      "filename": "t_83_shaft_down",
+      "row": 3,
+      "col": 6,
+      "type": "stairs",
+      "has_dark": true,
+      "completed": "2026-02-03T12:36:54.870588"
+    },
+    "F:2": {
+      "status": "completed",
+      "filename": "t_02_bottomless_pit",
+      "row": 4,
+      "col": 0,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:37:29.389072"
+    },
+    "F:3": {
+      "status": "completed",
+      "filename": "t_03_protective_rune",
+      "row": 4,
+      "col": 2,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:38:00.800091"
+    },
+    "F:12": {
+      "status": "completed",
+      "filename": "t_12_dark_pool",
+      "row": 4,
+      "col": 4,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:38:34.808586"
+    },
+    "F:13": {
+      "status": "completed",
+      "filename": "t_13_morgul_runes",
+      "row": 4,
+      "col": 6,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:39:06.196630"
+    },
+    "F:14": {
+      "status": "completed",
+      "filename": "t_14_shadow_brazier",
+      "row": 4,
+      "col": 8,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:39:44.228088"
+    },
+    "F:15": {
+      "status": "completed",
+      "filename": "t_15_torture_rack",
+      "row": 4,
+      "col": 10,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:40:16.426117"
+    },
+    "F:64": {
+      "status": "completed",
+      "filename": "t_64_orc_forge",
+      "row": 4,
+      "col": 12,
+      "type": "special",
+      "has_dark": true,
+      "completed": "2026-02-03T12:40:51.243082"
+    },
+    "F:16": {
+      "status": "completed",
+      "filename": "t_16_weakened_floor",
+      "row": 5,
+      "col": 0,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:41:29.673154"
+    },
+    "F:17": {
+      "status": "completed",
+      "filename": "t_17_jagged_pit",
+      "row": 5,
+      "col": 2,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:42:00.952575"
+    },
+    "F:18": {
+      "status": "completed",
+      "filename": "t_18_poisoned_spikes",
+      "row": 5,
+      "col": 4,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:42:36.753565"
+    },
+    "F:20": {
+      "status": "completed",
+      "filename": "t_20_noxious_fumes",
+      "row": 5,
+      "col": 6,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:43:12.196807"
+    },
+    "F:26": {
+      "status": "completed",
+      "filename": "t_26_thick_web",
+      "row": 5,
+      "col": 10,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:44:33.900486"
+    },
+    "F:27": {
+      "status": "completed",
+      "filename": "t_27_falling_stones",
+      "row": 5,
+      "col": 12,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:45:06.268270"
+    },
+    "F:22": {
+      "status": "completed",
+      "filename": "t_22_orc_alarm",
+      "row": 5,
+      "col": 14,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T12:45:49.091651"
+    },
+    "R:0": {
+      "status": "completed",
+      "filename": "p_0_elf",
+      "row": 6,
+      "col": 0,
+      "type": "player",
+      "has_dark": false,
+      "completed": "2026-02-03T12:46:26.853161"
+    },
+    "R:1": {
+      "status": "completed",
+      "filename": "p_1_man",
+      "row": 6,
+      "col": 1,
+      "type": "player",
+      "has_dark": false,
+      "completed": "2026-02-03T12:47:04.088156"
+    },
+    "R:2": {
+      "status": "completed",
+      "filename": "p_2_dwarf",
+      "row": 6,
+      "col": 2,
+      "type": "player",
+      "has_dark": false,
+      "completed": "2026-02-03T12:47:41.632334"
+    },
+    "R:3": {
+      "status": "completed",
+      "filename": "p_3_alt",
+      "row": 6,
+      "col": 3,
+      "type": "player",
+      "has_dark": false,
+      "completed": "2026-02-03T12:48:22.040161"
+    },
+    "R:11": {
+      "status": "completed",
+      "filename": "m_011_mirkwood_spider",
+      "row": 7,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:49:04.108130"
+    },
+    "R:12": {
+      "status": "completed",
+      "filename": "m_012_giant_rat",
+      "row": 7,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:49:40.983182"
+    },
+    "R:13": {
+      "status": "completed",
+      "filename": "m_013_black_squirrel",
+      "row": 7,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:50:19.158218"
+    },
+    "R:14": {
+      "status": "completed",
+      "filename": "m_014_crebain",
+      "row": 7,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:51:26.794625"
+    },
+    "R:15": {
+      "status": "completed",
+      "filename": "m_015_tanglethorn",
+      "row": 7,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:52:05.577216"
+    },
+    "R:16": {
+      "status": "completed",
+      "filename": "m_016_giant_bat",
+      "row": 7,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:52:43.828406"
+    },
+    "R:17": {
+      "status": "completed",
+      "filename": "m_017_web_spinner",
+      "row": 7,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:53:20.912994"
+    },
+    "R:18": {
+      "status": "completed",
+      "filename": "m_018_orc_scout",
+      "row": 7,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:54:04.300109"
+    },
+    "R:19": {
+      "status": "completed",
+      "filename": "m_019_swamp_adder",
+      "row": 7,
+      "col": 8,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:54:45.352494"
+    },
+    "R:20": {
+      "status": "completed",
+      "filename": "m_020_great_spider",
+      "row": 7,
+      "col": 9,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:55:20.163571"
+    },
+    "R:21": {
+      "status": "completed",
+      "filename": "m_021_warg_pup",
+      "row": 7,
+      "col": 10,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:55:57.431545"
+    },
+    "R:22": {
+      "status": "completed",
+      "filename": "m_022_broodmother",
+      "row": 7,
+      "col": 11,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:56:43.399347"
+    },
+    "R:31": {
+      "status": "completed",
+      "filename": "m_031_orc_slave",
+      "row": 8,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:57:23.443058"
+    },
+    "R:32": {
+      "status": "completed",
+      "filename": "m_032_orc_soldier",
+      "row": 8,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:58:03.351347"
+    },
+    "R:33": {
+      "status": "completed",
+      "filename": "m_033_orc_crossbowman",
+      "row": 8,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:58:40.444669"
+    },
+    "R:34": {
+      "status": "completed",
+      "filename": "m_034_warg",
+      "row": 8,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:59:15.848478"
+    },
+    "R:35": {
+      "status": "completed",
+      "filename": "m_035_orc_thrallmaster",
+      "row": 8,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T12:59:52.219429"
+    },
+    "R:36": {
+      "status": "completed",
+      "filename": "m_036_orc_captain",
+      "row": 8,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:00:29.666353"
+    },
+    "R:37": {
+      "status": "completed",
+      "filename": "m_037_warg_rider",
+      "row": 8,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:01:32.889016"
+    },
+    "R:38": {
+      "status": "completed",
+      "filename": "m_038_hill_troll",
+      "row": 8,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:02:08.358061"
+    },
+    "R:39": {
+      "status": "completed",
+      "filename": "m_039_gashnak",
+      "row": 8,
+      "col": 8,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:02:48.426517"
+    },
+    "R:40": {
+      "status": "completed",
+      "filename": "m_040_orc_warchief",
+      "row": 8,
+      "col": 9,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:03:26.105274"
+    },
+    "R:51": {
+      "status": "completed",
+      "filename": "m_051_dark_acolyte",
+      "row": 9,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:04:28.629983"
+    },
+    "R:52": {
+      "status": "completed",
+      "filename": "m_052_ghoul",
+      "row": 9,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:05:12.201023"
+    },
+    "R:54": {
+      "status": "completed",
+      "filename": "m_054_easterling_warrior",
+      "row": 9,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:06:28.865942"
+    },
+    "R:55": {
+      "status": "completed",
+      "filename": "m_055_dark_sorcerer",
+      "row": 9,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:07:09.818435"
+    },
+    "R:56": {
+      "status": "completed",
+      "filename": "m_056_tortured_wretch",
+      "row": 9,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:07:39.483524"
+    },
+    "R:57": {
+      "status": "completed",
+      "filename": "m_057_easterling_champion",
+      "row": 9,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:08:17.451996"
+    },
+    "R:58": {
+      "status": "completed",
+      "filename": "m_058_ghast",
+      "row": 9,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:09:02.373964"
+    },
+    "R:60": {
+      "status": "completed",
+      "filename": "m_060_master_sorcerer",
+      "row": 9,
+      "col": 9,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:10:11.154145"
+    },
+    "R:71": {
+      "status": "completed",
+      "filename": "m_071_skeleton",
+      "row": 10,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:10:50.474764"
+    },
+    "R:72": {
+      "status": "completed",
+      "filename": "m_072_skeleton_warrior",
+      "row": 10,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:11:33.395799"
+    },
+    "R:73": {
+      "status": "completed",
+      "filename": "m_073_zombie",
+      "row": 10,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:12:13.768679"
+    },
+    "R:74": {
+      "status": "completed",
+      "filename": "m_074_wight",
+      "row": 10,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:12:51.992114"
+    },
+    "R:75": {
+      "status": "completed",
+      "filename": "m_075_corpse_candle",
+      "row": 10,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:13:28.584780"
+    },
+    "R:76": {
+      "status": "completed",
+      "filename": "m_076_necromancer_adept",
+      "row": 10,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:14:17.054519"
+    },
+    "R:77": {
+      "status": "completed",
+      "filename": "m_077_barrow_wight",
+      "row": 10,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:14:58.015992"
+    },
+    "R:78": {
+      "status": "completed",
+      "filename": "m_078_bone_golem",
+      "row": 10,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:15:36.344040"
+    },
+    "R:79": {
+      "status": "completed",
+      "filename": "m_079_grishnakh",
+      "row": 10,
+      "col": 8,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:16:15.095437"
+    },
+    "R:91": {
+      "status": "completed",
+      "filename": "m_091_phantom",
+      "row": 11,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:16:52.465066"
+    },
+    "R:92": {
+      "status": "completed",
+      "filename": "m_092_shadow",
+      "row": 11,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:17:31.686603"
+    },
+    "R:93": {
+      "status": "completed",
+      "filename": "m_093_whispering_shade",
+      "row": 11,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:18:10.024698"
+    },
+    "R:94": {
+      "status": "completed",
+      "filename": "m_094_wraith",
+      "row": 11,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:18:48.217488"
+    },
+    "R:95": {
+      "status": "completed",
+      "filename": "m_095_fell_spirit",
+      "row": 11,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:19:23.170936"
+    },
+    "R:96": {
+      "status": "completed",
+      "filename": "m_096_spectre",
+      "row": 11,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:20:04.279270"
+    },
+    "R:97": {
+      "status": "completed",
+      "filename": "m_097_vampire_thrall",
+      "row": 11,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:20:43.900644"
+    },
+    "R:99": {
+      "status": "completed",
+      "filename": "m_099_uvatha",
+      "row": 11,
+      "col": 8,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:21:42.835010"
+    },
+    "R:111": {
+      "status": "completed",
+      "filename": "m_111_black_numenorean",
+      "row": 12,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:22:22.097520"
+    },
+    "R:112": {
+      "status": "completed",
+      "filename": "m_112_olog_hai",
+      "row": 12,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:22:56.910987"
+    },
+    "R:113": {
+      "status": "completed",
+      "filename": "m_113_vampire",
+      "row": 12,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:23:32.297627"
+    },
+    "R:114": {
+      "status": "completed",
+      "filename": "m_114_greater_wraith",
+      "row": 12,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:24:09.147301"
+    },
+    "R:115": {
+      "status": "completed",
+      "filename": "m_115_vampire_lord",
+      "row": 12,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:24:46.628810"
+    },
+    "R:116": {
+      "status": "completed",
+      "filename": "m_116_shadow_lord",
+      "row": 12,
+      "col": 5,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:25:25.663929"
+    },
+    "R:117": {
+      "status": "completed",
+      "filename": "m_117_maia_thrall",
+      "row": 12,
+      "col": 6,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:26:27.221655"
+    },
+    "R:118": {
+      "status": "completed",
+      "filename": "m_118_khamul",
+      "row": 12,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:27:02.997429"
+    },
+    "R:131": {
+      "status": "completed",
+      "filename": "m_131_elite_olog_hai",
+      "row": 13,
+      "col": 0,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:27:42.228881"
+    },
+    "R:132": {
+      "status": "completed",
+      "filename": "m_132_greater_shadow",
+      "row": 13,
+      "col": 1,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:28:19.535937"
+    },
+    "R:133": {
+      "status": "completed",
+      "filename": "m_133_void_wraith",
+      "row": 13,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:28:56.429853"
+    },
+    "R:134": {
+      "status": "completed",
+      "filename": "m_134_thrains_shade",
+      "row": 13,
+      "col": 3,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:29:31.444043"
+    },
+    "R:135": {
+      "status": "completed",
+      "filename": "m_135_sauron",
+      "row": 13,
+      "col": 4,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:30:10.642784"
+    },
+    "I:sword": {
+      "status": "completed",
+      "filename": "i_sword",
+      "row": 14,
+      "col": 0,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:30:47.968968"
+    },
+    "I:dagger": {
+      "status": "completed",
+      "filename": "i_dagger",
+      "row": 14,
+      "col": 1,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:31:25.460549"
+    },
+    "I:axe": {
+      "status": "completed",
+      "filename": "i_axe",
+      "row": 14,
+      "col": 2,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:32:00.090287"
+    },
+    "I:polearm": {
+      "status": "completed",
+      "filename": "i_polearm",
+      "row": 14,
+      "col": 3,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:32:43.008130"
+    },
+    "I:blunt": {
+      "status": "completed",
+      "filename": "i_blunt",
+      "row": 14,
+      "col": 4,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:33:18.571223"
+    },
+    "I:staff": {
+      "status": "completed",
+      "filename": "i_staff",
+      "row": 14,
+      "col": 5,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:34:00.841334"
+    },
+    "I:arrow": {
+      "status": "completed",
+      "filename": "i_arrow",
+      "row": 14,
+      "col": 7,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:35:19.661229"
+    },
+    "I:armor": {
+      "status": "completed",
+      "filename": "i_armor",
+      "row": 14,
+      "col": 8,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:35:58.677457"
+    },
+    "I:shield": {
+      "status": "completed",
+      "filename": "i_shield",
+      "row": 14,
+      "col": 9,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:36:37.621808"
+    },
+    "I:cloak": {
+      "status": "completed",
+      "filename": "i_cloak",
+      "row": 14,
+      "col": 11,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:37:27.851226"
+    },
+    "I:boots": {
+      "status": "completed",
+      "filename": "i_boots",
+      "row": 14,
+      "col": 12,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:38:04.532825"
+    },
+    "I:gloves": {
+      "status": "completed",
+      "filename": "i_gloves",
+      "row": 14,
+      "col": 13,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:38:43.673745"
+    },
+    "I:ring": {
+      "status": "completed",
+      "filename": "i_ring",
+      "row": 14,
+      "col": 14,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:39:18.033134"
+    },
+    "F:84": {
+      "status": "completed",
+      "filename": "t_84_poison_stream",
+      "row": 0,
+      "col": 12,
+      "type": "floor",
+      "has_dark": true,
+      "completed": "2026-02-03T13:53:12.631113"
+    },
+    "F:29": {
+      "status": "completed",
+      "filename": "t_29_prison_bars",
+      "row": 1,
+      "col": 6,
+      "type": "wall",
+      "has_dark": true,
+      "completed": "2026-02-03T13:53:44.942768"
+    },
+    "F:21": {
+      "status": "completed",
+      "filename": "t_21_mind_fog",
+      "row": 5,
+      "col": 8,
+      "type": "trap",
+      "has_dark": true,
+      "completed": "2026-02-03T13:54:39.805391"
+    },
+    "R:53": {
+      "status": "completed",
+      "filename": "m_053_mirk_troll",
+      "row": 9,
+      "col": 2,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T13:55:29.041976"
+    },
+    "I:bow": {
+      "status": "completed",
+      "filename": "i_bow",
+      "row": 14,
+      "col": 6,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:56:29.739949"
+    },
+    "I:helm": {
+      "status": "completed",
+      "filename": "i_helm",
+      "row": 14,
+      "col": 10,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:57:06.942881"
+    },
+    "I:amulet": {
+      "status": "completed",
+      "filename": "i_amulet",
+      "row": 14,
+      "col": 15,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:57:42.333056"
+    },
+    "I:potion": {
+      "status": "completed",
+      "filename": "i_potion",
+      "row": 15,
+      "col": 0,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:58:22.684590"
+    },
+    "I:herb": {
+      "status": "completed",
+      "filename": "i_herb",
+      "row": 15,
+      "col": 1,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:59:03.973498"
+    },
+    "I:food": {
+      "status": "completed",
+      "filename": "i_food",
+      "row": 15,
+      "col": 2,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T13:59:39.471654"
+    },
+    "I:torch": {
+      "status": "completed",
+      "filename": "i_torch",
+      "row": 15,
+      "col": 3,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:00:16.030325"
+    },
+    "I:lantern": {
+      "status": "completed",
+      "filename": "i_lantern",
+      "row": 15,
+      "col": 4,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:00:55.301306"
+    },
+    "I:chest": {
+      "status": "completed",
+      "filename": "i_chest",
+      "row": 15,
+      "col": 5,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:01:32.320584"
+    },
+    "I:wand": {
+      "status": "completed",
+      "filename": "i_wand",
+      "row": 15,
+      "col": 6,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:02:11.198734"
+    },
+    "I:horn": {
+      "status": "completed",
+      "filename": "i_horn",
+      "row": 15,
+      "col": 7,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:02:45.536411"
+    },
+    "I:pick": {
+      "status": "completed",
+      "filename": "i_pick",
+      "row": 15,
+      "col": 8,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:03:23.986943"
+    },
+    "I:gem": {
+      "status": "completed",
+      "filename": "i_gem",
+      "row": 15,
+      "col": 10,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:04:40.023526"
+    },
+    "I:gold": {
+      "status": "completed",
+      "filename": "i_gold",
+      "row": 15,
+      "col": 11,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:05:19.577716"
+    },
+    "E:arrow": {
+      "status": "completed",
+      "filename": "e_arrow",
+      "row": 15,
+      "col": 12,
+      "type": "effect",
+      "has_dark": false,
+      "completed": "2026-02-03T14:05:59.391392"
+    },
+    "E:fire": {
+      "status": "completed",
+      "filename": "e_fire",
+      "row": 15,
+      "col": 13,
+      "type": "effect",
+      "has_dark": false,
+      "completed": "2026-02-03T14:06:36.178805"
+    },
+    "E:impact": {
+      "status": "completed",
+      "filename": "e_impact",
+      "row": 15,
+      "col": 14,
+      "type": "effect",
+      "has_dark": false,
+      "completed": "2026-02-03T14:07:15.150970"
+    },
+    "U:cursor": {
+      "status": "completed",
+      "filename": "u_cursor",
+      "row": 15,
+      "col": 15,
+      "type": "ui",
+      "has_dark": false,
+      "completed": "2026-02-03T14:07:53.421054"
+    },
+    "R:98": {
+      "status": "completed",
+      "filename": "m_098_wailing_horror",
+      "row": 11,
+      "col": 7,
+      "type": "monster",
+      "has_dark": false,
+      "completed": "2026-02-03T14:13:16.770384"
+    },
+    "I:scroll": {
+      "status": "completed",
+      "filename": "i_scroll",
+      "row": 15,
+      "col": 9,
+      "type": "item",
+      "has_dark": false,
+      "completed": "2026-02-03T14:15:44.652999"
+    }
+  },
+  "updated": "2026-02-03T14:15:44.653023"
+}

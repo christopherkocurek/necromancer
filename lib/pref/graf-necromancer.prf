@@ -4,8 +4,9 @@
 # Format: TYPE:ID:0xROW/0xCOL
 # Row/Col are offset by 0x80 (128)
 #
-# Note: This file is included by graf-mac.prf when $GRAF == 'necromancer'
-# No additional conditional needed here.
+# Generated: 2026-02-03T11:48:25.414170
+# Total mappings: 121
+#
 
 # Terrain Features
 F:0:0x80/0x80
@@ -21,7 +22,6 @@ F:9:0x80/0x82
 F:12:0x82/0x85
 F:13:0x82/0x86
 F:14:0x82/0x87
-F:15:0x82/0x88
 F:16:0x83/0x80
 F:17:0x83/0x81
 F:18:0x83/0x86
