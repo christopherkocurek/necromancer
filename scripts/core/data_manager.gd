@@ -1,6 +1,6 @@
 extends Node
-## Parses and manages game data from the original Necromancer data files.
-## Converts Angband-format text files into usable game resources.
+## Parses and manages game data from The Necromancer data files.
+## Format is based on Sil-Q, not standard Angband.
 
 # Parsed data storage
 var monsters: Dictionary = {}  # name -> MonsterData
@@ -33,7 +33,7 @@ func load_all_data() -> void:
 	])
 
 # ============================================================================
-# MONSTER PARSING
+# MONSTER PARSING (Sil-Q format)
 # ============================================================================
 
 func load_monsters() -> void:
@@ -46,7 +46,7 @@ func load_monsters() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -58,55 +58,112 @@ func load_monsters() -> void:
 
 		match key:
 			"N":
-				# N:index:name
-				if current_monster:
+				# N:ID:Name
+				if current_monster and current_monster.name != "" and not current_monster.name.begins_with("<"):
 					monsters[current_monster.name] = current_monster
 				current_monster = MonsterData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_monster.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_monster.name = n_parts[1]
 			"G":
-				# G:char:color
+				# G:symbol:color
 				if current_monster:
 					var g_parts := value.split(":")
-					if g_parts.size() >= 2:
+					if g_parts.size() >= 1:
 						current_monster.display_char = g_parts[0]
+					if g_parts.size() >= 2:
 						current_monster.color = g_parts[1]
-			"I":
-				# I:speed:health_dice:aaf:ac:alertness
-				if current_monster:
-					var i_parts := value.split(":")
-					if i_parts.size() >= 5:
-						current_monster.speed = int(i_parts[0])
-						current_monster.health_dice = i_parts[1]
-						current_monster.aaf = int(i_parts[2])
-						current_monster.armor_class = int(i_parts[3])
-						current_monster.alertness = int(i_parts[4])
 			"W":
-				# W:depth:rarity:exp
+				# W:depth:rarity
 				if current_monster:
 					var w_parts := value.split(":")
-					if w_parts.size() >= 3:
+					if w_parts.size() >= 1:
 						current_monster.depth = int(w_parts[0])
+					if w_parts.size() >= 2:
 						current_monster.rarity = int(w_parts[1])
-						current_monster.experience = int(w_parts[2])
+			"I":
+				# I:speed:health_dice:light_radius
+				if current_monster:
+					var i_parts := value.split(":")
+					if i_parts.size() >= 1:
+						current_monster.speed = int(i_parts[0])
+					if i_parts.size() >= 2:
+						current_monster.health_dice = i_parts[1]
+					if i_parts.size() >= 3:
+						current_monster.light_radius = int(i_parts[2])
+			"A":
+				# A:sleepiness:perception:stealth:will
+				if current_monster:
+					var a_parts := value.split(":")
+					if a_parts.size() >= 1:
+						current_monster.alertness = int(a_parts[0])
+					if a_parts.size() >= 2:
+						current_monster.perception = int(a_parts[1])
+					if a_parts.size() >= 3:
+						current_monster.stealth = int(a_parts[2])
+					if a_parts.size() >= 4:
+						current_monster.will = int(a_parts[3])
+			"P":
+				# P:[evasion,protection_dice] or P:[+evasion,protection_dice]
+				if current_monster:
+					var p_value := value.strip_edges()
+					# Parse [+3,1d4] format
+					if p_value.begins_with("[") and p_value.ends_with("]"):
+						p_value = p_value.substr(1, p_value.length() - 2)
+						var p_parts := p_value.split(",")
+						if p_parts.size() >= 1:
+							var evasion_str := p_parts[0].strip_edges()
+							if evasion_str.begins_with("+"):
+								evasion_str = evasion_str.substr(1)
+							current_monster.evasion = int(evasion_str)
+						if p_parts.size() >= 2:
+							current_monster.protection_dice = p_parts[1].strip_edges()
 			"B":
-				# B:method:effect:damage_dice
+				# B:method:effect:(bonus,damage_dice)
 				if current_monster:
 					var b_parts := value.split(":")
-					if b_parts.size() >= 3:
+					if b_parts.size() >= 2:
 						var attack := AttackData.new()
 						attack.method = b_parts[0]
 						attack.effect = b_parts[1]
-						attack.damage_dice = b_parts[2] if b_parts.size() > 2 else ""
+						if b_parts.size() >= 3:
+							# Parse (bonus,damage_dice) format
+							var dmg_str := b_parts[2].strip_edges()
+							if dmg_str.begins_with("(") and dmg_str.ends_with(")"):
+								dmg_str = dmg_str.substr(1, dmg_str.length() - 2)
+								var dmg_parts := dmg_str.split(",")
+								if dmg_parts.size() >= 1:
+									var bonus_str := dmg_parts[0].strip_edges()
+									if bonus_str.begins_with("+"):
+										bonus_str = bonus_str.substr(1)
+									attack.attack_bonus = int(bonus_str)
+								if dmg_parts.size() >= 2:
+									attack.damage_dice = dmg_parts[1].strip_edges()
 						current_monster.attacks.append(attack)
+			"S":
+				# S:spell_frequency | spell_power or spell types
+				if current_monster:
+					if value.contains("|"):
+						var s_parts := value.split("|")
+						if s_parts.size() >= 1:
+							current_monster.spell_frequency = int(s_parts[0].strip_edges())
+						if s_parts.size() >= 2:
+							current_monster.spell_power = int(s_parts[1].strip_edges())
+					else:
+						# Spell types
+						var spells := value.split("|")
+						for spell in spells:
+							current_monster.spell_types.append(spell.strip_edges())
 			"F":
 				# F:FLAG1 | FLAG2 | FLAG3
 				if current_monster:
 					var flags := value.split("|")
 					for flag in flags:
-						current_monster.flags.append(flag.strip_edges())
+						var f := flag.strip_edges()
+						if f != "":
+							current_monster.flags.append(f)
 			"D":
 				# D:description text
 				if current_monster:
@@ -115,7 +172,7 @@ func load_monsters() -> void:
 					else:
 						current_monster.description += " " + value
 
-	if current_monster:
+	if current_monster and current_monster.name != "" and not current_monster.name.begins_with("<"):
 		monsters[current_monster.name] = current_monster
 
 # ============================================================================
@@ -132,7 +189,7 @@ func load_items() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -144,51 +201,77 @@ func load_items() -> void:
 
 		match key:
 			"N":
-				if current_item:
+				if current_item and current_item.name != "":
 					items[current_item.name] = current_item
 				current_item = ItemData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_item.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_item.name = n_parts[1]
 			"G":
 				if current_item:
 					var g_parts := value.split(":")
-					if g_parts.size() >= 2:
+					if g_parts.size() >= 1:
 						current_item.display_char = g_parts[0]
+					if g_parts.size() >= 2:
 						current_item.color = g_parts[1]
 			"I":
 				if current_item:
 					var i_parts := value.split(":")
-					if i_parts.size() >= 3:
+					if i_parts.size() >= 1:
 						current_item.tval = int(i_parts[0])
+					if i_parts.size() >= 2:
 						current_item.sval = int(i_parts[1])
-						current_item.pval = int(i_parts[2]) if i_parts.size() > 2 else 0
+					if i_parts.size() >= 3:
+						current_item.pval = int(i_parts[2])
 			"W":
 				if current_item:
 					var w_parts := value.split(":")
-					if w_parts.size() >= 4:
+					if w_parts.size() >= 1:
 						current_item.depth = int(w_parts[0])
+					if w_parts.size() >= 2:
 						current_item.rarity = int(w_parts[1])
+					if w_parts.size() >= 3:
 						current_item.weight = int(w_parts[2])
+					if w_parts.size() >= 4:
 						current_item.cost = int(w_parts[3])
 			"A":
 				if current_item:
 					current_item.allocation = value
 			"P":
 				if current_item:
+					# P:ac:dd:to_hit:to_dam:to_ac or similar
 					var p_parts := value.split(":")
-					if p_parts.size() >= 5:
+					if p_parts.size() >= 1:
 						current_item.ac = int(p_parts[0])
+					if p_parts.size() >= 2:
 						current_item.damage_dice = p_parts[1]
+					if p_parts.size() >= 3:
 						current_item.to_hit = int(p_parts[2])
+					if p_parts.size() >= 4:
 						current_item.to_dam = int(p_parts[3])
+					if p_parts.size() >= 5:
 						current_item.to_ac = int(p_parts[4])
+			"C":
+				if current_item:
+					# C:attack_bonus:damage_sides:evasion_bonus:protection_sides
+					var c_parts := value.split(":")
+					if c_parts.size() >= 1:
+						current_item.attack_bonus = int(c_parts[0])
+					if c_parts.size() >= 2:
+						current_item.damage_sides = int(c_parts[1])
+					if c_parts.size() >= 3:
+						current_item.evasion_bonus = int(c_parts[2])
+					if c_parts.size() >= 4:
+						current_item.protection_sides = int(c_parts[3])
 			"F":
 				if current_item:
 					var flags := value.split("|")
 					for flag in flags:
-						current_item.flags.append(flag.strip_edges())
+						var f := flag.strip_edges()
+						if f != "":
+							current_item.flags.append(f)
 			"D":
 				if current_item:
 					if current_item.description.is_empty():
@@ -196,7 +279,7 @@ func load_items() -> void:
 					else:
 						current_item.description += " " + value
 
-	if current_item:
+	if current_item and current_item.name != "":
 		items[current_item.name] = current_item
 
 # ============================================================================
@@ -213,7 +296,7 @@ func load_artifacts() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -225,41 +308,52 @@ func load_artifacts() -> void:
 
 		match key:
 			"N":
-				if current_artifact:
+				if current_artifact and current_artifact.name != "":
 					artifacts[current_artifact.name] = current_artifact
 				current_artifact = ArtifactData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_artifact.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_artifact.name = n_parts[1]
 			"I":
 				if current_artifact:
 					var i_parts := value.split(":")
-					if i_parts.size() >= 3:
+					if i_parts.size() >= 1:
 						current_artifact.tval = int(i_parts[0])
+					if i_parts.size() >= 2:
 						current_artifact.sval = int(i_parts[1])
+					if i_parts.size() >= 3:
 						current_artifact.pval = int(i_parts[2])
 			"W":
 				if current_artifact:
 					var w_parts := value.split(":")
-					if w_parts.size() >= 3:
+					if w_parts.size() >= 1:
 						current_artifact.depth = int(w_parts[0])
+					if w_parts.size() >= 2:
 						current_artifact.rarity = int(w_parts[1])
+					if w_parts.size() >= 3:
 						current_artifact.weight = int(w_parts[2])
 			"P":
 				if current_artifact:
 					var p_parts := value.split(":")
-					if p_parts.size() >= 5:
+					if p_parts.size() >= 1:
 						current_artifact.ac = int(p_parts[0])
+					if p_parts.size() >= 2:
 						current_artifact.damage_dice = p_parts[1]
+					if p_parts.size() >= 3:
 						current_artifact.to_hit = int(p_parts[2])
+					if p_parts.size() >= 4:
 						current_artifact.to_dam = int(p_parts[3])
+					if p_parts.size() >= 5:
 						current_artifact.to_ac = int(p_parts[4])
 			"F":
 				if current_artifact:
 					var flags := value.split("|")
 					for flag in flags:
-						current_artifact.flags.append(flag.strip_edges())
+						var f := flag.strip_edges()
+						if f != "":
+							current_artifact.flags.append(f)
 			"D":
 				if current_artifact:
 					if current_artifact.description.is_empty():
@@ -267,7 +361,7 @@ func load_artifacts() -> void:
 					else:
 						current_artifact.description += " " + value
 
-	if current_artifact:
+	if current_artifact and current_artifact.name != "":
 		artifacts[current_artifact.name] = current_artifact
 
 # ============================================================================
@@ -284,7 +378,7 @@ func load_abilities() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -296,18 +390,20 @@ func load_abilities() -> void:
 
 		match key:
 			"N":
-				if current_ability:
+				if current_ability and current_ability.name != "":
 					abilities[current_ability.name] = current_ability
 				current_ability = AbilityData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_ability.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_ability.name = n_parts[1]
 			"I":
 				if current_ability:
 					var i_parts := value.split(":")
-					if i_parts.size() >= 2:
+					if i_parts.size() >= 1:
 						current_ability.skill_type = int(i_parts[0])
+					if i_parts.size() >= 2:
 						current_ability.skill_requirement = int(i_parts[1])
 			"P":
 				if current_ability:
@@ -319,7 +415,7 @@ func load_abilities() -> void:
 					else:
 						current_ability.description += " " + value
 
-	if current_ability:
+	if current_ability and current_ability.name != "":
 		abilities[current_ability.name] = current_ability
 
 # ============================================================================
@@ -336,7 +432,7 @@ func load_races() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -348,12 +444,13 @@ func load_races() -> void:
 
 		match key:
 			"N":
-				if current_race:
+				if current_race and current_race.name != "":
 					races[current_race.name] = current_race
 				current_race = RaceData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_race.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_race.name = n_parts[1]
 			"S":
 				if current_race:
@@ -370,7 +467,7 @@ func load_races() -> void:
 					else:
 						current_race.description += " " + value
 
-	if current_race:
+	if current_race and current_race.name != "":
 		races[current_race.name] = current_race
 
 func load_houses() -> void:
@@ -383,7 +480,7 @@ func load_houses() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -395,12 +492,13 @@ func load_houses() -> void:
 
 		match key:
 			"N":
-				if current_house:
+				if current_house and current_house.name != "":
 					houses[current_house.name] = current_house
 				current_house = HouseData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_house.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_house.name = n_parts[1]
 			"S":
 				if current_house:
@@ -417,7 +515,7 @@ func load_houses() -> void:
 					else:
 						current_house.description += " " + value
 
-	if current_house:
+	if current_house and current_house.name != "":
 		houses[current_house.name] = current_house
 
 # ============================================================================
@@ -434,7 +532,7 @@ func load_terrain() -> void:
 
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
-		if line.is_empty() or line.begins_with("#"):
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
 			continue
 
 		var parts := line.split(":")
@@ -446,18 +544,20 @@ func load_terrain() -> void:
 
 		match key:
 			"N":
-				if current_terrain:
+				if current_terrain and current_terrain.name != "":
 					terrain[current_terrain.display_char] = current_terrain
 				current_terrain = TerrainData.new()
 				var n_parts := value.split(":")
-				if n_parts.size() >= 2:
+				if n_parts.size() >= 1:
 					current_terrain.index = int(n_parts[0])
+				if n_parts.size() >= 2:
 					current_terrain.name = n_parts[1]
 			"G":
 				if current_terrain:
 					var g_parts := value.split(":")
-					if g_parts.size() >= 2:
+					if g_parts.size() >= 1:
 						current_terrain.display_char = g_parts[0]
+					if g_parts.size() >= 2:
 						current_terrain.color = g_parts[1]
 			"M":
 				if current_terrain:
@@ -466,9 +566,11 @@ func load_terrain() -> void:
 				if current_terrain:
 					var flags := value.split("|")
 					for flag in flags:
-						current_terrain.flags.append(flag.strip_edges())
+						var f := flag.strip_edges()
+						if f != "":
+							current_terrain.flags.append(f)
 
-	if current_terrain:
+	if current_terrain and current_terrain.name != "":
 		terrain[current_terrain.display_char] = current_terrain
 
 # ============================================================================
@@ -488,7 +590,7 @@ func load_vaults() -> void:
 		var line := file.get_line()
 		var stripped := line.strip_edges()
 
-		if stripped.is_empty() or stripped.begins_with("#"):
+		if stripped.is_empty() or stripped.begins_with("#") or stripped.begins_with("V:"):
 			continue
 
 		var parts := stripped.split(":")
@@ -498,31 +600,34 @@ func load_vaults() -> void:
 
 			match key:
 				"N":
-					if current_vault:
+					if current_vault and current_vault.name != "":
 						vaults.append(current_vault)
 					current_vault = VaultData.new()
 					reading_map = false
 					var n_parts := value.split(":")
-					if n_parts.size() >= 2:
+					if n_parts.size() >= 1:
 						current_vault.index = int(n_parts[0])
+					if n_parts.size() >= 2:
 						current_vault.name = n_parts[1]
 				"X":
 					if current_vault:
 						var x_parts := value.split(":")
-						if x_parts.size() >= 4:
+						if x_parts.size() >= 1:
 							current_vault.vault_type = int(x_parts[0])
+						if x_parts.size() >= 2:
 							current_vault.rating = int(x_parts[1])
+						if x_parts.size() >= 3:
 							current_vault.height = int(x_parts[2])
+						if x_parts.size() >= 4:
 							current_vault.width = int(x_parts[3])
 				"D":
 					reading_map = true
 					if current_vault:
 						current_vault.map_lines.append(value)
 		elif reading_map and current_vault:
-			# Continue reading map lines
 			current_vault.map_lines.append(stripped)
 
-	if current_vault:
+	if current_vault and current_vault.name != "":
 		vaults.append(current_vault)
 
 # ============================================================================
@@ -553,8 +658,13 @@ func get_terrain_by_char(ch: String) -> TerrainData:
 func get_random_monster_for_depth(depth: int) -> MonsterData:
 	var valid_monsters: Array[MonsterData] = []
 	for m in monsters.values():
-		if m.depth <= depth:
+		if m.depth <= depth and m.depth >= depth - 3:
 			valid_monsters.append(m)
+	if valid_monsters.is_empty():
+		# Fallback: any monster at or below depth
+		for m in monsters.values():
+			if m.depth <= depth:
+				valid_monsters.append(m)
 	if valid_monsters.is_empty():
 		return null
 	return valid_monsters.pick_random()
@@ -562,18 +672,28 @@ func get_random_monster_for_depth(depth: int) -> MonsterData:
 func get_random_item_for_depth(depth: int) -> ItemData:
 	var valid_items: Array[ItemData] = []
 	for i in items.values():
-		if i.depth <= depth:
+		if i.depth <= depth and i.depth >= depth - 3:
 			valid_items.append(i)
+	if valid_items.is_empty():
+		for i in items.values():
+			if i.depth <= depth:
+				valid_items.append(i)
 	if valid_items.is_empty():
 		return null
 	return valid_items.pick_random()
 
 func roll_dice(dice_string: String) -> int:
-	# Parse dice strings like "3d6" or "1d8+2"
+	# Parse dice strings like "3d6" or "1d8+2" or "1d4"
+	if dice_string.is_empty():
+		return 0
+
 	var regex := RegEx.new()
 	regex.compile("(\\d+)d(\\d+)([+-]\\d+)?")
 	var result := regex.search(dice_string)
 	if not result:
+		# Try to parse as a plain number
+		if dice_string.is_valid_int():
+			return int(dice_string)
 		return 0
 
 	var num_dice := int(result.get_string(1))
@@ -597,14 +717,21 @@ class MonsterData:
 	var name: String = ""
 	var display_char: String = ""
 	var color: String = ""
-	var speed: int = 0
-	var health_dice: String = ""
-	var aaf: int = 0  # area affect flag
-	var armor_class: int = 0
-	var alertness: int = 0
-	var depth: int = 0
+	var speed: int = 2
+	var health_dice: String = "1d4"
+	var light_radius: int = 0
+	var alertness: int = 10
+	var perception: int = 5
+	var stealth: int = 5
+	var will: int = 5
+	var evasion: int = 0
+	var protection_dice: String = ""
+	var depth: int = 1
 	var rarity: int = 1
-	var experience: int = 0
+	var experience: int = 10
+	var spell_frequency: int = 0
+	var spell_power: int = 0
+	var spell_types: Array[String] = []
 	var attacks: Array[AttackData] = []
 	var flags: Array[String] = []
 	var description: String = ""
@@ -612,10 +739,14 @@ class MonsterData:
 	func roll_health() -> int:
 		return DataManager.roll_dice(health_dice) if health_dice else 10
 
+	func has_flag(flag: String) -> bool:
+		return flags.has(flag)
+
 class AttackData:
 	var method: String = ""
 	var effect: String = ""
-	var damage_dice: String = ""
+	var attack_bonus: int = 0
+	var damage_dice: String = "1d4"
 
 class ItemData:
 	var index: int = 0
@@ -635,6 +766,10 @@ class ItemData:
 	var to_hit: int = 0
 	var to_dam: int = 0
 	var to_ac: int = 0
+	var attack_bonus: int = 0
+	var damage_sides: int = 0
+	var evasion_bonus: int = 0
+	var protection_sides: int = 0
 	var flags: Array[String] = []
 	var description: String = ""
 
