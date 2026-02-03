@@ -1,0 +1,2244 @@
+# File: artefact.txt
+#
+# Artifact definitions for THE NECROMANCER
+# A SIL-Q fork set in Third Age Dol Guldur
+#
+# === Understanding artefact.txt ===
+#
+# N: serial number : item name
+# G: char : attr
+# I: tval : sval : pval
+# B: skilltype / abilitynum : ...
+# W: depth : rarity : weight : cost
+# P: attack bonus : damage dice : evasion bonus : protection dice
+# F: flag | flag | etc
+# D: text
+#
+# === Important Notes ===
+#
+# (1) Indices 1-19: Special artifacts (rings, amulets, lights, crowns)
+# (2) Indices 20-139: Normal artifacts (armor, weapons)
+# (3) Indices 175-179: Quest items (Ring of Thráin, Key to Erebor)
+# (4) Indices 182-198: Smithing templates (DO NOT MODIFY)
+#
+# === Third Age Setting (T.A. 2850) ===
+#
+# Appropriate sources:
+# - Elves of Lothlórien, Rivendell, Greenwood
+# - Dúnedain Rangers, Gondorians, Rohirrim
+# - Dwarves of Erebor, Iron Hills, Khazad-dûm exiles
+# - Artifacts from Second Age that survived
+# - Items made by Sauron's servants
+#
+
+V:1.5.0
+
+
+#################################################################
+# SPECIAL ARTIFACTS (Indices 1-19)
+# Rings, Amulets, Light Sources, Crowns
+#################################################################
+
+
+## The Ring of Barahir
+## Heirloom of the Dúnedain - appropriate for Third Age
+## (ability 7/3 is Song of Staunching)
+
+N:1:of Barahir
+I:45:32:0
+W:10:20:1:5000
+P:0:0d0:0:1d1
+F:FREE_ACT | RES_POIS | MEDIC
+F:INSTA_ART
+B:7/3
+D:A ring shaped into twinned serpents with eyes of emerald meeting
+D: beneath a crown of flowers. It has passed through the line of
+D: Isildur to the Dúnedain chieftains. It is a symbol of the ancient
+D: alliance between Elves and Men.
+
+
+## Vilya's Shard
+## Fragment of Elrond's ring - Third Age
+## (ability 5/1 is Channeling)
+
+N:2:'Vilya's Shard'
+I:45:30:2
+W:14:30:1:50000
+P:0:0d0:0:0d0
+F:PERCEPTION | CON | REGEN
+F:INSTA_ART
+B:5/1
+D:A fragment broken from the Ring of Air, mightiest of the Three.
+D: Even this shard retains some of Vilya's power to preserve and heal.
+D: It can cure even a Morgul-wound, but crumbles to dust when used thus.
+
+
+## The Amulet of the Woodland Realm
+## Third Age - Thranduil's folk
+## (ability 7/12 is Woven Themes)
+
+N:3:of the Woodland Realm
+I:40:10:2
+W:12:20:1:5000
+P:0:0d0:0:0d0
+F:SONG
+F:INSTA_ART
+B:7/12
+D:A pendant of silver and green stone, worn by the counselors
+D: of King Thranduil. It carries the memory of ancient songs
+D: and fills the wearer with courage against the shadow.
+
+
+## The Pearl of Nimrodel
+## Third Age namesake - Lothlórien
+
+N:4:'Nimrodel's Tear'
+I:40:13:2
+W:12:20:1:5000
+P:0:0d0:0:0d0
+F:GRA | SUST_GRA
+F:INSTA_ART
+D:A perfect pearl said to have been wept by Nimrodel herself
+D: when she was lost in the mountains. It gleams with the light
+D: of Lothlórien and soothes the heart of those who bear it.
+
+
+## The Evenstar
+## Third Age - Arwen's pendant
+
+N:5:'Evenstar'
+I:40:16:1
+W:14:20:1:7000
+P:0:0d0:0:0d0
+F:CON | REGEN | LIGHT
+F:INSTA_ART
+D:A silver pendant set with a white stone that glimmers like
+D: starlight on water. It was crafted in Rivendell and brings
+D: hope to those who carry it in dark places.
+
+
+## The Necklace of Girion
+## Third Age - Dale/Erebor
+
+N:6:of Girion
+I:40:12:1
+W:16:30:1:10000
+P:0:0d0:0:0d0
+F:CON | GRA
+F:INSTA_ART
+D:Five hundred emeralds green as grass, set in a necklace of
+D: silver and gold. This treasure of Dale was lost when Smaug
+D: came, and has somehow found its way to Dol Guldur's hoards.
+
+
+## Ring of the Nazgûl
+## Third Age - corrupted
+
+N:7:of the Nazgûl
+I:45:31:3
+W:12:18:1:10000
+P:0:0d0:0:0d0
+F:STEALTH | WILL | DARKNESS | TRAITOR | SEE_INVIS
+F:INSTA_ART
+D:One of the Nine Rings given to mortal men, doomed to die.
+D: It grants power over shadows but slowly devours the wearer's
+D: soul. To wear it long is to become a wraith yourself.
+
+
+## The Crown of Gondor
+## Third Age - but lost
+
+N:8:of Gondor
+G:]:w
+I:33:11:4
+W:14:30:5:600000
+P:0:0d0:0:1d0
+F:WILL | INSTA_ART
+D:The winged crown of the Kings of Gondor, lost when Eärnur
+D: rode to Minas Morgul and was never seen again. How it came
+D: to Dol Guldur is a mystery wrapped in darkness.
+
+
+## Crown of the Witch-King
+## Third Age
+
+N:9:of the Witch-King
+I:33:11:3
+W:20:20:35:300000
+P:0:0d0:0:1d1
+F:WILL | RES_FEAR | SEE_INVIS | DARKNESS
+F:AGGRAVATE | INSTA_ART | DANGER
+D:An iron crown of cruel design, worn by the Lord of the Nazgûl
+D: himself. It radiates malice and fills those nearby with dread.
+D: Great power it offers, but at terrible cost.
+
+
+## Crown of the Dwarrowdelf
+## Third Age namesake - Khazad-dûm
+## (ability 5/9 is Majesty)
+
+N:10:of the Dwarrowdelf
+I:33:11:3
+W:8:20:30:30000
+P:0:0d0:0:1d1
+F:WILL | RES_FEAR | CON
+F:INSTA_ART
+B:5/9
+D:A crown of mithril and gold, set with diamonds that gleam like
+D: stars. It was worn by the Kings of Khazad-dûm before the coming
+D: of Durin's Bane, and carries still the majesty of that realm.
+
+
+#################################################################
+# NORMAL ARTIFACTS - SOFT ARMOR (Indices 20-32)
+#################################################################
+
+
+## The Wanderer's Robe of Radagast
+## Third Age - Wizard
+
+N:20:of Radagast
+I:36:2:2
+W:4:10:30:25000
+P:0:0d0:2:1d0
+F:PERCEPTION | RES_POIS
+D:A brown robe of rough weave, worn by Radagast the Brown,
+D: wizard of Rhosgobel. It offers protection against the
+D: venoms and poisons of the creatures he tends.
+
+
+## The Wanderer's Robe of Galadriel
+## Third Age
+
+N:21:of Galadriel
+G:(:w
+I:36:2:0
+W:6:10:30:25000
+P:0:0d0:3:1d0
+F:FREE_ACT | SUST_GRA | LIGHT
+D:A robe of white cloth that seems to glow with inner light.
+D: It was woven in Lothlórien and carries the blessing
+D: of the Lady of the Golden Wood.
+
+
+## The Elven Cloak of Rivendell
+## Third Age
+
+N:22:of Rivendell
+I:36:2:0
+W:18:30:30:25000
+P:0:0d0:0:1d0
+F:SPEED | FREE_ACT
+D:A grey-green garment of elven make, light as a feather
+D: yet warm as fur. Those who wear it move with the
+D: swiftness of the Eldar.
+
+
+## The Ranger Leathers of the Ranger
+## Third Age - Dúnedain
+## (ability 3/3 is Exchange Places)
+
+N:24:of the Ranger
+I:36:4:0
+W:3:15:70:45000
+P:0:0d0:0:1d5
+F:STEALTH | PERCEPTION
+B:3/3
+D:Well-worn leather armor of the Rangers of the North.
+D: It has seen many miles and many battles against
+D: the servants of the Enemy.
+
+
+## The Ranger Leathers of Halbarad
+## Third Age - Ranger chieftain
+
+N:25:of Halbarad
+I:36:4:1
+W:6:10:40:45000
+P:0:0d0:-1:1d4
+F:STR | RES_FEAR | FREE_ACT
+D:Armor worn by Halbarad, kinsman to Aragorn and standard-bearer
+D: of the Grey Company. He fell in battle, but his armor
+D: survived to fight on.
+
+
+## Woodman's Leather
+## Third Age - Mirkwood
+## (ability 2/6 is Flanking)
+## (ability 4/2 is Keen Senses)
+
+N:26:'Woodman's Leather'
+I:36:4:0
+W:10:12:50:45000
+P:0:0d0:0:1d4
+B:2/6:4/2
+D:Armor of the Woodmen who dwell in western Mirkwood.
+D: Those who wear it learn to fight as they do,
+D: using the forest itself as a weapon.
+
+
+## The Scout's Armor of Bard
+## Third Age - Dale
+## (ability 5/4 is Inner Light)
+
+N:28:of Bard
+I:36:7:0
+W:8:20:120:35000
+P:0:0d0:-1:1d6
+F:RES_FEAR | SUST_CON
+B:5/4
+D:Armor that will one day be worn by Bard the Bowman
+D: when he slays Smaug the Golden. For now, it waits
+D: in darkness for its destined bearer.
+
+
+## The Scout's Armor of the Beornings
+## Third Age - Beorn's folk
+## (ability 4/3 is Concentration)
+
+N:29:of the Beornings
+I:36:7:1
+W:4:10:100:35000
+P:1:0d0:-2:1d6
+F:STR | WILL
+B:4/3
+D:Rough armor of the skin-changers who dwell between
+D: Mirkwood and the Misty Mountains. It grants the
+D: wearer something of their fierce determination.
+
+
+## The Shadow-steel Armor of Eöl
+## First Age but survived - appropriate
+## (automatic drop -- don't move)
+
+N:32:of Eöl
+I:36:11:1
+W:15:1:70:45000
+P:0:0d0:1:1d8
+F:DEX | RES_POIS
+F:HUNGER | DARKNESS
+F:INSTA_ART
+D:Black armor of galvorn, forged by the Dark Elf Eöl
+D: in ages past. It has passed through many hands
+D: since then, none of them clean.
+
+
+#################################################################
+# NORMAL ARTIFACTS - HARD ARMOR (Indices 34-41)
+#################################################################
+
+
+## The Gondor Corslet of Thranduil
+## Third Age - Greenwood
+
+N:34:of Thranduil
+I:37:4:1
+W:8:25:260:105000
+P:0:0d0:-3:2d4
+F:RES_FEAR | CON | GRA
+D:Armor of the Elvenking of the Woodland Realm, wrought
+D: of silver steel and set with green gems. It has turned
+D: many a spider's fang and orc's blade.
+
+
+## The Gondor Corslet of Dáin
+## Third Age - Iron Hills
+
+N:35:of Dáin
+I:37:4:0
+W:13:30:280:105000
+P:-1:0d0:-3:3d3
+F:RES_FIRE | RES_COLD | REGEN
+D:Armor of Dáin Ironfoot, Lord of the Iron Hills.
+D: It was forged in the deeps of his mountain halls
+D: and tempered against dragonfire.
+
+
+## The Mithril Shirt
+## Third Age - famously Bilbo's
+## (This one Bilbo will find later in Erebor)
+
+N:36:'Mithril Shirt'
+I:37:6:0
+W:13:12:30:105000
+P:-1:0d0:0:2d4
+F:RES_FIRE | RES_COLD | RES_POIS
+D:A corslet of mithril rings, light as a feather and hard
+D: as dragon-scales. Such shirts are beyond price, for the
+D: art of their making is all but lost.
+
+
+## The Dwarven Hauberk of the Tower Guard
+## Third Age - Gondor
+
+N:37:of the Tower Guard
+I:37:6:3
+W:13:10:300:25000
+P:-1:0d0:-3:2d6
+F:STAND_FAST | WILL
+D:Black mail and silver helm, the armor of the Guards
+D: of the Citadel of Minas Tirith. Those who wear it
+D: stand firm against any foe.
+
+
+## The Gondor Corslet of Celeborn
+## Third Age - Lothlórien
+## (ability 2/3 is Crowd Fighting)
+
+N:39:of Celeborn
+I:37:4:1
+W:5:30:350:25000
+P:-1:0d0:-1:2d4
+F:STR | LIGHT
+B:2/3
+D:Armor of the Lord of Lothlórien, wrought of silver
+D: rings that gleam with the light of Telperion. It
+D: grants strength to stand against many foes.
+
+
+## The Dwarven Hauberk of Elendil
+## Second Age but heirloom
+
+N:40:of Elendil
+I:37:6:0
+W:11:18:500:25000
+P:-2:0d0:-4:2d8
+F:SUST_GRA | SUST_STR | RES_FEAR
+D:The armor of Elendil the Tall, who fell before the
+D: gates of Barad-dûr. It has been kept in Rivendell
+D: against the day when his heir would need it.
+
+
+## The Mithril Corslet 'Starlight'
+## Third Age - Lothlórien
+## (ability 7/0 is Song of Elbereth)
+
+N:41:'Starlight'
+I:37:20:1
+W:16:10:120:50000
+P:0:0d0:-1:2d4
+F:RES_FEAR | RES_BLIND
+F:PERCEPTION | WILL
+B:7/0
+D:A coat of mithril rings that shimmers like starlight
+D: on water. It was made in Lothlórien and carries the
+D: blessing of Elbereth herself.
+
+
+#################################################################
+# NORMAL ARTIFACTS - SHIELDS (Indices 42-48)
+#################################################################
+
+
+## The Buckler of the Mark
+## Third Age - Rohan
+
+N:42:of the Mark
+I:34:3:1
+W:6:8:60:25000
+P:0:0d0:1:1d4
+F:STR | RES_FEAR
+D:A shield bearing the white horse of Rohan on a green
+D: field. Those who carry it ride to battle with courage
+D: undimmed by darkness.
+
+
+## The Buckler of Glorfindel
+## Glorfindel returned in Second Age - appropriate
+## (ability 0/4 is Charge)
+
+N:43:of Glorfindel
+I:34:3:0
+W:8:20:60:25000
+P:0:0d0:1:1d4
+B:0/4
+D:The shield of Glorfindel, who returned from the Halls
+D: of Mandos and now dwells in Rivendell. He is ever
+D: ready to ride against the servants of Sauron.
+
+
+## The Shield of the Dúnedain
+## Third Age - Rangers
+## (ability 5/0 is Curse Breaking)
+
+N:44:of the Dúnedain
+I:34:3:2
+W:3:20:40:15000
+P:1:0d0:0:1d3
+F:WILL
+B:5/0
+D:A shield of the Rangers, marked with the star of
+D: the North Kingdom. Many enchantments are woven
+D: into its worn surface.
+
+
+## The Tower Shield of Dale
+## Third Age - Dale
+
+N:45:of Dale
+G:):r
+I:34:5:0
+W:8:12:90:25000
+P:-1:0d0:0:1d6
+F:RES_FIRE | RES_COLD
+D:A shield of Dale, forged to withstand dragonfire.
+D: It bears the raven standard of that city.
+
+
+## The Tower Shield of Gil-galad
+## Second Age but legendary
+
+N:46:of Gil-galad
+G:):b1
+I:34:5:1
+W:13:15:70:25000
+P:-2:0d0:0:1d8
+F:CON | SUST_CON | RES_FEAR
+D:A shining blue shield, borne by the last High King
+D: of the Noldor in Middle-earth. He fell before
+D: Barad-dûr, but his shield survived.
+
+
+## The Mithril Shield of the White Tower
+## Third Age - Gondor
+
+N:47:of the White Tower
+G:):w
+I:34:10:1
+W:18:12:30:25000
+P:0:0d0:1:1d6
+F:LIGHT | GRA
+D:A shield of mithril bearing the device of the White
+D: Tree. It shines with a light that heartens the
+D: faithful and dismays the enemy.
+
+
+## The Swan Shield of Dol Amroth
+## Third Age - Gondor
+
+N:48:of Dol Amroth
+G:):b
+I:34:5:4
+W:10:15:70:25000
+P:-2:0d0:0:1d7
+F:WILL | SUST_CON | SUST_DEX
+D:A shield bearing the silver swan of Dol Amroth.
+D: The Princes of that city have elven blood, and
+D: their arms carry enchantments of endurance.
+
+
+#################################################################
+# NORMAL ARTIFACTS - EDGED WEAPONS (Indices 52-83)
+#################################################################
+
+
+## The Morgul-blade
+## Third Age - Nazgûl weapon
+## CURSED
+
+N:52:'Morgul-blade'
+I:23:4:0
+W:7:20:5:50000
+P:5:1d5:0:0d0
+F:BRAND_COLD | VAMPIRIC | DARKNESS
+F:HUNGER | DANGER | LIGHT_CURSE
+D:A fell blade of the Nazgûl, cold to the touch. Those
+D: wounded by it sicken and fade, becoming wraiths themselves.
+D: To wield it is to invite darkness into your soul.
+
+
+## The Ranger's Knife 'Sting'
+## Third Age - Bilbo will find this later
+
+N:53:'Sting'
+I:23:4:2
+W:0:20:5:5000
+P:0:1d6:0:0d0
+F:THROWING | LIGHT
+F:SLAY_ORC | SLAY_SPIDER | SEE_INVIS
+D:An Elven blade that glows blue when orcs are near.
+D: It will one day be found by a hobbit in a troll's
+D: cave, but for now it lies in Sauron's hoard.
+
+
+## The Ranger's Knife 'Narsil Shard'
+## Third Age - broken sword piece
+
+N:54:'Narsil Shard'
+I:23:4:0
+W:14:4:5:100000
+P:2:1d7:0:0d0
+F:LIGHT | SLAY_UNDEAD
+F:THROWING
+D:A shard of Narsil, the sword that was broken. Even this
+D: fragment of the blade that cut the Ring from Sauron's hand
+D: burns with light hateful to the servants of darkness.
+
+
+## The Orc-blade of Harad
+## Third Age - enemy weapon
+
+N:55:of Harad
+I:23:7:2
+W:4:10:60:30000
+P:-1:2d5:1:0d0
+F:STR | NEG_GRA | SLAY_MAN_OR_ELF | AGGRAVATE
+D:A curved blade of the Haradrim, who serve the Dark Lord.
+D: Its edge is keen but its purpose is cruel, turned always
+D: against the Free Peoples.
+
+
+## The Orc-blade of the Corsairs
+## Third Age - Umbar
+
+N:56:of the Corsairs
+I:23:7:-2
+W:8:10:60:30000
+P:-1:2d5:1:0d0
+F:VAMPIRIC | LIGHT_CURSE | WILL | PERCEPTION | NEG_CON | HUNGER
+D:A blade of the Corsairs of Umbar, enemies of Gondor.
+D: It has drunk deeply of blood and hungers for more.
+
+
+## The Woodland Blade of Haldir
+## Third Age - Lothlórien
+
+N:58:of Haldir
+I:23:10:2
+W:8:10:15:15000
+P:1:1d7:1:0d0
+F:STEALTH | PERCEPTION | FREE_ACT
+D:The blade of Haldir, Marchwarden of Lothlórien. He
+D: guards the borders of the Golden Wood against all
+D: servants of the Enemy.
+
+
+## The Woodland Blade 'Westernesse'
+## Third Age - Dúnedain blade
+
+N:59:'Westernesse'
+I:23:10:1
+W:12:10:20:15000
+P:2:1d8:1:0d0
+F:RES_FEAR | SLAY_UNDEAD | LIGHT
+D:A blade of Westernesse, forged in the days when the
+D: Dúnedain were mighty. Such blades are deadly to the
+D: servants of Sauron, especially the undead.
+
+
+## The Woodland Blade of the Grey Company
+## Third Age - Rangers
+## (ability 2/8 is Riposte)
+
+N:60:of the Grey Company
+I:23:10:0
+W:9:30:20:30000
+P:0:1d8:3:0d0
+F:SUST_CON
+B:2/8
+D:A blade carried by the Rangers who ride with Aragorn.
+D: It is swift in defense and deadly in counterattack.
+
+
+## The Longsword 'Orcrist'
+## First Age but survives - found by Thorin later
+
+N:64:'Orcrist'
+I:23:17:2
+W:10:20:30:40000
+P:2:2d5:2:0d0
+F:SLAY_ORC | SLAY_TROLL | PERCEPTION | LIGHT
+D:The mate to Glamdring, called "Goblin-cleaver" by the
+D: orcs who fear it. It will one day rest on Thorin's
+D: tomb, but for now Sauron hoards it jealously.
+
+
+## The Longsword 'Glamdring'
+## First Age but survives - Gandalf will find it
+
+N:65:'Glamdring'
+I:23:17:2
+W:14:20:30:40000
+P:2:2d5:2:0d0
+F:SLAY_ORC | SLAY_TROLL | WILL | LIGHT
+D:Forged for Turgon, King of Gondolin, this bright blade
+D: is called "Foe-hammer" by the orcs. It glows blue when
+D: enemies are near.
+
+
+## The Longsword 'Narsil'
+## Second Age - the unbroken blade
+
+N:66:'Narsil'
+I:23:17:0
+W:12:20:25:80000
+P:0:2d6:2:0d0
+F:LIGHT
+F:RES_FIRE | RES_COLD | SLAY_UNDEAD
+D:The sword of Elendil, forged by Telchar of Nogrod. It
+D: cut the Ring from Sauron's hand before it was broken.
+D: The shards are kept in Rivendell, but this is the blade
+D: whole, from an earlier time.
+
+
+## The Longsword of Isildur
+## Third Age - ancestor blade
+
+N:67:of Isildur
+I:23:17:3
+W:20:20:40:50000
+P:3:2d7:1:0d0
+F:WILL | RES_FEAR | SLAY_UNDEAD
+F:DANGER
+D:A blade that belonged to Isildur, who cut the Ring from
+D: Sauron's hand but was betrayed by it. It carries both
+D: his strength and his doom.
+
+
+## The Rohirrim Blade of Gondor
+## Third Age
+
+N:71:of Gondor
+G:|:w
+I:23:21:0
+W:15:15:50:100000
+P:1:3d4:1:0d0
+F:SLAY_ORC | SLAY_TROLL | RES_FEAR
+D:A blade of the soldiers of Gondor, bearing the device
+D: of the White Tree. It has defended the West against
+D: Sauron's servants for generations.
+
+
+## The Rohirrim Blade 'Gúthwinë'
+## Third Age - Éomer's blade
+
+N:72:'Gúthwinë'
+G:|:g
+I:23:21:0
+W:11:30:40:10000
+P:-2:3d4:1:0d0
+F:ACCURATE | RES_FEAR | FREE_ACT
+D:A blade of Rohan, its name meaning "Battle-friend."
+D: It will one day be wielded by Éomer, but now it
+D: waits for its destined bearer.
+
+
+## The Númenórean Blade 'Herugrim'
+## Third Age - Théoden's blade
+## (automatic drop -- don't move)
+
+N:74:'Herugrim'
+I:23:25:1
+W:12:1:120:100000
+P:-1:3d6:1:0d0
+F:STR | SUST_STR | RES_FEAR
+F:INSTA_ART
+D:The sword of the Kings of Rohan, its name meaning
+D: "Fierce-sword." It has been long unused, but its
+D: edge remains sharp and its purpose true.
+
+
+## The Númenórean Blade of the Witch-Realm
+## Third Age - Angmar
+
+N:75:of the Witch-Realm
+I:23:25:0
+W:17:15:70:100000
+P:0:3d5:1:0d0
+F:SLAY_UNDEAD | HAUNTED | SEE_INVIS | DARKNESS
+D:A black blade from Angmar, the Witch-king's realm.
+D: It was forged to slay the living, but its bearer
+D: is haunted by the spirits of those it has slain.
+
+
+## The Númenórean Blade 'Flame of the West'
+## Third Age namesake
+
+N:76:'Flame of the West'
+G:|:r
+I:23:25:1
+W:15:15:110:100000
+P:-5:3d7:1:0d0
+F:CON | BRAND_FIRE | LIGHT
+F:VUL_COLD | LIGHT_CURSE
+D:A blade wreathed in undying fire, forged long ago
+D: to fight the cold servants of the Enemy. Its light
+D: is a beacon of hope, but its heat consumes the weak.
+
+
+## The Mithril Sword 'Ringil'
+## First Age - Fingolfin's blade (legendary)
+
+N:80:'Ringil'
+I:23:28:0
+W:20:20:20:50000
+P:1:2d5:1:0d0
+F:BRAND_COLD | LIGHT
+D:The blade of Fingolfin that wounded Morgoth seven times.
+D: It gleams like ice and burns with cold. Such a weapon
+D: in Sauron's hoard is a great prize indeed.
+
+
+## The Mithril Sword 'Aiglos'
+## Second Age - Gil-galad's spear (renamed to sword here)
+
+N:81:'Aiglos'
+I:23:28:1
+W:20:7:20:300000
+P:3:2d5:3:0d0
+F:BRAND_COLD | LIGHT
+D:The legendary weapon of Gil-galad, called "Snow-point"
+D: for the cold light that plays along its edge. None
+D: could stand before it at the Battle of Dagorlad.
+
+
+## The Mithril Great-blade of the Eldar
+## Elven craftsmanship
+
+N:83:of the Eldar
+I:23:30:0
+W:12:20:40:30000
+P:-2:3d7:2:0d0
+F:SLAY_SPIDER | SLAY_ORC | LIGHT | FREE_ACT | RES_POIS
+D:A blade of the High Elves, wrought in days when their
+D: power was greater. Its light is hateful to all servants
+D: of the Shadow.
+
+
+#################################################################
+# NORMAL ARTIFACTS - POLEARMS (Indices 85-101)
+#################################################################
+
+
+## The Hunting Spear 'Aeglos'
+## Second Age - Gil-galad's weapon (proper version)
+
+N:85:'Aeglos'
+I:22:1:0
+W:14:15:30:140000
+P:1:1d11:0:0d0
+F:BRAND_COLD | RES_COLD
+F:THROWING
+D:The mighty spear of Gil-galad, famed as "Snow-point"
+D: in the songs of Elves. Orcs and trolls feared its
+D: icy gleam at the Last Alliance.
+
+
+## The Hunting Spear of the Eorlingas
+## Third Age - Rohan
+## (automatic drop -- don't move)
+
+N:86:of the Eorlingas
+G:/:g
+I:22:1:0
+W:8:1:50:30000
+P:0:1d12:0:0d0
+F:RES_FEAR | ACCURATE
+F:THROWING
+F:INSTA_ART
+D:A cavalry spear of Rohan, made for the charge.
+D: The Riders of the Mark are famed throughout
+D: Middle-earth for their mounted warfare.
+
+
+## The Hunting Spear of the Galadhrim
+## Third Age - Lothlórien
+
+N:87:of the Galadhrim
+I:22:1:0
+W:14:15:30:140000
+P:1:1d9:0:0d0
+F:LIGHT | SLAY_ORC
+F:THROWING
+D:A spear of Lothlórien, wrought of silver steel.
+D: It gleams with pale light and strikes true
+D: against the enemies of the Golden Wood.
+
+
+## The Tower Guard Spear of Erebor
+## Third Age - Dwarven
+
+N:89:of Erebor
+I:22:2:0
+W:12:20:50:60000
+P:2:1d14:2:0d0
+F:SLAY_DRAGON | RES_FIRE
+D:A great spear forged by the smiths of Erebor,
+D: made to pierce dragon-scale. It awaits the day
+D: when the Mountain will be reclaimed.
+
+
+## The Tower Guard Spear of Morgul
+## Third Age - Enemy weapon
+
+N:90:of Morgul
+G:/:v
+I:22:2:-1
+W:15:20:80:100000
+P:1:1d15:1:0d0
+F:GRA | BRAND_COLD | DARKNESS
+F:FREE_ACT | VUL_POIS | LIGHT_CURSE
+D:A spear of Minas Morgul, cold and cruel. Its point
+D: is touched with the sorcery of the Nazgûl, and wounds
+D: from it fester with dark magic.
+
+
+## The Woodsman's Axe of the Beornings
+## Third Age
+
+N:92:of the Beornings
+I:22:11:1
+W:6:20:10:1000
+P:0:4d3:0:0d0
+F:CON | SLAY_ORC | SLAY_WOLF
+D:An axe of the skin-changers, heavy and keen.
+D: It has split many an orc-helm and wolf-skull
+D: in defense of their lands.
+
+
+## The Dwarven War-axe of the Iron Hills
+## Third Age - Dwarven
+
+N:93:of the Iron Hills
+I:22:12:0
+W:12:15:50:21000
+P:-2:3d6:0:0d0
+F:SLAY_ORC | SLAY_TROLL | RES_FEAR
+D:A battle axe of the Iron Hills dwarves, forged for
+D: war against orcs and trolls. Its weight is terrible
+D: and its edge never dulls.
+
+
+## The Dwarven War-axe of Azanulbizar
+## Third Age - famous battle
+
+N:94:of Azanulbizar
+I:22:12:1
+W:15:12:60:90000
+P:-3:3d5:0:0d0
+F:STR | CON | SLAY_ORC
+D:An axe that saw service at the Battle of Azanulbizar,
+D: where the dwarves avenged Thrór's death. It is stained
+D: with orc-blood that will never wash clean.
+
+
+## The Erebor Great-axe of Durin's Folk
+## Third Age - Dwarven heirloom
+
+N:95:of Durin's Folk
+I:22:13:1
+W:18:15:110:150000
+P:-4:4d5:0:0d0
+F:SLAY_ORC | SLAY_TROLL
+F:STR | RES_FIRE | RES_FEAR
+D:A mighty axe of Durin's Folk, forged in Khazad-dûm
+D: before its fall. It carries the strength and stubborn
+D: courage of the dwarves.
+
+
+## The Erebor Great-axe 'Baruk Khazâd'
+## Dwarvish battle-cry
+## (ability 5/8 is Vengeance)
+
+N:96:'Baruk Khazâd'
+I:22:13:3
+W:14:20:90:10000
+P:-3:4d4:0:0d0
+F:WILL | SLAY_ORC
+B:5/8
+D:"Axes of the Dwarves!" This great axe bears
+D: the battle-cry of Durin's Folk etched into its blade.
+D: It hungers for vengeance against the servants of darkness.
+
+
+## The Morgul Glaive of Gondor
+## Third Age
+
+N:99:of Gondor
+I:22:4:3
+W:12:30:80:50000
+P:-1:2d9:1:0d0
+F:SLAY_ORC | RES_FEAR
+D:A glaive of the soldiers of Gondor, its blade
+D: etched with the White Tree. It has defended
+D: the realm for many generations.
+
+
+## The Morgul Glaive of the Woodland Realm
+## Third Age - Mirkwood
+## (ability 3/4 is Opportunist)
+## (ability 0/9 is Zone of Control)
+
+N:100:of the Woodland Realm
+I:22:4:3
+W:10:20:70:50000
+P:0:2d10:1:0d0
+F:SLAY_SPIDER
+B:0/9:3/4
+D:A glaive of Thranduil's warriors, made for fighting
+D: the great spiders of Mirkwood. Its long reach helps
+D: keep the venomous creatures at bay.
+
+
+## The Morgul Glaive 'Spider-bane'
+## Third Age - Mirkwood
+
+N:101:'Spider-bane'
+I:22:4:1
+W:8:12:50:22000
+P:0:2d10:2:0d0
+F:DEX | FREE_ACT | SLAY_SPIDER | RES_POIS
+D:A glaive forged specifically to fight the spawn of
+D: Ungoliant. Its edge is coated with an oil that burns
+D: spider-flesh and grants resistance to their venom.
+
+
+#################################################################
+# NORMAL ARTIFACTS - BLUNT WEAPONS (Indices 104-108)
+#################################################################
+
+
+## The Oak Staff of Gandalf
+## Third Age - Wizard's staff
+## (ability 7/2 is Song of Freedom)
+
+N:104:of Gandalf
+I:21:3:3
+W:2:10:40:250000
+P:0:2d4:3:0d0
+F:SUST_GRA | RES_FEAR | LIGHT
+B:7/2
+D:A plain wooden staff, but one that carries great power.
+D: It is the staff of Gandalf the Grey, and has seen him
+D: through many perils.
+
+
+## The Dwarven Hammer of the Longbeards
+## Third Age - Dwarven
+## (ability 6/5 is Artifice)
+
+N:107:of the Longbeards
+I:21:8:0
+W:11:20:45:250000
+P:0:4d2:0:0d0
+F:SUST_STR | RES_FIRE
+B:6/5
+D:A war hammer of Durin's Folk, made for both smithing
+D: and battle. Its head rings like a bell when it strikes
+D: and its blows shatter stone.
+
+
+## The Dwarven Hammer of Nogrod
+## First Age origin but survived
+
+N:108:of Nogrod
+I:21:8:1
+W:20:20:70:250000
+P:0:4d2:0:0d0
+F:STR | CON | SLAY_ORC | RES_FIRE | DANGER
+D:A hammer forged in Nogrod before its destruction.
+D: It carries the skill and malice of those dwarves
+D: who slew Thingol and stole the Silmaril.
+
+
+#################################################################
+# NORMAL ARTIFACTS - DIGGING TOOLS (Index 114)
+#################################################################
+
+
+## The Dwarf Mattock of Khazad-dûm
+## Third Age namesake
+
+N:114:of Khazad-dûm
+I:20:3:3
+W:20:8:110:30000
+P:-4:6d2:0:0d0
+F:TUNNEL
+D:A mighty mattock of the Dwarrowdelf, made for delving
+D: in the deeps. It can break through any stone and
+D: was used to mine the mithril that made Khazad-dûm rich.
+
+
+#################################################################
+# NORMAL ARTIFACTS - HELMS (Indices 117-123)
+#################################################################
+
+
+## The Iron Helm of Elrond
+## Third Age
+
+N:117:of Elrond
+I:32:5:0
+W:8:12:45:4500
+P:0:0d0:0:1d3
+F:RES_FEAR | WILL | REGEN
+D:A helm of the Lord of Rivendell, wrought of mithril
+D: and set with a single white gem. It grants wisdom
+D: and healing to its wearer.
+
+
+## The Iron Helm of the Dúnedain
+## Third Age - Rangers
+## (ability 4/7 is Listen)
+
+N:118:of the Dúnedain
+I:32:5:2
+W:15:10:45:45000
+P:0:0d0:-1:1d2
+F:PERCEPTION | STEALTH | RES_FEAR
+B:4/7
+D:A helm of the Rangers of the North, made to watch
+D: and listen in the wild. Those who wear it become
+D: aware of danger before it strikes.
+
+
+## The Iron Helm of the Oathbreaker
+## Third Age - cursed
+## (ability 5/8 is Vengeance)
+
+N:119:of the Oathbreaker
+I:32:5:0
+W:8:12:15:45000
+P:0:0d0:0:1d3
+F:TRAITOR | LIGHT_CURSE | HAUNTED
+B:5/8
+D:A helm worn by one of the Dead who dwell beneath
+D: Dunharrow. Those who broke their oath to Isildur
+D: cannot rest until they fulfill it.
+
+
+## The Tower Helm of the Dragonslayer
+## Third Age
+
+N:120:of the Dragonslayer
+I:32:6:1
+W:20:15:90:300000
+P:0:0d0:-2:1d4
+F:STR | RES_FEAR | RES_FIRE | WILL
+D:A helm made for those who hunt dragons. It grants
+D: courage to face dragonfire and strength to wield
+D: the weapons needed to pierce dragon-scale.
+
+
+## The Tower Helm of Angmar
+## Third Age - Witch-king's realm
+
+N:121:of Angmar
+G:]:D
+I:32:6:2
+W:20:20:100:10000
+P:0:0d0:-2:1d4
+F:CON | SEE_INVIS | DARKNESS
+F:NEG_GRA | LIGHT_CURSE
+D:A black helm from Angmar, the Witch-king's realm.
+D: It grants sight in darkness but darkens the soul
+D: of those who wear it.
+
+
+## The Dwarf Mask of Thráin
+## Third Age
+## (ability 5/2 is Strength in Adversity)
+
+N:122:of Thráin
+I:32:7:2
+W:16:10:70:6000
+P:0:0d0:-2:1d3
+F:WILL | RES_FIRE
+B:5/2
+D:A mask of Thráin, father of Thorin Oakenshield.
+D: He wore it when he attempted to retake Moria and
+D: when he was captured by Sauron's servants.
+
+
+## The Mithril Helm of Rivendell
+## Third Age
+## (ability 7/9 is Song of Staying)
+
+N:123:of Rivendell
+G:]:w
+I:32:8:2
+W:16:12:40:25000
+P:1:0d0:-1:1d3
+F:WILL | RES_FEAR
+B:7/9
+D:A beautiful helm of mithril, wrought in Rivendell.
+D: It carries enchantments of endurance and protection
+D: against the powers of darkness.
+
+
+#################################################################
+# NORMAL ARTIFACTS - CLOAKS (Indices 131-138)
+#################################################################
+
+
+## The Traveler's Cloak of Lothlórien
+## Third Age - Elven-cloak
+## (ability 7/7 is Song of the Trees)
+
+N:131:of Lothlórien
+G:(:g
+I:35:1:2
+W:13:10:20:35000
+P:0:0d0:1:0d0
+F:STEALTH
+B:7/7
+D:A cloak of the Galadhrim, woven on the looms of
+D: Lothlórien. It shifts and changes color to match
+D: its surroundings, hiding the wearer from unfriendly eyes.
+
+
+## The Traveler's Cloak of Elrond
+## Third Age
+
+N:132:of Elrond
+G:(:b
+I:35:1:1
+W:20:20:15:35000
+P:0:0d0:2:0d0
+F:RES_FIRE | RES_COLD | FREE_ACT
+D:A cloak of the Lord of Rivendell, deep blue in color
+D: and lined with silver thread. It offers protection
+D: against both fire and cold.
+
+
+## The Ranger's Cloak
+## Third Age - Dúnedain
+
+N:134:'Ranger's Cloak'
+I:35:6:4
+W:13:10:10:45000
+P:0:0d0:4:0d0
+F:STEALTH | PERCEPTION | SUST_CON
+D:A weathered cloak of the Rangers of the North.
+D: It blends with shadow and stone, helping its wearer
+D: pass unseen through the wild.
+
+
+## The Wolf-Hame of the Werewolf
+## Third Age - fell beast
+## (automatic drop -- don't move)
+## (ability 3/0 is Disguise)
+
+N:137:of the Werewolf
+I:35:20:2
+W:20:1:130:500000
+P:-3:0d0:-3:1d4
+B:3/0
+F:STEALTH
+F:INSTA_ART
+D:The skin of a great werewolf, servant of Sauron.
+D: If you wear it, you may pass as one of the enemy's
+D: beasts, but the darkness may seep into your soul.
+
+
+## The Bat-Fell of the Vampire
+## Third Age - fell beast
+## (automatic drop -- don't move)
+## (ability 3/0 is Disguise)
+
+N:138:of the Vampire
+I:35:21:2
+W:23:1:50:500000
+P:-1:0d0:+2:0d0
+B:3/0
+F:STEALTH
+F:INSTA_ART
+D:The wings of a vampire of Dol Guldur. Might they
+D: let you pass as a messenger of the Necromancer?
+D: But beware: such deceptions carry their own price.
+
+
+#################################################################
+# NORMAL ARTIFACTS - BOWS (Indices 142-150)
+#################################################################
+
+
+## The Silvan Bow of Lothlórien
+## Third Age
+## (ability 1/3 is Ambush)
+
+N:142:of Lothlórien
+I:19:12:-1
+W:7:10:20:9000
+P:1:1d9:0:0d0
+F:GRA | PERCEPTION
+B:1/3
+D:A bow of the Galadhrim, made of golden mallorn-wood.
+D: It grants its wielder the keen sight of the elves
+D: and the ability to strike from concealment.
+
+
+## The Silvan Bow 'Death's Whisper'
+## Third Age
+## (ability 1/6 is Crippling Shot)
+
+N:143:'Death's Whisper'
+I:19:12:0
+W:10:15:10:9000
+P:1:1d8:0:0d0
+F:STEALTH
+B:1/6
+D:A black bow of unknown origin. Its arrows fly silently
+D: and seek out the weak points in armor with uncanny
+D: accuracy.
+
+
+## The Longbow of the Galadhrim
+## Third Age - Lothlórien
+
+N:145:of the Galadhrim
+G:}:g
+I:19:13:2
+W:14:10:40:35000
+P:1:2d6:0:0d0
+F:PERCEPTION | SLAY_ORC
+D:A great bow of Lothlórien, strung with elven-hair
+D: that gleams gold in starlight. Its arrows fly true
+D: against the enemies of the Golden Wood.
+
+
+## The Longbow of the Mark
+## Third Age - Rohan
+
+N:146:of the Mark
+I:19:13:0
+W:10:10:20:3500
+P:2:2d5:0:0d0
+F:FREE_ACT | ACCURATE
+D:A bow of Rohan, made for shooting from horseback.
+D: The Rohirrim are famed for their mounted archery,
+D: and this bow is a fine example of their craft.
+
+
+## The Dragon-horn Bow of Dale
+## Third Age
+
+N:148:of Dale
+I:19:14:0
+W:20:10:50:35000
+P:1:4d3:0:0d0
+F:RES_FEAR | RES_FIRE | SLAY_DRAGON
+D:A great bow made from the horn of a dragon slain
+D: long ago. It grants courage against dragonfire and
+D: strikes especially deadly against the great worms.
+
+
+## The Arrow 'Black Arrow'
+## Third Age - Dale
+
+N:150:'Black Arrow'
+G:-:D
+I:17:1:0
+W:7:40:1:20000
+P:+15:0d0:0:0d0
+F:SLAY_DRAGON
+D:A black-feathered arrow of Dale, passed down through
+D: generations. It is said that one such arrow will slay
+D: the dragon Smaug, if aimed at the one bare patch in
+D: his jeweled armor.
+
+
+#################################################################
+# NORMAL ARTIFACTS - BOOTS (Indices 154-159)
+#################################################################
+
+
+## The Traveler's Boots of Elrond
+## Third Age
+
+N:154:of Elrond
+I:30:1:0
+W:15:20:20:40000
+P:0:0d0:3:1d1
+F:FREE_ACT | SPEED
+D:Boots of the Lord of Rivendell, made for walking
+D: long roads. They grant swiftness and sure-footedness
+D: to their wearer.
+
+
+## The Traveler's Boots of the Ranger
+## Third Age - Dúnedain
+## (ability 4/8 is Master Hunter)
+
+N:155:of the Ranger
+I:30:1:2
+W:12:15:20:25000
+P:0:0d0:1:1d1
+F:STEALTH | PERCEPTION
+B:4/8
+D:Boots of the Rangers of the North, made for tracking
+D: and stalking in the wild. They leave little trace
+D: and help their wearer move in silence.
+
+
+## The Traveler's Boots of the Burglar
+## Third Age - hint at Bilbo
+## (ability 2/0 is Dodging)
+## (ability 3/5 is Vanish)
+
+N:156:of the Burglar
+I:30:1:0
+W:5:10:15:25000
+P:0:0d0:0:1d2
+B:3/5:2/0
+D:Soft boots of leather, perfect for sneaking.
+D: They make no sound and help their wearer
+D: disappear when danger threatens.
+
+
+## The Iron Greaves of Gondor
+## Third Age
+
+N:158:of Gondor
+I:30:2:1
+W:10:20:70:12000
+P:0:0d0:-1:1d2
+F:DEX | RES_FEAR
+D:Greaves of the soldiers of Gondor, made to stand
+D: firm against the charges of the Enemy. They grant
+D: sure footing and steady nerves.
+
+
+## The Iron Greaves of the Helcaraxë
+## First Age but survived - legendary
+
+N:159:of the Helcaraxë
+I:30:2:0
+W:14:20:80:12000
+P:0:0d0:0:1d3
+F:RES_COLD | REGEN
+F:SUST_STR | SUST_CON | SUST_DEX | SUST_GRA
+D:Greaves that survived the crossing of the Grinding Ice.
+D: They grant endurance against cold and hardship,
+D: sustaining their wearer through any trial.
+
+
+#################################################################
+# NORMAL ARTIFACTS - GLOVES (Indices 161-167)
+#################################################################
+
+
+## The Leather Gloves of the Archer
+## Third Age - Lothlórien
+## (ability 1/1 is Fletchery)
+
+N:161:of the Archer
+I:31:1:2
+W:8:12:5:36000
+P:0:0d0:0:1d1
+F:ARCHERY | PERCEPTION
+B:1/1
+D:Gloves of the archers of Lothlórien, made for the
+D: great bows of the Galadhrim. They grant steady aim
+D: and skill in the making of arrows.
+
+
+## The Leather Gloves of the Smith
+## Third Age - Dwarven
+## (ability 6/4 is Expertise)
+
+N:162:of the Smith
+I:31:1:0
+W:10:12:5:36000
+P:0:0d0:0:1d1
+B:6/4
+F:FREE_ACT | RES_FIRE
+D:Gloves of a master smith, made to handle hot metal
+D: and delicate work alike. They grant skill in all
+D: manner of crafting.
+
+
+## The Leather Gloves of the Healer
+## Third Age - Rivendell
+## (ability 0/7 is Subtlety)
+
+N:163:of the Healer
+I:31:1:1
+W:8:25:5:36000
+P:0:0d0:0:1d0
+F:GRA | MEDIC
+B:0/7
+D:Gloves of the healers of Rivendell, supple and clean.
+D: They grant gentle skill in the tending of wounds
+D: and the curing of poisons.
+
+
+## The Iron Gauntlets of the Iron Hills
+## Third Age - Dwarven
+## (ability 0/2 is Knockback)
+
+N:165:of the Iron Hills
+I:31:2:1
+W:14:20:50:60000
+P:0:0d0:-1:2d1
+F:STR
+B:0/2
+D:Heavy gauntlets of the Iron Hills dwarves, made for
+D: war. Their weight adds force to every blow, driving
+D: enemies back.
+
+
+## The Iron Gauntlets of the Mark
+## Third Age - Rohan
+
+N:166:of the Mark
+I:31:2:0
+W:12:8:60:40000
+P:2:0d0:0:1d2
+F:RES_COLD | RES_FEAR
+D:Gauntlets of Rohan, fur-lined against the cold winds
+D: of the plains. They grant warmth and courage in battle.
+
+
+## The Mithril Gauntlets 'Silverhand'
+## Third Age
+## (ability 6/2 is Jeweller)
+
+N:167:'Silverhand'
+I:31:3:1
+W:15:10:10:20000
+P:0:0d0:0:1d2
+F:DEX
+B:6/2
+D:Gauntlets of mithril, light as silk and strong as steel.
+D: They grant nimble fingers for delicate work and sure
+D: grip for battle.
+
+
+#################################################################
+# NORMAL ARTIFACTS - LIGHTS (Index 170)
+#################################################################
+
+
+## Galadriel's Phial
+## Third Age
+
+N:170:'Galadriel's Phial'
+G:*:w
+I:39:2:3
+W:4:5:1:10000
+P:0:0d0:0:0d0
+F:RES_FEAR | LIGHT | SEE_INVIS | SLAY_UNDEAD
+D:A crystal phial filled with the light of Eärendil's star,
+D: caught in the waters of Galadriel's fountain. It shines
+D: in the darkest places and is a bane to all creatures of
+D: shadow. "May it be a light to you in dark places, when
+D: all other lights go out."
+
+
+#################################################################
+# QUEST ARTIFACTS (Indices 175-179)
+# These are required for victory
+#################################################################
+
+
+## The Ring of Thráin (Victory Item)
+## Third Age
+## (automatic drop -- don't move)
+
+N:175:of Thráin
+I:45:50:3
+W:20:1:2:10000000
+P:0:0d0:0:0d0:0
+F:INSTA_ART | WILL | GRA | SUST_GRA | FREE_ACT | LIGHT_CURSE
+D:The last of the Seven Rings of the Dwarf-lords. It grants piercing sight
+D: into the deep places of the world, but its whispers never cease.
+D: The bearer's spirit is slowly consumed.
+D: You must escape with this ring to fulfill your quest.
+
+
+## The Ring of Thráin (corrupted)
+## Third Age
+## (automatic drop -- don't move)
+
+N:176:of Thráin
+I:45:50:3
+W:20:1:2:10000000
+P:0:0d0:0:0d0:0
+F:INSTA_ART | WILL | GRA | SUST_GRA | FREE_ACT | AGGRAVATE | LIGHT_CURSE
+D:The last of the Seven Rings, now stained by Sauron's malice.
+D: It grants piercing sight into the deep places, but its whispers
+D: never cease. The bearer's spirit is slowly consumed, and you
+D: sense that its master is aware of your theft.
+
+
+## The Ring of Thráin (burning)
+## Third Age
+## (automatic drop -- don't move)
+
+N:177:of Thráin
+I:45:50:3
+W:20:1:2:10000000
+P:0:0d0:0:0d0:0
+F:INSTA_ART | WILL | GRA | SUST_GRA | FREE_ACT | AGGRAVATE | LIGHT | LIGHT_CURSE
+D:The last of the Seven Rings, burning with inner fire as Sauron's
+D: will seeks to reclaim it. It grants piercing sight into the deep
+D: places, but its whispers never cease, draining your spirit. The
+D: ring grows hot, and you feel his Eye searching through the darkness.
+
+
+## (placeholder - kept for compatibility)
+## (automatic drop -- don't move)
+
+N:178:of Thráin
+I:45:50:3
+W:20:1:2:10000000
+P:0:0d0:0:0d0:0
+F:INSTA_ART | WILL | GRA | SUST_GRA | FREE_ACT | LIGHT_CURSE
+D:The last of the Seven Rings of the Dwarf-lords. Its whispers reveal
+D: the secrets of the deep places, but slowly consume the bearer's spirit.
+
+
+## The Key to Erebor (Victory Item)
+## Third Age
+## (automatic drop -- don't move)
+
+N:179:to Erebor
+I:39:50:0
+W:20:1:5:500000
+P:0:0d0:0:0d0
+F:INSTA_ART
+D:This ancient dwarven key was crafted by Thráin's father Thrór, and
+D: opens the secret door to the Lonely Mountain. Gandalf sought this
+D: key for decades, and now you have found it in the deepest pit of
+D: Dol Guldur. With this and the Map, Erebor can be reclaimed.
+
+
+## Thrór's Map (Victory Item)
+## Third Age
+## (automatic drop -- don't move)
+
+N:180:of Erebor
+I:2:50:0
+W:20:1:1:500000
+P:0:0d0:0:0d0
+F:INSTA_ART
+D:Thrór's Map, showing the secret entrance to the Lonely Mountain.
+D: Moon-letters on this ancient parchment reveal the words: "Stand by
+D: the grey stone when the thrush knocks, and the setting sun with the
+D: last light of Durin's Day will shine upon the key-hole." With this
+D: Map and the Key, the path to Erebor is clear.
+
+
+#################################################################
+# SMITHING TEMPLATE ARTIFACTS (Indices 182-198)
+# DO NOT MODIFY - These define limits on random artifact generation
+#################################################################
+
+
+## The Ultimate TV_SWORD
+
+N:182:'Ultimate'
+I:23:0:0
+F:STR | DEX | CON | GRA | NEG_STR | NEG_DEX | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG
+F:TUNNEL | SHARPNESS | VAMPIRIC | CHEAT_DEATH | ACCURATE
+F:SLAY_ORC | SLAY_TROLL | SLAY_WOLF | SLAY_SPIDER
+F:SLAY_UNDEAD | SLAY_RAUKO | SLAY_DRAGON
+F:BRAND_ELEC | BRAND_FIRE | BRAND_COLD | BRAND_POIS
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_POLEARM
+
+N:183:'Ultimate'
+I:22:0:0
+F:STR | DEX | CON | GRA | NEG_STR | NEG_DEX | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG
+F:TUNNEL | SHARPNESS | VAMPIRIC | CHEAT_DEATH | ACCURATE
+F:SLAY_ORC | SLAY_TROLL | SLAY_WOLF | SLAY_SPIDER
+F:SLAY_UNDEAD | SLAY_RAUKO | SLAY_DRAGON
+F:BRAND_ELEC | BRAND_FIRE | BRAND_COLD | BRAND_POIS
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_HAFTED
+
+N:184:'Ultimate'
+I:21:0:0
+F:STR | DEX | CON | GRA | NEG_STR | NEG_DEX | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG | CHEAT_DEATH | ACCURATE
+F:TUNNEL
+F:SLAY_ORC | SLAY_TROLL | SLAY_WOLF | SLAY_SPIDER
+F:SLAY_UNDEAD | SLAY_RAUKO | SLAY_DRAGON
+F:BRAND_ELEC | BRAND_FIRE | BRAND_COLD | BRAND_POIS
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_DIGGING
+
+N:185:'Ultimate'
+I:20:0:0
+F:STR | DEX | CON | NEG_STR | NEG_DEX | NEG_CON
+F:WILL
+F:VAMPIRIC
+F:SLAY_ORC | SLAY_TROLL | SLAY_WOLF | SLAY_SPIDER
+F:SLAY_UNDEAD | SLAY_RAUKO | SLAY_DRAGON
+F:BRAND_ELEC | BRAND_FIRE | BRAND_COLD | BRAND_POIS
+F:SUST_STR | SUST_DEX | SUST_CON
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_BOW
+
+N:186:'Ultimate'
+I:19:0:0
+F:RES_COLD | RES_POIS | RES_HALLU | RES_STUN | RES_CONFU | RES_BLEED
+F:RADIANCE | RES_FEAR | RES_BLIND | SEE_INVIS | SUST_DEX
+F:SUST_CON | SUST_STR | FREE_ACT | PERCEPTION | STEALTH
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART | ACCURATE
+
+
+## The Ultimate TV_ARROW
+
+N:187:'Ultimate'
+I:17:0:0
+F:SHARPNESS
+F:SLAY_ORC | SLAY_TROLL | SLAY_WOLF | SLAY_SPIDER
+F:SLAY_UNDEAD | SLAY_RAUKO | SLAY_DRAGON
+F:BRAND_FIRE | BRAND_COLD | BRAND_POIS
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_RING
+
+N:188:'Ultimate'
+I:45:0:0
+F:STR | DEX | NEG_STR | NEG_DEX
+F:ARCHERY | STEALTH | PERCEPTION
+F:SUST_STR | SUST_DEX | MEDIC
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | REGEN | SEE_INVIS | FREE_ACT | SPEED
+F:HUNGER | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_AMULET
+
+N:189:'Ultimate'
+I:40:0:0
+F:CON | GRA | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG
+F:SUST_CON | SUST_GRA | CHEAT_DEATH | MEDIC
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_LIGHT
+
+N:190:'Ultimate'
+I:39:0:0
+F:GRA | NEG_GRA
+F:PERCEPTION | WILL
+F:SUST_GRA | CHEAT_DEATH
+F:RES_FEAR | RES_BLIND | RES_HALLU
+F:LIGHT | SEE_INVIS
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_SOFT_ARMOR
+
+N:191:'Ultimate'
+I:36:0:0
+F:STR | DEX | CON | GRA | NEG_STR | NEG_DEX | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT | SPEED
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_MAIL
+
+N:192:'Ultimate'
+I:37:0:0
+F:STR | DEX | CON | GRA | NEG_STR | NEG_DEX | NEG_CON | NEG_GRA
+F:STEALTH | PERCEPTION | WILL | SONG | STAND_FAST
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | SEE_INVIS | FREE_ACT | SPEED
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_CLOAK
+
+N:193:'Ultimate'
+I:35:0:0
+F:DEX | CON | NEG_DEX | NEG_CON
+F:STEALTH | SONG
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_BLEED
+F:RES_FEAR | RES_CONFU | RES_STUN | RES_HALLU
+F:SLOW_DIGEST | LIGHT | REGEN | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_SHIELD
+
+N:194:'Ultimate'
+I:34:0:0
+F:STR | CON | NEG_STR | NEG_CON
+F:WILL | CHEAT_DEATH | DAMAGE_SIDES
+F:SUST_STR | SUST_DEX | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN
+F:LIGHT | REGEN | FREE_ACT
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_HELM
+
+N:195:'Ultimate'
+I:32:0:0
+F:STR | CON | GRA | NEG_STR | NEG_CON | NEG_GRA
+F:PERCEPTION | WILL | SONG
+F:SUST_STR | SUST_CON | SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:LIGHT | REGEN | SEE_INVIS
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_CROWN
+
+N:196:'Ultimate'
+I:33:0:0
+F:GRA | NEG_GRA
+F:PERCEPTION | WILL | SONG
+F:SUST_GRA
+F:RES_FIRE | RES_COLD | RES_POIS
+F:RES_FEAR | RES_BLIND | RES_CONFU | RES_STUN | RES_HALLU
+F:LIGHT | REGEN | SEE_INVIS
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_GLOVES
+
+N:197:'Ultimate'
+I:31:0:0
+F:STR | DEX | NEG_STR | NEG_DEX
+F:ARCHERY | MEDIC
+F:REGEN | RES_BLEED
+F:SUST_STR | SUST_DEX
+F:FREE_ACT | RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:HUNGER | DANGER | AGGRAVATE | LIGHT_CURSE | DARKNESS
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+F:INSTA_ART
+
+
+## The Ultimate TV_BOOTS
+
+N:198:'Ultimate'
+I:30:0:0
+F:DEX | NEG_DEX
+F:STEALTH | STAND_FAST
+F:SUST_DEX | RADIANCE
+F:RES_FIRE | RES_COLD | RES_POIS | RES_BLEED
+F:RES_FEAR | RES_CONFU | REGEN
+F:FREE_ACT | SPEED | AVOID_TRAPS
+F:HUNGER | DARKNESS | DANGER | AGGRAVATE | LIGHT_CURSE
+F:HAUNTED | FEAR | VUL_FIRE | VUL_COLD | VUL_POIS
+
+#################################################################
+# NEW ARTIFACT ADDITIONS - The Necromancer
+# Indices 200-230
+#################################################################
+
+
+## The Lamp of the Noldor
+## High Elven craft - everlasting light
+
+N:199:of the Noldor
+G:~:B
+I:39:8:2
+W:12:15:10:8000
+P:0:0d0:0:0d0
+F:PERCEPTION | LIGHT
+F:INSTA_ART
+D:A lamp of the High Elves, wrought in the style of Feanor's
+D: folk though made in later days. It shines with a steady
+D: light that never fades and reveals hidden things.
+
+
+## The Palantír of Dol Guldur
+## Third Age - Sauron's seeing-stone
+## CURSED
+
+N:200:'Palantír'
+G:*:D
+I:39:2:4
+W:20:30:20:100000
+P:0:0d0:0:0d0
+F:SEE_INVIS | PERCEPTION | WILL
+F:DANGER | AGGRAVATE | LIGHT_CURSE
+F:INSTA_ART
+D:One of the Seven Seeing-stones of Numenor. Sauron has
+D: corrupted this one to his purposes. To look into it is
+D: to risk drawing the Eye upon yourself, yet the knowledge
+D: it offers is beyond price.
+
+
+## The Torch of Mordor
+## Third Age - Orc-make
+## CURSED
+
+N:201:of Mordor
+G:~:r
+I:39:0:0
+W:8:10:20:500
+P:0:0d0:0:0d0
+F:RES_FIRE | LIGHT
+F:AGGRAVATE | LIGHT_CURSE
+F:INSTA_ART
+D:A torch of Mordor-make that burns with a sullen red flame
+D: and never goes out. Its light draws the attention of
+D: servants of the Enemy.
+
+
+## The Elendilmir
+## Third Age - Star of the North Kingdom
+
+N:202:'Elendilmir'
+G:*:w
+I:39:2:3
+W:16:20:1:50000
+P:0:0d0:0:0d0
+F:WILL | GRA | LIGHT | RES_FEAR
+F:INSTA_ART
+D:The Star of Elendil, a white gem bound upon the brow of
+D: the Kings of Arnor. It shines with a clear light that
+D: gives courage to the faithful and dismays the servants
+D: of darkness.
+
+
+## The Shadow Cloak of Mordor
+## Third Age - Dark artifact
+## CURSED
+
+N:203:of Mordor
+G:(:D
+I:35:6:3
+W:14:15:10:25000
+P:0:0d0:3:1d0
+F:STEALTH | DARKNESS | SEE_INVIS
+F:HUNGER | LIGHT_CURSE
+D:A cloak woven from shadow itself in the pits of Mordor.
+D: It hides the wearer from sight but feeds on their
+D: life force, and the darkness seeps into their soul.
+
+
+## The Mantle of Stars
+## Third Age - Lothlórien masterwork
+
+N:204:'Mantle of Stars'
+G:(:B
+I:35:1:2
+W:18:25:15:60000
+P:0:0d0:2:1d0
+F:STEALTH | GRA | LIGHT | FREE_ACT
+D:A cloak of deepest blue sewn with gems that gleam like
+D: stars. It is the finest work of the weavers of Lothlórien,
+D: and those who wear it walk with the grace of the Eldar.
+
+
+## The Corslet of Erebor
+## Third Age - Dwarven mail
+
+N:205:of Erebor
+I:37:4:1
+W:10:15:280:80000
+P:-1:0d0:-3:2d5
+F:STR | RES_FIRE | SUST_STR
+D:A corslet of dwarf-mail from Erebor, forged before
+D: Smaug came. It turns aside flame and grants the
+D: wearer something of dwarven endurance.
+
+
+## The Iron Helm of Durin
+## Third Age - Dwarven heirloom
+
+N:206:of Durin
+I:32:6:2
+W:14:20:80:45000
+P:0:0d0:-2:1d4
+F:WILL | RES_FEAR | CON | SUST_CON
+D:A helm of the line of Durin, wrought in Khazad-dum
+D: in days of glory. It grants the stubborn courage
+D: of the dwarves and protects against fear.
+
+
+## The Crown of the Smith
+## Third Age - Masterwork
+
+N:207:'Crown of the Smith'
+G:]:y
+I:32:6:3
+W:20:30:70:100000
+P:0:0d0:-2:1d4
+F:WILL | RES_FIRE | FREE_ACT
+F:SUST_STR | SUST_DEX
+D:A crown forged by a master smith, set with gems of
+D: their own cutting. It is the mark of one who has
+D: achieved true mastery of the forge.
+
+
+## The Gauntlets of Erebor
+## Third Age - Dwarven
+
+N:208:of Erebor
+I:31:2:1
+W:12:15:50:50000
+P:0:0d0:-1:1d2
+F:STR | RES_FIRE | SUST_STR
+D:Heavy gauntlets of Erebor-make, forged for smithing
+D: and war alike. They grant strength to the wearer
+D: and protect against fire.
+
+
+## The Gloves of Shadow
+## Third Age - Dark artifact
+## CURSED
+
+N:209:of Shadow
+I:31:1:2
+W:10:15:5:30000
+P:0:0d0:0:1d0
+F:STEALTH | SEE_INVIS | DARKNESS
+F:HUNGER | LIGHT_CURSE
+D:Gloves of black silk that seem to drink in light.
+D: They grant stealth and the ability to see hidden
+D: things, but at a cost to the wearer's vitality.
+
+
+## The Traveler's Boots of Lothlórien
+## Third Age - Elven craft
+
+N:210:of Lothlórien
+I:30:1:1
+W:10:15:15:30000
+P:0:0d0:1:1d1
+F:GRA | FREE_ACT | STEALTH
+D:Boots of elven make from the Golden Wood. They are
+D: light as leaves and make no sound upon stone or
+D: twig. Those who wear them move with elven grace.
+
+
+## The Longsword 'Hadhafang'
+## Third Age - Elrond's blade
+
+N:211:'Hadhafang'
+I:23:17:1
+W:12:15:30:35000
+P:1:2d5:2:0d0
+F:SLAY_ORC | SLAY_TROLL | FREE_ACT | PERCEPTION
+D:An Elven blade of Rivendell, its name meaning
+D: "Throng-cleaver." It has been wielded by the lords
+D: of that house against many foes.
+
+
+## The Ranger's Knife 'Noldorin Knife'
+## Third Age - High Elven blade
+
+N:212:'Noldorin Knife'
+I:23:4:1
+W:8:15:5:20000
+P:1:1d6:0:0d0
+F:SHARPNESS | SEE_INVIS | LIGHT
+F:THROWING
+D:A knife of the High Elves, its edge never dulls
+D: and its blade reveals things hidden from mortal
+D: sight. It gleams with pale light.
+
+
+## The Dwarven War-axe of Erebor
+## Third Age - Dwarven
+
+N:213:of Erebor
+I:22:12:1
+W:10:15:55:40000
+P:-2:3d5:0:0d0
+F:STR | SLAY_ORC | RES_FIRE
+D:A battle axe forged in Erebor before the dragon came.
+D: It is heavy and keen, and grants strength to cleave
+D: through orcish armor.
+
+
+## The Dwarven Hammer 'Hammer of the Longbeards'
+## Third Age - Dwarven masterwork
+
+N:214:'Hammer of the Longbeards'
+I:21:8:2
+W:18:25:60:80000
+P:-1:4d3:0:0d0
+F:STR | CON | SLAY_ORC | SLAY_TROLL
+F:RES_FIRE | SUST_STR
+D:A mighty hammer of Durin's Folk, made for both the
+D: forge and the battlefield. Its weight is terrible
+D: and its blows shatter stone and bone alike.
+
+
+## The Longbow of Mirkwood
+## Third Age - Wood-elf craft
+
+N:215:of Mirkwood
+I:19:13:1
+W:10:12:25:25000
+P:1:2d5:0:0d0
+F:STEALTH | SLAY_SPIDER | RES_POIS
+D:A bow of the Wood-elves of Mirkwood, made for
+D: hunting the great spiders. Its arrows fly true
+D: in the shadows beneath the trees.
+
+
+## The Longbow 'Black Bow of Mordor'
+## Third Age - Orc-make
+## CURSED
+
+N:216:'Black Bow of Mordor'
+G:}:D
+I:19:13:0
+W:12:15:35:20000
+P:2:2d6:0:0d0
+F:ACCURATE | DARKNESS
+F:AGGRAVATE | LIGHT_CURSE
+D:A great bow of Mordor-make, black as night and
+D: terribly accurate. It draws the attention of
+D: the Enemy's servants but strikes with deadly force.
+
+
+## The Longbow 'Bow of the Last Alliance'
+## Second Age - Legendary
+
+N:217:'Bow of the Last Alliance'
+G:}:w
+I:19:13:2
+W:18:25:35:60000
+P:2:2d7:0:0d0
+F:SLAY_ORC | SLAY_TROLL | LIGHT | RES_FEAR
+D:A great bow that saw service at the Battle of
+D: Dagorlad, where Elves and Men stood together
+D: against Sauron. It gleams with remembered glory.
+
+
+## The Ring of the Noldor
+## Third Age - Elven ring (not of Power)
+
+N:218:of the Noldor
+I:45:30:2
+W:12:20:1:30000
+P:0:0d0:0:0d0
+F:GRA | SEE_INVIS | SUST_GRA
+F:INSTA_ART
+D:A ring of the High Elves, wrought with great skill
+D: but not with the arts of Power. It grants clarity
+D: of sight and steadiness of spirit.
+
+
+## The Ring of Mastery
+## Third Age - Masterwork
+
+N:219:'Ring of Mastery'
+I:45:30:2
+W:20:30:1:100000
+P:0:0d0:0:0d0
+F:STR | DEX | CON | GRA
+F:INSTA_ART
+D:A ring forged by a master of the craft, set with
+D: four gems representing the cardinal virtues.
+D: It grants balance and strength in all things.
+
+
+## The Amulet of the Istari
+## Third Age - Wizard's focus
+
+N:220:of the Istari
+I:40:10:2
+W:14:20:1:40000
+P:0:0d0:0:0d0
+F:WILL | PERCEPTION | RES_FEAR
+F:INSTA_ART
+D:An amulet of the Wizards, a focus for their power.
+D: It sharpens the mind and strengthens the will
+D: against the deceits of the Enemy.
+
+
+## The Black Necklace of Morgul
+## Third Age - Dark artifact
+## CURSED
+
+N:221:'Black Necklace'
+I:40:12:2
+W:12:15:1:25000
+P:0:0d0:0:0d0
+F:STR | VAMPIRIC | DARKNESS
+F:HUNGER | DANGER | LIGHT_CURSE
+F:INSTA_ART
+D:A necklace of black iron forged in Minas Morgul.
+D: It grants fell strength and drinks the life of
+D: those you strike, but it slowly devours its wearer.
+
+
+## The Star of the North
+## Third Age - Dúnedain heirloom
+
+N:222:'Star of the North'
+I:40:16:3
+W:18:25:1:70000
+P:0:0d0:0:0d0
+F:WILL | GRA | LIGHT | RES_FEAR | RES_COLD
+F:INSTA_ART
+D:A jewel of the Dúnedain, a lesser echo of the
+D: Elendilmir. It shines with cold clear light
+D: and gives courage against the terrors of darkness.
+
+
+#################################################################
+# END OF ADDITIONS
+#################################################################

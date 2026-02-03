@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://dm3kp7x2n8q1f"]
+
+[ext_resource type="Script" path="res://scripts/entities/monster.gd" id="1_monster"]
+
+[node name="Monster" type="Node2D"]
+script = ExtResource("1_monster")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(32, 32)

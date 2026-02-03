@@ -1,0 +1,2899 @@
+# File: object.txt
+#
+# This file is used to create the 'lib/data/object.raw;' file, which is
+# used to initialize the 'Object Kind' information for Sil.
+#
+# Do not modify this file unless you know exactly what you are doing,
+# unless you wish to risk possible system crashes and broken savefiles.
+#
+#
+# === Understanding object.txt ===
+#
+# N: serial number : & object name~
+# G: symbol : color
+# I: tval : sval : pval
+# W: depth : rarity : weight : cost
+# P: plus to-hit : damage dice : plus to-evasion : protection dice
+# A: depth/rarity : depth/rarity : etc
+# F: flag | flag | etc
+# D: description
+#
+# 'N' indicates the beginning of an entry. The serial number must
+#     increase for each new item. The '&' and '~' symbols are use to
+#     include articles and pluralization as necessary to ensure
+#     grammatical correctness in object descriptions.
+#
+# 'G' is for graphics - symbol and color. There are 15 colors, as
+#     follows:
+#
+#     D - Dark Gray    w - White          s - Gray          o - Orange
+#     r - Red          g - Green          b - Blue          u - Brown
+#     W - Light Gray   v - Violet         y - Yellow        R - Light Red
+#     G - Light Green  B - Light Blue     U - Light Brown
+#     d - 'flavoured' items
+#
+# 'I' is for basic information. The tval is for the type of item, the
+#     sval identifies the subtype and the pval indicates the amount of
+#     effect the item has, if applicable (a fixed value: variable pvals
+#     are currently hard-coded.) 
+#
+# 'W' is for extra information. Depth is the depth the object is normally
+#     found at (and defines what 'level' the object is, when determining how easy 
+#     it is to use a wand, staff or rod, rarity determines how common the object
+#     is (currently unused, thanks to the A: allocation lines), weight is in
+#     tenth-pounds and cost is the item's base value.
+#
+# 'P' is for power information. The item's bonuses to attack and evasion
+#     as well as its damage and protection dice. Note that adding damage dice to
+#     armor won't aid your attacks, it will just set the damage done when it is thrown.
+#
+# 'A' is for allocation - depth and rarity, in pairs. This allows an
+#     item to have multiple natural depths and rarities. It is used to
+#     ensure that certain vital items such as food and identify scrolls
+#     are found throughout the dungeon. The 'allocation' depth need not
+#     match the depth as specified in the 'W:' line.
+#
+# 'F' is for flags. These are fairly self-explanatory. As many F:
+#     lines may be used as are needed to specify all the flags and flags
+#     are separated by the '|' symbol.
+#
+# 'D' is for description. As many D: lines may be used as are needed
+#     to describe the object. Note that lines will need spaces at their
+#     ends or the beginning of the next line to prevent words from running
+#     together.
+
+
+# Version stamp (required)
+
+V:1.5.0
+
+
+##### Non-kind (contains the 'pile' picture) #####
+
+N:0:<pile>
+G:&:w
+
+
+
+##### The 'Special Artifacts' #####
+#
+# These objects do not specify 'full names' because the artifact name
+# is added in 'obj-desc.c' based on the artifact index ('i_ptr->name1').
+#
+# These objects do specify a 'base name, which is used when the object
+# is 'aware' (always true for lites)
+#
+# They specify 'physical colors', which
+# over-ride the 'flavor' colors, if any. 
+#
+# Note that ALL artifacts are given 'IGNORE_ALL',
+# so we do not need to specify that here.
+#
+# Note that the 'INSTA_ART' flag is used to prevent these objects from
+# being created without also turning them into artifacts.  This flag
+# must be specified both here and in the artifact template.
+#
+# The reason for having multiple 'ring' and
+# 'amulet' templates is to allow each 'special artifact' to
+# have a different 'color' and 'flavor', and also to allow the use of
+# special 'base names' (such as 'Necklace').
+
+
+# The Ring of Barahir
+#
+# The word 'Serpentine' should be just a flavor,
+# but I can get it to work like that yet.
+# Putting it here works almost as well.
+
+N:1:& Serpentine Ring~
+G:=:g1
+I:45:32:0
+W:1:0:1:65000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Ring of Melian
+
+N:2:& Ring~
+G:=:D
+I:45:30:0
+W:1:0:1:65000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Amulet of Tinfang Gelion
+
+N:3:& Amulet~
+G:":D
+I:40:10:0
+W:1:0:1:65000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Pearl 'Nimphelos'
+
+N:4:& Pearl~
+G:":w
+I:40:13:1
+W:1:0:1:100000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Jewel 'Elessar'
+
+N:5:& Jewel~
+G:":g
+I:40:16:1
+W:1:0:1:50000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Necklace of the Dwarves
+
+N:6:& Necklace~
+G:":y
+I:40:12:1
+W:1:0:1:75000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+# Melkor artifacts
+
+# The Ring of Mairon
+
+N:7:& Ring~
+G:=:D
+I:45:31:0
+W:1:0:1:1000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+# A base ring for self-made artifacts
+
+N:10:& Ring~
+G:=:W
+I:45:40:0
+W:1:0:1:1000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# A base amulet for self-made artifacts
+
+N:11:& Amulet~
+G:":W
+I:40:40:0
+W:1:0:1:1000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+# The Mighty Hammer 'Grond'
+
+N:19:& Mighty Hammer~
+G:\:D
+I:21:50:0
+W:20:0:1000:1000
+P:-7:6d5:0:0d0
+F:INSTA_ART | TWO_HANDED
+
+
+# The Massive Iron Crown of Morgoth
+
+N:20:& Massive Iron Crown~
+G:]:D
+I:33:50:0
+W:20:0:4000:1000
+P:0:0d0:0:0d0
+F:INSTA_ART
+
+
+##### The Normal Item Types #####
+
+N:21:& Elven Light~
+G:*:B
+I:39:2:0
+W:3:20:1:1000
+P:0:0d0:0:0d0:0
+A:3/20
+D:A small crystal that glows with inner light. The elves craft these as gifts.
+D: You can equip it as a light source with a radius of 1 square.
+D: It will shine forever.
+
+##### Armor #####
+
+N:22:& Wanderer's Robe~
+G:(:b
+I:36:2:0
+W:1:0:30:4
+P:0:0d0:1:1d0
+A:5/3:10/10
+F:ENCHANTABLE
+D:A simple robe worn by travelers. It offers little protection but doesn't hinder movement.
+
+
+N:23:Ranger Leathers~
+G:(:U
+I:36:4:0
+W:1:0:70:18
+P:0:0d0:-1:1d4
+A:1/2
+D:Supple leather armor favored by the Rangers of the North. Quiet and flexible.
+
+
+N:26:Scout's Armor~
+G:(:U1
+I:36:7:0
+W:2:0:130:200
+P:0:0d0:-2:1d6
+A:2/2
+D:Leather armor reinforced with metal studs. Favored by scouts and skirmishers.
+
+
+N:27:Shadow-steel Armor~
+G:(:D
+I:36:11:0
+W:17:0:70:200
+P:0:0d0:-1:1d8
+A:17/20:22/4
+F:IGNORE_ALL | NO_SMITHING
+D:Armor forged of a strange black metal, supple as leather but strong as mail. Its origins are dark.
+
+
+N:30:& Gondor Corslet~
+G:[:W
+I:37:4:0
+W:5:0:270:750
+P:-1:0d0:-3:2d4
+A:5/2:12/1:20/1
+D:A mail shirt of Gondorian make, covering from shoulder to waist.
+
+
+N:31:& Dwarven Hauberk~
+G:[:s1
+I:37:6:0
+W:7:0:350:900
+P:-2:0d0:-4:2d5
+A:7/3:17/2
+D:A long mail shirt of dwarven craft, protecting from neck to knee.
+
+
+N:38:& Mithril Corslet~
+G:[:B
+I:37:20:0
+W:7:0:150:7000
+P:0:0d0:-2:2d4
+A:7/80:15/10
+F:IGNORE_ALL | MITHRIL
+D:A shirt of armour formed from linked rings.
+
+
+#### Skeletons ####
+
+
+N:40:& Orc Skeleton~
+G:~:w
+I:3:0:0
+W:1:1:130:0
+P:0:0d0:0:0d0
+A:1/1
+F:EASY_KNOW
+
+
+N:41:& Human Skeleton~
+G:~:w
+I:3:1:0
+W:8:5:120:0
+P:0:0d0:0:0d0
+A:3/3:6/3
+F:EASY_KNOW
+
+
+N:42:& Elf Skeleton~
+G:~:w
+I:3:2:0
+W:10:5:110:0
+P:0:0d0:0:0d0
+A:9/3:12/3
+F:EASY_KNOW
+
+
+##### Shields #####
+
+N:43:& Buckler~
+G:):s
+I:34:3:0
+W:3:0:50:50
+P:0:0d0:0:1d3
+A:3/2
+D:A small round shield, easy to maneuver but offering limited coverage.
+
+
+N:44:& Tower Shield~
+G:):W
+I:34:5:0
+W:6:0:80:200
+P:-2:0d0:0:1d6
+A:6/1
+D:A tall shield that covers from shoulder to knee. Favored by the Tower Guard.
+
+
+N:46:& Mithril Shield~
+G:):B
+I:34:10:0
+W:8:0:40:10000
+P:-1:0d0:0:1d6
+A:8/80:14/10
+F:IGNORE_ALL | MITHRIL
+
+
+
+
+##### Edged Weapons #####
+
+N:56:& Ranger's Knife~
+G:|:w
+I:23:4:0
+W:1:0:5:10
+P:0:1d5:0:0d0
+A:1/1:10/1
+F:THROWING | MORE_SPECIAL
+D:A keen blade favored by the Dúnedain. Light enough to throw, sharp enough to kill.
+
+
+N:57:& Orc-blade~
+G:|:s
+I:23:7:0
+W:2:0:40:10
+P:-1:2d5:1:0d0
+A:2/2
+D:A crude scimitar forged in the shadow of Dol Guldur. The edge is notched but hungry.
+
+
+N:60:& Woodland Blade~
+G:|:w
+I:23:10:0
+W:1:0:20:90
+P:0:1d7:1:0d0
+A:1/1:12/1
+D:A short blade of elven make, favored by the wood-elves for its balance.
+
+
+N:64:& Longsword~
+G:|:W
+I:23:17:0
+W:4:0:30:300
+P:0:2d5:1:0d0
+A:4/1:14/1
+
+
+N:67:& Rohirrim Blade~
+G:|:W
+I:23:21:0
+W:6:0:40:350
+P:-2:3d3:1:0d0
+A:6/2:14/2
+F:HAND_AND_A_HALF
+D:A long sword in the style of the Riddermark. It can be wielded with one or two hands.
+
+
+N:68:& Númenórean Blade~
+G:|:W
+I:23:25:0
+W:4:0:60:775
+P:-2:3d5:1:0d0
+A:4/1:14/1
+F:TWO_HANDED
+D:A greatsword of ancient design, forged in the style of Westernesse. It requires two hands to wield.
+
+
+N:69:& Mithril Sword~
+G:|:B
+I:23:28:0
+W:5:0:20:5000
+P:1:2d5:1:0d0
+A:5/80:14/10
+F:IGNORE_ALL | MITHRIL
+D:A longsword forged of true-silver. Light as a feather, hard as dragon-scale.
+
+
+N:70:& Mithril Great-blade~
+G:|:B
+I:23:30:0
+W:6:0:40:7000
+P:-2:3d6:1:0d0
+A:6/80:16/15
+F:IGNORE_ALL | TWO_HANDED | MITHRIL
+D:A massive two-handed sword of mithril. Despite its size, it is remarkably light.
+
+
+##### Axes & Polearms #####
+
+N:71:& Hunting Spear~
+G:/:U
+I:22:1:0
+W:1:0:30:36
+P:0:1d9:0:0d0
+A:1/1:10/4
+F:THROWING | HAND_AND_A_HALF | POLEARM
+D:A simple spear used for hunting game. It serves well enough against darker prey.
+
+
+N:72:& Tower Guard Spear~
+G:/:u
+I:22:2:0
+W:4:0:60:36
+P:1:1d13:1:0d0
+A:4/2:12/4
+F:TWO_HANDED | POLEARM
+D:A tall spear of Gondorian make, used by the Tower Guard in formal ceremonies and battle.
+
+
+N:74:& Morgul Glaive~
+G:/:s
+I:22:4:0
+W:8:0:70:363
+P:-1:2d9:1:0d0
+A:8/2:16/2
+F:TWO_HANDED | POLEARM
+D:A wicked polearm touched by shadow. The blade seems to drink the light.
+
+
+N:76:& Woodsman's Axe~
+G:/:s
+I:22:11:0
+W:2:0:10:150
+P:-1:4d2:0:0d0
+A:2/4
+F:AXE
+D:A small axe meant for chopping wood, but deadly when thrown.
+
+
+N:77:& Dwarven War-axe~
+G:/:s
+I:22:12:0
+W:4:0:45:304
+P:-3:3d4:0:0d0
+A:4/1:10/1
+F:HAND_AND_A_HALF | AXE
+D:A heavy axe of dwarven craft. The runes on its head are worn but still sharp.
+
+
+N:81:& Erebor Great-axe~
+G:/:s
+I:22:13:0
+W:8:0:80:334
+P:-4:4d4:0:0d0
+A:8/2:15/1
+F:TWO_HANDED | AXE
+D:A massive axe forged in the halls of Erebor. It requires both hands to wield.
+
+
+##### Blunt Weapons #####
+
+
+N:86:& Oak Staff~
+G:\:U
+I:21:3:0
+W:1:0:50:200
+P:0:2d5:2:0d0
+A:1/4
+F:TWO_HANDED | ENCHANTABLE | MORE_SPECIAL
+D:A sturdy staff of aged oak. Simple but effective.
+
+
+N:89:& Dwarven Hammer~
+G:\:D1
+I:21:8:0
+W:6:0:50:225
+P:-2:4d1:0:0d0
+A:4/3
+F:HAND_AND_A_HALF
+D:A heavy hammer of dwarven make. Good for cracking skulls and ore alike.
+
+
+##### Digging Tools #####
+
+
+N:96:& Miner's Spade~
+G:\:s
+I:20:1:1
+W:5:0:50:10
+P:-3:2d2:0:0d0
+A:5/3:12/3
+F:TUNNEL | TWO_HANDED
+D:A sturdy digging tool. It can also bash skulls in a pinch.
+
+
+# Mattocks are canonically used as weapons by the dwarves
+
+N:98:& Dwarf Mattock~
+G:\:D
+I:20:3:2
+W:10:0:100:700
+P:-5:5d2:0:0d0
+A:10/3
+F:TUNNEL | TWO_HANDED
+D:A heavy pick used by dwarven miners. Excellent for breaking through rock and armor.
+
+
+
+##### Helms #####
+
+
+N:100:& Iron Helm~
+G:]:s1
+I:32:5:0
+W:3:0:50:75
+P:0:0d0:-1:1d2
+A:3/1
+D:A simple iron helm. It protects the head at the cost of peripheral vision.
+
+
+N:101:& Tower Helm~
+G:]:W
+I:32:6:0
+W:5:0:80:200
+P:0:0d0:-2:1d3
+A:5/1
+D:A tall helm in the style of the Tower Guard. It bears a small silver star.
+
+
+N:102:& Dwarf Mask~
+G:]:s
+I:32:7:0
+W:10:0:80:300
+P:0:0d0:-2:1d2
+A:10/8:16/8
+F:RES_FIRE
+D:A full faced helm, wrought in a fearsome visage.
+
+
+N:103:& Mithril Helm~
+G:]:B
+I:32:8:0
+W:7:0:35:500
+P:0:0d0:-1:1d3
+A:7/80:12/10
+F:IGNORE_ALL | MITHRIL
+
+
+N:104:& Crown~
+G:]:y
+I:33:11:0
+W:7:0:30:1000
+P:0:0d0:0:1d0
+F:INSTA_ART
+
+
+##### Cloaks #####
+
+N:106:& Traveler's Cloak~
+G:(:g
+I:35:1:0
+W:2:0:20:3
+P:0:0d0:1:1d0
+A:2/2:10/1
+D:A weathered cloak that keeps off rain and wind. It helps you blend into shadows.
+
+
+N:107:& Shadow Cloak~
+G:(:D
+I:35:6:2
+W:12:0:10:4000
+P:0:0d0:3:1d0
+A:12/3
+F:DARKNESS | STEALTH
+
+
+N:108:& Wolf-Hame~
+G:(:W
+I:35:20:0
+W:20:0:130:1000
+P:-3:0d0:-3:1d6
+F:INSTA_ART
+
+
+N:109:& Bat-Fell~
+G:(:D1
+I:35:21:0
+W:23:0:50:1000
+P:-1:0d0:+2:0d0
+F:INSTA_ART
+
+
+##### Bows #####
+
+N:110:& Silvan Bow~
+G:}:u
+I:19:12:0
+W:1:0:15:50
+P:0:1d7:0:0d0
+A:1/1:11/1
+D:A light bow of wood-elf make. Quick to draw and accurate.
+
+
+N:111:& Longbow~
+G:}:U
+I:19:13:0
+W:6:0:30:120
+P:0:2d4:0:0d0
+A:6/3:16/3
+
+
+# Modelled on Earendil's bow
+
+N:112:& Dragon-horn Bow~
+G:}:U1
+I:19:14:0
+W:15:0:45:500
+P:0:4d2:0:0d0
+A:15/6
+F:NO_SMITHING
+
+
+##### Arrows #####
+
+N:116:& Arrow~
+G:-:U
+I:17:1:0
+W:1:0:1:1
+P:0:0d0:0:0d0
+A:2/1:6/1:11/1:17/1
+
+
+##### Boots #####
+
+N:122:& Traveler's Boots~
+G:]:U
+I:30:1:0
+W:1:0:20:7
+P:0:0d0:0:1d1
+A:1/2:10/1
+D:Sturdy boots for long roads. They've seen many leagues.
+
+
+N:123:& Iron Greaves~
+G:]:s
+I:30:2:0
+W:4:0:80:19
+P:0:0d0:-1:1d2
+A:4/1:15/1
+F:IGNORE_FIRE
+D:Metal plates that protect the lower legs. Heavy but effective.
+
+
+N:124:& Pair~ of Mithril Greaves
+G:]:B
+I:30:3:0
+W:6:0:40:50
+P:0:0d0:0:1d2
+A:6/80:12/10
+F:IGNORE_ALL | MITHRIL
+
+
+##### Gloves #####
+
+N:125:& Leather Gloves~
+G:]:U
+I:31:1:0
+W:1:0:5:3
+P:0:0d0:0:1d0
+A:1/4:10/2
+D:Simple gloves of tanned leather. They protect the hands without hindering dexterity.
+
+
+N:126:& Iron Gauntlets~
+G:]:W
+I:31:2:0
+W:3:0:30:35
+P:-1:0d0:0:1d1
+A:3/1:11/1
+F:IGNORE_FIRE
+D:Heavy metal gloves that protect the hands in combat.
+
+
+N:127:& Set~ of Mithril Gauntlets
+G:]:B
+I:31:3:0
+W:5:0:15:100
+P:0:0d0:0:1d1
+A:5/80:12/10
+F:IGNORE_ALL | MITHRIL
+
+
+##### Light Sources #####
+
+N:128:& Wooden Torch~
+G:~:u
+I:39:0:0
+W:1:0:20:2
+P:0:0d0:0:0d0:0
+A:1/1:3/1
+F:NO_SMITHING | EASY_KNOW
+D:You can equip it as a light source with a radius of 1 square.
+D: It may also be used to fuel another wooden torch, up to a
+D: maximum of 3,000 turns of light.
+
+
+N:129:& Brass Lantern~
+G:~:U
+I:39:1:0
+W:5:0:30:35
+P:0:0d0:0:0d0:0
+A:5/2:9/1:13/1
+D:You can equip it as a light source with a radius of 2 squares.
+D: It may also be used to fuel another lantern, up to a maximum of
+D: 7,000 turns of light.
+
+
+# Lesser Jewel is at index 21
+
+# Mallorn Torch is at index 411
+
+N:130:& Jewel-lamp~
+G:~:B
+I:39:8:0
+W:12:0:10:1000
+P:0:0d0:0:0d0:0
+A:12/8:18/4
+F:MITHRIL
+D:A crystal lamp that shines with captured starlight. It never dims or goes out.
+D: You can equip it as a light source with a radius of 4 squares.
+D: It will shine forever.
+
+
+N:131:& Star-glass~
+G:*:w
+I:39:9:0
+W:25:0:1:100000
+P:0:0d0:0:0d0
+F:SEE_INVIS | SUST_GRA | EASY_KNOW
+F:IGNORE_ALL | NO_SMITHING
+D:A crystal phial filled with the light of Earendil's star, blessed
+D: by the Lady of Lothlórien. You can equip it as a light source with
+D: a radius of 7 squares. It will shine forever.
+
+##### Amulets #####
+
+
+N:132:Last Chances
+G:":d
+I:40:0:0
+W:7:0:1:20
+P:0:0d0:0:0d0
+A:12/40
+F:CHEAT_DEATH | EASY_KNOW
+
+
+N:133:Constitution
+G:":d
+I:40:1:0
+W:8:0:1:500
+P:0:0d0:0:0d0
+A:8/5
+F:CON | SUST_CON
+
+
+N:134:Grace
+G:":d
+I:40:2:0
+W:10:0:1:500
+P:0:0d0:0:0d0
+A:10/5
+F:GRA | SUST_GRA
+
+
+N:135:Regeneration
+G:":d
+I:40:3:0
+W:12:0:1:600
+P:0:0d0:0:0d0
+A:8/3
+F:REGEN | EASY_KNOW
+
+
+N:136:Preservation
+G:":d
+I:40:4:0
+W:14:0:1:20000
+P:0:0d0:0:0d0
+A:6/3
+F:SUST_CON
+F:SUST_GRA | SLOW_DIGEST | IGNORE_ALL
+F:EASY_KNOW
+
+
+N:137:the Blessed Realm
+G:":d
+I:40:5:0
+W:16:0:1:30000
+P:0:0d0:0:0d0
+A:16/6
+F:GRA | SUST_GRA | LIGHT
+
+
+N:138:Haunted Dreams
+G:":d
+I:40:6:0
+W:9:0:1:0
+P:0:0d0:0:0d0
+A:9/3
+F:HAUNTED | SEE_INVIS | EASY_KNOW
+
+
+# (ability 4/2 is Keen Senses)
+N:139:the Vigilant Eye
+G:":d
+I:40:7:0
+W:4:0:1:0
+P:0:0d0:0:0d0
+A:10/20
+F:PERCEPTION | RES_HALLU
+B:4/2
+
+##### Rings #####
+
+# (ability 4/4 is Alchemy)
+N:150:Secrets
+G:=:d
+I:45:0:0
+W:15:0:1:500
+P:0:0d0:0:0d0
+A:15/30
+F:PERCEPTION
+B:4/4
+
+
+N:151:Ered Luin
+G:=:d
+I:45:1:0
+W:8:0:1:150
+P:0:0d0:0:0d0
+A:8/10
+F:WILL | RES_FEAR | RES_CONFU
+
+
+N:152:Evasion
+G:=:d
+I:45:2:0
+W:8:0:1:500
+P:0:0d0:0:0d0
+A:8/15
+D:It helps you avoid your enemies' blows. 
+
+
+N:153:Protection
+G:=:d
+I:45:3:0
+W:7:0:1:500
+P:0:0d0:0:0d0
+A:7/4
+D:It provides protection from damage. 
+
+
+N:154:Strength
+G:=:d
+I:45:4:0
+W:9:0:1:500
+P:0:0d0:0:0d0
+A:9/25
+F:STR | SUST_STR
+
+
+N:155:Dexterity
+G:=:d
+I:45:5:0
+W:10:0:1:500
+P:0:0d0:0:0d0
+A:10/25
+F:DEX | SUST_DEX
+
+
+N:156:Frost
+G:=:d
+I:45:6:0
+W:9:0:1:250
+P:0:0d0:0:0d0
+A:9/3
+F:RES_FIRE | EASY_KNOW
+
+
+N:157:Warmth
+G:=:d
+I:45:7:0
+W:10:0:1:250
+P:0:0d0:0:0d0
+A:10/3
+F:RES_COLD | EASY_KNOW
+
+
+N:158:Accuracy
+G:=:d
+I:45:8:0
+W:12:0:1:500
+P:0:0d0:0:0d0
+A:12/15
+D:It helps you hit your opponents. 
+
+
+N:159:Free Action
+G:=:d
+I:45:9:0
+W:12:0:1:1500
+P:0:0d0:0:0d0
+A:12/3
+F:FREE_ACT | EASY_KNOW
+
+
+# (ability 2/0 is Dodging)
+N:160:Cowardice
+G:=:d
+I:45:10:0
+W:7:0:1:0
+P:0:0d0:0:0d0
+A:7/6
+F:FEAR | EASY_KNOW | LIGHT_CURSE
+B:2/0
+
+
+N:161:the Shadow's Vanguard
+G:=:d
+I:45:11:0
+W:6:0:1:300
+P:0:0d0:0:0d0
+A:6/2
+F:RES_STUN | SUST_STR | HUNGER | EASY_KNOW
+
+
+N:162:Venom's End
+G:=:d
+I:45:12:0
+W:6:0:1:1000
+P:0:0d0:0:0d0
+A:6/4
+F:RES_POIS | EASY_KNOW
+
+
+##
+
+
+N:171:the Laiquendi
+G:=:d
+I:45:21:0
+W:8:0:1:1000
+P:0:0d0:0:0d0
+A:8/20
+F:STEALTH | ARCHERY | EASY_KNOW
+
+
+#N:172:Wrath
+#G:=:d
+#I:45:22:0
+#W:10:0:1:0
+#P:0:0d0:0:0d0
+#A:10/2
+#F:AGGRAVATE | EASY_KNOW
+
+
+
+##### Staves #####
+
+
+N:191:Imprisonment
+G:_:d
+I:55:1:0
+W:6:0:50:400
+P:0:0d0:0:0d0
+A:5/3
+D:It may shut and lock all doors in line of sight.
+
+
+N:192:Freedom
+G:_:d
+I:55:2:0
+W:9:0:50:400
+P:0:0d0:0:0d0
+A:6/4:12/2
+D:It reveals doors and traps in line of sight and may
+D: open or destroy them.
+
+
+N:193:Light
+G:_:d
+I:55:3:0
+W:2:0:50:250
+P:0:0d0:0:0d0
+A:3/2:9/4
+D:It lights up an area with a radius of 7 squares, plus the entire room
+D: if you are currently in one.  This stuns
+D: any light-sensitive creatures within the area of effect.
+
+
+N:195:Sanctity
+G:_:d
+I:55:5:0
+W:6:0:50:400
+P:0:0d0:0:0d0
+A:4/2:10/4
+D:It removes curses from the items in your possession.
+
+
+N:196:Understanding
+G:_:d
+I:55:6:0
+W:10:0:50:400
+P:0:0d0:0:0d0
+A:8/2:14/1
+D:It identifies an item. 
+D: (This may be aborted without using up a charge.) 
+
+
+N:197:Revelations
+G:_:d
+I:55:7:0
+W:13:0:50:400
+P:0:0d0:0:0d0
+A:13/3
+D:It reveals your surroundings.
+
+
+N:198:Treasures
+G:_:d
+I:55:8:0
+W:13:0:50:400
+P:0:0d0:0:0d0
+A:13/6
+D:It shows you the whereabouts of all items on the level.
+
+
+N:199:Foes
+G:_:d
+I:55:9:0
+W:13:0:50:400
+P:0:0d0:0:0d0
+A:6/4:14/2
+D:It shows you the whereabouts of all monsters on the level.
+
+
+N:200:Slumber
+G:_:d
+I:55:10:0
+W:11:0:50:400
+P:0:0d0:0:0d0
+A:8/3:15/2
+D:It causes a great weariness in all monsters in line of sight.
+
+
+N:201:Majesty
+G:_:d
+I:55:11:0
+W:9:0:50:400
+P:0:0d0:0:0d0
+A:8/3:15/2
+D:It causes fear in all monsters in line of sight.
+
+
+N:202:Self Knowledge
+G:_:d
+I:55:12:0
+W:7:0:50:400
+P:0:0d0:0:0d0
+A:2/3
+D:It lets you know all of your abilities.
+
+
+N:203:Warding
+G:_:d
+I:55:13:0
+W:11:0:50:400
+P:0:0d0:0:0d0
+A:11/3
+D:It can be used to create glyphs of warding, which your opponents
+D: have difficulty crossing.
+
+
+N:204:Dismay
+G:_:d
+I:55:14:0
+W:13:0:50:400
+P:0:0d0:0:0d0
+A:6/3:11/2
+D:It confuses all monsters in line of sight.
+
+
+N:206:Recharging
+G:_:d
+I:55:16:0
+W:11:0:50:400
+P:0:0d0:0:0d0
+A:11/12
+D:It allows you to partially recharge another staff.
+
+
+N:210:Summoning
+G:_:d
+I:55:17:0
+W:7:0:50:0
+P:0:0d0:0:0d0
+A:3/3:12/2
+D:It summons monsters to the stairs on the current level. 
+
+
+N:211:Shadows
+G:_:d
+I:55:18:0
+W:9:0:50:0
+P:0:0d0:0:0d0
+A:3/3
+D:It darkens an area with a radius of 7 squares, plus the entire room
+D: if you are currently in one.
+
+
+##### Wands #####
+
+
+N:220:& Wand~ of Frost
+G:-:w
+I:56:0:0
+W:6:0:10:150
+P:0:0d0:0:0d0
+A:6/3:12/2
+D:It fires a bolt of frost that deals 2d4 cold damage
+D: and may slow its target.
+
+
+N:221:& Wand~ of Fire
+G:-:r
+I:56:1:0
+W:7:0:10:175
+P:0:0d0:0:0d0
+A:7/3:13/2
+D:It fires a bolt of fire that deals 2d5 fire damage.
+
+
+N:222:& Wand~ of Slowing
+G:-:B
+I:56:2:0
+W:5:0:10:125
+P:0:0d0:0:0d0
+A:5/3:11/2
+D:It fires a ray that slows its target for several turns.
+D: Excellent for stealth builds.
+
+
+N:223:& Wand~ of Light
+G:-:y
+I:56:3:0
+W:4:0:10:100
+P:0:0d0:0:0d0
+A:4/2:10/2
+D:It fires a beam of light that deals 1d6 damage to
+D: light-sensitive creatures and illuminates the area.
+
+
+N:224:& Wand~ of Fear
+G:-:s
+I:56:4:0
+W:8:0:10:200
+P:0:0d0:0:0d0
+A:8/4:14/3
+D:It fires a wave of terror that causes its target to flee.
+D: Requires a Will save to resist.
+
+
+N:225:& Wand~ of Sleep
+G:-:v
+I:56:5:0
+W:9:0:10:225
+P:0:0d0:0:0d0
+A:9/4:15/3
+D:It fires a ray of slumber that puts its target to sleep.
+D: Requires a Will save to resist. Excellent for stealth builds.
+
+
+##### Horns #####
+
+N:240:Terror
+G:?:d
+I:66:0:0
+W:7:0:10:100
+P:0:0d0:0:0d0
+A:7/6
+F:EASY_KNOW
+D:Its sound brings terror to your enemies.
+
+
+N:241:Thunder
+G:?:d
+I:66:1:0
+W:10:0:10:100
+P:0:0d0:0:0d0
+A:10/6
+F:EASY_KNOW
+D:Its sound stuns your enemies. 
+
+
+N:242:Force
+G:?:d
+I:66:2:0
+W:12:0:10:100
+P:0:0d0:0:0d0
+A:12/6
+F:EASY_KNOW
+D:Its sound blows your enemies back. 
+
+
+N:243:Blasting
+G:?:d
+I:66:3:0
+W:13:0:10:100
+P:0:0d0:0:0d0
+A:13/6
+F:EASY_KNOW
+D:Its sound can shatter stone.
+D: In addition to the compass directions, brave souls can
+D: aim it up (<) or down (>).
+
+
+N:250:Challenge
+G:?:d
+I:66:4:0
+W:7:0:10:100
+P:0:0d0:0:0d0
+A:7/6
+F:EASY_KNOW
+D:It rings out a challenge to your foes, filling you with
+D: battle-fury (+1 Str/Con, -1 Dex/Gra) for 20 turns. Alerts
+D: nearby enemies but grants the courage to face them.
+
+
+N:251:& Flute~ of the Fairy
+G:?:s
+I:66:5:0
+W:10:0:3:200
+P:0:0d0:0:0d0
+A:10/4:16/3
+F:EASY_KNOW
+D:A delicate silver flute. Its haunting melody conjures
+D: concealing mists in a radius around you, blocking line
+D: of sight for those within. Much quieter than horns.
+
+
+##### Potions #####
+
+
+N:313:Miruvor
+G:!:d
+I:75:0:100
+W:11:0:5:1000
+P:0:0d0:0:0d0
+A:11/2:17/2
+F:EASY_KNOW
+D:It cures stunning, confusion, hallucination, poison,
+D: blindness, cuts, and fear. It restores half your health, and
+D: all your voice.
+
+
+N:315:Orcish Liquor
+G:!:d
+I:75:2:100
+W:3:0:5:100
+P:0:0d0:0:0d0
+A:3/1:7/1
+F:EASY_KNOW
+D:It banishes all fear, cures a quarter of your health, and stuns you
+D: (for 2d4 turns).
+
+
+N:316:Esgalduin
+G:!:d
+I:75:3:100
+W:4:0:5:200
+P:0:0d0:0:0d0
+A:4/3:12/6
+F:EASY_KNOW
+D:It grants a bonus of +10 to perception for 20d4 turns, and
+D: restores a quarter of your voice.
+
+
+N:317:Clarity
+G:!:d
+I:75:4:100
+W:6:0:5:100
+P:0:0d0:0:0d0
+A:3/1:13/1
+F:EASY_KNOW
+D:It cures stunning, confusion, and hallucination; and ends
+D: your rage. 
+
+
+N:318:Cordial of the Wise
+G:!:d
+I:75:5:100
+W:9:0:5:300
+P:0:0d0:0:0d0
+A:9/1:15/1
+F:EASY_KNOW
+D:A soothing draught favored by healers and loremasters.
+D: It heals all cuts and restores half your health.
+
+
+N:319:Voice
+G:!:d
+I:75:6:100
+W:13:0:5:300
+P:0:0d0:0:0d0
+A:13/1
+F:EASY_KNOW
+D:It renews your voice. 
+
+
+N:320:True Sight
+G:!:d
+I:75:7:100
+W:5:0:5:100
+P:0:0d0:0:0d0
+A:5/1:15/1
+F:EASY_KNOW
+D:It restores your sight and enables you to resist
+D: blindness, resist hallucination, and see
+D: invisible creatures for 10d4 turns. 
+
+
+N:321:Antidote
+G:!:d
+I:75:8:100
+W:2:0:5:100
+P:0:0d0:0:0d0
+A:2/1:12/1
+F:EASY_KNOW
+D:It cures any current poisoning.
+
+
+N:322:Quickness
+G:!:d
+I:75:9:100
+W:5:0:5:200
+P:0:0d0:0:0d0
+A:5/1:15/1
+F:EASY_KNOW
+D:It makes you move more quickly (+1 to speed) for 10d4 turns.
+
+
+N:323:Elemental Resistance
+G:!:d
+I:75:10:100
+W:12:0:5:100
+P:0:0d0:0:0d0
+A:12/1:16/1
+F:EASY_KNOW
+D:It grants you temporary resistance to fire and cold for 20d4 turns.
+
+
+N:324:Shadows
+G:!:d
+I:75:11:100
+W:8:0:5:150
+P:0:0d0:0:0d0
+A:8/2:14/2
+F:EASY_KNOW
+D:A dark liquid that cloaks you in shadow. It grants temporary
+D: invisibility and dims your light for 15d4 turns.
+
+
+N:327:Draught of Might
+G:!:d
+I:75:14:100
+W:6:0:5:200
+P:0:0d0:0:0d0
+A:6/2:12/2
+F:EASY_KNOW
+D:A potent brew that fills the limbs with strength. It grants
+D: a bonus of +3 to strength for 20d4 turns, restoring strength
+D: in the process.
+
+
+N:328:Nimble-wine
+G:!:d
+I:75:15:100
+W:7:0:5:200
+P:0:0d0:0:0d0
+A:7/2:13/2
+F:EASY_KNOW
+D:An Elvish cordial that quickens the hands and feet. It grants
+D: a bonus of +3 to dexterity for 20d4 turns, restoring dexterity
+D: in the process.
+
+
+N:329:Hardy-brew
+G:!:d
+I:75:16:100
+W:8:0:5:200
+P:0:0d0:0:0d0
+A:8/2:14/2
+F:EASY_KNOW
+D:A thick dwarven tonic that fortifies the body. It grants
+D: a bonus of +3 to constitution for 20d4 turns, restoring
+D: constitution in the process.
+
+
+N:330:Starlight Elixir
+G:!:d
+I:75:17:100
+W:9:0:5:200
+P:0:0d0:0:0d0
+A:9/2:15/2
+F:EASY_KNOW
+D:A shimmering draught that heightens awareness of the unseen.
+D: It grants a bonus of +3 to grace for 20d4 turns, restoring
+D: grace in the process.
+
+##
+
+
+N:343:Slowness
+G:!:d
+I:75:22:100
+W:2:0:5:0
+P:0:0d0:0:0d0
+A:2/3
+F:EASY_KNOW
+D:It slows you down (-1 to speed) for 10d4 turns.
+
+
+N:344:Poison
+G:!:d
+I:75:23:100
+W:3:0:5:0
+P:0:0d0:0:0d0
+A:3/3
+F:EASY_KNOW
+D:It causes 5d4 points of poison. 
+
+
+N:345:Blindness
+G:!:d
+I:75:24:100
+W:4:0:5:0
+P:0:0d0:0:0d0
+A:4/3
+F:EASY_KNOW
+D:It induces blindness for 10d4 turns.
+
+
+N:346:Confusion
+G:!:d
+I:75:25:100
+W:6:0:5:0
+P:0:0d0:0:0d0
+A:6/3
+F:EASY_KNOW
+D:It induces confusion for 5d4 turns.
+
+
+N:348:Awkwardness
+G:!:d
+I:75:27:100
+W:9:0:5:0
+P:0:0d0:0:0d0
+A:9/3
+F:EASY_KNOW
+D:It reduces your dexterity by one point. 
+
+
+N:350:Disconnection
+G:!:d
+I:75:29:100
+W:11:0:5:0
+P:0:0d0:0:0d0
+A:11/3
+F:EASY_KNOW
+D:It reduces your grace by one point. 
+
+
+##### Chests #####
+
+# note that the steel and jewelled chests
+# give higher chances of good and great items
+
+N:372:& Small wooden chest~
+G:~:D1
+I:7:1:0
+W:5:0:200:20
+P:0:0d0:0:0d0
+A:5/4
+
+
+N:373:& Small steel chest~
+G:~:s
+I:7:2:0
+W:12:0:250:200
+P:0:0d0:0:0d0
+A:12/4
+F:IGNORE_ALL
+
+
+N:374:& Small jewelled chest~
+G:~:v1
+I:7:3:0
+W:19:0:750:250
+P:0:0d0:0:0d0
+A:19/8
+F:IGNORE_ALL
+
+
+N:375:& Large wooden chest~
+G:~:u
+I:7:11:0
+W:10:0:500:60
+P:0:0d0:0:0d0
+A:10/8
+
+
+N:376:& Large steel chest~
+G:~:W
+I:7:12:0
+W:17:0:750:250
+P:0:0d0:0:0d0
+A:17/8
+F:IGNORE_ALL
+
+
+N:377:& Large jewelled chest~
+G:~:v
+I:7:13:0
+W:24:0:750:250
+P:0:0d0:0:0d0
+A:24/8
+F:IGNORE_ALL
+
+
+N:378:& Finely wrapped present~
+G:~:r
+I:7:4:0
+W:25:0:100:250
+P:0:0d0:0:0d0
+F:IGNORE_ALL | EASY_KNOW
+
+
+
+##### Herbs #####
+
+# Do not move Orc-rage Mushroom from this location, used by quests.
+
+N:380:& Orc-rage Mushroom~
+G:,:d
+I:80:0:250
+W:3:0:1:25
+P:0:0d0:0:0d0
+A:3/2:9/1:15/4
+F:EASY_KNOW
+D:A dark fungus favored by orc berserkers. It sends you into a
+D: dark rage (+1 Str/Con, -1 Dex/Gra, special melee attack,
+D: resistance to fear) for 10d4 turns. Provides nourishment
+D: for about 250 turns under normal conditions. 
+
+
+N:381:Waymeal
+G:,:d
+I:80:1:0
+W:5:0:1:50
+P:0:0d0:0:0d0
+A:3/2:13/1
+F:EASY_KNOW
+D:A compact traveler's herb that staves off hunger. It provides
+D: nourishment for about 2000 turns under normal conditions. 
+
+# Do not move Herb of Terror from this location, used by quests.
+
+N:382:Terror
+G:,:d
+I:80:2:250
+W:3:0:1:10
+P:0:0d0:0:0d0
+A:3/2:6/2
+F:EASY_KNOW
+D:It induces fear that lasts
+D: for 10d4 turns and a burst of speed that lasts 5d4 turns.
+D: Herbs provide nourishment for about 250
+D: turns under normal conditions.
+
+
+N:383:& Healer's Herb~
+G:,:d
+I:80:3:250
+W:7:0:1:75
+P:0:0d0:0:0d0
+A:7/2:17/2
+F:EASY_KNOW
+D:A medicinal herb known to healers of the West. It cures all
+D: cuts and heals half of your health. Provides nourishment
+D: for about 250 turns under normal conditions. 
+
+
+N:384:Restoration
+G:,:d
+I:80:4:250
+W:5:0:1:1000
+P:0:0d0:0:0d0
+A:5/4:9/2:19/2
+F:EASY_KNOW
+D:It restores all of your statistics by up to 3 points each. 
+D: Herbs provide nourishment for about 250 turns under normal
+D: conditions. 
+
+
+N:385:Emptiness
+G:,:d
+I:80:5:0
+W:4:0:1:0
+P:0:0d0:0:0d0
+A:4/3
+F:EASY_KNOW
+D:It makes you more hungry (by 1,000 turns under normal conditions). 
+
+
+N:386:Visions
+G:,:d
+I:80:6:250
+W:8:0:1:0
+P:0:0d0:0:0d0
+A:8/3
+F:EASY_KNOW
+D:It causes you to hallucinate for 80d4 turns, but cures blindness in
+D: the process.
+D: Herbs provide nourishment for about 250
+D: turns under normal conditions.
+
+
+N:387:Entrancement
+G:,:d
+I:80:7:250
+W:8:0:1:0
+P:0:0d0:0:0d0
+A:8/3
+F:EASY_KNOW
+D:It induces a trance that lasts for 10d4 turns.
+D: Herbs provide nourishment for about 250 turns under
+D: normal conditions. 
+
+
+N:388:Weakness
+G:,:d
+I:80:8:250
+W:8:0:1:0
+P:0:0d0:0:0d0
+A:8/3
+F:EASY_KNOW
+D:It reduces your strength by one point.
+D: Herbs provide nourishment for about 250
+D: turns under normal conditions. 
+
+
+N:389:Sickness
+G:,:d
+I:80:9:250
+W:8:0:1:0
+P:0:0d0:0:0d0
+A:8/3
+F:EASY_KNOW
+D:It reduces your constitution by one point.
+D: Herbs provide nourishment for
+D: about 250 turns under normal conditions.
+
+
+N:390:Athelas
+G:,:G
+I:80:10:250
+W:12:0:1:500
+P:0:0d0:0:0d0
+A:12/8:18/4
+F:EASY_KNOW
+D:The kingsfoil, a powerful healing herb known to the Dúnedain.
+D: It cures poison, fear, confusion, and hallucination, and restores
+D: a quarter of your health. It is especially potent against the
+D: shadow-sickness of Dol Guldur. Herbs provide nourishment for about
+D: 250 turns under normal conditions.
+
+
+N:399:& Piece~ of Travel Bread
+G:,:s
+I:80:35:1500
+W:7:0:5:2
+P:0:0d0:0:0d0
+A:7/2:13/1
+F:EASY_KNOW
+D:Simple travel rations, filling but unremarkable. It provides
+D: nourishment for about 1,500 turns under normal conditions. 
+
+
+N:400:& Strip~ of Dried Meat
+G:,:u
+I:80:36:2000
+W:10:0:10:3
+P:0:0d0:0:0d0
+A:10/4:16/1
+F:EASY_KNOW
+D:It provides nourishment for about 2,000 turns under normal conditions. 
+
+
+N:401:& Fragment~ of Lembas
+G:,:y
+I:80:37:3000
+W:7:0:1:10
+P:0:0d0:0:0d0
+A:7/4:18/2
+F:EASY_KNOW
+D:It restores a point of grace if it has been drained.  It provides
+D: nourishment for about 3,000 turns under normal conditions.
+
+
+N:402:& Flask~ of oil
+G:!:y1
+I:77:0:3000
+W:7:0:10:3
+P:0:0d0:0:0d0
+A:7/2:13/1:19/1
+F:EASY_KNOW
+D:It can be used to fuel a brass lantern with 3,000 turns of light,
+D: up to a maximum of 7,000 turns of light.
+
+
+N:403:& Cake~ of Cram
+G:,:W
+I:80:38:2000
+W:5:0:3:5
+P:0:0d0:0:0d0
+A:5/3:11/2:17/1
+F:EASY_KNOW
+D:Dense waybread from Dale. Filling but bland. It provides
+D: nourishment for about 2,000 turns under normal conditions.
+
+
+N:404:& Pipe-weed~
+G:,:g
+I:80:11:250
+W:3:0:1:15
+P:0:0d0:0:0d0
+A:3/2:9/1:15/1
+F:EASY_KNOW
+D:Fine Longbottom Leaf, the best pipe-weed in the Southfarthing.
+D: A few puffs steady the nerves, curing fear and granting +3
+D: Grace for 30 turns. Creates a tell-tale wisp of smoke.
+D: Provides nourishment for about 250 turns.
+
+
+##### Various #####
+
+
+N:410:& Piece~ of Mithril
+G:~:B
+I:4:0:0
+W:15:5:1:100
+P:0:0d0:0:0d0
+A:15/20
+F:EASY_KNOW
+D:Small shining pieces of true silver. They can be used at a forge
+D: to create mithril items.
+
+
+#### Out of place ####
+
+N:411:& Mallorn Torch~
+G:~:U
+I:39:3:0
+W:1:0:10:2
+P:0:0d0:0:0d0:0
+A:3/4:6/2
+F:NO_SMITHING | EASY_KNOW
+D:The wood of the mallorn burns bright but briefly.
+D: You can equip it as a light source with a radius of 3 squares.
+D: It may also be used to fuel another wooden torch, up to a
+D: maximum of 100 turns of light.
+
+
+##### Improved Herbs (Alchemy Crafting) #####
+
+
+N:412:& Concentrated Healer's Herb~
+G:,:G
+I:80:20:250
+W:99:0:1:200
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A potent concentrate of healing herbs. It cures all cuts
+D: and heals three-quarters of your health. Created by combining
+D: two Healer's Herbs with Alchemy. Provides nourishment for
+D: about 250 turns.
+
+
+N:413:& Potent Athelas~
+G:,:G
+I:80:21:250
+W:99:0:1:600
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A powerful preparation of kingsfoil. It cures poison, fear,
+D: confusion, and hallucination, heals half your health, and cures
+D: all shadow-sickness. Created by combining two Athelas with
+D: Alchemy. Provides nourishment for about 250 turns.
+
+
+N:414:& Concentrated Waymeal~
+G:,:G
+I:80:22:0
+W:99:0:1:150
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A dense concentrate of traveler's herbs. Created by combining
+D: two Waymeals with Alchemy. It provides nourishment for about
+D: 4,000 turns under normal conditions.
+
+
+N:415:& Potent Orc-rage Mushroom~
+G:,:v
+I:80:23:250
+W:99:0:1:100
+P:0:0d0:0:0d0
+F:EASY_KNOW | INSTA_ART
+D:A highly concentrated fungal preparation. It sends you into a
+D: powerful rage (+2 Str/Con, -2 Dex/Gra, special melee attack,
+D: resistance to fear) for 15d4 turns. Created by combining two
+D: Orc-rage Mushrooms with Alchemy. Provides nourishment for
+D: about 250 turns.
+
+
+#### Damaged items ####
+
+N:420:& Rusted Helm~
+G:]:s1
+I:32:1:0
+W:1:0:50:15
+P:0:0d0:-1:1d1
+A:1/1
+F:DAMAGED | NO_SMITHING
+D:An old helm covered in rust. It offers some protection, but not much.
+
+N:421:& Worn Boots~
+G:]:U
+I:30:4:0
+W:1:0:20:7
+P:0:0d0:-1:1d1
+A:1/1
+F:DAMAGED | NO_SMITHING
+D:Old boots that have seen better days. They still keep out the worst of the mud.
+
+N:422:& Shattered Shield~
+G:):s
+I:34:1:0
+W:1:0:50:50
+P:-1:0d0:0:1d2
+A:1/1
+F:DAMAGED | NO_SMITHING
+D:The remains of a once-sturdy shield. It might deflect a blow or two.
+
+N:451:& Note~
+G:~:W1
+I:2:1:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Welcome to The Necromancer. The game is set within the fortress of Dol Guldur.
+D: You have journeyed through the dark forest of Mirkwood to reach the
+D: Necromancer's stronghold, and at great cost have found your way in.
+D: You plan to descend into the depths to find Thrain's ring and the
+D: key to Erebor, so that the dwarves might reclaim their homeland.
+D:
+D: As with many other Roguelike games, graphics are represented by text:
+D: you are represented by the @, the + is a door, the ~ is a note, the blocks are
+D: walls. Try moving around with the keypad or arrow keys to reach the note.
+D: (You may need to press Numlock if your keypad doesn't work).
+
+
+N:452:& Note~
+G:~:W1
+I:2:2:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:To proceed, you will need to go through that door. To open a door, just
+D: try to move into it. Some doors are locked, in which case you will
+D: need to try multiple times in order to pick the lock. Alternatively,
+D: you could try bashing down the door by holding down Control while you
+D: move into it (or press (/) before moving). Some doors are stuck, in
+D: which case bashing them down is the only way past.
+D:
+D: (Note: if you have vi keys enabled, Control behaves differently -
+D: use the / key instead.)
+
+
+N:453:& Note~
+G:~:W1
+I:2:3:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:There are many different types of objects, which are represented
+D: by punctuation symbols. For example the | is a sword and the (
+D: is a piece of armour. To pick them up, walk onto them and
+D: press (,). The comma key interacts with your current square.
+D: Since there is an object there, it picks it up. To drop an object,
+D: press (d).
+
+
+N:454:& Note~
+G:~:W1
+I:2:4:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Once you have got the items, they will be in your inventory.
+D: Your inventory is displayed in a window to the right of the main map.
+D: If you cannot see this window, you can also view inventory
+D: by pressing (i).
+
+
+N:455:& Note~
+G:~:W1
+I:2:5:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Now that you can view your inventory, try equipping your
+D: sword and armour. To do this, press (u) to use an item,
+D: followed by the inventory letter of the item you wish to
+D: use. When you have equipped both sword and armour, they
+D: will disappear from your inventory and appear in your
+D: equipment list (in a window to the right).
+D: You can also press (e) to view equipment.
+
+
+N:456:& Note~
+G:~:W1
+I:2:6:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:You are now ready to try some combat. Creatures in Sil are usually
+D: represented by letters of the alphabet. In the next room
+D: lies the least fearsome enemy in the game: the tanglethorn.
+D: It cannot move, so simply walk up to it and move into it
+D: to attack. However, remember that in Sil death is final.
+D: If things start going badly, you can always retreat.
+
+
+N:457:& Note~
+G:~:W1
+I:2:7:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:To find out everything else you need to know about combat,
+D: you should read the appropriate pages in the manual
+D: that comes with the game. This is
+D: not essential for your first few games, but will
+D: help you explore the rich tactical combat system in Sil.
+
+
+N:458:& Note~
+G:~:W1
+I:2:8:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:There is no obvious way out of this room, but there might be a
+D: secret door somewhere. Pressing (z) or (5) waits a single turn
+D: and also increases your natural searching ability. Try walking
+D: around the wall of the room and searching for a secret door.
+D: You can also rest until healed by holding Shift while pressing
+D: (z) or (5). This might be useful after that fight.
+
+
+N:459:& Note~
+G:~:W1
+I:2:9:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:The } here is a bow, and the - is a set of arrows. Pick them up
+D: using (,), then wield them both using (u). You can now fire arrows
+D: using (f). Try this in the next room.
+
+
+N:460:& Note~
+G:~:W1
+I:2:10:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:If you want to move a long distance, hold down Shift while
+D: you move (or press (.) before moving). This moves you continuously until
+D: something happens which needs your attention. It can even
+D: run around corners in corridors. Try it.
+
+
+N:461:& Note~
+G:~:W1
+I:2:11:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Corridors and some rooms like this one are not lit, forcing you
+D: to rely on your torch or lantern for light. Darkness and light
+D: is a major theme in Sil.
+
+
+N:462:& Note~
+G:~:W1
+I:2:12:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:You have found a shortsword. Note that it is listed as a Shortsword
+D: (+0, 1d7) [+1]. The numbers given in round brackets are attack values
+D: and those in square brackets are evasion. This shortsword gives no
+D: bonus to hit, does a single seven sided die of damage, and gives a
+D: +1 bonus to evasion. In contrast, your curved sword has -1 to accuracy
+D: and does two five sided dice of damage, and the same bonus to evasion.
+D:                                 
+D: This shortsword is also marked {special}. This means that it bears some
+D: unknown enchantment. You will have to discover what that is. For now
+D: try wielding it (u).
+
+
+N:463:& Note~
+G:~:W1
+I:2:13:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Here is a set of Gauntlets (-1) [+0, 1d1]. This means that they
+D: give a penalty of -1 to your accuracy, they have no bonus to evasion
+D: and they absorb 1 point of damage (a one sided die worth...).
+D: In contrast, your Leather Armour [-1, 1d4] has a -1 penalty to evasion
+D: and absorbs one four sided die of damage.
+D:                                           As you can see, armour and
+D: weapons in Sil come with trade-offs between attack (chance of hitting;
+D: damage), and defence (chance of evading hits; damage reduction).
+D: Which pieces of equipment are best will depend on the circumstances.
+
+
+N:464:& Note~
+G:~:W1
+I:2:14:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:If you were wielding the shortsword, you would have noticed it glow
+D: brightly in the presence of the orc, indicating to the perceptive player
+D: that it bears an enchantment against orcs. This means that it does an
+D: extra die of damage against orcs, making its 1d7 into 2d7: a large bonus.
+
+
+N:465:& Note~
+G:~:W1
+I:2:15:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:The halls of Dol Guldur are littered with many traps. Near here is a
+D: caltrop trap which temporarily slows you. Like most traps, it can be
+D: disarmed by holding down Control while attempting to move into it
+D: (or pressing (/) before moving). This also has a chance of triggering the trap.
+D: Since it is not too dangerous, try to disarm it until you succeed.
+D:
+D: (Note: if you have vi keys enabled, Control behaves differently -
+D: use the / key instead.)
+
+N:466:& Note~
+G:~:W1
+I:2:16:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Your character has four main statistics: Strength, Dexterity,
+D: Constitution, and Grace. These are represented at the left of
+D: the screen. The numbers can be positive or negative, with zero
+D: representing the average for the humans of this age.
+
+
+N:467:& Note~
+G:~:W1
+I:2:17:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Your Strength mainly affects the damage you deal. You can get an
+D: extra side on each damage die for each point of Strength. Your
+D: strength is 2, so you do 2d7 damage with the curved sword instead
+D: of 2d5.                                             
+D: You only do 1d8 damage with the shortsword though, as you
+D: can get at most 1 extra side for each lb the weapon weighs.
+D: Your abilities with your current weapon/bow/armour are listed on the
+D: left of the screen too. Try switching weapons to see what happens.
+
+
+N:468:& Note~
+G:~:W1
+I:2:18:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Your Constitution increases your maximum health. Unlike many other
+D: games, in Sil it is the only thing that affects maximum Health.
+D: To survive the more challenging opponents, you will need to
+D: get better at avoiding their attacks or absorbing the damage with armour.
+
+
+N:469:& Note~
+G:~:W1
+I:2:19:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:As well as your Statistics, you have 8 skills open to you.
+D: Your Dexterity affects the first four of these: Melee, Archery,
+D: Evasion, and Stealth.
+
+
+N:470:& Note~
+G:~:W1
+I:2:20:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:As well as your Statistics, you have 8 skills open to you.
+D: Your Grace affects the last four of these: Perception, Will,
+D: Smithing, and Lore. It also increases your 'Voice' which is
+D: a measure of how long you can maintain your concentration.
+
+
+N:471:& Note~
+G:~:W1
+I:2:21:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:To have a look at your character sheet, press (Escape) to bring up the
+D: main menu then choose the second option. This will show
+D: all of your Skills and much more. To exit just press (Escape)
+D: (which exits any menu or screen).
+D: An alternative way to look at your character sheet is to press the @
+D: key.
+
+
+N:472:& Note~
+G:~:W1
+I:2:22:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:In Sil, your character gains experience from encountering enemies,
+D: killing enemies, identifying items, and reaching new depths in
+D: the dungeon. You can use the experience you have earned to increase
+D: your Skills via the character sheet, but don't do so right now.
+
+
+N:473:& Note~
+G:~:W1
+I:2:23:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Sometimes you won't know what a character on the screen represents.
+D: To find out, press (l), which allows you to look at objects.
+
+
+N:474:& Note~
+G:~:W1
+I:2:24:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Sometimes you will have identified an item, but still won't know exactly
+D: what it does. You can find out more by pressing (x) to examine it.
+
+
+N:475:& Note~
+G:~:W1
+I:2:25:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Sometimes you will forget which key does what, or need a new command.
+D: You can see a list of all the key commands by pressing (?). 
+
+
+N:476:& Note~
+G:~:W1
+I:2:26:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:You now know more than enough to start playing Sil and can probably
+D: pick up most things as you go along, with occasional references to the
+D: manual if you want to know exactly how things work. If you'd like to
+D: continue with the tutorial, just take the door to the north. If you'd
+D: like to start a proper game, then go through the passage to the east.
+D: If you want to skip this part of the tutorial next time, there is a
+D: secret door to the south between the first room and this room.
+
+
+N:477:& Note~
+G:~:W1
+I:2:27:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:To use the staircase, type (,) when standing on it.
+
+
+N:478:& Note~
+G:~:W1
+I:2:28:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Enemies have three levels of alertness. They can be asleep, unwary,
+D: or alert. When they are asleep they don't move, and their Evasion score is
+D: set to [-5]. When they are unwary, they move around oblivious to you and
+D: their Evasion is halved.
+D:
+D: Remaining unnoticed can be a great advantage. You can try to avoid
+D: all enemies, avoid only those you cannot handle, or kill them in their sleep.
+D: It is even possible to play the game without any combat if you are very
+D: careful.                                                 
+
+
+N:479:& Note~
+G:~:W1
+I:2:29:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Your chance to remain unseen is primarily affected by your Stealth skill.
+D: Enemies get a penalty to notice you based on how far away they are, with
+D: closed doors counting as five squares.
+D:                                                                    
+D: If you are within sight of an unwary enemy, it receives a bonus
+D: to notice you, and this effect is increased for each floor square around
+D: you. It thus pays to remain out of sight and behind closed doors, or
+D: (if you must be in sight), to hide near the walls and corners of rooms.
+D: Finally, there is a penalty for making loud noises, such as being
+D: involved in combat.
+
+
+N:480:& Note~
+G:~:W1
+I:2:30:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:If it is critical to avoid attracting attention, you get a bonus for staying
+D: still, or for moving slowly (Stealth mode). To switch this on or off, press (S).
+D: Using Stealth mode and sticking to the walls, see if you can evade these
+D: Orc soldiers. If not, don't despair -- stealth is not always easy.
+
+
+N:481:& Note~
+G:~:W1
+I:2:31:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:It looks like there has been a cave-in here. To get through
+D: you will need to move diagonally. This is easy with a keypad, but harder on
+D: a laptop. To move diagonally, use the 1 3 7 9 keys at the top of the
+D: keyboard. This can be a little tricky to learn, but it is often convenient and
+D: sometimes essential. If you are very familiar with the hjkl movement keys,
+D: there is an option to use them instead in the options menu (find it from the
+D: main menu).
+
+
+N:482:& Note~
+G:~:W1
+I:2:32:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:The corridor ahead is completely blocked, but there is a shovel here.
+D: If you are carrying a shovel, you can use Control
+D: (or (/)) to tunnel through the rubble. Deeper down you might find mattocks
+D: which can dig through quartz veins, and even some ways to dig through
+D: granite. It is strongly recommended that you carry some means of digging
+D: when you venture down into the depths, or you could become trapped.
+
+
+N:483:& Note~
+G:~:W1
+I:2:33:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Some characters learn words of power and ancient lore, which can
+D: have great effect upon you, your enemies, or even your environment.
+D: Your character knows abilities that aid healing and provide light.
+D: Behind this door you will find use for them. Press (s) to begin or end
+D: using your lore abilities.
+
+
+N:484:& Note~
+G:~:W1
+I:2:34:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Some characters master Smithing and create enchanted items.
+D: To do so requires you to find a forge and when standing in it,
+D: to press (,). Your character knows how to make magical jewellery.
+D: Find the forge through this door and create a Ring of Frost.
+D: This will help protect you from enemies that have fiery attacks.
+
+N:485:& Note~
+G:~:W1
+I:2:35:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:When you have learnt about Lore and Smithing, go through this door.
+
+N:486:& Note~
+G:~:W1
+I:2:36:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:Each of the eight skills has a set of special Abilities tied to it.
+D: Words of power and ancient knowledge are Abilities for the Lore skill.
+D: Jewellery is an Ability for the Smithing skill.
+
+N:487:& Note~
+G:~:W1
+I:2:37:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:To look through the available Abilities, press (Tab). You will see
+D: that each one has a required number of points in that Skill and
+D: possibly some pre-requisite Abilities. Typically the first ability
+D: in a skill costs 500 experience, then 1000, 1500 etc. You will have
+D: to find the right balance between spending experience on Skill points
+D: and on abilities. Now might be a good time to spend any experience
+D: you have on Skills or Abilities.
+
+
+N:488:& Note~
+G:~:W1
+I:2:38:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:That's it. You now know enough to really get started.
+D: If you need to know any more, then have a look through the manual.
+D: Through here lies your final challenge, and one that will
+D: almost certainly mean your demise. See if you can make it past the
+D: challenge and reach the staircase, using it by pressing (,).
+
+
+N:489:& Note~
+G:~:W1
+I:2:39:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:39.
+
+
+N:490:& Note~
+G:~:W1
+I:2:40:0
+W:0:1:1:0
+P:0:0d0:0:0d0
+F:EASY_KNOW
+D:40.
+
+
+##### New Items #####
+
+# New items sometimes have to go down here if there were not enough
+# indices to fit them in the right place, since moving indices around
+# breaks savefile compatibility.
+
+
+#################################################################
+# BROKEN ITEMS FOR SMITHING SYSTEM
+# Broken Glowing items: Common drops, used to craft Enchanted items
+# Broken Strange items: Rare drops, used to craft Artifact/Legendary items
+#
+# Recipe reminder:
+# - 2x Broken Glowing → 1 Enchanted item (player chooses "of X" type)
+# - 2x Broken Strange → 1 random Artifact
+# - 4x Broken Strange → 1 random Legendary
+#################################################################
+
+
+#### Broken Glowing Items ####
+# These glow faintly with residual enchantment
+# More common, found throughout dungeon
+# Use with Reforge ability to create random enchanted items
+
+
+N:491:& Broken Glowing Weapon~
+G:|:B
+I:23:1:0
+W:3:0:25:50
+P:0:0d0:0:0d0
+A:3/4:7/3:12/2:17/2
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A shattered weapon that still glimmers with faint enchantment.
+D: A skilled smith with the Reforge ability might salvage
+D: the magic within to create a new enchanted weapon.
+
+
+N:492:& Shattered Elven Mail~
+G:[:B
+I:37:1:0
+W:4:0:50:75
+P:0:0d0:0:0d0
+A:4/4:9/3:14/2:19/2
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:Fragments of elven armor that still glow with faint enchantment. Perhaps it can be reforged.
+
+
+#### Broken Strange Items ####
+# These feel wrong, uncanny - powerful but damaged
+# Rare drops, found deeper in dungeon
+# Use with Reclaim (2) or Masterwork (4) to create artifacts
+
+
+N:493:& Broken Strange Weapon~
+G:|:v
+I:23:2:0
+W:8:0:20:200
+P:0:0d0:0:0d0
+A:8/12:13/8:18/5
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A weapon-fragment that seems to shift when you're not looking.
+D: It hums with power that transcends normal enchantment.
+D: A master smith might forge it into something legendary.
+
+
+N:494:& Twisted Shadow-plate~
+G:[:v
+I:37:2:0
+W:10:0:80:200
+P:0:0d0:0:0d0
+A:10/12:15/8:20/5
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:Shards of dark armor from some fell creature. The metal seems to shift in the light.
+
+
+N:495:& Broken Strange Jewelry~
+G:=:v
+I:45:99:0
+W:12:0:1:300
+P:0:0d0:0:0d0
+A:12/15:17/10
+F:DAMAGED | NO_SMITHING | EASY_KNOW
+D:A cracked ring or amulet that whispers at the edge of hearing.
+D: Great power sleeps within, waiting to be reawakened.
+
+
+#################################################################
+# END OF BROKEN ITEM ADDITIONS
+#################################################################
+
+
+#################################################################
+##### TOWER OBJECTS - Discovery XP for Stealth Gameplay #####
+# These items grant experience when discovered, providing
+# a combat-independent progression path for stealth builds.
+# Each object can only be found once per playthrough.
+#################################################################
+
+##### Thráin's Memories (sval 50-57) #####
+# Blue wisps of memory, found in layers 3-7
+# Grant 150 XP each
+
+N:500:& Thráin's Memory~
+G:*:B
+I:2:50:0
+W:6:100:0:0
+A:6/8:10/6:14/6:18/10
+F:EASY_KNOW
+D:A wisp of pale blue light hovers before you. Within it, you sense
+D: a fragment of tortured memory. "Halls of stone... my father's
+D: throne... gone..." The voice of Thráin II, lost dwarf-king.
+
+N:501:& Thráin's Memory~
+G:*:B
+I:2:51:0
+W:7:100:0:0
+A:7/8:10/6:13/6:16/8
+F:EASY_KNOW
+D:A ghostly memory-wisp pulses sadly. "The key... I hid the key...
+D: where did I hide it?" Thráin's confusion echoes through the ages.
+
+N:502:& Thráin's Memory~
+G:*:B
+I:2:52:0
+W:9:100:0:0
+A:9/8:12/6:15/6:18/8
+F:EASY_KNOW
+D:This memory burns with old pain. "Ambushed... Azanulbizar survivors...
+D: so few of us left..." The capture of a dwarf prince, long ago.
+
+N:503:& Thráin's Memory~
+G:*:B
+I:2:53:0
+W:11:100:0:0
+A:11/10:14/8:17/8
+F:EASY_KNOW
+D:Rage and grief swirl within this memory. "The Ring! He took my Ring!
+D: Durin's heirloom!" Sauron's theft of the last Dwarven Ring.
+
+N:504:& Thráin's Memory~
+G:*:B
+I:2:54:0
+W:12:100:0:0
+A:12/10:15/8:18/8
+F:EASY_KNOW
+D:Screams echo within this dark memory. "Questions... always questions...
+D: I told him nothing!" Thráin's defiance under torture.
+
+N:505:& Thráin's Memory~
+G:*:B
+I:2:55:0
+W:14:100:0:0
+A:14/10:17/8:19/10
+F:EASY_KNOW
+D:Pride blazes in this memory despite the darkness. "My name is Thráin!
+D: Son of Thrór! I am NOT broken!" A dwarf's stubborn courage.
+
+N:506:& Thráin's Memory~
+G:*:B
+I:2:56:0
+W:16:100:0:0
+A:16/10:18/8:20/10
+F:EASY_KNOW
+D:Longing fills this memory. "My son... does Thorin still live?
+D: The line continues?" A father's hope in the darkness.
+
+N:507:& Thráin's Memory~
+G:*:B
+I:2:57:0
+W:19:100:0:0
+A:19/12:20/10
+F:EASY_KNOW
+D:A final spark of hope. "Someone comes... I sense it... dwarf-friend...
+D: rescue?" Thráin's last hope, perhaps for you.
+
+
+##### Shadow Fragments (sval 60-65) #####
+# Dark crystals, found near dangerous monsters
+# Grant 200 XP each
+
+N:510:& Shadow Fragment~
+G:*:D
+I:2:60:0
+W:4:100:1:0
+A:4/12:7/10:10/8
+F:EASY_KNOW
+D:A shard of crystallized darkness, cold as void. Where Sauron's
+D: power concentrates, shadow itself takes solid form.
+
+N:511:& Shadow Fragment~
+G:*:D
+I:2:61:0
+W:8:100:1:0
+A:8/12:11/10:14/8
+F:EASY_KNOW
+D:This fragment of solid shadow seems to drink in light.
+D: You can feel malice radiating from within.
+
+N:512:& Shadow Fragment~
+G:*:D
+I:2:62:0
+W:12:100:1:0
+A:12/15:15/10:18/8
+F:EASY_KNOW
+D:A night-black crystal that hurts to look upon. The Necromancer's
+D: power has pooled here, becoming tangible.
+
+N:513:& Shadow Fragment~
+G:*:D
+I:2:63:0
+W:15:100:1:0
+A:15/15:18/10:20/10
+F:EASY_KNOW
+D:Shadow made solid. This fragment pulses with a heartbeat
+D: that is not your own. Sauron's essence crystallized.
+
+N:514:& Shadow Fragment~
+G:*:D
+I:2:64:0
+W:18:100:1:0
+A:18/20:20/15
+F:EASY_KNOW
+D:A piece of perfect darkness. Looking into it, you see
+D: visions of fire and ruin. Sauron's memories, perhaps.
+
+N:515:& Shadow Fragment~
+G:*:D
+I:2:65:0
+W:20:100:1:0
+A:20/25
+F:EASY_KNOW
+D:They call this "Sauron's Tear" - a drop of pure shadow
+D: shed when the Necromancer first bound himself to this place.
+
+
+##### Ancient Glyphs (sval 70-76) #####
+# Wall inscriptions, found throughout all layers
+# Grant 75 XP each
+
+N:520:& Ancient Glyph~
+G:;:y
+I:2:70:0
+W:2:100:0:0
+A:2/5:6/4:10/4:14/5
+F:EASY_KNOW
+D:Scratched into the stone: "Beware the watchers - they see in darkness."
+D: A captive's warning, left for those who follow.
+
+N:521:& Ancient Glyph~
+G:;:y
+I:2:71:0
+W:4:100:0:0
+A:4/5:8/4:12/4:16/5
+F:EASY_KNOW
+D:Tengwar script, elegant despite the crude scratching:
+D: "We are forgotten." An Elvish lament from long ago.
+
+N:522:& Ancient Glyph~
+G:;:y
+I:2:72:0
+W:7:100:0:0
+A:7/5:11/4:15/4:19/5
+F:EASY_KNOW
+D:Tally marks scratched deep into the stone. Hundreds of them.
+D: Someone counted the days of their imprisonment here.
+
+N:523:& Ancient Glyph~
+G:;:y
+I:2:73:0
+W:10:100:0:0
+A:10/6:13/5:16/5:19/6
+F:EASY_KNOW
+D:A rough map fragment scratched into the wall, showing
+D: what might be an escape route. Hard to read now.
+
+N:524:& Ancient Glyph~
+G:;:y
+I:2:74:0
+W:13:100:0:0
+A:13/6:16/5:19/6
+F:EASY_KNOW
+D:Black Speech characters burned into the stone. Reading them
+D: hurts your eyes, but grants dark knowledge. A curse.
+
+N:525:& Ancient Glyph~
+G:;:y
+I:2:75:0
+W:16:100:0:0
+A:16/8:19/6
+F:EASY_KNOW
+D:A single word in Black Speech: Sauron's name. Seeing it
+D: written sends a chill down your spine.
+
+N:526:& Ancient Glyph~
+G:;:y
+I:2:76:0
+W:19:100:0:0
+A:19/10
+F:EASY_KNOW
+D:"Tell my family I died fighting." A final message, never
+D: delivered. You are the first to read it in centuries.
+
+
+##### Palantír Shards (sval 80-83) #####
+# Rare fragments of the seeing-stone
+# Grant 500 XP each, only in vaults
+
+N:530:& Palantír Shard~
+G:*:v
+I:2:80:0
+W:3:100:1:0
+A:3/50:6/40
+F:EASY_KNOW
+D:A fragment of the great seeing-stone of Amon Sûl, shattered
+D: when Arvedui drowned. Glimpses of Forochel's ice flicker within.
+
+N:531:& Palantír Shard~
+G:*:v
+I:2:81:0
+W:9:100:1:0
+A:9/50:12/40
+F:EASY_KNOW
+D:This shard shows visions of endless plains - the East,
+D: where Sauron's influence spreads. Rhûn under shadow.
+
+N:532:& Palantír Shard~
+G:*:v
+I:2:82:0
+W:15:100:1:0
+A:15/50:18/40
+F:EASY_KNOW
+D:Fire and ash swirl within this fragment. Mordor revealed -
+D: the land where Sauron's true power lies waiting.
+
+N:533:& Palantír Shard~
+G:*:v
+I:2:83:0
+W:20:100:1:0
+A:20/60
+F:EASY_KNOW
+D:Light, pure and silver, gleams within. For an instant you see
+D: the Undying Lands - a glimpse of Valinor's shore.
+
+
+##### Erebor Relics (sval 90-94) #####
+# Treasures from the Lonely Mountain
+# Grant 100 XP each
+
+N:540:& Mithril Brooch~
+G:$:u
+I:2:90:0
+W:4:100:2:0
+A:4/8:7/6:10/6
+F:EASY_KNOW
+D:A brooch bearing the sigil of Erebor - the mountain and seven stars.
+D: Part of the dragon's hoard, stolen to furnish Dol Guldur.
+
+N:541:& Thrór's Coin~
+G:$:u
+I:2:91:0
+W:7:100:1:0
+A:7/8:10/6:13/6
+F:EASY_KNOW
+D:A gold coin bearing King Thrór's face. Currency from a kingdom
+D: that fell to dragonfire. Tribute extracted by Sauron's servants.
+
+N:542:& Dragon-Touched Gem~
+G:$:u
+I:2:92:0
+W:10:100:2:0
+A:10/10:13/8:16/8
+F:EASY_KNOW
+D:A gem that still radiates faint heat - it lay against Smaug's
+D: belly for a century. Warm even in Dol Guldur's cold.
+
+N:543:& Dwarven Chronicle Page~
+G:$:u
+I:2:93:0
+W:13:100:1:0
+A:13/10:16/8:19/10
+F:EASY_KNOW
+D:A page torn from an Erebor chronicle, recording the days
+D: before the fall. History stolen along with gold.
+
+N:544:& Durin's Day Fragment~
+G:$:u
+I:2:94:0
+W:16:100:2:0
+A:16/12:19/10
+F:EASY_KNOW
+D:A piece of the throne-room calendar showing Durin's Day.
+D: The secret door could only open then. Now forgotten.
+
+
+##### Dol Guldur Records (sval 100-107) #####
+# Found throughout dungeon, grant 500 XP each
+# Prisoner accounts, orc reports, historical fragments
+
+N:550:& Prisoner's Account~
+G:~:u
+I:2:100:0
+W:3:80:0:0
+A:3/10:6/8:9/6
+F:EASY_KNOW
+D:"Day 47. The screaming stopped. I don't know if that's better or worse.
+D: The guards speak of someone called the Necromancer. They fear him
+D: almost as much as we do." The scratched words of a forgotten captive.
+
+N:551:& Prisoner's Account~
+G:~:u
+I:2:101:0
+W:5:80:0:0
+A:5/10:8/8:11/6
+F:EASY_KNOW
+D:"They took Aldor today. He came back wrong. His eyes... empty.
+D: He serves them now. The shadow takes everything eventually."
+D: The last entry is smeared with something dark.
+
+N:552:& Orc Report~
+G:~:R
+I:2:102:0
+W:7:80:0:0
+A:7/10:10/8:13/6
+F:EASY_KNOW
+D:"Prisoners ready for questioning. One dwarf still resists - the old one
+D: with the beard-rings. Master says he knows about mountain. We break
+D: him soon." Crude orkish script, decades old.
+
+N:553:& Orc Report~
+G:~:R
+I:2:103:0
+W:9:80:0:0
+A:9/10:12/8:15/6
+F:EASY_KNOW
+D:"Patrols increased. Master senses something. Grey Wanderer spotted
+D: near forest edge again. All guards to stations." The orcs'
+D: fear of Gandalf is palpable even in writing.
+
+N:554:& Historical Fragment~
+G:~:W
+I:2:104:0
+W:11:80:0:0
+A:11/10:14/8:17/6
+F:EASY_KNOW
+D:"...and so the fortress of Dol Guldur was built upon the hill
+D: of Amon Lanc, where once the Silvan Elves held court. The shadow
+D: came slowly, driving them north..." An elvish chronicle, half-burned.
+
+N:555:& Historical Fragment~
+G:~:W
+I:2:105:0
+W:13:80:0:0
+A:13/10:16/8:18/6
+F:EASY_KNOW
+D:"The White Council debated long. Was it truly Sauron returned?
+D: Saruman urged caution. Gandalf pushed for assault. In the end,
+D: nothing was done." A wizard's notes, abandoned here.
+
+N:556:& Necromancer Sighting~
+G:~:D
+I:2:106:0
+W:15:80:0:0
+A:15/12:18/10
+F:EASY_KNOW
+D:"I saw him today. Not a man - a shadow that wears the shape of one.
+D: Where he walks, torches dim. Where he looks, courage dies.
+D: I understand now why the elves fled." Written in a trembling hand.
+
+N:557:& Necromancer Sighting~
+G:~:D
+I:2:107:0
+W:17:80:0:0
+A:17/12:19/10
+F:EASY_KNOW
+D:"He spoke to me. Or rather, spoke through me - I felt his voice
+D: in my skull. 'WHERE IS THE RING?' Over and over. Even now I hear
+D: it echoing. He searches for something precious." A final testament.
+

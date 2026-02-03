@@ -1,0 +1,191 @@
+# File: epitaphs.txt
+# Death epitaphs for tombstone generation
+# Format: Category:Text or Condition:Text
+
+# === CONDITIONAL EPITAPHS (checked first) ===
+# These have priority when the condition is met
+
+# Killed by Sauron (the Necromancer)
+C:killed_by_sauron:Sauron remembers every face. He will forget this one.
+C:killed_by_sauron:Stood before the Necromancer. Briefly.
+C:killed_by_sauron:The Lord of the Tower does not suffer trespassers.
+C:killed_by_sauron:Looked upon the Lidless Eye. It was the last thing he saw.
+C:killed_by_sauron:The Necromancer's power brooks no resistance.
+
+# Killed by a Nazgul (Khamul)
+C:killed_by_nazgul:The wraith's blade was cold. Then nothing was.
+C:killed_by_nazgul:Nine there were. One was enough.
+C:killed_by_nazgul:Felt the Black Breath. Then felt nothing.
+C:killed_by_nazgul:The Shadow of the East claims another.
+C:killed_by_nazgul:No mortal can stand before the Nine.
+
+# Died on deep level (13 = 650ft, the bottom)
+C:died_deep:Reached the bottom. It was waiting.
+C:died_deep:So close to Thrain. So far from escape.
+C:died_deep:The Pits of Despair earned their name.
+C:died_deep:The deeper you go, the darker it gets.
+C:died_deep:Found what lies beneath. It found him too.
+
+# Died on shallow level (1-3)
+C:died_shallow:Barely past the threshold.
+C:died_shallow:Mirkwood claimed another.
+C:died_shallow:The forest was hungry today.
+C:died_shallow:A brief candle in an endless dark.
+C:died_shallow:The journey ended before it began.
+
+# High stealth ratio (sneaky player)
+C:high_stealth:Moved like a shadow. Died like everyone else.
+C:high_stealth:Unseen until the end.
+C:high_stealth:The perfect ghost, finally caught.
+C:high_stealth:Silent footsteps. Silenced forever.
+C:high_stealth:Avoided a hundred. Missed one.
+
+# High kill count (warrior)
+C:high_kills:Left a trail of bodies. Added one more.
+C:high_kills:Warrior's heart. Warrior's death.
+C:high_kills:Killed many. Not enough.
+C:high_kills:The blade that slew a hundred found its match.
+C:high_kills:Fought like a demon. Died like a man.
+
+# Found Thrain
+C:found_thrain:Held the Key. Couldn't use it.
+C:found_thrain:Thrain's last hope died with him.
+C:found_thrain:So close to the Lonely Mountain.
+C:found_thrain:Found the lost king. Joined him in death.
+C:found_thrain:Thrain waits no longer.
+
+# Saw Sauron (but wasn't killed by him)
+C:saw_sauron:Looked upon the Necromancer. A privilege and a curse.
+C:saw_sauron:The Eye sees all. Including the end.
+C:saw_sauron:Met the master of the Tower. Briefly.
+C:saw_sauron:Glimpsed the Lidless Eye and lived. Then died.
+C:saw_sauron:Sauron remembers every face.
+
+# Stole the Ring
+C:stole_ring:Held a Ring of Power. It was not enough.
+C:stole_ring:The Ring betrayed another bearer.
+C:stole_ring:Thrain's Ring found a new corpse to adorn.
+C:stole_ring:One Ring to bind him. Bound unto death.
+C:stole_ring:The Ring takes. It does not give.
+
+# Very long run (>10000 turns)
+C:long_run:Survived longer than most. Still died.
+C:long_run:Ten thousand turns. One fatal mistake.
+C:long_run:Endurance counts for nothing in the end.
+C:long_run:The Tower is patient. It always wins.
+C:long_run:Outlasted many. Outlasted by one.
+
+# Very short run (<500 turns)
+C:short_run:Blinked and missed it.
+C:short_run:The Tower makes quick work of the unwary.
+C:short_run:A brief candle in an endless dark.
+C:short_run:Hardly worth noting.
+C:short_run:In and out. Mostly out.
+
+# Pacifist (no kills)
+C:pacifist:Killed nothing. Died anyway.
+C:pacifist:Mercy is not rewarded here.
+C:pacifist:The peaceful path ends the same.
+C:pacifist:Raised no blade. Still fell.
+C:pacifist:Gentle soul. Gentle death.
+
+
+# === GENERIC EPITAPHS BY TONE ===
+# Used when no conditional triggers match
+# Selected based on run profile analysis
+
+# Laconic - short, understated, matter-of-fact
+T:laconic:He came. He saw. He died.
+T:laconic:Not deep enough.
+T:laconic:The shadows were patient.
+T:laconic:One door too many.
+T:laconic:Should have run.
+T:laconic:Happens to everyone.
+T:laconic:So it goes.
+T:laconic:Next.
+T:laconic:Expected better.
+T:laconic:Close, but no.
+
+# Descriptive - paints a picture of the final moment
+T:descriptive:Fell to an orc's blade, gold still clutched in hand.
+T:descriptive:The last thing she saw was the Eye, and it saw her too.
+T:descriptive:Died in the dark, alone, the sound of drums growing closer.
+T:descriptive:Reached for the key. The Nazgul reached faster.
+T:descriptive:The torch guttered out. So did hope.
+T:descriptive:Backed into a corner. There was nowhere left to go.
+T:descriptive:The arrow came from the darkness. He never saw the archer.
+T:descriptive:Slipped on the wet stone. The fall was not survivable.
+
+# Ironic - dark humor, twist of fate
+T:ironic:Survived Sauron. Killed by a rat.
+T:ironic:Found the greatest treasure of the age. Couldn't find the stairs.
+T:ironic:Master of stealth. Tripped on a bone.
+T:ironic:Killed forty orcs. Forgot to eat.
+T:ironic:The door he closed behind him was the last one he'd ever see.
+T:ironic:Escaped a hundred traps. Missed one.
+T:ironic:Found the cure. Couldn't reach it in time.
+T:ironic:The armor held. The heart did not.
+T:ironic:Won the fight. Lost the war.
+T:ironic:Dodged the sword. Caught the arrow.
+
+# Bleak - hopeless, the darkness won
+T:bleak:Another soul for the pit.
+T:bleak:The Tower keeps what it takes.
+T:bleak:No song will remember this name.
+T:bleak:Even the stones forgot him.
+T:bleak:The darkness was always going to win.
+T:bleak:One more name for the forgotten list.
+T:bleak:The shadows do not mourn.
+T:bleak:Bones join bones. Nothing more.
+T:bleak:The pit grows deeper every day.
+T:bleak:No rescue comes. It never does.
+
+# Aspirational - they tried, they dreamed
+T:aspirational:Dreamed of Erebor. Almost made it.
+T:aspirational:Carried hope deeper than any before.
+T:aspirational:Sought the Ring. Found only death.
+T:aspirational:Believed the old tales. Became one.
+T:aspirational:Went further than wisdom allowed.
+T:aspirational:Dared to enter. Dared to dream.
+T:aspirational:Reached for glory. Touched the void.
+T:aspirational:Braver than most. Just as dead.
+T:aspirational:The road goes ever on. This one stopped.
+T:aspirational:Had a plan. The Tower had other ideas.
+
+# Grim - brutal, unflinching
+T:grim:The wights picked the bones clean.
+T:grim:Screamed once. No one heard.
+T:grim:Bled out in a forgotten corridor.
+T:grim:The Necromancer added another servant.
+T:grim:Died on his knees, begging.
+T:grim:The last sound was crunching bone.
+T:grim:Fed to the spiders. All of him.
+T:grim:Left a stain on the stones.
+T:grim:The wolves finished what the orcs started.
+T:grim:No burial. No marker. No memory.
+
+# Heroic - died well, even in failure
+T:heroic:Slew a Nazgul before the end.
+T:heroic:Looked into the Eye and did not flinch.
+T:heroic:Died fighting, as was fitting.
+T:heroic:Bought time for others who will never know.
+T:heroic:Found Thrain. That was enough.
+T:heroic:Stood alone against the dark.
+T:heroic:Fell with sword in hand.
+T:heroic:Made them pay for every step.
+T:heroic:The last charge was glorious.
+T:heroic:Died as he lived: defiant.
+
+
+# === PERSONALIZATION TOKENS ===
+# These can be substituted in epitaphs:
+# %n = Character name
+# %r = Race (Elf, Man, Dwarf)
+# %h = House name
+# %d = Depth in feet
+# %k = Killer name
+# %t = Turns survived
+
+# Example personalized epitaphs (future expansion):
+# "%n of %h went too deep. %d feet too deep."
+# "The %r thought he was clever. %k thought otherwise."

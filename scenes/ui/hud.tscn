@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://bhx9k2v4m1pqr"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopPanel" type="PanelContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TopPanel"]
+layout_mode = 2
+
+[node name="HealthLabel" type="Label" parent="TopPanel"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "HP:"
+
+[node name="HealthBar" type="ProgressBar" parent="TopPanel"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="DepthLabel" type="Label" parent="TopPanel"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Depth: 1"
+
+[node name="TurnLabel" type="Label" parent="TopPanel"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Turn: 0"
+
+[node name="StatusContainer" type="HBoxContainer" parent="TopPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BottomPanel" type="PanelContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -120.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MessageLog" type="RichTextLabel" parent="BottomPanel"]
+layout_mode = 2
+bbcode_enabled = true
+scroll_following = true

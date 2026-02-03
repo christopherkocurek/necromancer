@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://crnv5m8k2x4hd"]
+
+[ext_resource type="Script" path="res://scripts/systems/level.gd" id="1_level"]
+
+[node name="Level" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="TerrainLayer" type="TileMapLayer" parent="."]
+
+[node name="Items" type="Node2D" parent="."]
+
+[node name="Entities" type="Node2D" parent="."]
+
+[node name="Effects" type="Node2D" parent="."]

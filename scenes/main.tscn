@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://bqm4n7k2p8x1v"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/systems/turn_system.gd" id="2_turn"]
+[ext_resource type="Script" path="res://scripts/systems/floater_manager.gd" id="3_floater"]
+[ext_resource type="PackedScene" uid="uid://bhx9k2v4m1pqr" path="res://scenes/ui/hud.tscn" id="4_hud"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="LevelContainer" type="Node2D" parent="."]
+
+[node name="TurnSystem" type="Node" parent="."]
+script = ExtResource("2_turn")
+
+[node name="FloaterManager" type="Node" parent="."]
+script = ExtResource("3_floater")
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
