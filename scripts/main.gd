@@ -18,9 +18,20 @@ var inventory_panel: Control = null
 var skills_panel: Control = null
 var abilities_panel: Control = null
 var death_screen: Control = null
+var look_panel: Control = null
+var dialogue_panel: Control = null  # DialoguePanel - using Control to avoid load order issues
+var smithing_panel: Control = null
+var target_panel: Control = null    # TargetPanel for archery/wand targeting
 
 var current_level: Level = null
 var player: Player = null
+
+# Quest system (using Node type to avoid load order issues)
+var quest_system: Node = null
+
+# Systems (Phase 8C) - using Node/RefCounted to avoid load order issues
+var auto_explore: RefCounted = null  # AutoExplore
+var monster_memory: RefCounted = null
 
 const LEVEL_SCENE := preload("res://scenes/levels/level.tscn")
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
@@ -29,6 +40,13 @@ const INVENTORY_PANEL_SCENE := preload("res://scenes/ui/inventory_panel.tscn")
 const SKILLS_PANEL_SCENE := preload("res://scenes/ui/skills_panel.tscn")
 const ABILITIES_PANEL_SCENE := preload("res://scenes/ui/abilities_panel.tscn")
 const DEATH_SCREEN_SCENE := preload("res://scenes/ui/death_screen.tscn")
+const LOOK_PANEL_SCENE := preload("res://scenes/ui/look_panel.tscn")
+const DIALOGUE_PANEL_SCENE := preload("res://scenes/ui/dialogue_panel.tscn")
+const SMITHING_PANEL_SCENE := preload("res://scenes/ui/smithing_panel.tscn")
+const TARGET_PANEL_SCENE := preload("res://scenes/ui/target_panel.tscn")
+const QuestSystemScript := preload("res://scripts/systems/quest_system.gd")
+const AutoExploreScript := preload("res://scripts/systems/auto_explore.gd")
+const MonsterMemoryScript := preload("res://scripts/systems/monster_memory.gd")
 
 func _ready() -> void:
 	_setup_ui_panels()
@@ -62,6 +80,38 @@ func _setup_ui_panels() -> void:
 	death_screen.new_game_requested.connect(_on_new_game_requested)
 	death_screen.quit_requested.connect(_on_quit_requested)
 	ui_layer.add_child(death_screen)
+
+	# Instantiate look panel (hidden by default)
+	look_panel = LOOK_PANEL_SCENE.instantiate()
+	look_panel.closed.connect(_on_look_closed)
+	ui_layer.add_child(look_panel)
+
+	# Instantiate target panel (hidden by default)
+	target_panel = TARGET_PANEL_SCENE.instantiate()
+	target_panel.target_selected.connect(_on_target_selected)
+	target_panel.cancelled.connect(_on_target_cancelled)
+	ui_layer.add_child(target_panel)
+
+	# Instantiate dialogue panel (hidden by default)
+	dialogue_panel = DIALOGUE_PANEL_SCENE.instantiate()
+	dialogue_panel.dialogue_closed.connect(_on_dialogue_closed)
+	ui_layer.add_child(dialogue_panel)
+
+	# Instantiate smithing panel (hidden by default)
+	smithing_panel = SMITHING_PANEL_SCENE.instantiate()
+	smithing_panel.closed.connect(_on_smithing_closed)
+	ui_layer.add_child(smithing_panel)
+
+	# Initialize Phase 8C systems (using preloaded scripts)
+	auto_explore = AutoExploreScript.new()
+	monster_memory = MonsterMemoryScript.new()
+
+	# Create quest system using preloaded script
+	quest_system = QuestSystemScript.new()
+	add_child(quest_system)
+
+	# Connect NPC interaction event
+	EventBus.npc_interacted.connect(_on_npc_interacted)
 
 func _show_character_creation() -> void:
 	current_state = GameState.CHARACTER_CREATION
@@ -103,9 +153,11 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	turn_system.set_player(player)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
-	# Initial FOV update
-	current_level.update_fov(player.grid_position, 10)
+	# Initial FOV update (use layer-based FOV radius)
+	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	current_level.update_fov(player.grid_position, fov_radius)
 	current_level.update_entity_visibility()
+	current_level.apply_fov_to_tilemap()
 
 	# Show HUD
 	hud.visible = true
@@ -115,6 +167,11 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	var name_str: String = character_data.get("name", "Necromancer")
 	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, Color.CYAN)
 	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Skills: @  Pickup: G", Color.GRAY)
+
+	# Show layer entry message
+	var entry_msg := LayerConfig.get_entry_message(1, 0)
+	if not entry_msg.is_empty():
+		GameManager.log_message(entry_msg, Color.YELLOW)
 
 func _generate_level(depth: int) -> void:
 	# Clean up old level
@@ -129,6 +186,10 @@ func _generate_level(depth: int) -> void:
 	# Generate dungeon
 	var generator := DungeonGenerator.new()
 	generator.generate(current_level, depth)
+
+	# Try to spawn Thrain on appropriate depths
+	if quest_system:
+		generator.spawn_thrain_if_appropriate(depth, quest_system)
 
 	# Store reference
 	GameManager.current_level = current_level
@@ -165,6 +226,10 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	# Store reference
 	GameManager.player = player
 
+	# Set player on quest system
+	if quest_system:
+		quest_system.set_player(player)
+
 func _process(_delta: float) -> void:
 	if current_state != GameState.PLAYING:
 		return
@@ -200,6 +265,7 @@ func _check_stairs() -> void:
 					_ascend()
 
 func _descend() -> void:
+	var previous_depth := GameManager.current_depth
 	GameManager.descend_level()
 
 	# Award descent XP
@@ -224,13 +290,21 @@ func _descend() -> void:
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
-	# Update FOV
-	current_level.update_fov(player.grid_position, 10)
+	# Update FOV (use layer-based FOV radius)
+	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	current_level.update_fov(player.grid_position, fov_radius)
 	current_level.update_entity_visibility()
+	current_level.apply_fov_to_tilemap()
 
 	GameManager.log_message("You descend deeper into the darkness... (Depth %d)" % GameManager.current_depth, Color.CYAN)
 
+	# Show layer entry message if entering a new layer
+	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
+	if not entry_msg.is_empty():
+		GameManager.log_message(entry_msg, Color.YELLOW)
+
 func _ascend() -> void:
+	var previous_depth := GameManager.current_depth
 	GameManager.ascend_level()
 
 	# For now, just regenerate (in full game, would cache levels)
@@ -247,10 +321,19 @@ func _ascend() -> void:
 
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
-	current_level.update_fov(player.grid_position, 10)
+
+	# Update FOV (use layer-based FOV radius)
+	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	current_level.update_fov(player.grid_position, fov_radius)
 	current_level.update_entity_visibility()
+	current_level.apply_fov_to_tilemap()
 
 	GameManager.log_message("You climb back up... (Depth %d)" % GameManager.current_depth, Color.CYAN)
+
+	# Show layer entry message if entering a new layer (when ascending)
+	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
+	if not entry_msg.is_empty():
+		GameManager.log_message(entry_msg, Color.YELLOW)
 
 func _update_camera_zoom() -> void:
 	var camera := player.get_node("Camera2D") as Camera2D
@@ -280,14 +363,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_abilities()
 		get_viewport().set_input_as_handled()
 
-	# Quick save (F5)
-	if event.is_action_pressed("quick_save"):
-		_quick_save()
+	# Look mode toggle (X key)
+	if event.is_action_pressed("look"):
+		_toggle_look()
 		get_viewport().set_input_as_handled()
 
-	# Quick load (F9)
-	if event.is_action_pressed("quick_load"):
-		_quick_load()
+	# Auto-explore (O key)
+	if event.is_action_pressed("auto_explore"):
+		_start_auto_explore()
+		get_viewport().set_input_as_handled()
+
+	# F key: Fire (archery) if bow equipped, else forge if on forge tile
+	if event.is_action_pressed("forge"):
+		if player and player.can_fire_ranged():
+			_open_targeting()
+		else:
+			_try_use_forge()
 		get_viewport().set_input_as_handled()
 
 	# Pause/menu
@@ -302,7 +393,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _is_ui_open() -> bool:
 	return (inventory_panel and inventory_panel.visible) or \
 		   (skills_panel and skills_panel.visible) or \
-		   (abilities_panel and abilities_panel.visible)
+		   (abilities_panel and abilities_panel.visible) or \
+		   (look_panel and look_panel.visible) or \
+		   (dialogue_panel and dialogue_panel.visible) or \
+		   (smithing_panel and smithing_panel.visible)
 
 func _toggle_inventory() -> void:
 	if inventory_panel.visible:
@@ -352,6 +446,64 @@ func _on_abilities_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
 
+func _toggle_look() -> void:
+	if look_panel.visible:
+		look_panel.close()
+	else:
+		# Close other panels first
+		if inventory_panel and inventory_panel.visible:
+			inventory_panel.close()
+		if skills_panel and skills_panel.visible:
+			skills_panel.close()
+		if abilities_panel and abilities_panel.visible:
+			abilities_panel.close()
+		look_panel.open(player, current_level)
+		GameManager.is_player_turn = false  # Pause game while in look mode
+
+func _on_look_closed() -> void:
+	GameManager.is_player_turn = true
+
+func _on_npc_interacted(_player_node: Node, npc: Node) -> void:
+	"""Handle NPC interaction - open dialogue panel."""
+	if dialogue_panel and npc:
+		dialogue_panel.open_dialogue(npc)
+
+func _on_dialogue_closed() -> void:
+	"""Handle dialogue panel closing."""
+	GameManager.is_player_turn = true
+
+## Open targeting mode for archery
+func _open_targeting() -> void:
+	if not player or not player.is_alive:
+		return
+	if not player.can_fire_ranged():
+		GameManager.log_message("You need a bow and arrows to fire.", Color.GRAY)
+		return
+	# Close other panels
+	if look_panel and look_panel.visible:
+		look_panel.close()
+	target_panel.open(player, current_level)
+	GameManager.is_player_turn = false
+
+func _on_target_selected(target_pos: Vector2i) -> void:
+	GameManager.is_player_turn = true
+	if not player or not player.is_alive:
+		return
+	# Fire arrow at target
+	var target_entity: Entity = current_level.get_entity_at(target_pos)
+	if target_entity and is_instance_valid(target_entity) and target_entity.is_alive:
+		var dist: int = max(abs(target_pos.x - player.grid_position.x),
+						   abs(target_pos.y - player.grid_position.y))
+		if player.consume_arrow():
+			player.attacked_this_turn = true
+			player.ranged_attack(target_entity, dist)
+			player.consume_energy()
+	else:
+		GameManager.log_message("Nothing to hit there.", Color.GRAY)
+
+func _on_target_cancelled() -> void:
+	GameManager.is_player_turn = true
+
 # ============================================================================
 # DEATH HANDLING
 # ============================================================================
@@ -364,9 +516,6 @@ func _on_player_died(cause: String, killer_name: String) -> void:
 	player.run_stats.killer_name = killer_name
 	player.run_stats.max_depth_reached = maxi(player.run_stats.max_depth_reached, GameManager.current_depth)
 	player.run_stats.total_turns = GameManager.turn_count
-
-	# Delete save file in permadeath mode
-	SaveManager.delete_save_on_death(QUICK_SAVE_SLOT)
 
 	# Show death screen
 	death_screen.show_death(player, player.run_stats)
@@ -395,84 +544,112 @@ func _on_new_game_requested() -> void:
 func _on_quit_requested() -> void:
 	get_tree().quit()
 
+
 # ============================================================================
-# SAVE/LOAD SYSTEM
+# SMITHING SYSTEM (Phase 8C)
 # ============================================================================
 
-const QUICK_SAVE_SLOT: int = 0
-
-var current_game_mode: SaveManager.GameMode = SaveManager.GameMode.PERMADEATH
-
-func _quick_save() -> void:
-	if current_state != GameState.PLAYING:
-		GameManager.log_message("Cannot save in current state.", Color.YELLOW)
-		return
-
+func _try_use_forge() -> void:
 	if not player or not current_level:
-		GameManager.log_message("Cannot save: No active game.", Color.YELLOW)
 		return
 
-	SaveManager.save_game(QUICK_SAVE_SLOT, player, current_level, current_game_mode)
-
-func _quick_load() -> void:
-	if not SaveManager.has_save(QUICK_SAVE_SLOT):
-		GameManager.log_message("No save file in quick save slot.", Color.YELLOW)
+	var tile: int = current_level.get_tile(player.grid_position)
+	if tile != Level.Tile.FORGE:
+		GameManager.log_message("You need to be standing on a forge to use it.", Color.YELLOW)
 		return
 
-	var save_data := SaveManager.load_game(QUICK_SAVE_SLOT)
-	if save_data.is_empty():
-		GameManager.log_message("Failed to load save file.", Color.RED)
+	_open_smithing_panel()
+
+func _open_smithing_panel() -> void:
+	if not smithing_panel:
 		return
 
-	# Clean up current game
-	if current_level:
-		current_level.queue_free()
-		await get_tree().process_frame
+	# Close other panels first
+	if inventory_panel and inventory_panel.visible:
+		inventory_panel.close()
+	if skills_panel and skills_panel.visible:
+		skills_panel.close()
+	if abilities_panel and abilities_panel.visible:
+		abilities_panel.close()
+	if look_panel and look_panel.visible:
+		look_panel.close()
 
-	if player:
-		player.queue_free()
-		await get_tree().process_frame
+	smithing_panel.open(player, current_level)
+	GameManager.is_player_turn = false
 
-	# Get data from save
-	var game_state: Dictionary = save_data.get("game_state", {})
-	var player_data: Dictionary = save_data.get("player", {})
-	var header: Dictionary = save_data.get("header", {})
-
-	# Restore game mode
-	current_game_mode = header.get("game_mode", SaveManager.GameMode.PERMADEATH)
-
-	# Restore game state
-	GameManager.current_depth = game_state.get("current_depth", 1)
-	GameManager.turn_count = game_state.get("turn_count", 0)
-	current_state = GameState.PLAYING
-
-	# Generate level (will be at same depth, but regenerated)
-	# TODO: For full save fidelity, store and restore RNG seed
-	_generate_level(GameManager.current_depth)
-
-	# Spawn and restore player
-	player = PLAYER_SCENE.instantiate()
-	SaveManager.apply_save_data(save_data, player, current_level)
-
-	# Connect player death signal
-	player.player_died.connect(_on_player_died)
-
-	# Add player to level
-	current_level.add_entity(player)
-
-	# Update systems
-	turn_system.set_level(current_level)
-	turn_system.set_player(player)
-	floater_manager.set_container(current_level.get_node("Effects"))
-
-	# Update FOV
-	current_level.update_fov(player.grid_position, 10)
-	current_level.update_entity_visibility()
-
-	# Show HUD
-	hud.visible = true
+func _on_smithing_closed() -> void:
+	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
 
-	# Store references
-	GameManager.player = player
-	GameManager.current_level = current_level
+# ============================================================================
+# AUTO-EXPLORE (Phase 8C)
+# ============================================================================
+
+func _start_auto_explore() -> void:
+	if not auto_explore or not player or not current_level:
+		return
+
+	# Set up auto-explore
+	auto_explore.set_level(current_level)
+	auto_explore.set_player(player)
+
+	if auto_explore.start_explore():
+		# Process auto-explore turns
+		_process_auto_explore()
+
+func _process_auto_explore() -> void:
+	if not auto_explore or not auto_explore.is_exploring:
+		return
+
+	# Check for manual input to stop
+	if auto_explore.should_stop_on_input():
+		return
+
+	# Get next step
+	var next_pos: Vector2i = auto_explore.get_next_step()
+	if next_pos == Vector2i(-1, -1):
+		return
+
+	# Calculate direction
+	var direction: Vector2i = next_pos - player.grid_position
+
+	# Move the player
+	if player.try_move(direction):
+		player.consume_energy()
+		auto_explore.confirm_step_taken()
+
+		# Update FOV
+		var fov_radius := current_level.get_fov_radius()
+		current_level.update_fov(player.grid_position, fov_radius)
+		current_level.update_entity_visibility()
+		current_level.apply_fov_to_tilemap()
+
+		# Record monster observations
+		_observe_visible_monsters()
+
+		# Process game tick
+		turn_system._process_game_tick()
+
+		# Continue auto-explore on next frame if still exploring
+		if auto_explore.is_exploring:
+			await get_tree().create_timer(0.05).timeout
+			_process_auto_explore()
+
+# ============================================================================
+# MONSTER MEMORY (Phase 8C)
+# ============================================================================
+
+func _observe_visible_monsters() -> void:
+	if not monster_memory or not current_level:
+		return
+
+	# Record observations for all visible monsters
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive:
+			if current_level.is_tile_visible(entity.grid_position):
+				monster_memory.record_observation(entity)
+
+func get_monster_memory() -> RefCounted:
+	return monster_memory

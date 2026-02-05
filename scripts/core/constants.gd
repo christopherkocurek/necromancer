@@ -98,11 +98,15 @@ enum EvasionAbility {
 # ============================================================================
 
 enum ArcheryAbility {
-	ARC_PRECISION = 0,
-	ARC_POINT_BLANK = 1,
-	ARC_RAPID_FIRE = 2,
-	ARC_CRIPPLING_SHOT = 3,
-	ARC_FLAMING_ARROWS = 4
+	ARC_ROUT = 0,
+	ARC_FLETCHERY = 1,
+	ARC_POINT_BLANK = 2,
+	ARC_PUNCTURE = 3,
+	ARC_AMBUSH = 4,
+	ARC_KEEN_EYES = 5,
+	ARC_CRIPPLING_SHOT = 6,
+	ARC_DEADLY_HAIL = 7,
+	ARC_DEX = 8,
 }
 
 # ============================================================================
@@ -112,9 +116,16 @@ enum ArcheryAbility {
 enum StealthAbility {
 	STL_DISGUISE = 0,
 	STL_ASSASSINATION = 1,
-	STL_CRUEL_BLOW = 2,
-	STL_OPPORTUNIST = 3,
-	STL_EXCHANGE_PLACES = 4
+	STL_DISORIENTING = 2,
+	STL_ESCAPE_ARTIST = 3,
+	STL_LIGHT_FINGERS = 4,
+	STL_VANISH = 5,
+	STL_DEX = 6,
+	STL_THROAT_SLIT = 7,
+	STL_FADE = 8,
+	STL_PILFER = 9,
+	STL_DISTRACTION = 10,
+	STL_SILENT_KILL = 11,
 }
 
 # ============================================================================
@@ -122,11 +133,16 @@ enum StealthAbility {
 # ============================================================================
 
 enum PerceptionAbility {
-	PER_FOCUSED_ATTACK = 0,
-	PER_KEEN_SENSES = 1,
-	PER_LORE_KEEPER = 2,
+	PER_NATURAL_TALENT = 0,
+	PER_FOCUSED_ATTACK = 1,
+	PER_KEEN_SENSES = 2,
 	PER_CONCENTRATION = 3,
-	PER_BANE = 4
+	PER_ALCHEMY = 4,
+	PER_BANE = 5,
+	PER_OUTWIT = 6,
+	PER_LISTEN = 7,
+	PER_MASTER_HUNTER = 8,
+	PER_GRACE = 9,
 }
 
 # ============================================================================
@@ -134,11 +150,17 @@ enum PerceptionAbility {
 # ============================================================================
 
 enum WillAbility {
-	WIL_CHANNELING = 0,
-	WIL_MIND_OVER_BODY = 1,
-	WIL_CURSE_BREAKING = 2,
-	WIL_INNER_LIGHT = 3,
-	WIL_HARDINESS = 4
+	WIL_CURSE_BREAKING = 0,
+	WIL_FORCE_OF_WILL = 1,
+	WIL_STRENGTH_ADVERSITY = 2,
+	WIL_FORMIDABLE = 3,
+	WIL_DEFY_DEATH = 4,
+	WIL_INDOMITABLE = 5,
+	WIL_OATH = 6,
+	WIL_POISON_RESIST = 7,
+	WIL_VENGEANCE = 8,
+	WIL_MAJESTY = 9,
+	WIL_CON = 10,
 }
 
 # ============================================================================
@@ -149,9 +171,36 @@ enum SmithingAbility {
 	SMT_WEAPONSMITH = 0,
 	SMT_ARMOURSMITH = 1,
 	SMT_JEWELLER = 2,
-	SMT_ENCHANTMENT = 3,
-	SMT_ARTIFICE = 4,
-	SMT_MASTERPIECE = 5
+	SMT_REFORGE = 3,
+	SMT_EXPERTISE = 4,
+	SMT_RECLAIM = 5,
+	SMT_MASTERWORK = 6,
+	SMT_GRACE = 7,
+	SMT_REFORGE_MASTERY = 8,
+	SMT_SALVAGE = 9,
+	SMT_RECLAIM_MASTERY = 10,
+	SMT_MASTER_SMITH = 11,
+}
+
+# ============================================================================
+# LORE ABILITIES (Phase 8)
+# ============================================================================
+
+enum LoreAbility {
+	LOR_WORD_OF_COMMAND = 0,    # 140: AOE fear/stun
+	LOR_LORE_OF_BATTLE = 1,     # 141: Provoke target
+	LOR_DEEP_MEMORY = 2,        # 142: Reveal map (DEFERRED)
+	LOR_WORD_OF_OPENING = 3,    # 143: Unlock doors, reveal traps
+	LOR_LORE_OF_SILENCE = 4,    # 144: Reduce monster perception
+	LOR_HERBCRAFT = 5,          # 145: Double healing from potions
+	LOR_WORD_OF_SHUTTING = 6,   # 146: Lock doors permanently
+	LOR_INNER_LIGHT = 7,        # 147: +light radius (DEFERRED)
+	LOR_DEADLY_LORE = 8,        # 148: Instant kill if HP <= 2xLore
+	LOR_LORE_OF_ENDURANCE = 9,  # 149: +Will/2, +2d2 protection
+	LOR_LORE_OF_SLEEP = 10,     # 150: Put target to sleep
+	LOR_WORD_OF_MASTERY = 11,   # 151: Paralyze target
+	LOR_DEVICE_MASTERY = 12,    # 152: +50% wand/staff charges
+	LOR_GRACE = 13,             # 153: Passive +1 Grace stat
 }
 
 # ============================================================================
@@ -292,8 +341,17 @@ const FLAG_MAP: Dictionary = {
 
 const ACTION_COST: int = 100
 
+# Stealth
+const STEALTH_MODE_BONUS: int = 5  # Bonus to stealth score when in stealth mode
+const NOISE_DOOR: int = 5          # Noise from opening/closing doors
+const NOISE_SMITHING: int = 10     # Noise from smithing
+const NOISE_DIGGING: int = 10      # Noise from tunnelling/digging
+const NOISE_BASH: int = 15         # Noise from bashing doors
+
 # Energy gained per tick based on speed (0-7)
-const ENERGY_TABLE: Array[int] = [5, 5, 10, 15, 20, 25, 30, 35]
+# Speed 2 is normal (100 energy = 1 action per tick)
+# Faster creatures act more often, slower less often
+const ENERGY_TABLE: Array[int] = [50, 75, 100, 125, 150, 175, 200, 250]
 
 # ============================================================================
 # ACTION TYPES (for tracking previous actions)
@@ -435,6 +493,7 @@ const EFFECT_ENTRANCED: StringName = &"entranced"
 const EFFECT_IMAGE: StringName = &"image"  # Hallucination
 const EFFECT_RAGE: StringName = &"rage"
 const EFFECT_DARKENED: StringName = &"darkened"
+const EFFECT_BURNING: StringName = &"burning"
 
 # Stun thresholds
 const STUN_THRESHOLD_HEAVY: int = 50

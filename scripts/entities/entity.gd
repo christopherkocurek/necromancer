@@ -50,9 +50,11 @@ static var _magenta_shader: ShaderMaterial = null
 
 # State
 var is_alive: bool = true
-var status_effects: Dictionary = {}  # name -> {duration: int, data: Variant}
+var status_effects: Dictionary = {}  # name -> {duration: int, data: Variant} (legacy, synced from status_fx)
+var status_fx: StatusEffects  # New status effect system
 
 func _ready() -> void:
+	status_fx = StatusEffects.new(self)
 	_setup_sprite()
 	_update_visual_position()
 
@@ -148,6 +150,10 @@ func move_to(target: Vector2i, animate: bool = true) -> void:
 
 	EventBus.entity_moved.emit(self, old_pos, target)
 
+	# Check for tile effects (traps, etc.)
+	if GameManager.current_level and GameManager.current_level.has_method("on_entity_step"):
+		GameManager.current_level.on_entity_step(self, target)
+
 func teleport_to(target: Vector2i) -> void:
 	var old_pos := grid_position
 	grid_position = target
@@ -237,58 +243,42 @@ func _play_death_animation() -> void:
 # STATUS EFFECTS
 # ============================================================================
 
-func apply_status(status_name: String, duration: int, data: Variant = null) -> void:
-	status_effects[status_name] = {"duration": duration, "data": data}
-	EventBus.status_applied.emit(self, status_name, duration)
+func apply_status(status_name: String, duration: int, _data: Variant = null) -> void:
+	# Delegate to new StatusEffects system
+	var effect_id: StringName = StringName(status_name)
+	status_fx.apply_effect(effect_id, duration)
+	# Sync legacy dict for backwards compatibility (HUD reads this)
+	_sync_status_dict()
 
 func remove_status(status_name: String) -> void:
-	if status_effects.has(status_name):
-		status_effects.erase(status_name)
-		EventBus.status_removed.emit(self, status_name)
+	var effect_id: StringName = StringName(status_name)
+	status_fx.remove_effect(effect_id)
+	_sync_status_dict()
 
 func has_status(status_name: String) -> bool:
-	return status_effects.has(status_name)
+	return status_fx.has_effect(StringName(status_name))
 
 func tick_status_effects() -> void:
-	var to_remove: Array[String] = []
+	status_fx.tick_effects()
+	_sync_status_dict()
 
-	for status_name in status_effects:
-		var effect: Dictionary = status_effects[status_name]
-
-		# Process effect each tick
-		_process_status_effect(status_name, effect)
-
-		effect.duration -= 1
-		EventBus.status_tick.emit(self, status_name, effect.duration)
-
-		if effect.duration <= 0:
-			to_remove.append(status_name)
-
-	for status_name in to_remove:
-		remove_status(status_name)
-
-func _process_status_effect(status_name: String, effect: Dictionary) -> void:
-	var power: int = effect.get("data", 1) if effect.has("data") and effect.data != null else 1
-	match status_name:
-		"poison":
-			take_damage(power, "poison", null)
-		"regeneration":
-			heal(power, null)
-		"burning":
-			take_damage(power * 2, "fire", null)
-		"bleeding":
-			take_damage(power, "physical", null)
-		_:
-			pass  # Other effects handled elsewhere
+func _sync_status_dict() -> void:
+	# Keep legacy status_effects dict in sync for HUD and other readers
+	status_effects.clear()
+	for effect_id: StringName in status_fx.effects:
+		status_effects[String(effect_id)] = {"duration": status_fx.effects[effect_id], "data": null}
 
 # ============================================================================
 # ATTACK
 # ============================================================================
 
 func attack_entity(target: Entity) -> void:
-	# Sil-Q Opposed Roll Combat: (1d20 + attack) vs (1d20 + evasion)
-	var attack_score: int = randi_range(1, 20) + melee_bonus
-	var evasion_score: int = randi_range(1, 20) + target.evasion_bonus
+	# Sil-Q Opposed Roll Combat with full modifier stacks
+	var att: int = get_total_attack(target)
+	var evn: int = target.get_total_evasion(self)
+
+	var attack_score: int = randi_range(1, 20) + att
+	var evasion_score: int = randi_range(1, 20) + evn
 	var hit_result: int = attack_score - evasion_score
 
 	if hit_result < 0:
@@ -300,24 +290,32 @@ func attack_entity(target: Entity) -> void:
 
 	# Base damage from weapon dice
 	var weapon_weight: int = _get_weapon_weight()
-	var damage: int = DataManager.roll_dice(damage_dice)
+	var dmg_dice: String = _get_attack_damage_dice()
+	var damage: int = DataManager.roll_dice(dmg_dice)
 
 	# STR damage bonus capped by weapon weight
-	# Heavier weapons can utilize more STR, lighter weapons cap the bonus
 	var str_bonus: int = strength / 2
 	var weight_cap: int = weapon_weight / 10
 	var actual_str_bonus: int = mini(str_bonus, weight_cap)
 	damage += actual_str_bonus
 
-	# Critical hit calculation: (hit_result × 10 + 4) / (70 + weapon_weight)
-	# Heavier weapons = harder crits but more damage potential from STR
-	var crit_dice: int = (hit_result * 10 + 4) / (70 + weapon_weight)
+	# Critical hit calculation: (hit_result * 10 + 4) / (threshold + weight)
+	var crit_threshold: int = _get_crit_threshold()
+	var crit_dice: int = (hit_result * 10 + 4) / (crit_threshold + weapon_weight)
+
+	# Check target crit resistance
+	crit_dice = _apply_crit_resistance(target, crit_dice)
 
 	# Apply crit bonus dice
 	var crit_damage: int = 0
 	for i in range(crit_dice):
-		crit_damage += DataManager.roll_dice(damage_dice)
+		crit_damage += DataManager.roll_dice(dmg_dice)
 	damage += crit_damage
+
+	# Bonus damage dice from abilities (e.g., Power)
+	var bonus_dice: int = _get_bonus_damage_dice()
+	for i in range(bonus_dice):
+		damage += DataManager.roll_dice(dmg_dice)
 
 	# Log the hit
 	if crit_dice > 0:
@@ -331,10 +329,125 @@ func attack_entity(target: Entity) -> void:
 
 	target.take_damage(damage, "physical", self)
 
+	# Resolve attack effects (e.g., monster special attacks: FIRE, COLD, BLIND, etc.)
+	_on_successful_hit(target, hit_result, damage)
+
+# ============================================================================
+# COMBAT MODIFIERS (virtual - override in Player/Monster)
+# ============================================================================
+
+## Calculate total attack bonus vs a specific target. Override in subclasses.
+func get_total_attack(target: Entity) -> int:
+	var att: int = melee_bonus
+	# Blind attacker: halve attack
+	if status_fx and status_fx.is_blind():
+		att = att / 2
+	return att
+
+## Calculate total evasion bonus vs a specific attacker. Override in subclasses.
+func get_total_evasion(attacker: Entity) -> int:
+	var evn: int = evasion_bonus
+	# Blind defender: halve evasion
+	if status_fx and status_fx.is_blind():
+		evn = evn / 2
+	return evn
+
+## Get the damage dice for this attack. Override for weapon-based attacks.
+func _get_attack_damage_dice() -> String:
+	return damage_dice
+
+## Get critical hit threshold. Override for ability modifiers.
+func _get_crit_threshold() -> int:
+	return 70
+
+## Get bonus damage dice from abilities. Override in Player.
+func _get_bonus_damage_dice() -> int:
+	return 0
+
+## Apply target's crit resistance (RES_CRIT halves, NO_CRIT zeroes).
+func _apply_crit_resistance(target: Entity, crit_dice_count: int) -> int:
+	if is_instance_valid(target) and target is Monster:
+		var mon: Monster = target as Monster
+		if mon.monster_data:
+			if mon.monster_data.has_flag("NO_CRIT"):
+				return 0
+			if mon.monster_data.has_flag("RES_CRIT"):
+				return crit_dice_count / 2
+	return crit_dice_count
+
+## Called after a successful hit. Override in Monster for attack effects.
+func _on_successful_hit(_target: Entity, _hit_result: int, _damage: int) -> void:
+	pass
+
 func _get_weapon_weight() -> int:
 	# Override in Player to get actual weapon weight
 	# Default weight for monsters/unarmed
 	return 50
+
+# ============================================================================
+# RANGED COMBAT
+# ============================================================================
+
+## Perform a ranged attack against a target entity
+func ranged_attack(target: Entity, distance: int) -> void:
+	# Sil-Q ranged combat: evasion halved at range, distance penalty
+	var att: int = get_total_attack(target)
+	# Distance penalty: -1 per tile beyond 1
+	att -= maxi(0, distance - 1)
+
+	# Ranged evasion is halved
+	var evn: int = target.get_total_evasion(self) / 2
+
+	var attack_score: int = randi_range(1, 20) + att
+	var evasion_score: int = randi_range(1, 20) + evn
+
+	var hit_result: int = attack_score - evasion_score
+
+	if hit_result < 0:
+		EventBus.attack_missed.emit(self, target)
+		GameManager.log_message("%s's shot misses %s (%d vs %d)" % [
+			entity_name, target.entity_name, attack_score, evasion_score
+		], Color.GRAY)
+		return
+
+	# Damage from arrow/bolt
+	var dmg_dice: String = _get_ranged_damage_dice()
+	var damage: int = DataManager.roll_dice(dmg_dice)
+
+	# STR bonus (capped by bow weight)
+	var bow_weight: int = _get_bow_weight()
+	var str_bonus: int = strength / 2
+	var weight_cap: int = bow_weight / 10
+	damage += mini(str_bonus, weight_cap)
+
+	# Critical hit
+	var crit_threshold: int = _get_crit_threshold()
+	var crit_dice: int = (hit_result * 10 + 4) / (crit_threshold + bow_weight)
+	crit_dice = _apply_crit_resistance(target, crit_dice)
+
+	var crit_damage: int = 0
+	for i in range(crit_dice):
+		crit_damage += DataManager.roll_dice(dmg_dice)
+	damage += crit_damage
+
+	if crit_dice > 0:
+		GameManager.log_message("%s CRITS %s with a shot! (%d vs %d, +%d dice = %d dmg)" % [
+			entity_name, target.entity_name, attack_score, evasion_score, crit_dice, damage
+		], Color.ORANGE)
+	else:
+		GameManager.log_message("%s hits %s with a shot (%d vs %d = %d dmg)" % [
+			entity_name, target.entity_name, attack_score, evasion_score, damage
+		], Color.WHITE)
+
+	target.take_damage(damage, "physical", self)
+
+## Override in Player for equipped bow damage
+func _get_ranged_damage_dice() -> String:
+	return "1d5"  # Default arrow damage
+
+## Override in Player for bow weight
+func _get_bow_weight() -> int:
+	return 30
 
 # ============================================================================
 # ENERGY SYSTEM
@@ -342,11 +455,22 @@ func _get_weapon_weight() -> int:
 
 func get_energy_gain() -> int:
 	# Get energy gain based on speed (uses Constants.ENERGY_TABLE)
-	var speed_index: int = clampi(speed, 0, Constants.ENERGY_TABLE.size() - 1)
+	# SLOW/FAST status effects shift the speed index
+	var speed_mod: int = 0
+	if status_fx:
+		speed_mod = status_fx.get_speed_modifier()
+	var speed_index: int = clampi(speed + speed_mod, 0, Constants.ENERGY_TABLE.size() - 1)
 	return Constants.ENERGY_TABLE[speed_index]
 
 func can_act() -> bool:
 	return energy >= Constants.ACTION_COST and is_alive
+
+## Check if entity can take a turn (not incapacitated by status effects).
+## STUNNED (knockout level) and ENTRANCED prevent action.
+func can_take_turn() -> bool:
+	if status_fx and status_fx.is_incapacitated():
+		return false
+	return true
 
 func consume_energy(amount: int = Constants.ACTION_COST) -> void:
 	energy -= amount

@@ -196,6 +196,9 @@ func _on_buy_pressed() -> void:
 	learned.append(selected_ability.name)
 	player.set_meta("learned_abilities", learned)
 
+	# Register in the gameplay ability array system so has_ability() works
+	player.learn_ability(selected_ability.skill_type, selected_ability.ability_num)
+
 	GameManager.log_message("You have learned %s!" % selected_ability.name, Color.GOLD)
 	ability_purchased.emit(selected_ability.name)
 

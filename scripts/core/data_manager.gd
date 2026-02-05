@@ -966,6 +966,9 @@ class ItemData:
 	var protection_dice: String = "" # e.g. "1d4" for armor
 	var flags: Array[String] = []
 	var description: String = ""
+	# Identification (Phase D)
+	var identified: bool = false     # Whether this specific item is identified
+	var fuel: int = -1               # Fuel for light sources (-1 = no fuel system)
 
 class ArtifactData:
 	var index: int = 0

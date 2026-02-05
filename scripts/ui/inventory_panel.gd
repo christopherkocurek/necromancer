@@ -4,6 +4,7 @@ class_name InventoryPanel
 
 signal item_selected(item_data: Variant)
 signal item_equipped(item_data: Variant, slot: int)
+signal item_unequipped(item_data: Variant, slot_key: String)
 signal item_dropped(item_data: Variant)
 signal closed
 
@@ -15,6 +16,7 @@ const TILE_SIZE: int = 64
 var player: Player
 var selected_item: Variant = null
 var selected_slot_index: int = -1
+var selected_equipment_slot: int = -1  # Track selected equipment slot
 
 # Shared tileset texture for item sprites
 static var _tileset_texture: Texture2D = null
@@ -52,6 +54,7 @@ func close() -> void:
 	visible = false
 	selected_item = null
 	selected_slot_index = -1
+	selected_equipment_slot = -1
 	closed.emit()
 
 func _setup_inventory_grid() -> void:
@@ -185,6 +188,9 @@ func _refresh_equipment() -> void:
 			slot.text = ""
 
 func _on_inventory_slot_pressed(index: int) -> void:
+	# Clear equipment selection when clicking inventory
+	selected_equipment_slot = -1
+
 	if not player or index >= player.inventory.size():
 		selected_item = null
 		selected_slot_index = -1
@@ -207,14 +213,55 @@ func _on_equipment_slot_pressed(slot_id: int) -> void:
 			_try_equip_item(selected_item, slot_id)
 		return
 
-	# Otherwise, show equipped item info or unequip
+	# Clear inventory selection when clicking equipment
+	selected_item = null
+	selected_slot_index = -1
+
+	# Select this equipment slot
 	var slot_key: String = _get_slot_key(slot_id)
 	if slot_key.is_empty():
 		return
 
 	var equipped_item = player.equipment.get(slot_key)
 	if equipped_item != null:
+		selected_equipment_slot = slot_id
 		_update_item_info(equipped_item)
+		_highlight_equipment_slot(slot_id)
+	else:
+		selected_equipment_slot = -1
+		_update_item_info(null)
+
+func _highlight_equipment_slot(slot_id: int) -> void:
+	# Reset all equipment slot styles
+	for id in equipment_slots:
+		var slot: Button = equipment_slots[id]
+		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.15, 0.2, 0.15)))
+
+	# Highlight selected slot
+	if slot_id >= 0 and equipment_slots.has(slot_id):
+		var slot: Button = equipment_slots[slot_id]
+		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.3, 0.4, 0.5)))
+
+func _try_unequip_slot(slot_id: int) -> void:
+	var slot_key: String = _get_slot_key(slot_id)
+	if slot_key.is_empty():
+		return
+
+	var equipped_item = player.equipment.get(slot_key)
+	if equipped_item == null:
+		GameManager.log_message("Nothing equipped in that slot.", Color.GRAY)
+		return
+
+	if player.unequip_slot(slot_key):
+		GameManager.log_message("Unequipped %s." % _get_item_name(equipped_item), Color.WHITE)
+		item_unequipped.emit(equipped_item, slot_key)
+		selected_equipment_slot = -1
+		_refresh_inventory()
+		_refresh_equipment()
+		_update_item_info(null)
+		_highlight_equipment_slot(-1)
+	else:
+		GameManager.log_message("Cannot unequip - inventory full.", Color.YELLOW)
 
 func _on_slot_gui_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton:
@@ -336,9 +383,7 @@ func _get_item_icon(item: Variant) -> AtlasTexture:
 func _get_item_name(item: Variant) -> String:
 	if item == null:
 		return "Unknown"
-	if "name" in item:
-		return item.name
-	return "Unknown"
+	return GameManager.get_item_display_name(item)
 
 func _get_item_slot(item: Variant) -> int:
 	if item == null:
@@ -407,4 +452,9 @@ func _input(event: InputEvent) -> void:
 			selected_item = null
 			selected_slot_index = -1
 			_refresh_inventory()
+		get_viewport().set_input_as_handled()
+
+	# Unequip with 'r'
+	if event.is_action_pressed("unequip") and selected_equipment_slot >= 0:
+		_try_unequip_slot(selected_equipment_slot)
 		get_viewport().set_input_as_handled()

@@ -93,6 +93,13 @@ func _load_terrain_coords() -> void:
 	terrain_coords[7] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}  # CHASM = 7 -> jagged pit (same as 17)
 	terrain_coords[8] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # RUBBLE = 8 -> open floor (same as 1)
 	terrain_coords[9] = {"light": Vector2i(12, 2), "dark": Vector2i(13, 2)}  # FORGE = 9 -> orc forge 5 uses (same as 69)
+	terrain_coords[10] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}  # TRAP = 10 -> poison needle trap (same as 19)
+	terrain_coords[11] = {"light": Vector2i(30, 0), "dark": Vector2i(31, 0)}  # TRAP_TRIGGERED = 11 -> rusted caltrops (same as 24, looks "used")
+	terrain_coords[12] = {"light": Vector2i(6, 0), "dark": Vector2i(7, 0)}    # DOOR_LOCKED = 12 -> warded door (glowing runes = locked)
+	terrain_coords[13] = {"light": Vector2i(8, 0), "dark": Vector2i(9, 0)}    # DOOR_JAMMED = 13 -> warded door variant 2
+	terrain_coords[14] = {"light": Vector2i(16, 0), "dark": Vector2i(17, 0)}  # DOOR_SECRET = 14 -> wall (hidden until revealed)
+	terrain_coords[15] = {"light": Vector2i(8, 1), "dark": Vector2i(9, 1)}    # WATER = 15 -> quartz vein (bluish)
+	terrain_coords[16] = {"light": Vector2i(18, 0), "dark": Vector2i(19, 0)}  # LAVA = 16 -> morgul runes (reddish glow)
 
 func _load_monster_coords() -> void:
 	monster_coords[0] = Vector2i(16, 3)  # player (Elf)

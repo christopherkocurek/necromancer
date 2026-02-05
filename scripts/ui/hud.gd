@@ -56,16 +56,20 @@ func _on_message_logged(text: String, color: Color) -> void:
 	message_log.scroll_to_line(message_log.get_line_count())
 
 func _on_entity_damaged(entity: Entity, damage: int, damage_type: String, source: Entity) -> void:
+	if not is_instance_valid(entity):
+		return
 	if entity is Player:
-		var source_name := source.entity_name if source else "something"
+		var source_name := source.entity_name if is_instance_valid(source) else "something"
 		var msg := "The %s hits you for %d %s damage." % [source_name, damage, damage_type]
 		_on_message_logged(msg, Color.RED)
 		update_player_stats(entity as Player)
-	elif source is Player:
+	elif is_instance_valid(source) and source is Player:
 		var msg := "You hit the %s for %d damage." % [entity.entity_name, damage]
 		_on_message_logged(msg, Color.WHITE)
 
 func _on_entity_healed(entity: Entity, amount: int, _source: Entity) -> void:
+	if not is_instance_valid(entity):
+		return
 	if entity is Player:
 		var msg := "You recover %d health." % amount
 		_on_message_logged(msg, Color.GREEN)
@@ -79,11 +83,15 @@ func _on_round_completed(round_number: int) -> void:
 	turn_label.text = "Turn: %d" % round_number
 
 func _on_status_applied(entity: Entity, status_name: String, duration: int) -> void:
+	if not is_instance_valid(entity):
+		return
 	if entity is Player:
 		_on_message_logged("You are afflicted with %s (%d turns)." % [status_name, duration], Color.ORANGE)
 		_update_status_icons(entity as Player)
 
 func _on_status_removed(entity: Entity, status_name: String) -> void:
+	if not is_instance_valid(entity):
+		return
 	if entity is Player:
 		_on_message_logged("The %s effect wears off." % status_name, Color.CYAN)
 		_update_status_icons(entity as Player)
@@ -93,13 +101,15 @@ func _update_status_icons(player: Player) -> void:
 	for child in status_container.get_children():
 		child.queue_free()
 
-	# Add icons for active status effects
-	for status_name in player.status_effects:
-		var icon := Label.new()
-		icon.text = _get_status_abbreviation(status_name)
-		icon.add_theme_color_override("font_color", _get_status_color(status_name))
-		icon.tooltip_text = status_name
-		status_container.add_child(icon)
+	# Use new StatusEffects system for active effects
+	if player.status_fx:
+		for effect_id: StringName in player.status_fx.get_active_effects():
+			var duration: int = player.status_fx.get_duration(effect_id)
+			var icon := Label.new()
+			icon.text = _get_status_abbreviation(String(effect_id))
+			icon.add_theme_color_override("font_color", _get_status_color(String(effect_id)))
+			icon.tooltip_text = "%s (%d)" % [String(effect_id).capitalize(), duration]
+			status_container.add_child(icon)
 
 func _get_status_abbreviation(status_name: String) -> String:
 	match status_name.to_lower():
@@ -107,10 +117,15 @@ func _get_status_abbreviation(status_name: String) -> String:
 		"confused": return "[CNF]"
 		"blind": return "[BLD]"
 		"afraid": return "[AFR]"
-		"slowed": return "[SLW]"
-		"hasted": return "[HST]"
-		"invisible": return "[INV]"
+		"slow": return "[SLW]"
+		"fast": return "[HST]"
 		"entranced": return "[ENT]"
+		"stunned": return "[STN]"
+		"cut": return "[CUT]"
+		"burning": return "[BRN]"
+		"rage": return "[RGE]"
+		"darkened": return "[DRK]"
+		"image": return "[HAL]"
 		_: return "[%s]" % status_name.substr(0, 3).to_upper()
 
 func _get_status_color(status_name: String) -> Color:
@@ -119,8 +134,13 @@ func _get_status_color(status_name: String) -> Color:
 		"confused": return Color.PURPLE
 		"blind": return Color.GRAY
 		"afraid": return Color.YELLOW
-		"slowed": return Color.CYAN
-		"hasted": return Color.ORANGE
-		"invisible": return Color.WHITE
+		"slow": return Color.CYAN
+		"fast": return Color.ORANGE
 		"entranced": return Color.MAGENTA
+		"stunned": return Color.RED
+		"cut": return Color.DARK_RED
+		"burning": return Color.ORANGE_RED
+		"rage": return Color.RED
+		"darkened": return Color.DARK_BLUE
+		"image": return Color.MEDIUM_PURPLE
 		_: return Color.WHITE

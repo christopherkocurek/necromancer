@@ -97,6 +97,10 @@ func tick_effects() -> void:
 	var to_remove: Array[StringName] = []
 
 	for effect_id in effects:
+		# Stop processing if owner died from a previous DOT effect
+		if owner and not owner.is_alive:
+			break
+
 		var duration: int = effects[effect_id]
 
 		# Apply damage effects first (before decay)
@@ -138,6 +142,9 @@ func _apply_damage(effect_id: StringName, duration: int) -> void:
 		Constants.EFFECT_CUT:
 			damage = EffectDefinitions.calculate_cut_damage(duration)
 			damage_type = "bleeding"
+		Constants.EFFECT_BURNING:
+			damage = EffectDefinitions.calculate_burning_damage(duration)
+			damage_type = "fire"
 
 	if damage > 0:
 		owner.take_damage(damage, damage_type, null)
@@ -152,6 +159,8 @@ func _calculate_decay(effect_id: StringName, duration: int) -> int:
 			return EffectDefinitions.calculate_poison_decay(duration)
 		Constants.EFFECT_CUT:
 			return EffectDefinitions.calculate_cut_decay(duration)
+		Constants.EFFECT_BURNING:
+			return EffectDefinitions.calculate_burning_decay(duration)
 
 	return base_decay
 
@@ -214,6 +223,9 @@ func is_confused() -> bool:
 ## Check if afraid.
 func is_afraid() -> bool:
 	return has_effect(Constants.EFFECT_AFRAID)
+
+func is_burning() -> bool:
+	return has_effect(Constants.EFFECT_BURNING)
 
 ## Get list of all active effect IDs.
 func get_active_effects() -> Array[StringName]:

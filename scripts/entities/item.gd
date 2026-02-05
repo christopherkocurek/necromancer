@@ -87,9 +87,9 @@ func initialize_from_artifact_data(data: DataManager.ArtifactData) -> void:
 
 func get_display_name() -> String:
 	if artifact_data:
-		return artifact_data.name
+		return artifact_data.name  # Artifacts are always identified
 	elif item_data:
-		return item_data.name
+		return GameManager.get_item_display_name(item_data)
 	return "Unknown Item"
 
 func get_data() -> Variant:

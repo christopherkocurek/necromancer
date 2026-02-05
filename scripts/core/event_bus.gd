@@ -55,3 +55,15 @@ signal game_resumed()
 signal game_over(victory: bool, reason: String)
 signal save_requested()
 signal load_requested()
+
+# Dialogue/NPC events
+signal dialogue_started(npc: Node)
+signal dialogue_advanced(npc: Node, text: String)
+signal dialogue_ended(npc: Node)
+signal npc_interacted(player: Node, npc: Node)
+
+# Quest events
+signal quest_updated(quest_state: int)
+signal quest_item_received(item_name: String)
+signal thrain_encountered()
+signal escape_sequence_started()

@@ -1,0 +1,123 @@
+[gd_scene load_steps=2 format=3 uid="uid://smithing_panel"]
+
+[ext_resource type="Script" path="res://scripts/ui/smithing_panel.gd" id="1_script"]
+
+[node name="SmithingPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -250.0
+offset_right = 350.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Forge"
+horizontal_alignment = 1
+
+[node name="SuccessLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Success Chance: 0%"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="HSplit" type="HSplitContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RecipeSection" type="VBoxContainer" parent="Panel/VBox/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.4
+
+[node name="RecipeTitle" type="Label" parent="Panel/VBox/HSplit/RecipeSection"]
+layout_mode = 2
+text = "Recipes"
+
+[node name="RecipeList" type="ItemList" parent="Panel/VBox/HSplit/RecipeSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemSection" type="VBoxContainer" parent="Panel/VBox/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.6
+
+[node name="VBox" type="VBoxContainer" parent="Panel/VBox/HSplit/ItemSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemTitle" type="Label" parent="Panel/VBox/HSplit/ItemSection/VBox"]
+layout_mode = 2
+text = "Items to Enhance"
+
+[node name="ItemList" type="ItemList" parent="Panel/VBox/HSplit/ItemSection/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MaterialTitle" type="Label" parent="Panel/VBox/HSplit/ItemSection/VBox"]
+layout_mode = 2
+text = "Materials"
+
+[node name="MaterialList" type="ItemList" parent="Panel/VBox/HSplit/ItemSection/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InfoSection" type="VBoxContainer" parent="Panel/VBox/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InfoTitle" type="Label" parent="Panel/VBox/HSplit/InfoSection"]
+layout_mode = 2
+text = "Details"
+
+[node name="InfoLabel" type="RichTextLabel" parent="Panel/VBox/HSplit/InfoSection"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Select a recipe to begin smithing."
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="ForgeButton" type="Button" parent="Panel/VBox/ButtonRow"]
+layout_mode = 2
+disabled = true
+text = "Forge (F)"
+
+[node name="CloseButton" type="Button" parent="Panel/VBox/ButtonRow"]
+layout_mode = 2
+text = "Close (Esc)"

@@ -119,6 +119,17 @@ const EFFECT_DATA: Dictionary = {
 		"onset_message": "Darkness surrounds you!",
 		"recovery_message": "The darkness lifts.",
 	},
+	Constants.EFFECT_BURNING: {
+		"name": "Burning",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 0,  # Special: decay = (v+4)/5
+		"has_damage": true,
+		"onset_message": "You catch on fire!",
+		"recovery_message": "The flames die out.",
+		"severity_messages": {
+			5: "You are engulfed in flames!",
+		}
+	},
 }
 
 # ============================================================================
@@ -140,6 +151,14 @@ static func calculate_poison_decay(duration: int) -> int:
 ## Calculate decay for cut effect: same as damage formula
 static func calculate_cut_decay(duration: int) -> int:
 	return (duration + 4) / 5
+
+## Calculate damage for burning effect: (duration + 2) / 3
+static func calculate_burning_damage(duration: int) -> int:
+	return (duration + 2) / 3
+
+## Calculate decay for burning effect: same as damage formula
+static func calculate_burning_decay(duration: int) -> int:
+	return (duration + 2) / 3
 
 # ============================================================================
 # EFFECT QUERIES
@@ -195,6 +214,7 @@ const RESISTANCE_MAP: Dictionary = {
 	Constants.EFFECT_SLOW: "free_act",
 	Constants.EFFECT_ENTRANCED: "free_act",
 	Constants.EFFECT_IMAGE: "resist_hallu",
+	Constants.EFFECT_BURNING: "resist_fire",
 }
 
 static func get_resistance_property(effect_id: StringName) -> String:

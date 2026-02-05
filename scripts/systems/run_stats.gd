@@ -41,6 +41,10 @@ var stole_ring: bool = false
 var escaped: bool = false
 var necromancer_defeated: bool = false
 
+# Victory tracking
+var victory: bool = false
+var victory_type: String = ""  # "Escape" or "Banishment"
+
 # Timing
 var total_turns: int = 0
 var start_time: int = 0  # Unix timestamp
@@ -96,8 +100,13 @@ func record_escape() -> void:
 	escaped = true
 	end_time = Time.get_unix_time_from_system()
 
-func record_victory() -> void:
-	necromancer_defeated = true
+func record_victory(type: String = "Banishment") -> void:
+	victory = true
+	victory_type = type
+	if type == "Banishment":
+		necromancer_defeated = true
+	elif type == "Escape":
+		escaped = true
 	end_time = Time.get_unix_time_from_system()
 
 # ============================================================================
@@ -162,6 +171,8 @@ func to_dict() -> Dictionary:
 		"stole_ring": stole_ring,
 		"escaped": escaped,
 		"necromancer_defeated": necromancer_defeated,
+		"victory": victory,
+		"victory_type": victory_type,
 		"total_turns": total_turns,
 		"start_time": start_time,
 		"end_time": end_time,
@@ -194,6 +205,8 @@ static func from_dict(data: Dictionary) -> RunStats:
 	stats.stole_ring = data.get("stole_ring", false)
 	stats.escaped = data.get("escaped", false)
 	stats.necromancer_defeated = data.get("necromancer_defeated", false)
+	stats.victory = data.get("victory", false)
+	stats.victory_type = data.get("victory_type", "")
 	stats.total_turns = data.get("total_turns", 0)
 	stats.start_time = data.get("start_time", 0)
 	stats.end_time = data.get("end_time", 0)

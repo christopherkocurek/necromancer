@@ -204,12 +204,14 @@ func _serialize_player(player: Player) -> Dictionary:
 		"encounter_xp": player.encounter_xp,
 		"descent_xp": player.descent_xp,
 		"identify_xp": player.identify_xp,
+		"kills_by_name": player.kills_by_name.duplicate() if player.kills_by_name else {},
 		# Skills
 		"skills": player.skills.duplicate(),
 		# Abilities
-		"innate_ability": player.innate_ability.duplicate(),
-		"active_ability": player.active_ability.duplicate(),
-		"have_ability": player.have_ability.duplicate(),
+		"innate_ability": player.innate_ability.duplicate(true),
+		"active_ability": player.active_ability.duplicate(true),
+		"have_ability": player.have_ability.duplicate(true),
+		"learned_abilities": player.get_meta("learned_abilities") if player.has_meta("learned_abilities") else [],
 		# Voice
 		"voice_charges": player.voice_charges,
 		"max_voice": player.max_voice,
@@ -289,6 +291,8 @@ func _serialize_level(level: Level) -> Dictionary:
 func _serialize_monsters(level: Level) -> Array:
 	var monsters := []
 	for child in level.get_children():
+		if not is_instance_valid(child):
+			continue
 		if child is Entity and not child is Player:
 			monsters.append({
 				"type": child.entity_name,
@@ -367,6 +371,7 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	player.encounter_xp = data.get("encounter_xp", 0)
 	player.descent_xp = data.get("descent_xp", 0)
 	player.identify_xp = data.get("identify_xp", 0)
+	player.kills_by_name = data.get("kills_by_name", {})
 
 	# Skills
 	if "skills" in data:
@@ -375,9 +380,12 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 				player.skills[skill_name] = data.skills[skill_name]
 
 	# Abilities
-	player.innate_ability = data.get("innate_ability", []).duplicate()
-	player.active_ability = data.get("active_ability", []).duplicate()
-	player.have_ability = data.get("have_ability", []).duplicate()
+	player.innate_ability = data.get("innate_ability", []).duplicate(true)
+	player.active_ability = data.get("active_ability", []).duplicate(true)
+	player.have_ability = data.get("have_ability", []).duplicate(true)
+	var loaded_abilities: Array = data.get("learned_abilities", [])
+	if not loaded_abilities.is_empty():
+		player.set_meta("learned_abilities", loaded_abilities)
 
 	# Voice
 	player.voice_charges = data.get("voice_charges", 0)

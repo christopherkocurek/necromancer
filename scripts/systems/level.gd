@@ -30,7 +30,37 @@ enum Tile {
 	CHASM = 7,
 	RUBBLE = 8,
 	FORGE = 9,
+	TRAP = 10,           # Generic trap - deals damage when stepped on
+	TRAP_TRIGGERED = 11,  # Trap that has already been triggered
+	DOOR_LOCKED = 12,    # Locked door - requires key or lockpicking
+	DOOR_JAMMED = 13,    # Jammed/stuck door - requires STR check to bash
+	DOOR_SECRET = 14,    # Secret door - looks like wall until discovered
+	WATER = 15,          # Shallow water - passable, slows movement
+	LAVA = 16,           # Lava - passable but deals fire damage on step
 }
+
+# Track which traps have been triggered (to avoid re-triggering)
+var triggered_traps: Dictionary = {}  # Vector2i -> bool
+
+# Trap types stored per position
+enum TrapType {
+	BASIC = 0,      # 1d4+depth/3 damage
+	PIT = 1,        # 2d4 damage, stuck 1 turn
+	DART = 2,       # 1d6 + poison
+	GAS = 3,        # Confusion 3-5 turns
+	ALARM = 4,      # Raises floor alertness +15
+	TELEPORT = 5,   # Random teleport
+	FLASH = 6,      # Blind 3-5 turns
+	CALTROPS = 7,   # 1d4 + slow 3 turns
+	WEB = 8,        # Slow 5 turns
+}
+var trap_types: Dictionary = {}  # Vector2i -> TrapType
+
+# Secret door tracking
+var secret_doors: Dictionary = {}  # Vector2i -> bool (true if still hidden)
+
+# Floor-wide alertness (Phase B: Stealth)
+var floor_alertness: int = 0  # 0-50+, rises with noise, decays over time
 
 # Child nodes
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
@@ -40,7 +70,7 @@ enum Tile {
 
 func _ready() -> void:
 	_initialize_arrays()
-	_apply_magenta_shader()
+	_apply_layer_tint_shader()
 
 func _initialize_arrays() -> void:
 	var size := width * height
@@ -51,10 +81,36 @@ func _initialize_arrays() -> void:
 	tile_visibility.resize(size)
 	tile_visibility.fill(false)
 
-func _apply_magenta_shader() -> void:
+func _apply_layer_tint_shader() -> void:
 	if terrain_layer:
-		var shader_material: ShaderMaterial = load("res://assets/shaders/magenta_transparent.tres")
+		# Use layer tint shader which includes magenta transparency
+		var shader_material: ShaderMaterial = load("res://assets/shaders/layer_tint.tres")
+		# Clone the material so each level can have its own tint settings
+		shader_material = shader_material.duplicate()
 		terrain_layer.material = shader_material
+		# Apply initial tint based on depth
+		update_layer_tint()
+
+## Update the layer tint based on current depth
+func update_layer_tint() -> void:
+	if not terrain_layer or not terrain_layer.material:
+		return
+
+	var shader_mat := terrain_layer.material as ShaderMaterial
+	if shader_mat:
+		var tint_color := LayerConfig.get_tint_color(depth)
+		var tint_strength := LayerConfig.get_tint_strength(depth)
+		shader_mat.set_shader_parameter("tint_color", tint_color)
+		shader_mat.set_shader_parameter("tint_strength", tint_strength)
+
+## Get the max FOV radius for this level's depth (layer-based cap)
+func get_fov_radius() -> int:
+	return LayerConfig.get_fov_radius(depth)
+
+## Get effective FOV radius considering player's light source
+func get_effective_fov_radius(player_light: int) -> int:
+	var layer_max: int = get_fov_radius()
+	return mini(player_light, layer_max)
 
 # ============================================================================
 # TERRAIN ACCESS
@@ -82,15 +138,122 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE:
 			return true
 		_:
 			return false
 
+## Get movement energy cost for a tile (water costs double)
+func get_movement_cost(pos: Vector2i) -> int:
+	var tile := get_tile(pos)
+	if tile == Tile.WATER:
+		return Constants.ACTION_COST * 2  # Double energy cost to wade
+	return Constants.ACTION_COST
+
+## Called when an entity steps on a tile. Returns true if something happened.
+func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
+	var tile := get_tile(pos)
+
+	if tile == Tile.TRAP and not triggered_traps.has(pos):
+		return _trigger_trap(entity, pos)
+
+	if tile == Tile.LAVA:
+		return _lava_damage(entity, pos)
+
+	if tile == Tile.WATER and entity is Player:
+		GameManager.log_message("You wade through shallow water.", Color.LIGHT_BLUE)
+
+	return false
+
+func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
+	# Check for Perception to potentially spot and avoid (50% + Per*5%)
+	var avoid_chance: int = 50
+	if is_instance_valid(entity) and entity.has_method("get_skill"):
+		var perception: int = entity.get_skill("perception")
+		avoid_chance += perception * 5
+
+	# Roll to avoid — trap stays active if avoided
+	if randi_range(1, 100) <= avoid_chance:
+		if entity == GameManager.player:
+			GameManager.log_message("You notice a trap and step carefully over it.", Color.YELLOW)
+		return true
+
+	# Mark trap as triggered only after failing to avoid
+	triggered_traps[pos] = true
+	set_tile(pos, Tile.TRAP_TRIGGERED)
+
+	# Get trap type for this position
+	var trap_type: int = trap_types.get(pos, TrapType.BASIC)
+	_resolve_trap_effect(entity, trap_type, pos)
+	return true
+
+func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> void:
+	if not is_instance_valid(entity):
+		return
+
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "trigger" if entity == GameManager.player else "triggers"
+
+	match trap_type:
+		TrapType.BASIC:
+			var dmg: int = randi_range(1, 4) + depth / 3
+			entity.take_damage(dmg, "physical", null)
+			GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], Color.RED)
+
+		TrapType.PIT:
+			var dmg: int = randi_range(2, 8)  # 2d4
+			entity.take_damage(dmg, "physical", null)
+			entity.apply_status("stunned", 1)
+			GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], Color.RED)
+
+		TrapType.DART:
+			var dmg: int = randi_range(1, 6)
+			entity.take_damage(dmg, "physical", null)
+			entity.apply_status("poisoned", 5 + randi_range(1, 5))
+			GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], Color.RED)
+
+		TrapType.GAS:
+			entity.apply_status("confused", 3 + randi_range(0, 2))
+			GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), Color.PURPLE)
+
+		TrapType.ALARM:
+			add_floor_noise(15)
+			GameManager.log_message("An alarm sounds! The dungeon stirs...", Color.ORANGE)
+
+		TrapType.TELEPORT:
+			var new_pos: Vector2i = find_random_floor()
+			if new_pos != Vector2i(-1, -1) and entity.has_method("teleport_to"):
+				entity.teleport_to(new_pos)
+				GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], Color.CYAN)
+
+		TrapType.FLASH:
+			entity.apply_status("blind", 3 + randi_range(0, 2))
+			GameManager.log_message("A blinding flash of light!", Color.YELLOW)
+
+		TrapType.CALTROPS:
+			var dmg: int = randi_range(1, 4)
+			entity.take_damage(dmg, "physical", null)
+			entity.apply_status("slow", 3)
+			GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], Color.RED)
+
+		TrapType.WEB:
+			entity.apply_status("slow", 5)
+			GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], Color.YELLOW)
+
+func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	var dmg: int = randi_range(2, 8) + depth / 2  # 2d4 + depth/2
+	entity.take_damage(dmg, "fire", null)
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "burn" if entity == GameManager.player else "burns"
+	GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], Color.ORANGE)
+	return true
+
 func is_transparent(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.WALL, Tile.DOOR_CLOSED:
+		Tile.WALL, Tile.DOOR_CLOSED, Tile.DOOR_LOCKED, Tile.DOOR_JAMMED, Tile.DOOR_SECRET:
 			return false
 		_:
 			return true
@@ -122,11 +285,20 @@ func set_tile_visible(pos: Vector2i, value: bool) -> void:
 func add_entity(entity: Entity) -> void:
 	entities.append(entity)
 	entity_container.add_child(entity)
+	# Auto-remove from entities array when entity dies
+	if not entity.died.is_connected(_on_entity_died):
+		entity.died.connect(_on_entity_died.bind(entity))
 
 func remove_entity(entity: Entity) -> void:
 	entities.erase(entity)
 	if entity.get_parent() == entity_container:
 		entity_container.remove_child(entity)
+
+func _on_entity_died(killer: Entity, entity: Entity) -> void:
+	# Remove from entities array immediately when entity dies
+	# This prevents "freed instance" errors when iterating entities
+	if is_instance_valid(entity) and entity in entities:
+		entities.erase(entity)
 
 func get_entity_at(pos: Vector2i) -> Entity:
 	for entity in entities:
@@ -185,13 +357,13 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 	if not terrain_layer:
 		return
 
-	# Map tile type to atlas coordinates
-	var atlas_coords := _get_atlas_coords_for_tile(tile)
+	# Map tile type to atlas coordinates (default to lit for set_tile calls)
+	var atlas_coords := _get_atlas_coords_for_tile(tile, true)
 	terrain_layer.set_cell(pos, 0, atlas_coords)
 
-func _get_atlas_coords_for_tile(tile: int) -> Vector2i:
+func _get_atlas_coords_for_tile(tile: int, lit: bool = true) -> Vector2i:
 	# Use TileMapper to get atlas coordinates directly from tile enum
-	return TileMapper.get_terrain_coords(tile)
+	return TileMapper.get_terrain_coords(tile, lit)
 
 func rebuild_tilemap() -> void:
 	if not terrain_layer:
@@ -244,6 +416,29 @@ func update_entity_visibility() -> void:
 	for entity in entities:
 		if is_instance_valid(entity) and entity is Monster:
 			entity.visible = is_tile_visible(entity.grid_position)
+
+## Refresh tilemap after FOV update: lit tiles use light atlas, explored use dark, unexplored hidden
+func apply_fov_to_tilemap() -> void:
+	if not terrain_layer:
+		return
+	for y in range(height):
+		for x in range(width):
+			var pos := Vector2i(x, y)
+			var tile: int = get_tile(pos)
+			if tile == Tile.VOID:
+				terrain_layer.erase_cell(pos)
+				continue
+			if is_tile_visible(pos):
+				# Currently visible — lit variant
+				var atlas_coords := _get_atlas_coords_for_tile(tile, true)
+				terrain_layer.set_cell(pos, 0, atlas_coords)
+			elif is_explored(pos):
+				# Explored but not visible — dark/remembered variant
+				var atlas_coords := _get_atlas_coords_for_tile(tile, false)
+				terrain_layer.set_cell(pos, 0, atlas_coords)
+			else:
+				# Unexplored — hide completely
+				terrain_layer.erase_cell(pos)
 
 func has_los_to(from: Vector2i, to: Vector2i) -> bool:
 	# Bresenham line check for transparency
@@ -366,3 +561,78 @@ func find_random_floor() -> Vector2i:
 			return pos
 		attempts -= 1
 	return Vector2i(-1, -1)
+
+# ============================================================================
+# FLOOR-WIDE ALERTNESS (Phase B: Stealth)
+# ============================================================================
+
+## Add noise to floor alertness (from combat, doors, smithing, etc.)
+func add_floor_noise(amount: int) -> void:
+	floor_alertness = mini(floor_alertness + amount, 50)
+
+## Decay floor alertness by 1 per round (called from turn system)
+func tick_floor_alertness() -> void:
+	if floor_alertness > 0:
+		floor_alertness -= 1
+
+## Get floor alertness for spawning/door locking decisions
+func get_floor_alertness() -> int:
+	return floor_alertness
+
+# ============================================================================
+# DOOR MECHANICS (Phase F)
+# ============================================================================
+
+## Try to close an open door at pos. Returns true if closed.
+func close_door(pos: Vector2i) -> bool:
+	if get_tile(pos) != Tile.DOOR_OPEN:
+		return false
+	# Check if an entity is standing in the doorway
+	if get_entity_at(pos) != null:
+		return false
+	# Check if items are blocking the doorway
+	if not get_items_at(pos).is_empty():
+		return false
+	set_tile(pos, Tile.DOOR_CLOSED)
+	return true
+
+## Try to bash a jammed/locked door. Returns true if bashed open.
+func bash_door(pos: Vector2i, str_bonus: int) -> bool:
+	var tile := get_tile(pos)
+	if tile != Tile.DOOR_JAMMED and tile != Tile.DOOR_LOCKED:
+		return false
+	# STR check: 30% base + STR*5%
+	var chance: int = 30 + str_bonus * 5
+	if randi_range(1, 100) <= chance:
+		set_tile(pos, Tile.DOOR_OPEN)
+		return true
+	return false
+
+## Reveal a secret door at pos
+func reveal_secret_door(pos: Vector2i) -> void:
+	if get_tile(pos) == Tile.DOOR_SECRET:
+		secret_doors.erase(pos)
+		set_tile(pos, Tile.DOOR_CLOSED)
+
+## Search adjacent tiles for secret doors (Perception check per tile)
+func search_for_secrets(center: Vector2i, perception: int) -> int:
+	var found: int = 0
+	var directions: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+	for dir: Vector2i in directions:
+		var check_pos: Vector2i = center + dir
+		if get_tile(check_pos) == Tile.DOOR_SECRET:
+			# Perception check: 20% + perception*10%
+			var chance: int = 20 + perception * 10
+			if randi_range(1, 100) <= chance:
+				reveal_secret_door(check_pos)
+				found += 1
+	return found
+
+## Place a trap with a specific type at a position
+func place_trap(pos: Vector2i, trap_type: int) -> void:
+	set_tile(pos, Tile.TRAP)
+	trap_types[pos] = trap_type
