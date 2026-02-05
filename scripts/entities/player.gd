@@ -3,16 +3,23 @@ class_name Player
 ## The player character - the reawakened Necromancer.
 
 signal experience_gained(amount: int)
-signal level_up(new_level: int)
-signal skill_points_gained(amount: int)
+signal xp_spent(amount: int, skill_name: String)
 
 # Character creation
 @export var race_name: String = "Man"
 @export var house_name: String = ""
 
-# Experience & Level
-@export var experience: int = 0
-@export var level: int = 1
+# XP System (Sil-Q style - XP is currency for skills, no levels)
+const STARTING_XP: int = 5000
+const XP_MULTIPLIER: float = 1.3  # 130% boost from base Sil-Q
+@export var total_xp_earned: int = 0  # Lifetime XP for records
+@export var xp_available: int = STARTING_XP  # XP available to spend
+
+# XP tracking by source
+var kill_xp: int = 0
+var encounter_xp: int = 0
+var descent_xp: int = 0
+var identify_xp: int = 0
 
 # Skills (0-20 scale)
 var skills: Dictionary = {
@@ -23,7 +30,7 @@ var skills: Dictionary = {
 	"perception": 0,
 	"will": 0,
 	"smithing": 0,
-	"song": 0,
+	"lore": 0,  # Was "song" in Sil-Q
 }
 
 # Necromancer-specific
@@ -158,34 +165,110 @@ func _apply_racial_modifiers() -> void:
 	_recalculate_stats()
 
 func _recalculate_stats() -> void:
-	max_health = 10 + constitution * 2 + level
+	# Base stats (no levels in Sil-Q)
+	max_health = 10 + constitution * 2
+
+	# Combat bonuses from skills and stats
 	melee_bonus = skills["melee"] + (strength / 2)
 	evasion_bonus = skills["evasion"] + (dexterity / 2)
 
+	# Equipment bonuses
+	var equip_attack: int = 0
+	var equip_evasion: int = 0
+	var equip_protection: String = ""
+
+	for slot in equipment:
+		var item = equipment[slot]
+		if item == null:
+			continue
+		# Item is a DataManager.ItemData
+		if item.has("attack_bonus"):
+			equip_attack += item.attack_bonus
+		if item.has("evasion_bonus"):
+			equip_evasion += item.evasion_bonus
+		# Protection dice are accumulated as strings for now
+		# TODO: Parse and combine protection dice properly
+
+	melee_bonus += equip_attack
+	evasion_bonus += equip_evasion
+
+	# Update protection dice from armor
+	_recalculate_protection()
+
+func _recalculate_protection() -> void:
+	# Sum up protection dice from all armor pieces
+	var total_dice: int = 0
+	var total_sides: int = 0
+
+	for slot in equipment:
+		var item = equipment[slot]
+		if item == null:
+			continue
+		# Parse protection_dice string like "1d4" or "2d6"
+		if item.has("protection_dice") and item.protection_dice != "":
+			var parsed := _parse_dice_string(item.protection_dice)
+			if parsed.dice > 0:
+				# Simple combination: add dice, take max sides
+				total_dice += parsed.dice
+				if parsed.sides > total_sides:
+					total_sides = parsed.sides
+
+	protection_dice = total_dice
+	protection_sides = total_sides
+
+func _parse_dice_string(dice_str: String) -> Dictionary:
+	# Parse "NdM" format
+	var result := {"dice": 0, "sides": 0}
+	if dice_str.is_empty():
+		return result
+	var parts := dice_str.to_lower().split("d")
+	if parts.size() == 2:
+		result.dice = int(parts[0]) if parts[0].is_valid_int() else 0
+		result.sides = int(parts[1]) if parts[1].is_valid_int() else 0
+	return result
+
 # ============================================================================
-# EXPERIENCE & LEVELING
+# XP SYSTEM (Sil-Q style - XP as currency)
 # ============================================================================
 
-func gain_experience(amount: int) -> void:
-	experience += amount
-	experience_gained.emit(amount)
+func gain_experience(amount: int, source: String = "misc") -> void:
+	# Apply XP multiplier
+	var boosted: int = int(amount * XP_MULTIPLIER)
 
-	var xp_for_next := _xp_for_level(level + 1)
-	while experience >= xp_for_next:
-		_level_up()
-		xp_for_next = _xp_for_level(level + 1)
+	# Track by source
+	match source:
+		"kill": kill_xp += boosted
+		"encounter": encounter_xp += boosted
+		"descent": descent_xp += boosted
+		"identify": identify_xp += boosted
 
-func _xp_for_level(target_level: int) -> int:
-	# Sil-style XP curve
-	return target_level * target_level * 100
+	total_xp_earned += boosted
+	xp_available += boosted
+	experience_gained.emit(boosted)
 
-func _level_up() -> void:
-	level += 1
-	max_health += constitution / 2 + 2
-	current_health = max_health  # Full heal on level up
+	GameManager.log_message("Gained %d XP (%s)" % [boosted, source], Color.YELLOW)
 
-	level_up.emit(level)
-	GameManager.log_message("You have reached level %d!" % level, Color.YELLOW)
+func get_skill_cost(current_level: int, points_to_buy: int = 1) -> int:
+	# Cost for nth skill point = 100 × n
+	# Total cost to go from current to (current + points) = sum of 100×(current+1) to 100×(current+points)
+	var cost: int = 0
+	for i in range(points_to_buy):
+		cost += 100 * (current_level + i + 1)
+	return cost
+
+func can_afford_skill(skill_name: String) -> bool:
+	if not skills.has(skill_name):
+		return false
+	var current: int = skills[skill_name]
+	if current >= 20:  # Max skill level
+		return false
+	return xp_available >= get_skill_cost(current)
+
+func get_total_skill_points() -> int:
+	var total: int = 0
+	for skill_value in skills.values():
+		total += skill_value
+	return total
 
 # ============================================================================
 # SKILLS
@@ -193,11 +276,25 @@ func _level_up() -> void:
 
 func invest_skill(skill_name: String) -> bool:
 	if not skills.has(skill_name):
+		GameManager.log_message("Unknown skill: %s" % skill_name, Color.RED)
 		return false
-	if skills[skill_name] >= 20:
+
+	var current: int = skills[skill_name]
+	if current >= 20:
+		GameManager.log_message("%s is already at maximum!" % skill_name.capitalize(), Color.RED)
 		return false
-	# Check for available skill points, etc.
+
+	var cost: int = get_skill_cost(current)
+	if xp_available < cost:
+		GameManager.log_message("Need %d XP to raise %s (have %d)" % [cost, skill_name, xp_available], Color.RED)
+		return false
+
+	# Spend XP and increase skill
+	xp_available -= cost
 	skills[skill_name] += 1
+	xp_spent.emit(cost, skill_name)
+
+	GameManager.log_message("Raised %s to %d (-%d XP)" % [skill_name.capitalize(), skills[skill_name], cost], Color.GREEN)
 	_recalculate_stats()
 	return true
 
@@ -272,6 +369,20 @@ func unequip_slot(slot: String) -> bool:
 	EventBus.item_unequipped.emit(self, item, slot)
 	_recalculate_stats()
 	return true
+
+func _get_weapon_weight() -> int:
+	# Get weight of equipped weapon for crit calculation
+	# Heavier weapons = harder crits but more STR damage bonus
+	var weapon = equipment.get("weapon")
+	if weapon != null and weapon.has("weight"):
+		return weapon.weight
+	return 30  # Unarmed default weight
+
+func get_weapon_damage_dice() -> String:
+	var weapon = equipment.get("weapon")
+	if weapon != null and weapon.has("damage_dice") and weapon.damage_dice != "":
+		return weapon.damage_dice
+	return "1d4"  # Unarmed
 
 # ============================================================================
 # INPUT HANDLING

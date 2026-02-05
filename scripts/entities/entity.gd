@@ -280,24 +280,49 @@ func _process_status_effect(status_name: String, effect: Dictionary) -> void:
 # ============================================================================
 
 func attack_entity(target: Entity) -> void:
-	# Roll to hit
-	var hit_roll := randi_range(1, 20) + melee_bonus + (dexterity / 2)
-	var target_evasion := target.evasion_bonus + (target.dexterity / 2)
+	# Sil-Q Opposed Roll Combat: (1d20 + attack) vs (1d20 + evasion)
+	var attack_score: int = randi_range(1, 20) + melee_bonus
+	var evasion_score: int = randi_range(1, 20) + target.evasion_bonus
+	var hit_result: int = attack_score - evasion_score
 
-	if hit_roll < target_evasion:
+	if hit_result < 0:
 		EventBus.attack_missed.emit(self, target)
+		GameManager.log_message("%s misses %s (%d vs %d)" % [
+			entity_name, target.entity_name, attack_score, evasion_score
+		], Color.GRAY)
 		return
 
-	# Roll damage
-	var damage := DataManager.roll_dice(damage_dice)
+	# Base damage
+	var damage: int = DataManager.roll_dice(damage_dice)
 	damage += strength / 2
 
-	# Check for critical hit (natural 20)
-	if hit_roll >= 20:
-		damage *= 2
-		# Could emit a critical hit event here
+	# Critical hit calculation: (hit_result × 10 + 4) / (70 + weapon_weight)
+	# Heavier weapons = harder crits but more damage potential
+	var weapon_weight: int = _get_weapon_weight()
+	var crit_dice: int = (hit_result * 10 + 4) / (70 + weapon_weight)
+
+	# Apply crit bonus dice
+	var crit_damage: int = 0
+	for i in range(crit_dice):
+		crit_damage += DataManager.roll_dice(damage_dice)
+	damage += crit_damage
+
+	# Log the hit
+	if crit_dice > 0:
+		GameManager.log_message("%s CRITS %s! (%d vs %d, +%d dice = %d dmg)" % [
+			entity_name, target.entity_name, attack_score, evasion_score, crit_dice, damage
+		], Color.ORANGE)
+	else:
+		GameManager.log_message("%s hits %s (%d vs %d = %d dmg)" % [
+			entity_name, target.entity_name, attack_score, evasion_score, damage
+		], Color.WHITE)
 
 	target.take_damage(damage, "physical", self)
+
+func _get_weapon_weight() -> int:
+	# Override in Player to get actual weapon weight
+	# Default weight for monsters/unarmed
+	return 50
 
 # ============================================================================
 # ENERGY SYSTEM

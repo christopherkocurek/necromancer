@@ -239,30 +239,16 @@ func load_items() -> void:
 					current_item.allocation = value
 			"P":
 				if current_item:
-					# P:ac:dd:to_hit:to_dam:to_ac or similar
+					# P:attack_bonus:damage_dice:evasion_bonus:protection_dice
 					var p_parts := value.split(":")
 					if p_parts.size() >= 1:
-						current_item.ac = int(p_parts[0])
+						current_item.attack_bonus = int(p_parts[0])
 					if p_parts.size() >= 2:
 						current_item.damage_dice = p_parts[1]
 					if p_parts.size() >= 3:
-						current_item.to_hit = int(p_parts[2])
+						current_item.evasion_bonus = int(p_parts[2])
 					if p_parts.size() >= 4:
-						current_item.to_dam = int(p_parts[3])
-					if p_parts.size() >= 5:
-						current_item.to_ac = int(p_parts[4])
-			"C":
-				if current_item:
-					# C:attack_bonus:damage_sides:evasion_bonus:protection_sides
-					var c_parts := value.split(":")
-					if c_parts.size() >= 1:
-						current_item.attack_bonus = int(c_parts[0])
-					if c_parts.size() >= 2:
-						current_item.damage_sides = int(c_parts[1])
-					if c_parts.size() >= 3:
-						current_item.evasion_bonus = int(c_parts[2])
-					if c_parts.size() >= 4:
-						current_item.protection_sides = int(c_parts[3])
+						current_item.protection_dice = p_parts[3]
 			"F":
 				if current_item:
 					var flags := value.split("|")
@@ -334,17 +320,16 @@ func load_artifacts() -> void:
 						current_artifact.weight = int(w_parts[2])
 			"P":
 				if current_artifact:
+					# P:attack_bonus:damage_dice:evasion_bonus:protection_dice
 					var p_parts := value.split(":")
 					if p_parts.size() >= 1:
-						current_artifact.ac = int(p_parts[0])
+						current_artifact.attack_bonus = int(p_parts[0])
 					if p_parts.size() >= 2:
 						current_artifact.damage_dice = p_parts[1]
 					if p_parts.size() >= 3:
-						current_artifact.to_hit = int(p_parts[2])
+						current_artifact.evasion_bonus = int(p_parts[2])
 					if p_parts.size() >= 4:
-						current_artifact.to_dam = int(p_parts[3])
-					if p_parts.size() >= 5:
-						current_artifact.to_ac = int(p_parts[4])
+						current_artifact.protection_dice = p_parts[3]
 			"F":
 				if current_artifact:
 					var flags := value.split("|")
@@ -480,6 +465,56 @@ func load_races() -> void:
 						current_race.dex_mod = int(s_parts[1])
 						current_race.con_mod = int(s_parts[2])
 						current_race.gra_mod = int(s_parts[3])
+			"I":
+				# I:history:agebase:agemax
+				if current_race:
+					var i_parts := value.split(":")
+					if i_parts.size() >= 1:
+						current_race.history_index = int(i_parts[0])
+					if i_parts.size() >= 2:
+						current_race.age_base = int(i_parts[1])
+					if i_parts.size() >= 3:
+						current_race.age_max = int(i_parts[2])
+			"H":
+				# H:base_height:mod_height
+				if current_race:
+					var h_parts := value.split(":")
+					if h_parts.size() >= 2:
+						current_race.height_base = int(h_parts[0])
+						current_race.height_mod = int(h_parts[1])
+			"W":
+				# W:base_weight:mod_weight
+				if current_race:
+					var w_parts := value.split(":")
+					if w_parts.size() >= 2:
+						current_race.weight_base = int(w_parts[0])
+						current_race.weight_mod = int(w_parts[1])
+			"C":
+				# C:house_index|house_index|... (compatible houses)
+				if current_race:
+					var house_indices := value.split("|")
+					for idx_str in house_indices:
+						var idx: int = int(idx_str.strip_edges())
+						current_race.compatible_houses.append(idx)
+			"F":
+				# F:FLAG1 | FLAG2 | ... (racial flags)
+				if current_race:
+					var flag_list := value.split("|")
+					for flag in flag_list:
+						var f := flag.strip_edges()
+						if f != "":
+							current_race.flags.append(f)
+			"E":
+				# E:tval:sval:min:max (starting equipment)
+				if current_race:
+					var e_parts := value.split(":")
+					if e_parts.size() >= 4:
+						current_race.starting_equipment.append({
+							"tval": int(e_parts[0]),
+							"sval": int(e_parts[1]),
+							"min_qty": int(e_parts[2]),
+							"max_qty": int(e_parts[3])
+						})
 			"D":
 				if current_race:
 					if current_race.description.is_empty():
@@ -520,6 +555,20 @@ func load_houses() -> void:
 					current_house.index = int(n_parts[0])
 				if n_parts.size() >= 2:
 					current_house.name = n_parts[1]
+			"A":
+				# A:alternate_name (e.g. "Lothlorien" for "Of Lothlorien")
+				if current_house:
+					current_house.alternate_name = value
+			"B":
+				# B:short_name (e.g. "Lorien")
+				if current_house:
+					current_house.short_name = value
+			"F":
+				# F:affinity_flag (e.g. LOR_AFFINITY, MEL_AFFINITY)
+				if current_house:
+					var affinity := value.strip_edges()
+					if affinity != "":
+						current_house.affinities.append(affinity)
 			"S":
 				if current_house:
 					var s_parts := value.split(":")
@@ -894,18 +943,14 @@ class ItemData:
 	var pval: int = 0
 	var depth: int = 0
 	var rarity: int = 1
-	var weight: int = 0
+	var weight: int = 0  # Tenth-pounds, also affects crit chance and damage
 	var cost: int = 0
 	var allocation: String = ""
-	var ac: int = 0
-	var damage_dice: String = ""
-	var to_hit: int = 0
-	var to_dam: int = 0
-	var to_ac: int = 0
-	var attack_bonus: int = 0
-	var damage_sides: int = 0
-	var evasion_bonus: int = 0
-	var protection_sides: int = 0
+	# Combat stats (Sil-Q style from P: line)
+	var attack_bonus: int = 0       # Bonus to attack rolls
+	var damage_dice: String = ""    # e.g. "2d5"
+	var evasion_bonus: int = 0      # Bonus/penalty to evasion
+	var protection_dice: String = "" # e.g. "1d4" for armor
 	var flags: Array[String] = []
 	var description: String = ""
 
@@ -918,11 +963,11 @@ class ArtifactData:
 	var depth: int = 0
 	var rarity: int = 1
 	var weight: int = 0
-	var ac: int = 0
+	# Combat stats (Sil-Q style from P: line)
+	var attack_bonus: int = 0
 	var damage_dice: String = ""
-	var to_hit: int = 0
-	var to_dam: int = 0
-	var to_ac: int = 0
+	var evasion_bonus: int = 0
+	var protection_dice: String = ""
 	var flags: Array[String] = []
 	var description: String = ""
 
@@ -949,6 +994,22 @@ class RaceData:
 	var dex_mod: int = 0
 	var con_mod: int = 0
 	var gra_mod: int = 0
+	# I: line - history and age
+	var history_index: int = 0
+	var age_base: int = 20
+	var age_max: int = 100
+	# H: line - height
+	var height_base: int = 70
+	var height_mod: int = 4
+	# W: line - weight
+	var weight_base: int = 150
+	var weight_mod: int = 10
+	# C: line - compatible house indices
+	var compatible_houses: Array[int] = []
+	# F: line - racial flags (BOW_PROFICIENCY, SWORD_PROFICIENCY, etc.)
+	var flags: Array[String] = []
+	# E: lines - starting equipment [{tval, sval, min_qty, max_qty}]
+	var starting_equipment: Array = []
 	var description: String = ""
 
 class HouseData:
@@ -958,6 +1019,12 @@ class HouseData:
 	var dex_mod: int = 0
 	var con_mod: int = 0
 	var gra_mod: int = 0
+	# A: line - alternate name
+	var alternate_name: String = ""
+	# B: line - short/abbreviated name
+	var short_name: String = ""
+	# F: line - skill affinities (MEL_AFFINITY, ARC_AFFINITY, etc.)
+	var affinities: Array[String] = []
 	var description: String = ""
 
 class TerrainData:
