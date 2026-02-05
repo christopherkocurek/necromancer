@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://bvk2x9q8ycmwh"]
+[gd_scene format=3 uid="uid://bvk2yaq8ycmwh"]
 
 [ext_resource type="Script" path="res://scripts/ui/inventory_panel.gd" id="1_inv"]
 
@@ -74,10 +74,11 @@ theme_override_font_sizes/font_size = 20
 text = "Equipment"
 horizontal_alignment = 1
 
-[node name="EquipmentSlots" type="Control" parent="HSplitContainer/EquipmentSection"]
-custom_minimum_size = Vector2(250, 400)
+[node name="EquipmentSlots" type="GridContainer" parent="HSplitContainer/EquipmentSection"]
 layout_mode = 2
 size_flags_vertical = 3
+size_flags_horizontal = 4
+columns = 3
 
 [node name="HintLabel" type="Label" parent="HSplitContainer/EquipmentSection"]
 layout_mode = 2

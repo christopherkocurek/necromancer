@@ -90,6 +90,7 @@ func _on_race_selected(race_name: String) -> void:
 	selected_race = race_name
 	selected_house = ""  # Reset house when race changes
 	_update_race_info()
+	_update_navigation()
 
 func _update_race_info() -> void:
 	if selected_race.is_empty():
@@ -149,6 +150,7 @@ func _show_house_selection() -> void:
 func _on_house_selected(house_name: String) -> void:
 	selected_house = house_name
 	_update_house_info()
+	_update_navigation()
 
 func _update_house_info() -> void:
 	if selected_house.is_empty():
@@ -329,6 +331,7 @@ func _show_name_entry() -> void:
 func _on_name_changed(new_name: String) -> void:
 	character_name = new_name
 	info_label.text = _get_character_summary()
+	_update_navigation()
 
 func _on_random_name() -> void:
 	var names := ["Thorin", "Elrond", "Galadriel", "Aragorn", "Legolas", "Gimli",
@@ -343,6 +346,7 @@ func _on_random_name() -> void:
 			break
 
 	info_label.text = _get_character_summary()
+	_update_navigation()
 
 func _get_character_summary() -> String:
 	var race: DataManager.RaceData = DataManager.get_race(selected_race)

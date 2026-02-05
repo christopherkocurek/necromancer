@@ -17,3 +17,6 @@ script = ExtResource("2_turn")
 script = ExtResource("3_floater")
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10

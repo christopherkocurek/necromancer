@@ -186,10 +186,16 @@ func _calculate_damage_reduction(base_damage: int, _damage_type: String) -> int:
 	# Roll protection dice for damage reduction (Sil-Q system)
 	var prot: int = roll_protection()
 	var final_damage: int = max(0, base_damage - prot)
-	if protection_dice > 0:
-		GameManager.log_message("[%s] Protection: %dd%d = %d (%d -> %d dmg)" % [
-			entity_name, protection_dice, protection_sides, prot, base_damage, final_damage
-		], Color.GRAY)
+	if protection_dice > 0 and prot > 0:
+		# Show player-friendly message when armor absorbs damage
+		if self is Player:
+			GameManager.log_message("Your armor absorbs %d damage (rolled %dd%d)." % [
+				prot, protection_dice, protection_sides
+			], Color.LIGHT_BLUE)
+		else:
+			GameManager.log_message("%s's armor absorbs %d damage." % [
+				entity_name, prot
+			], Color.GRAY)
 	return final_damage
 
 func roll_protection(_damage_type: int = 1) -> int:

@@ -181,10 +181,10 @@ func _recalculate_stats() -> void:
 		var item = equipment[slot]
 		if item == null:
 			continue
-		# Item is a DataManager.ItemData
-		if item.has("attack_bonus"):
+		# Item is a DataManager.ItemData - use "in" instead of .has()
+		if "attack_bonus" in item:
 			equip_attack += item.attack_bonus
-		if item.has("evasion_bonus"):
+		if "evasion_bonus" in item:
 			equip_evasion += item.evasion_bonus
 		# Protection dice are accumulated as strings for now
 		# TODO: Parse and combine protection dice properly
@@ -205,7 +205,7 @@ func _recalculate_protection() -> void:
 		if item == null:
 			continue
 		# Parse protection_dice string like "1d4" or "2d6"
-		if item.has("protection_dice") and item.protection_dice != "":
+		if "protection_dice" in item and item.protection_dice != "":
 			var parsed := _parse_dice_string(item.protection_dice)
 			if parsed.dice > 0:
 				# Simple combination: add dice, take max sides
@@ -374,13 +374,13 @@ func _get_weapon_weight() -> int:
 	# Get weight of equipped weapon for crit calculation
 	# Heavier weapons = harder crits but more STR damage bonus
 	var weapon = equipment.get("weapon")
-	if weapon != null and weapon.has("weight"):
+	if weapon != null and "weight" in weapon:
 		return weapon.weight
 	return 30  # Unarmed default weight
 
 func get_weapon_damage_dice() -> String:
 	var weapon = equipment.get("weapon")
-	if weapon != null and weapon.has("damage_dice") and weapon.damage_dice != "":
+	if weapon != null and "damage_dice" in weapon and weapon.damage_dice != "":
 		return weapon.damage_dice
 	return "1d4"  # Unarmed
 

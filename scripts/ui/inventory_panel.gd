@@ -17,7 +17,7 @@ var selected_slot_index: int = -1
 
 # UI References
 @onready var inventory_grid: GridContainer = $HSplitContainer/InventorySection/InventoryGrid
-@onready var equipment_container: Control = $HSplitContainer/EquipmentSection/EquipmentSlots
+@onready var equipment_container: GridContainer = $HSplitContainer/EquipmentSection/EquipmentSlots
 @onready var item_info: RichTextLabel = $HSplitContainer/InventorySection/ItemInfo
 @onready var weight_label: Label = $HSplitContainer/InventorySection/WeightLabel
 
@@ -63,31 +63,14 @@ func _setup_inventory_grid() -> void:
 		inventory_slots.append(slot)
 
 func _setup_equipment_slots() -> void:
-	# Create equipment slot buttons arranged as paper doll
-	# Layout:
-	#     [HEAD]
-	# [NECK] [CLOAK]
-	# [BODY] [OFF_HAND]
-	# [WEAPON] [BOW]
-	# [HANDS] [RING_L]
-	# [FEET] [RING_R]
-	#     [LIGHT] [QUIVER]
-
-	var slot_positions: Dictionary = {
-		Constants.EquipSlot.HEAD: Vector2(1, 0),
-		Constants.EquipSlot.NECK: Vector2(0, 1),
-		Constants.EquipSlot.CLOAK: Vector2(2, 1),
-		Constants.EquipSlot.BODY: Vector2(1, 2),
-		Constants.EquipSlot.WEAPON: Vector2(0, 3),
-		Constants.EquipSlot.OFF_HAND: Vector2(2, 2),
-		Constants.EquipSlot.BOW: Vector2(2, 3),
-		Constants.EquipSlot.HANDS: Vector2(0, 4),
-		Constants.EquipSlot.RING_L: Vector2(0, 5),
-		Constants.EquipSlot.RING_R: Vector2(2, 5),
-		Constants.EquipSlot.FEET: Vector2(1, 5),
-		Constants.EquipSlot.LIGHT: Vector2(1, 6),
-		Constants.EquipSlot.QUIVER: Vector2(2, 6),
-	}
+	# Create equipment slot buttons arranged as paper doll in a 3-column grid
+	# Layout (read left-to-right, top-to-bottom):
+	# Row 0: [empty] [HEAD]    [empty]
+	# Row 1: [NECK]  [BODY]    [CLOAK]
+	# Row 2: [WEAPON][empty]   [OFF_HAND]
+	# Row 3: [HANDS] [empty]   [BOW]
+	# Row 4: [RING_L][FEET]    [RING_R]
+	# Row 5: [LIGHT] [empty]   [QUIVER]
 
 	var slot_names: Dictionary = {
 		Constants.EquipSlot.HEAD: "Head",
@@ -105,19 +88,37 @@ func _setup_equipment_slots() -> void:
 		Constants.EquipSlot.QUIVER: "Quiver",
 	}
 
-	for slot_id in slot_positions:
-		var pos: Vector2 = slot_positions[slot_id]
-		var slot := Button.new()
-		slot.custom_minimum_size = SLOT_SIZE
-		slot.position = pos * (SLOT_SIZE.x + 8)
-		slot.tooltip_text = slot_names[slot_id]
-		slot.pressed.connect(_on_equipment_slot_pressed.bind(slot_id))
+	# Grid layout: each row is [left, center, right]
+	# Use -1 for empty spacer cells
+	var grid_layout: Array = [
+		[-1, Constants.EquipSlot.HEAD, -1],                           # Row 0
+		[Constants.EquipSlot.NECK, Constants.EquipSlot.BODY, Constants.EquipSlot.CLOAK],  # Row 1
+		[Constants.EquipSlot.WEAPON, -1, Constants.EquipSlot.OFF_HAND],  # Row 2
+		[Constants.EquipSlot.HANDS, -1, Constants.EquipSlot.BOW],        # Row 3
+		[Constants.EquipSlot.RING_L, Constants.EquipSlot.FEET, Constants.EquipSlot.RING_R],  # Row 4
+		[Constants.EquipSlot.LIGHT, -1, Constants.EquipSlot.QUIVER],     # Row 5
+	]
 
-		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.15, 0.2, 0.15)))
-		slot.add_theme_stylebox_override("hover", _create_slot_style(Color(0.25, 0.3, 0.25)))
+	equipment_container.columns = 3
 
-		equipment_container.add_child(slot)
-		equipment_slots[slot_id] = slot
+	for row in grid_layout:
+		for slot_id in row:
+			if slot_id == -1:
+				# Add empty spacer control
+				var spacer := Control.new()
+				spacer.custom_minimum_size = SLOT_SIZE
+				equipment_container.add_child(spacer)
+			else:
+				var slot := Button.new()
+				slot.custom_minimum_size = SLOT_SIZE
+				slot.tooltip_text = slot_names[slot_id]
+				slot.pressed.connect(_on_equipment_slot_pressed.bind(slot_id))
+
+				slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.15, 0.2, 0.15)))
+				slot.add_theme_stylebox_override("hover", _create_slot_style(Color(0.25, 0.3, 0.25)))
+
+				equipment_container.add_child(slot)
+				equipment_slots[slot_id] = slot
 
 func _refresh_inventory() -> void:
 	if not player:
@@ -241,18 +242,18 @@ func _update_item_info(item: Variant) -> void:
 	var name_str: String = _get_item_name(item)
 	var stats_str: String = ""
 
-	if item.has("attack_bonus") and item.attack_bonus != 0:
+	if "attack_bonus" in item and item.attack_bonus != 0:
 		stats_str += "Attack: %+d\n" % item.attack_bonus
-	if item.has("damage_dice") and item.damage_dice != "":
+	if "damage_dice" in item and item.damage_dice != "":
 		stats_str += "Damage: %s\n" % item.damage_dice
-	if item.has("evasion_bonus") and item.evasion_bonus != 0:
+	if "evasion_bonus" in item and item.evasion_bonus != 0:
 		stats_str += "Evasion: %+d\n" % item.evasion_bonus
-	if item.has("protection_dice") and item.protection_dice != "":
+	if "protection_dice" in item and item.protection_dice != "":
 		stats_str += "Protection: %s\n" % item.protection_dice
-	if item.has("weight"):
+	if "weight" in item:
 		stats_str += "Weight: %.1f lb\n" % (item.weight / 10.0)
 
-	var desc_str: String = item.description if item.has("description") else ""
+	var desc_str: String = item.description if "description" in item else ""
 
 	item_info.bbcode_enabled = true
 	item_info.text = "[b]%s[/b]\n%s\n%s" % [name_str, stats_str, desc_str]
@@ -263,12 +264,12 @@ func _update_weight_display() -> void:
 
 	var total_weight: float = 0.0
 	for item in player.inventory:
-		if item.has("weight"):
+		if "weight" in item:
 			total_weight += item.weight / 10.0
 
 	for slot_key in player.equipment:
 		var item = player.equipment[slot_key]
-		if item != null and item.has("weight"):
+		if item != null and "weight" in item:
 			total_weight += item.weight / 10.0
 
 	weight_label.text = "Weight: %.1f lb" % total_weight
@@ -278,17 +279,24 @@ func _update_weight_display() -> void:
 # ============================================================================
 
 func _get_item_char(item: Variant) -> String:
-	if item.has("display_char"):
+	if item == null:
+		return "?"
+	# ItemData/ArtifactData classes have display_char property
+	if "display_char" in item and item.display_char != "":
 		return item.display_char
 	return "?"
 
 func _get_item_name(item: Variant) -> String:
-	if item.has("name"):
+	if item == null:
+		return "Unknown"
+	if "name" in item:
 		return item.name
 	return "Unknown"
 
 func _get_item_slot(item: Variant) -> int:
-	if item.has("tval"):
+	if item == null:
+		return -1
+	if "tval" in item:
 		return Constants.get_slot_for_tval(item.tval)
 	return -1
 

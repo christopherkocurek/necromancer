@@ -715,6 +715,19 @@ func get_artifact(name: String) -> ArtifactData:
 func get_ability(name: String) -> AbilityData:
 	return abilities.get(name)
 
+func get_abilities_for_skill(skill_type: int) -> Array[AbilityData]:
+	var result: Array[AbilityData] = []
+	for ability in abilities.values():
+		if ability.skill_type == skill_type:
+			result.append(ability)
+	# Sort by level requirement then by ability_num
+	result.sort_custom(func(a, b):
+		if a.level_requirement != b.level_requirement:
+			return a.level_requirement < b.level_requirement
+		return a.ability_num < b.ability_num
+	)
+	return result
+
 func get_race(name: String) -> RaceData:
 	return races.get(name)
 
