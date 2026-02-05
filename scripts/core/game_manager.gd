@@ -28,6 +28,17 @@ func start_new_game() -> void:
 	current_state = GameState.PLAYING
 	EventBus.game_started.emit()
 
+func reset_game() -> void:
+	# Clear references
+	player = null
+	current_level = null
+	# Reset state
+	current_depth = 1
+	turn_count = 0
+	is_player_turn = true
+	current_state = GameState.MAIN_MENU
+	current_zoom_index = 1
+
 func change_state(new_state: GameState) -> void:
 	var old_state := current_state
 	current_state = new_state

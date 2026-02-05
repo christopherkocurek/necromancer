@@ -3,63 +3,49 @@
 This file coordinates work between parallel Claude sessions.
 
 **Main repo:** `~/dev/active/games/necromancer-godot` (master)
-**Bugfix worktree:** `~/dev/worktrees/necromancer-bugfix` (bugfix branch)
-**Features worktree:** `~/dev/worktrees/necromancer-features` (features branch)
+**Status:** Phase 7 - DCSS Tileset Integration COMPLETE
 
 ---
 
-## Coordination Rules
+## Completed Tasks
 
-1. **Claim tasks before starting** - Add your initials and timestamp
-2. **Mark completed tasks** - Move to Done section with commit hash
-3. **Communicate blockers** - Note any dependencies between tasks
-4. **Sync regularly** - Pull from master before starting new work
+| Date | Task | Notes |
+|------|------|-------|
+| 2026-02-05 | DCSS Tileset Integration | Replaced old 16x16 tileset with 32x32 DCSS tileset |
+| 2026-02-05 | TileSet resource updated | Now uses 2048x2048 necromancer_dcss_tileset.png |
+| 2026-02-05 | tile_mapper.gd replaced | New DCSS-based mapper with 294 tiles |
+| 2026-02-05 | Level.gd Tile enum compatibility | Added mappings for VOID, FLOOR, WALL, etc. |
 
 ---
 
-## Bugfix Agent Tasks
+## Current Phase: Testing & Polish
 
 | Status | Priority | Task | Notes |
 |--------|----------|------|-------|
-| [ ] | HIGH | [BUG] Audit all .gd files for untyped `var err = ...` patterns | Type inference crashes |
-| [ ] | MED | [BUG] Check sprite timing issues - pending values pattern | See skill.md |
-| [ ] | LOW | [BUG] Review null checks on sprite references | Potential crashes |
+| [ ] | HIGH | Visual test of tileset in-game | Launch game, verify terrain/monsters/items render |
+| [ ] | MED | Add more char_to_monster_id mappings | Some monsters may not have sprites |
+| [ ] | MED | Fix GUT test script issues | test_turn_flow.gd has parse error |
+| [ ] | LOW | Clean up old tile_mapper files | Remove tile_mapper_old.gd, tile_mapper_dcss.gd |
 
 ---
 
-## Features Agent Tasks
+## Known Issues
 
-| Status | Priority | Task | Notes |
-|--------|----------|------|-------|
-| [ ] | HIGH | [FEATURE] Turn system with energy/speed | Phase 3 |
-| [ ] | HIGH | [FEATURE] Visual feedback delays (show results before next turn) | Phase 3 |
-| [ ] | HIGH | [FEATURE] Combat mechanics (attack rolls, defense, damage) | Phase 3 |
-| [ ] | MED | [FEATURE] Basic monster AI (pathfinding, aggression) | Phase 3 |
-| [ ] | MED | [FEATURE] FOV / visibility (line-of-sight) | Phase 3 |
-| [ ] | MED | [FEATURE] Dungeon generation (rooms + corridors) | Phase 3 |
-| [ ] | LOW | [FEATURE] Status effect indicators (buff/debuff icons) | Phase 4 |
+1. **DataManager warnings** - Missing key monsters (Morgoth, Orc, Troll, Spider) and races (Noldor, Sindar) in validation. These are validation checks, not runtime errors.
+
+2. **Test script parse error** - `test_turn_flow.gd:146` has a parameter name issue.
 
 ---
 
-## Shared/Blocked
+## Files Changed (DCSS Integration)
 
-Tasks that need coordination or are blocked:
-
-| Task | Blocked By | Notes |
-|------|------------|-------|
-| | | |
-
----
-
-## Done
-
-| Task | Branch | Commit | Date |
-|------|--------|--------|------|
-| | | | |
+- `assets/sprites/necromancer_tileset.tres` - Updated to use 32x32 DCSS grid
+- `scripts/core/tile_mapper.gd` - Replaced with DCSS version (294 tiles)
+- `scripts/core/tile_mapper_dcss.gd` - Source for new mapper (can be deleted)
+- `scripts/core/tile_mapper_old.gd` - Backup of old mapper (can be deleted)
 
 ---
 
 ## Notes
 
-_Add any cross-agent communication here_
-
+_The DCSS tileset integration is complete. The game now uses GPL-licensed DCSS tiles scaled from 32x32 to 64x64. Dark variants are generated for FOV system. All terrain, monster, and item tiles are mapped._

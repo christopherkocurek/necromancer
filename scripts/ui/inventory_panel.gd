@@ -10,10 +10,15 @@ signal closed
 const GRID_COLS: int = 4
 const GRID_ROWS: int = 6
 const SLOT_SIZE: Vector2 = Vector2(64, 64)
+const TILE_SIZE: int = 64
 
 var player: Player
 var selected_item: Variant = null
 var selected_slot_index: int = -1
+
+# Shared tileset texture for item sprites
+static var _tileset_texture: Texture2D = null
+static var _magenta_shader: ShaderMaterial = null
 
 # UI References
 @onready var inventory_grid: GridContainer = $HSplitContainer/InventorySection/InventoryGrid
@@ -26,6 +31,12 @@ var equipment_slots: Dictionary = {}
 var inventory_slots: Array[Button] = []
 
 func _ready() -> void:
+	# Load shared resources
+	if not _tileset_texture:
+		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
+	if not _magenta_shader:
+		_magenta_shader = load("res://assets/shaders/magenta_transparent.tres")
+
 	_setup_inventory_grid()
 	_setup_equipment_slots()
 	visible = false
@@ -128,9 +139,11 @@ func _refresh_inventory() -> void:
 		var slot: Button = inventory_slots[i]
 		if i < player.inventory.size():
 			var item = player.inventory[i]
-			slot.text = _get_item_char(item)
+			slot.icon = _get_item_icon(item)
+			slot.text = ""  # Clear text, use icon instead
 			slot.tooltip_text = _get_item_name(item)
 		else:
+			slot.icon = null
 			slot.text = ""
 			slot.tooltip_text = "Empty"
 
@@ -164,9 +177,11 @@ func _refresh_equipment() -> void:
 		var item = player.equipment[equip_key]
 
 		if item != null:
-			slot.text = _get_item_char(item)
+			slot.icon = _get_item_icon(item)
+			slot.text = ""  # Clear text, use icon instead
 			slot.tooltip_text = _get_item_name(item)
 		else:
+			slot.icon = null
 			slot.text = ""
 
 func _on_inventory_slot_pressed(index: int) -> void:
@@ -285,6 +300,38 @@ func _get_item_char(item: Variant) -> String:
 	if "display_char" in item and item.display_char != "":
 		return item.display_char
 	return "?"
+
+func _get_item_icon(item: Variant) -> AtlasTexture:
+	if item == null or not _tileset_texture:
+		return null
+
+	# Get item index - works for both ItemData and ArtifactData
+	var item_index: int = -1
+	if "index" in item:
+		item_index = item.index
+	else:
+		return null
+
+	# Determine if it's an artifact or regular item
+	var is_artifact: bool = item is DataManager.ArtifactData if item else false
+
+	# Get atlas coordinates from TileMapper
+	var atlas_coords: Vector2i
+	if is_artifact:
+		atlas_coords = TileMapper.get_artifact_coords(item_index)
+	else:
+		atlas_coords = TileMapper.get_item_coords(item_index)
+
+	# Create atlas texture with the correct region
+	var atlas := AtlasTexture.new()
+	atlas.atlas = _tileset_texture
+	atlas.region = Rect2(
+		atlas_coords.x * TILE_SIZE,
+		atlas_coords.y * TILE_SIZE,
+		TILE_SIZE,
+		TILE_SIZE
+	)
+	return atlas
 
 func _get_item_name(item: Variant) -> String:
 	if item == null:

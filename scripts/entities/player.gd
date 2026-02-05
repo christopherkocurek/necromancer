@@ -4,6 +4,7 @@ class_name Player
 
 signal experience_gained(amount: int)
 signal xp_spent(amount: int, skill_name: String)
+signal player_died(cause: String, killer_name: String)
 
 # Character creation
 @export var race_name: String = "Man"
@@ -60,6 +61,9 @@ var max_inventory: int = 23  # a-w
 # Movement tracking for running
 var last_direction: Vector2i = Vector2i.ZERO
 var is_running: bool = false
+
+# Run statistics (Phase 7)
+var run_stats: RunStats = RunStats.new()
 
 # ============================================================================
 # ABILITY TRACKING (Phase 4)
@@ -474,3 +478,52 @@ func can_move_to(target: Vector2i) -> bool:
 			return false
 
 	return true
+
+# ============================================================================
+# DEATH OVERRIDE (Phase 7)
+# ============================================================================
+
+func die(killer: Entity = null) -> void:
+	if not is_alive:
+		return
+
+	is_alive = false
+
+	# Record death in run stats
+	var cause: String = "unknown causes"
+	var killer_name: String = ""
+	var killer_id: int = -1
+
+	if killer:
+		killer_name = killer.entity_name
+		cause = killer_name
+		if killer is Monster and killer.monster_data:
+			killer_id = killer.monster_data.id if "id" in killer.monster_data else -1
+
+	run_stats.record_death(cause, killer_name, killer_id)
+
+	# Log death
+	GameManager.log_message("You have been slain by %s!" % cause, Color.RED)
+
+	# Emit signals
+	player_died.emit(cause, killer_name)
+	EventBus.entity_died.emit(self, killer)
+	EventBus.game_over.emit(false, cause)
+
+	# Play death animation (don't queue_free - we need the player for death screen)
+	_play_death_animation_no_free()
+
+func _play_death_animation_no_free() -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.3, 0.5)
+
+# ============================================================================
+# STAT TRACKING HELPERS (Phase 7)
+# ============================================================================
+
+func record_damage_dealt(amount: int) -> void:
+	run_stats.record_damage_dealt(amount)
+
+func record_kill(monster: Monster) -> void:
+	var was_silent: bool = false  # TODO: Detect silent kills
+	run_stats.record_kill(monster.entity_name, monster.experience_value, was_silent)

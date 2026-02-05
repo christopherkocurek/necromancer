@@ -379,3 +379,106 @@ static func get_slot_for_tval(tval: int) -> int:
 	if TVAL_TO_SLOT.has(tval):
 		return TVAL_TO_SLOT[tval]
 	return -1  # Not equippable
+
+# ============================================================================
+# ALERTNESS SYSTEM (Phase 7)
+# ============================================================================
+
+const ALERTNESS_MIN: int = -20        # Deep sleep
+const ALERTNESS_UNWARY: int = -10     # Awake but unaware (wandering)
+const ALERTNESS_ALERT: int = 0        # Aware of player (hunting/alert)
+const ALERTNESS_QUITE_ALERT: int = 5  # More alert
+const ALERTNESS_VERY_ALERT: int = 10  # Highly alert
+const ALERTNESS_MAX: int = 20         # Maximum alertness
+
+# ============================================================================
+# MORALE SYSTEM (Phase 7)
+# ============================================================================
+
+const BASE_MORALE: int = 60
+const RALLY_BONUS: int = 60           # +60 tmp_morale when stopping flight
+const ESCORT_MULTIPLIER: int = 4      # Escorts provide 4x morale to pack
+
+# Stance thresholds
+const MORALE_AGGRESSIVE: int = 200    # Morale > 200 = aggressive
+const MORALE_CONFIDENT: int = 0       # Morale > 0 = confident
+
+# Range constants
+const MAX_SIGHT: int = 20
+const FLEE_RANGE: int = MAX_SIGHT + 20  # = 40
+const TURN_RANGE: int = 3             # Fleeing monsters within 3 tiles must fight if slower
+
+# ============================================================================
+# STANCE ENUM (Phase 7)
+# ============================================================================
+
+enum Stance {
+	AGGRESSIVE,
+	CONFIDENT,
+	FLEEING
+}
+
+# ============================================================================
+# STATUS EFFECT IDS (Phase 7)
+# ============================================================================
+
+# Use StringName for efficiency
+const EFFECT_BLIND: StringName = &"blind"
+const EFFECT_CONFUSED: StringName = &"confused"
+const EFFECT_POISONED: StringName = &"poisoned"
+const EFFECT_AFRAID: StringName = &"afraid"
+const EFFECT_STUNNED: StringName = &"stunned"
+const EFFECT_CUT: StringName = &"cut"
+const EFFECT_SLOW: StringName = &"slow"
+const EFFECT_FAST: StringName = &"fast"
+const EFFECT_ENTRANCED: StringName = &"entranced"
+const EFFECT_IMAGE: StringName = &"image"  # Hallucination
+const EFFECT_RAGE: StringName = &"rage"
+const EFFECT_DARKENED: StringName = &"darkened"
+
+# Stun thresholds
+const STUN_THRESHOLD_HEAVY: int = 50
+const STUN_THRESHOLD_KNOCKOUT: int = 100
+const STUN_MAX: int = 105
+
+# Effect caps
+const EFFECT_MAX_GENERAL: int = 10000
+const EFFECT_MAX_POISON: int = 100
+const EFFECT_MAX_CUT: int = 100
+
+# ============================================================================
+# GAME MODES (Phase 7)
+# ============================================================================
+
+enum GameMode {
+	PERMADEATH,
+	CASUAL
+}
+
+# ============================================================================
+# SPECIAL MONSTER INDICES (Phase 7)
+# ============================================================================
+
+const SAURON_ID: int = 99       # Placeholder - update with actual ID
+const NAZGUL_IDS: Array[int] = [90, 91, 92, 93, 94, 95, 96, 97, 98]  # 9 Nazgul
+const THRAIN_ID: int = 100      # Thrain's corpse/encounter
+
+# ============================================================================
+# SCORE CALCULATION (Phase 7)
+# ============================================================================
+
+const SCORE_MAX_TURNS: int = 100000
+const SCORE_DEPTH_MULTIPLIER: int = 10
+const SCORE_ESCAPE_BONUS: int = 50000
+const SCORE_VICTORY_BONUS: int = 500000
+
+# Race challenge factors for score calculation
+const RACE_CHALLENGE_FACTORS: Dictionary = {
+	"Noldor": 3,
+	"Sindar": 4,
+	"Man": 4,
+	"Dwarf": 5,
+}
+
+static func get_race_challenge_factor(race_name: String) -> int:
+	return RACE_CHALLENGE_FACTORS.get(race_name, 4)

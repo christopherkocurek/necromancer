@@ -62,10 +62,6 @@ func _run_unit_tests():
 		gut.add_directory("res://tests/unit")
 		gut.add_directory("res://tests/integration")
 
-		# Configure GUT
-		gut.set_log_level(gut.LOG_LEVEL_ALL_ASSERTS)
-		gut.set_include_subdirectories(true)
-
 		# Run and wait
 		gut.test_scripts()
 		await gut.end_run

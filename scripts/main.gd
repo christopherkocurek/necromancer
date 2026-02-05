@@ -17,6 +17,7 @@ var character_creation: Control = null
 var inventory_panel: Control = null
 var skills_panel: Control = null
 var abilities_panel: Control = null
+var death_screen: Control = null
 
 var current_level: Level = null
 var player: Player = null
@@ -27,6 +28,7 @@ const CHARACTER_CREATION_SCENE := preload("res://scenes/ui/character_creation.ts
 const INVENTORY_PANEL_SCENE := preload("res://scenes/ui/inventory_panel.tscn")
 const SKILLS_PANEL_SCENE := preload("res://scenes/ui/skills_panel.tscn")
 const ABILITIES_PANEL_SCENE := preload("res://scenes/ui/abilities_panel.tscn")
+const DEATH_SCREEN_SCENE := preload("res://scenes/ui/death_screen.tscn")
 
 func _ready() -> void:
 	_setup_ui_panels()
@@ -54,6 +56,12 @@ func _setup_ui_panels() -> void:
 	abilities_panel = ABILITIES_PANEL_SCENE.instantiate()
 	abilities_panel.closed.connect(_on_abilities_closed)
 	ui_layer.add_child(abilities_panel)
+
+	# Instantiate death screen (hidden by default)
+	death_screen = DEATH_SCREEN_SCENE.instantiate()
+	death_screen.new_game_requested.connect(_on_new_game_requested)
+	death_screen.quit_requested.connect(_on_quit_requested)
+	ui_layer.add_child(death_screen)
 
 func _show_character_creation() -> void:
 	current_state = GameState.CHARACTER_CREATION
@@ -142,6 +150,9 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 		player.dexterity += base_stats.get("dex", 0)
 		player.constitution += base_stats.get("con", 0)
 		player.grace += base_stats.get("gra", 0)
+
+	# Connect player death signal
+	player.player_died.connect(_on_player_died)
 
 	# Find starting position (stairs up or random floor)
 	var start_pos := current_level.find_stairs_up()
@@ -269,6 +280,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_abilities()
 		get_viewport().set_input_as_handled()
 
+	# Quick save (F5)
+	if event.is_action_pressed("quick_save"):
+		_quick_save()
+		get_viewport().set_input_as_handled()
+
+	# Quick load (F9)
+	if event.is_action_pressed("quick_load"):
+		_quick_load()
+		get_viewport().set_input_as_handled()
+
 	# Pause/menu
 	if event.is_action_pressed("ui_cancel"):
 		# Pause menu (to be implemented)
@@ -330,3 +351,128 @@ func _on_skills_closed() -> void:
 func _on_abilities_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
+
+# ============================================================================
+# DEATH HANDLING
+# ============================================================================
+
+func _on_player_died(cause: String, killer_name: String) -> void:
+	current_state = GameState.GAME_OVER
+
+	# Update run stats with final info
+	player.run_stats.died_from = cause
+	player.run_stats.killer_name = killer_name
+	player.run_stats.max_depth_reached = maxi(player.run_stats.max_depth_reached, GameManager.current_depth)
+	player.run_stats.total_turns = GameManager.turn_count
+
+	# Delete save file in permadeath mode
+	SaveManager.delete_save_on_death(QUICK_SAVE_SLOT)
+
+	# Show death screen
+	death_screen.show_death(player, player.run_stats)
+
+	# Log the death
+	if killer_name.is_empty():
+		GameManager.log_message("You have died. %s" % cause, Color.RED)
+	else:
+		GameManager.log_message("You have been slain by %s." % killer_name, Color.RED)
+
+func _on_new_game_requested() -> void:
+	# Clean up current game
+	if current_level:
+		current_level.queue_free()
+		current_level = null
+	if player:
+		player.queue_free()
+		player = null
+
+	# Reset game manager
+	GameManager.reset_game()
+
+	# Show character creation for new game
+	_show_character_creation()
+
+func _on_quit_requested() -> void:
+	get_tree().quit()
+
+# ============================================================================
+# SAVE/LOAD SYSTEM
+# ============================================================================
+
+const QUICK_SAVE_SLOT: int = 0
+
+var current_game_mode: SaveManager.GameMode = SaveManager.GameMode.PERMADEATH
+
+func _quick_save() -> void:
+	if current_state != GameState.PLAYING:
+		GameManager.log_message("Cannot save in current state.", Color.YELLOW)
+		return
+
+	if not player or not current_level:
+		GameManager.log_message("Cannot save: No active game.", Color.YELLOW)
+		return
+
+	SaveManager.save_game(QUICK_SAVE_SLOT, player, current_level, current_game_mode)
+
+func _quick_load() -> void:
+	if not SaveManager.has_save(QUICK_SAVE_SLOT):
+		GameManager.log_message("No save file in quick save slot.", Color.YELLOW)
+		return
+
+	var save_data := SaveManager.load_game(QUICK_SAVE_SLOT)
+	if save_data.is_empty():
+		GameManager.log_message("Failed to load save file.", Color.RED)
+		return
+
+	# Clean up current game
+	if current_level:
+		current_level.queue_free()
+		await get_tree().process_frame
+
+	if player:
+		player.queue_free()
+		await get_tree().process_frame
+
+	# Get data from save
+	var game_state: Dictionary = save_data.get("game_state", {})
+	var player_data: Dictionary = save_data.get("player", {})
+	var header: Dictionary = save_data.get("header", {})
+
+	# Restore game mode
+	current_game_mode = header.get("game_mode", SaveManager.GameMode.PERMADEATH)
+
+	# Restore game state
+	GameManager.current_depth = game_state.get("current_depth", 1)
+	GameManager.turn_count = game_state.get("turn_count", 0)
+	current_state = GameState.PLAYING
+
+	# Generate level (will be at same depth, but regenerated)
+	# TODO: For full save fidelity, store and restore RNG seed
+	_generate_level(GameManager.current_depth)
+
+	# Spawn and restore player
+	player = PLAYER_SCENE.instantiate()
+	SaveManager.apply_save_data(save_data, player, current_level)
+
+	# Connect player death signal
+	player.player_died.connect(_on_player_died)
+
+	# Add player to level
+	current_level.add_entity(player)
+
+	# Update systems
+	turn_system.set_level(current_level)
+	turn_system.set_player(player)
+	floater_manager.set_container(current_level.get_node("Effects"))
+
+	# Update FOV
+	current_level.update_fov(player.grid_position, 10)
+	current_level.update_entity_visibility()
+
+	# Show HUD
+	hud.visible = true
+	hud.update_player_stats(player)
+
+	# Store references
+	GameManager.player = player
+	GameManager.current_level = current_level

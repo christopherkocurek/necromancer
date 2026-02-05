@@ -1,6 +1,7 @@
 extends Entity
 class_name Monster
 ## Base class for all monsters.
+## Implements Sil-Q alertness/morale system.
 
 enum AIState { IDLE, WANDERING, HUNTING, FLEEING }
 
@@ -8,9 +9,21 @@ enum AIState { IDLE, WANDERING, HUNTING, FLEEING }
 var ai_state: AIState = AIState.IDLE
 var target: Entity = null
 var home_position: Vector2i = Vector2i.ZERO
-var alertness: int = 5
+var last_known_player_pos: Vector2i = Vector2i(-1, -1)
+
+# Alertness system (Sil-Q: continuous spectrum from -20 to +20)
+# < -10: Unwary (can be assassinated)
+# >= 0: Alert (full combat awareness)
+var alertness: int = Constants.ALERTNESS_ALERT  # Start alert
+var perception: int = 5  # Base perception stat
 var perception_range: int = 10
 var experience_value: int = 10
+
+# Morale system (Sil-Q style)
+var base_morale: int = Constants.BASE_MORALE
+var current_morale: int = Constants.BASE_MORALE
+var rally_bonus: int = 0
+var stance: Constants.Stance = Constants.Stance.CONFIDENT
 
 # Monster-specific flags
 var is_unique: bool = false
@@ -19,6 +32,13 @@ var is_dragon: bool = false
 var can_open_doors: bool = false
 var never_moves: bool = false
 var is_invisible: bool = false
+var is_sleeping: bool = false
+var is_mindless: bool = false
+var is_territorial: bool = false  # Won't flee from home
+var is_cowardly: bool = false  # Flees easier
+var is_brave: bool = false  # Won't flee unless critical
+var is_pack_leader: bool = false
+var pack_id: int = -1  # For escort/pack morale bonuses
 
 func _ready() -> void:
 	super._ready()
@@ -33,8 +53,15 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	max_health = current_health
 	evasion_bonus = data.evasion
 	speed = data.speed
-	alertness = data.alertness
+	perception = data.alertness  # Data's alertness is actually perception stat
 	experience_value = data.experience
+
+	# Initial alertness based on monster type
+	if data.has_flag("SLEEPING"):
+		alertness = Constants.ALERTNESS_MIN  # Deep sleep
+		is_sleeping = true
+	else:
+		alertness = Constants.ALERTNESS_ALERT  # Start alert by default
 
 	# Parse protection dice (e.g., "1d4" -> dice=1, sides=4)
 	if not data.protection_dice.is_empty():
@@ -46,9 +73,8 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	# Give monster initial energy based on speed
 	energy = randi_range(0, Constants.ACTION_COST - 1)  # Stagger initial energy
 
-	# Set sprite based on monster display character using TileMapper
-	var atlas_coords := TileMapper.get_monster_coords_for_char(data.display_char)
-	print("Monster %s (char=%s) using atlas coords %s" % [data.name, data.display_char, atlas_coords])
+	# Set sprite based on monster index directly (not display char, since multiple monsters share chars)
+	var atlas_coords := TileMapper.get_monster_coords(data.index)
 	set_sprite_from_atlas_coords(atlas_coords)
 
 	# Parse flags using has_flag (works with both legacy array and bitflags)
@@ -58,6 +84,16 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	can_open_doors = data.has_flag("OPEN_DOOR")
 	never_moves = data.has_flag("NEVER_MOVE")
 	is_invisible = data.has_flag("INVISIBLE")
+	is_mindless = data.has_flag("MINDLESS") or data.has_flag("EMPTY_MIND")
+	is_cowardly = data.has_flag("COWARD")
+	is_brave = data.has_flag("BRAVE") or is_unique  # Uniques are brave
+
+	# Morale modifiers from flags
+	if is_cowardly:
+		base_morale = Constants.BASE_MORALE / 2
+	elif is_brave:
+		base_morale = Constants.BASE_MORALE * 2
+	current_morale = base_morale
 
 	# Set up attacks from data
 	if data.attacks.size() > 0:
@@ -102,27 +138,164 @@ func _update_ai_state() -> void:
 
 	var distance_to_player := _grid_distance(grid_position, player.grid_position)
 
-	# Check if we can perceive the player
-	var can_see_player := distance_to_player <= perception_range
-	if can_see_player and GameManager.current_level:
-		can_see_player = GameManager.current_level.has_los_to(grid_position, player.grid_position)
+	# Check line of sight
+	var has_los := false
+	if distance_to_player <= perception_range and GameManager.current_level:
+		has_los = GameManager.current_level.has_los_to(grid_position, player.grid_position)
 
-	if can_see_player:
-		# Check health for fleeing
-		if current_health < max_health * 0.2 and not is_unique:
-			ai_state = AIState.FLEEING
-		else:
-			ai_state = AIState.HUNTING
-			target = player
-	elif ai_state == AIState.HUNTING:
-		# Lost sight, keep hunting toward last known position for a bit
-		if randf() < 0.3:
-			ai_state = AIState.WANDERING
-	else:
+	# Update alertness based on perception
+	_update_alertness(player, has_los, distance_to_player)
+
+	# Calculate current morale
+	_update_morale()
+
+	# Determine stance from morale
+	_update_stance()
+
+	# Set AI state based on alertness and stance
+	if is_sleeping:
+		ai_state = AIState.IDLE
+	elif alertness < Constants.ALERTNESS_UNWARY:
+		# Unwary - not aware of player
 		if ai_state == AIState.IDLE and randf() < 0.1:
 			ai_state = AIState.WANDERING
 		elif ai_state == AIState.WANDERING and randf() < 0.1:
 			ai_state = AIState.IDLE
+	elif alertness >= Constants.ALERTNESS_ALERT:
+		# Alert - aware of player
+		if has_los:
+			last_known_player_pos = player.grid_position
+			target = player
+
+			# Check stance for fleeing
+			if stance == Constants.Stance.FLEEING:
+				ai_state = AIState.FLEEING
+			else:
+				ai_state = AIState.HUNTING
+		elif ai_state == AIState.HUNTING:
+			# Lost LOS - hunt to last known position
+			if last_known_player_pos != Vector2i(-1, -1):
+				if grid_position == last_known_player_pos or randf() < 0.2:
+					# Reached last known pos or giving up
+					last_known_player_pos = Vector2i(-1, -1)
+					ai_state = AIState.WANDERING
+			else:
+				ai_state = AIState.WANDERING
+	else:
+		# Between unwary and alert - cautious state
+		if ai_state == AIState.HUNTING and randf() < 0.3:
+			ai_state = AIState.WANDERING
+
+func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
+	# Sil-Q alertness: continuous spectrum from -20 to +20
+	# Perception roll: monster_perception vs player_stealth
+	# Result < 0: monster loses alertness
+
+	if has_los:
+		# Always gain alertness when player in LOS
+		var alertness_gain := 1
+		if distance <= 3:
+			alertness_gain = 5  # Close = very obvious
+		elif distance <= 6:
+			alertness_gain = 3
+
+		alertness = mini(alertness + alertness_gain, Constants.ALERTNESS_MAX)
+
+		# Wake up if sleeping and player very close
+		if is_sleeping and distance <= 2:
+			_wake_up()
+	else:
+		# Perception roll to detect unseen player
+		var perception_roll := randi_range(1, 20) + perception
+		var stealth_roll := randi_range(1, 20) + _get_player_stealth(player)
+		var result := perception_roll - stealth_roll
+
+		if result < 0:
+			# Failed perception - lose alertness
+			alertness = maxi(alertness - 1, Constants.ALERTNESS_MIN)
+		elif result > 5:
+			# Strong perception - gain alertness (heard something)
+			alertness = mini(alertness + 1, Constants.ALERTNESS_MAX)
+
+	# Decay alertness over time when no stimulus
+	if not has_los and alertness > Constants.ALERTNESS_ALERT:
+		alertness -= 1
+
+func _update_morale() -> void:
+	# Sil-Q morale calculation
+	current_morale = base_morale
+
+	# Health penalty
+	var health_pct := float(current_health) / float(max_health)
+	if health_pct < 0.5:
+		current_morale -= int((0.5 - health_pct) * 60)  # Up to -30 at 20% health
+
+	# Escort bonus (4x multiplier for nearby allies)
+	var escort_count := _count_nearby_allies(Constants.TURN_RANGE)
+	current_morale += escort_count * Constants.ESCORT_MULTIPLIER
+
+	# Rally bonus (applied temporarily)
+	current_morale += rally_bonus
+
+	# Territorial bonus (won't flee from home)
+	if is_territorial:
+		var dist_from_home := _grid_distance(grid_position, home_position)
+		if dist_from_home <= 5:
+			current_morale += 30
+
+	# Mindless creatures don't flee
+	if is_mindless:
+		current_morale = Constants.BASE_MORALE * 3
+
+func _update_stance() -> void:
+	# Stance thresholds from Sil-Q
+	if current_morale > 200:
+		stance = Constants.Stance.AGGRESSIVE
+	elif current_morale > 0:
+		stance = Constants.Stance.CONFIDENT
+	else:
+		stance = Constants.Stance.FLEEING
+
+	# Unique/brave monsters override fleeing
+	if stance == Constants.Stance.FLEEING and is_brave:
+		if current_health > max_health * 0.1:
+			stance = Constants.Stance.CONFIDENT
+
+func _wake_up() -> void:
+	if is_sleeping:
+		is_sleeping = false
+		alertness = Constants.ALERTNESS_ALERT
+		GameManager.log_message("The %s wakes up!" % entity_name, Color.YELLOW)
+
+func _get_player_stealth(player: Player) -> int:
+	# Get player's stealth skill value
+	if "stealth" in player.skills:
+		return player.skills["stealth"]
+	return 0
+
+func _count_nearby_allies(range_tiles: int) -> int:
+	var count := 0
+	if not GameManager.current_level:
+		return 0
+
+	for entity in GameManager.current_level.entities:
+		if entity == self or not entity is Monster:
+			continue
+		if not entity.is_alive:
+			continue
+		var dist := _grid_distance(grid_position, entity.grid_position)
+		if dist <= range_tiles:
+			count += 1
+	return count
+
+## Called when an ally rallies nearby monsters
+func receive_rally(bonus: int = Constants.RALLY_BONUS) -> void:
+	rally_bonus = bonus
+	# Rally bonus decays each turn
+	EventBus.turn_ended.connect(_decay_rally_bonus, CONNECT_ONE_SHOT)
+
+func _decay_rally_bonus() -> void:
+	rally_bonus = maxi(0, rally_bonus - 10)
 
 func _idle_behavior() -> void:
 	# Just wait
@@ -171,9 +344,13 @@ func _flee_behavior() -> void:
 	if not player:
 		return
 
-	# Stop fleeing if far enough
-	if _grid_distance(grid_position, player.grid_position) > perception_range * 2:
+	var distance := _grid_distance(grid_position, player.grid_position)
+
+	# Stop fleeing if far enough (FLEE_RANGE = MAX_SIGHT + 20 = 40)
+	if distance > Constants.FLEE_RANGE:
 		ai_state = AIState.WANDERING
+		# Regain some morale when safe
+		rally_bonus = maxi(rally_bonus, 20)
 		return
 
 	# Try all directions, pick one that maximizes distance
@@ -240,7 +417,40 @@ func can_move_to(target: Vector2i) -> bool:
 func die(killer: Entity = null) -> void:
 	super.die(killer)
 
-	# Grant experience to player
+	# Grant experience to player and track stats
 	if killer is Player:
-		killer.gain_experience(experience_value)
-		GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, experience_value], Color.GREEN)
+		var was_silent := alertness < Constants.ALERTNESS_ALERT  # Monster wasn't fully aware
+		killer.gain_experience(experience_value, "kill")
+
+		# Track in run stats
+		killer.run_stats.record_kill(entity_name, experience_value, was_silent)
+
+		if was_silent:
+			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, experience_value], Color.GREEN)
+		else:
+			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, experience_value], Color.GREEN)
+
+		# Check for special achievements
+		if entity_name.begins_with("Nazgul") or "Ringwraith" in entity_name:
+			killer.run_stats.killed_nazgul = true
+		if entity_name == "Sauron" or entity_name == "The Necromancer":
+			killer.run_stats.necromancer_defeated = true
+
+## Check if monster is currently unwary (can be assassinated)
+func is_unwary() -> bool:
+	return alertness < Constants.ALERTNESS_UNWARY
+
+## Check if monster is currently alert
+func is_alert() -> bool:
+	return alertness >= Constants.ALERTNESS_ALERT
+
+## Get monster's current stance as a string
+func get_stance_string() -> String:
+	match stance:
+		Constants.Stance.AGGRESSIVE:
+			return "aggressive"
+		Constants.Stance.CONFIDENT:
+			return "confident"
+		Constants.Stance.FLEEING:
+			return "fleeing"
+	return "unknown"

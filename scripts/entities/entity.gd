@@ -67,7 +67,7 @@ func _setup_sprite() -> void:
 
 	# Load shared resources if not loaded
 	if not _tileset_texture:
-		_tileset_texture = load("res://assets/sprites/64x64_necromancer.png")
+		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
 	if not _magenta_shader:
 		_magenta_shader = load("res://assets/shaders/magenta_transparent.tres")
 
