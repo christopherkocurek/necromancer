@@ -16,7 +16,9 @@ func set_container(container: Node2D) -> void:
 	floater_container = container
 
 func _on_entity_damaged(entity: Node, damage: int, damage_type: String, _source: Node) -> void:
+	print("FloaterManager: damage event - entity=%s damage=%d type=%s container=%s" % [entity, damage, damage_type, floater_container])
 	if not floater_container or not entity:
+		print("FloaterManager: SKIPPING - no container or entity")
 		return
 
 	var pos := _get_entity_position(entity)

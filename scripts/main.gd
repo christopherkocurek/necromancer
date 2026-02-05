@@ -32,6 +32,7 @@ func _start_new_game() -> void:
 
 	# Initial FOV update
 	current_level.update_fov(player.grid_position, 10)
+	current_level.update_entity_visibility()
 
 	# Welcome message
 	GameManager.log_message("Welcome, Necromancer. You awaken in the depths...", Color.CYAN)
@@ -82,7 +83,11 @@ func _process(_delta: float) -> void:
 	_check_stairs()
 
 	# Handle zoom
-	if Input.is_action_just_pressed("zoom_in") or Input.is_action_just_pressed("zoom_out"):
+	if Input.is_action_just_pressed("zoom_in"):
+		GameManager.cycle_zoom()
+		_update_camera_zoom()
+	elif Input.is_action_just_pressed("zoom_out"):
+		GameManager.cycle_zoom_reverse()
 		_update_camera_zoom()
 
 func _check_stairs() -> void:
@@ -123,6 +128,7 @@ func _descend() -> void:
 
 	# Update FOV
 	current_level.update_fov(player.grid_position, 10)
+	current_level.update_entity_visibility()
 
 	GameManager.log_message("You descend deeper into the darkness...", Color.CYAN)
 
@@ -144,6 +150,7 @@ func _ascend() -> void:
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
 	current_level.update_fov(player.grid_position, 10)
+	current_level.update_entity_visibility()
 
 	GameManager.log_message("You climb back up...", Color.CYAN)
 

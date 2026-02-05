@@ -44,6 +44,9 @@ func generate(target_level: Level, depth: int) -> void:
 	# Connect rooms with corridors
 	_connect_rooms()
 
+	# Try to place vaults (special pre-designed rooms)
+	_try_place_vaults(depth)
+
 	# Place stairs
 	_place_stairs(depth)
 
@@ -217,12 +220,133 @@ func _is_door_candidate(pos: Vector2i) -> bool:
 
 	return false
 
+func _try_place_vaults(depth: int) -> void:
+	# Chance to place a vault increases with depth
+	var vault_chance := 0.1 + depth * 0.05
+	vault_chance = minf(vault_chance, 0.5)
+
+	if randf() > vault_chance:
+		return
+
+	var vault := DataManager.get_random_vault_for_depth(depth)
+	if not vault or vault.map_lines.is_empty():
+		return
+
+	# Find a suitable position (try to fit within map bounds)
+	var max_attempts := 20
+	for _attempt in range(max_attempts):
+		var start_x := randi_range(2, level.width - vault.width - 2)
+		var start_y := randi_range(2, level.height - vault.height - 2)
+
+		if _can_place_vault_at(Vector2i(start_x, start_y), vault):
+			_carve_vault(Vector2i(start_x, start_y), vault, depth)
+			return
+
+func _can_place_vault_at(pos: Vector2i, vault: DataManager.VaultData) -> bool:
+	# Check if the vault fits and doesn't overlap stairs
+	for y in range(vault.height):
+		for x in range(vault.width):
+			var check_pos := Vector2i(pos.x + x, pos.y + y)
+			if not level.is_in_bounds(check_pos):
+				return false
+			# Don't overwrite stairs
+			var tile := level.get_tile(check_pos)
+			if tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.STAIRS_UP:
+				return false
+	return true
+
+func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> void:
+	var monster_scene := preload("res://scenes/entities/monster.tscn")
+	var item_scene := preload("res://scenes/entities/item.tscn")
+
+	for y in range(vault.map_lines.size()):
+		if y >= vault.height:
+			break
+		var line: String = vault.map_lines[y]
+		for x in range(line.length()):
+			if x >= vault.width:
+				break
+
+			var ch: String = line[x]
+			var tile_pos := Vector2i(pos.x + x, pos.y + y)
+
+			# Parse vault symbol
+			match ch:
+				"#":
+					level.set_tile(tile_pos, Level.Tile.WALL)
+				".", " ":
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+				"+":
+					level.set_tile(tile_pos, Level.Tile.DOOR_CLOSED)
+				">":
+					level.set_tile(tile_pos, Level.Tile.STAIRS_DOWN)
+				"<":
+					level.set_tile(tile_pos, Level.Tile.STAIRS_UP)
+				"^":
+					# Trap - for now just floor
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+				"*":
+					# Treasure
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					var item_data := DataManager.get_random_item_for_depth(depth)
+					if item_data:
+						var item: Item = item_scene.instantiate()
+						item.grid_position = tile_pos
+						item.initialize_from_item_data(item_data)
+						level.add_item(item)
+				"&":
+					# Good treasure (higher depth items)
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					var item_data := DataManager.get_random_item_for_depth(depth + 3)
+					if item_data:
+						var item: Item = item_scene.instantiate()
+						item.grid_position = tile_pos
+						item.initialize_from_item_data(item_data)
+						level.add_item(item)
+				"1", "2", "3", "4":
+					# Monster at depth + N
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					var monster_depth := depth + int(ch)
+					var monster_data := DataManager.get_random_monster_for_depth(monster_depth)
+					if monster_data:
+						var monster: Monster = monster_scene.instantiate()
+						monster.grid_position = tile_pos
+						monster.initialize_from_data(monster_data)
+						level.add_entity(monster)
+				_:
+					# Check for named monster characters
+					if ch.to_upper() == ch and ch != ch.to_lower():
+						# Uppercase letter - potentially a named monster
+						level.set_tile(tile_pos, Level.Tile.FLOOR)
+						var monster_data := DataManager.get_monster_by_char(ch, depth)
+						if monster_data:
+							var monster: Monster = monster_scene.instantiate()
+							monster.grid_position = tile_pos
+							monster.initialize_from_data(monster_data)
+							level.add_entity(monster)
+					elif ch.to_lower() == ch and ch != ch.to_upper():
+						# Lowercase letter - potentially a monster
+						level.set_tile(tile_pos, Level.Tile.FLOOR)
+						var monster_data := DataManager.get_monster_by_char(ch, depth)
+						if monster_data:
+							var monster: Monster = monster_scene.instantiate()
+							monster.grid_position = tile_pos
+							monster.initialize_from_data(monster_data)
+							level.add_entity(monster)
+					else:
+						# Unknown symbol, treat as floor
+						level.set_tile(tile_pos, Level.Tile.FLOOR)
+
+	# Track this as a room
+	rooms.append(Rect2i(pos.x, pos.y, vault.width, vault.height))
+
 func _spawn_monsters(depth: int) -> void:
 	# Number of monsters scales with depth
 	var monster_count := randi_range(3 + depth, 5 + depth * 2)
 	monster_count = mini(monster_count, 20)  # Cap
 
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
+	var spawned := 0
 
 	for _i in range(monster_count):
 		var spawn_pos := level.find_random_floor()
@@ -242,11 +366,17 @@ func _spawn_monsters(depth: int) -> void:
 			monster.grid_position = spawn_pos
 			monster.initialize_from_data(monster_data)
 			level.add_entity(monster)
+			spawned += 1
+
+	print("Spawned %d monsters at depth %d" % [spawned, depth])
 
 func _spawn_items(depth: int) -> void:
 	# Number of items scales with depth (fewer items than monsters)
 	var item_count := randi_range(2 + depth / 2, 4 + depth)
 	item_count = mini(item_count, 15)
+
+	var item_scene := preload("res://scenes/entities/item.tscn")
+	var spawned := 0
 
 	for _i in range(item_count):
 		var spawn_pos := level.find_random_floor()
@@ -255,5 +385,10 @@ func _spawn_items(depth: int) -> void:
 
 		var item_data := DataManager.get_random_item_for_depth(depth)
 		if item_data:
-			# For now, just store the data reference
-			level.add_item_at(spawn_pos, item_data)
+			var item: Item = item_scene.instantiate()
+			item.grid_position = spawn_pos
+			item.initialize_from_item_data(item_data)
+			level.add_item(item)
+			spawned += 1
+
+	print("Spawned %d items at depth %d" % [spawned, depth])

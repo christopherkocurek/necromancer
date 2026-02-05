@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://crnv5m8k2x4hd"]
 
 [ext_resource type="Script" uid="uid://bljv6unk7ywxq" path="res://scripts/systems/level.gd" id="1_level"]
-[ext_resource type="TileSet" uid="uid://dy3rb26hmf80g" path="res://assets/sprites/necromancer_64x64_v1.tres" id="2_bovvr"]
+[ext_resource type="TileSet" uid="uid://cmv6lvgvv7q3l" path="res://assets/sprites/necromancer_tileset.tres" id="2_bovvr"]
 
 [node name="Level" type="Node2D" unique_id=1266957464]
 script = ExtResource("1_level")

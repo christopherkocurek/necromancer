@@ -16,7 +16,7 @@ var tile_visibility: Array[bool] = []
 
 # Entities
 var entities: Array[Entity] = []
-var items_on_ground: Dictionary = {}  # Vector2i -> Array of items
+var items: Array = []  # Item nodes on the ground
 
 # Tile types
 enum Tile {
@@ -40,6 +40,7 @@ enum Tile {
 
 func _ready() -> void:
 	_initialize_arrays()
+	_apply_magenta_shader()
 
 func _initialize_arrays() -> void:
 	var size := width * height
@@ -50,6 +51,11 @@ func _initialize_arrays() -> void:
 	tile_visibility.resize(size)
 	tile_visibility.fill(false)
 
+func _apply_magenta_shader() -> void:
+	if terrain_layer:
+		var shader_material: ShaderMaterial = load("res://assets/shaders/magenta_transparent.tres")
+		terrain_layer.material = shader_material
+
 # ============================================================================
 # TERRAIN ACCESS
 # ============================================================================
@@ -59,9 +65,15 @@ func get_tile(pos: Vector2i) -> int:
 		return Tile.VOID
 	return terrain[pos.y * width + pos.x]
 
+var _set_tile_debug_count := 0
+
 func set_tile(pos: Vector2i, tile: int) -> void:
 	if is_in_bounds(pos):
 		terrain[pos.y * width + pos.x] = tile
+		if _set_tile_debug_count < 10:
+			var atlas_coords := TileMapper.get_terrain_coords(tile)
+			print("set_tile: pos=", pos, " tile=", Tile.keys()[tile], " atlas=", atlas_coords)
+			_set_tile_debug_count += 1
 		_update_tilemap_cell(pos, tile)
 
 func is_in_bounds(pos: Vector2i) -> bool:
@@ -118,14 +130,14 @@ func remove_entity(entity: Entity) -> void:
 
 func get_entity_at(pos: Vector2i) -> Entity:
 	for entity in entities:
-		if entity.grid_position == pos and entity.is_alive:
+		if is_instance_valid(entity) and entity.grid_position == pos and entity.is_alive:
 			return entity
 	return null
 
 func get_entities_in_radius(center: Vector2i, radius: int) -> Array[Entity]:
 	var result: Array[Entity] = []
 	for entity in entities:
-		if entity.is_alive:
+		if is_instance_valid(entity) and entity.is_alive:
 			var dist: int = max(abs(entity.grid_position.x - center.x),
 						   abs(entity.grid_position.y - center.y))
 			if dist <= radius:
@@ -135,7 +147,7 @@ func get_entities_in_radius(center: Vector2i, radius: int) -> Array[Entity]:
 func get_monsters() -> Array[Monster]:
 	var monsters: Array[Monster] = []
 	for entity in entities:
-		if entity is Monster and entity.is_alive:
+		if is_instance_valid(entity) and entity is Monster and entity.is_alive:
 			monsters.append(entity)
 	return monsters
 
@@ -143,23 +155,26 @@ func get_monsters() -> Array[Monster]:
 # ITEM MANAGEMENT
 # ============================================================================
 
-func add_item_at(pos: Vector2i, item: Variant) -> void:
-	if not items_on_ground.has(pos):
-		items_on_ground[pos] = []
-	items_on_ground[pos].append(item)
+func add_item(item: Item) -> void:
+	items.append(item)
+	item_container.add_child(item)
 
-func get_items_at(pos: Vector2i) -> Array:
-	return items_on_ground.get(pos, [])
+func remove_item(item: Item) -> void:
+	items.erase(item)
+	if item.get_parent() == item_container:
+		item_container.remove_child(item)
 
-func remove_item_at(pos: Vector2i, item: Variant) -> bool:
-	if items_on_ground.has(pos):
-		var items: Array = items_on_ground[pos]
-		var idx := items.find(item)
-		if idx >= 0:
-			items.remove_at(idx)
-			if items.is_empty():
-				items_on_ground.erase(pos)
-			return true
+func get_items_at(pos: Vector2i) -> Array[Item]:
+	var result: Array[Item] = []
+	for item in items:
+		if item.grid_position == pos:
+			result.append(item)
+	return result
+
+func remove_item_at(pos: Vector2i, item: Item) -> bool:
+	if item in items and item.grid_position == pos:
+		remove_item(item)
+		return true
 	return false
 
 # ============================================================================
@@ -175,41 +190,23 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 	terrain_layer.set_cell(pos, 0, atlas_coords)
 
 func _get_atlas_coords_for_tile(tile: int) -> Vector2i:
-	# Map tile types to positions in the 64x64 tileset
-	# Coordinates from user's tileset configuration
-	match tile:
-		Tile.VOID:
-			return Vector2i(4, 60)
-		Tile.FLOOR:
-			return Vector2i(8, 60)
-		Tile.WALL:
-			return Vector2i(0, 56)
-		Tile.DOOR_CLOSED:
-			return Vector2i(0, 56)  # TODO: find door tile
-		Tile.DOOR_OPEN:
-			return Vector2i(8, 60)  # TODO: find door tile
-		Tile.STAIRS_DOWN:
-			return Vector2i(16, 48)
-		Tile.STAIRS_UP:
-			return Vector2i(24, 48)
-		Tile.CHASM:
-			return Vector2i(4, 60)  # TODO: find chasm tile
-		Tile.RUBBLE:
-			return Vector2i(8, 60)  # TODO: find rubble tile
-		Tile.FORGE:
-			return Vector2i(8, 60)  # TODO: find forge tile
-		_:
-			return Vector2i(4, 60)
+	# Use TileMapper to get atlas coordinates directly from tile enum
+	return TileMapper.get_terrain_coords(tile)
 
 func rebuild_tilemap() -> void:
 	if not terrain_layer:
 		return
 
 	terrain_layer.clear()
+	var debug_count := 0
 	for y in range(height):
 		for x in range(width):
 			var pos := Vector2i(x, y)
 			var tile := get_tile(pos)
+			if debug_count < 5:
+				var atlas_coords := TileMapper.get_terrain_coords(tile)
+				print("Tile at ", pos, ": ", Tile.keys()[tile], " atlas=", atlas_coords)
+				debug_count += 1
 			_update_tilemap_cell(pos, tile)
 
 # ============================================================================
@@ -245,8 +242,39 @@ func update_fov(center: Vector2i, radius: int) -> void:
 
 func update_entity_visibility() -> void:
 	for entity in entities:
-		if entity is Monster:
+		if is_instance_valid(entity) and entity is Monster:
 			entity.visible = is_tile_visible(entity.grid_position)
+
+func has_los_to(from: Vector2i, to: Vector2i) -> bool:
+	# Bresenham line check for transparency
+	var x0: int = from.x
+	var y0: int = from.y
+	var x1: int = to.x
+	var y1: int = to.y
+
+	var dx: int = absi(x1 - x0)
+	var dy: int = absi(y1 - y0)
+	var sx: int = 1 if x0 < x1 else -1
+	var sy: int = 1 if y0 < y1 else -1
+	var err: int = dx - dy
+
+	while true:
+		if Vector2i(x0, y0) != from:
+			if not is_transparent(Vector2i(x0, y0)):
+				return false
+
+		if x0 == x1 and y0 == y1:
+			break
+
+		var e2: int = 2 * err
+		if e2 > -dy:
+			err -= dy
+			x0 += sx
+		if e2 < dx:
+			err += dx
+			y0 += sy
+
+	return true
 
 # ============================================================================
 # PATHFINDING

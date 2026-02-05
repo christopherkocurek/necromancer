@@ -16,7 +16,7 @@ var vaults: Array[VaultData] = []
 const DATA_PATH := "res://data/"
 
 func _ready() -> void:
-	call_deferred("load_all_data")
+	load_all_data()
 
 func load_all_data() -> void:
 	print("DataManager: Loading game data...")
@@ -28,9 +28,7 @@ func load_all_data() -> void:
 	load_races()
 	load_houses()
 	load_vaults()
-	print("DataManager: Loaded %d monsters, %d items, %d artifacts, %d abilities" % [
-		monsters.size(), items.size(), artifacts.size(), abilities.size()
-	])
+	_validate_data()
 
 # ============================================================================
 # MONSTER PARSING (Sil-Q format)
@@ -159,11 +157,11 @@ func load_monsters() -> void:
 			"F":
 				# F:FLAG1 | FLAG2 | FLAG3
 				if current_monster:
-					var flags := value.split("|")
-					for flag in flags:
+					var flag_list := value.split("|")
+					for flag in flag_list:
 						var f := flag.strip_edges()
 						if f != "":
-							current_monster.flags.append(f)
+							current_monster.set_flag(f)
 			"D":
 				# D:description text
 				if current_monster:
@@ -404,10 +402,32 @@ func load_abilities() -> void:
 					if i_parts.size() >= 1:
 						current_ability.skill_type = int(i_parts[0])
 					if i_parts.size() >= 2:
-						current_ability.skill_requirement = int(i_parts[1])
+						current_ability.ability_num = int(i_parts[1])
+					if i_parts.size() >= 3:
+						current_ability.level_requirement = int(i_parts[2])
 			"P":
 				if current_ability:
 					current_ability.prerequisites = value
+					# Parse into structured format: skill/ability:skill/ability:...
+					var prereq_list := value.split(":")
+					for prereq in prereq_list:
+						var p_parts := prereq.split("/")
+						if p_parts.size() >= 2:
+							current_ability.prereqs.append({
+								"skill": int(p_parts[0]),
+								"ability": int(p_parts[1])
+							})
+			"T":
+				# T: lines grant abilities from items
+				# Format: tval:min_sval:max_sval
+				if current_ability:
+					var t_parts := value.split(":")
+					if t_parts.size() >= 3:
+						current_ability.item_grants.append({
+							"tval": int(t_parts[0]),
+							"min_sval": int(t_parts[1]),
+							"max_sval": int(t_parts[2])
+						})
 			"D":
 				if current_ability:
 					if current_ability.description.is_empty():
@@ -682,6 +702,86 @@ func get_random_item_for_depth(depth: int) -> ItemData:
 		return null
 	return valid_items.pick_random()
 
+func _validate_data() -> void:
+	print("=== DataManager Validation ===")
+	print("Loaded %d monsters, %d items, %d artifacts, %d abilities" % [
+		monsters.size(), items.size(), artifacts.size(), abilities.size()
+	])
+	print("Loaded %d races, %d houses, %d vaults" % [
+		races.size(), houses.size(), vaults.size()
+	])
+
+	# Spot-check critical content
+	var warnings: Array[String] = []
+
+	# Check for key monsters
+	var key_monsters := ["Morgoth, Lord of Darkness", "Orc", "Troll", "Warg", "Spider"]
+	for monster_name in key_monsters:
+		if not monsters.has(monster_name):
+			warnings.append("Missing key monster: " + monster_name)
+
+	# Check for races
+	var expected_races := ["Noldor", "Sindar", "Man", "Dwarf"]
+	for race_name in expected_races:
+		if not races.has(race_name):
+			warnings.append("Missing race: " + race_name)
+
+	# Check vaults have map data
+	var empty_vaults := 0
+	for vault in vaults:
+		if vault.map_lines.is_empty():
+			empty_vaults += 1
+	if empty_vaults > 0:
+		warnings.append("Found %d vaults with no map data" % empty_vaults)
+
+	# Print warnings
+	if warnings.is_empty():
+		print("All validation checks passed!")
+	else:
+		for warning in warnings:
+			push_warning("DataManager: " + warning)
+		print("Validation completed with %d warnings" % warnings.size())
+
+	print("==============================")
+
+func get_vaults_for_depth(depth: int) -> Array[VaultData]:
+	var valid_vaults: Array[VaultData] = []
+	for vault in vaults:
+		# vault_type determines the layer/type:
+		# 0 = any, 1+ = specific dungeon layers
+		# For now, allow all vaults with type <= depth
+		if vault.vault_type <= depth:
+			valid_vaults.append(vault)
+	return valid_vaults
+
+func get_random_vault_for_depth(depth: int) -> VaultData:
+	var valid := get_vaults_for_depth(depth)
+	if valid.is_empty():
+		return null
+	return valid.pick_random()
+
+func get_monster_by_char(ch: String, depth: int) -> MonsterData:
+	# Map single characters to monster types for vault spawning
+	var char_to_monster: Dictionary = {
+		"o": "Orc",
+		"O": "Orc captain",
+		"T": "Troll",
+		"V": "Morgoth, Lord of Darkness",  # Sauron equivalent
+		"g": "Goblin",
+		"w": "Warg",
+		"s": "Spider",
+		"S": "Mirkwood Spider",
+		"d": "Young dragon",
+		"D": "Dragon",
+		"W": "Werewolf",
+		"k": "Kobold",
+	}
+	var monster_name: String = char_to_monster.get(ch, "")
+	if monster_name and monsters.has(monster_name):
+		return monsters[monster_name]
+	# Fallback to random monster for depth
+	return get_random_monster_for_depth(depth)
+
 func roll_dice(dice_string: String) -> int:
 	# Parse dice strings like "3d6" or "1d8+2" or "1d4"
 	if dice_string.is_empty():
@@ -733,14 +833,50 @@ class MonsterData:
 	var spell_power: int = 0
 	var spell_types: Array[String] = []
 	var attacks: Array[AttackData] = []
-	var flags: Array[String] = []
+	var flags: Array[String] = []  # Keep for backwards compatibility
 	var description: String = ""
+
+	# Bitflag storage (Phase 4)
+	var flags1: int = 0  # RF1 - general flags
+	var flags2: int = 0  # RF2 - ability flags
+	var flags3: int = 0  # RF3 - race/resist flags
+	var flags4: int = 0  # RF4 - spell/ranged flags
 
 	func roll_health() -> int:
 		return DataManager.roll_dice(health_dice) if health_dice else 10
 
-	func has_flag(flag: String) -> bool:
-		return flags.has(flag)
+	func has_flag(flag_name: String) -> bool:
+		# First check legacy array
+		if flags.has(flag_name):
+			return true
+		# Then check bitflags
+		if not Constants.FLAG_MAP.has(flag_name):
+			return false
+		var info: Array = Constants.FLAG_MAP[flag_name]
+		var flag_set: int = info[0]
+		var flag_bit: int = info[1]
+		match flag_set:
+			1: return (flags1 & flag_bit) != 0
+			2: return (flags2 & flag_bit) != 0
+			3: return (flags3 & flag_bit) != 0
+			4: return (flags4 & flag_bit) != 0
+		return false
+
+	func set_flag(flag_name: String) -> void:
+		# Also add to legacy array for compatibility
+		if not flags.has(flag_name):
+			flags.append(flag_name)
+		# Set bitflag
+		if not Constants.FLAG_MAP.has(flag_name):
+			return
+		var info: Array = Constants.FLAG_MAP[flag_name]
+		var flag_set: int = info[0]
+		var flag_bit: int = info[1]
+		match flag_set:
+			1: flags1 |= flag_bit
+			2: flags2 |= flag_bit
+			3: flags3 |= flag_bit
+			4: flags4 |= flag_bit
 
 class AttackData:
 	var method: String = ""
@@ -793,10 +929,18 @@ class ArtifactData:
 class AbilityData:
 	var index: int = 0
 	var name: String = ""
-	var skill_type: int = 0
-	var skill_requirement: int = 0
-	var prerequisites: String = ""
+	var skill_type: int = 0       # I: first value - which skill tree
+	var ability_num: int = 0      # I: second value - position in skill tree
+	var level_requirement: int = 0 # I: third value - skill level needed
+	var prerequisites: String = ""  # Legacy string format
+	var prereqs: Array = []       # P: parsed as [{skill: int, ability: int}, ...]
+	var item_grants: Array = []   # T: parsed as [{tval: int, min_sval: int, max_sval: int}, ...]
 	var description: String = ""
+
+	# Keep old field name for compatibility
+	var skill_requirement: int:
+		get: return level_requirement
+		set(v): level_requirement = v
 
 class RaceData:
 	var index: int = 0

@@ -31,26 +31,33 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	entity_name = data.name
 	current_health = data.roll_health()
 	max_health = current_health
-	armor_class = data.armor_class
+	evasion_bonus = data.evasion
 	speed = data.speed
 	alertness = data.alertness
 	experience_value = data.experience
 
-	# Parse flags
-	for flag in data.flags:
-		match flag:
-			"UNIQUE":
-				is_unique = true
-			"UNDEAD":
-				is_undead = true
-			"DRAGON":
-				is_dragon = true
-			"OPEN_DOOR":
-				can_open_doors = true
-			"NEVER_MOVE":
-				never_moves = true
-			"INVISIBLE":
-				is_invisible = true
+	# Parse protection dice (e.g., "1d4" -> dice=1, sides=4)
+	if not data.protection_dice.is_empty():
+		var prot_parts := data.protection_dice.split("d")
+		if prot_parts.size() >= 2:
+			protection_dice = int(prot_parts[0])
+			protection_sides = int(prot_parts[1])
+
+	# Give monster initial energy based on speed
+	energy = randi_range(0, Constants.ACTION_COST - 1)  # Stagger initial energy
+
+	# Set sprite based on monster display character using TileMapper
+	var atlas_coords := TileMapper.get_monster_coords_for_char(data.display_char)
+	print("Monster %s (char=%s) using atlas coords %s" % [data.name, data.display_char, atlas_coords])
+	set_sprite_from_atlas_coords(atlas_coords)
+
+	# Parse flags using has_flag (works with both legacy array and bitflags)
+	is_unique = data.has_flag("UNIQUE")
+	is_undead = data.has_flag("UNDEAD")
+	is_dragon = data.has_flag("DRAGON")
+	can_open_doors = data.has_flag("OPEN_DOOR")
+	never_moves = data.has_flag("NEVER_MOVE")
+	is_invisible = data.has_flag("INVISIBLE")
 
 	# Set up attacks from data
 	if data.attacks.size() > 0:
@@ -66,10 +73,11 @@ func take_turn() -> void:
 	if not is_alive or never_moves:
 		return
 
-	EventBus.turn_started.emit(self)
+	# Check if monster has energy to act (energy consumed by TurnSystem)
+	if not can_act():
+		return
 
-	# Tick status effects
-	tick_status_effects()
+	EventBus.turn_started.emit(self)
 
 	# Update AI state
 	_update_ai_state()
@@ -96,7 +104,8 @@ func _update_ai_state() -> void:
 
 	# Check if we can perceive the player
 	var can_see_player := distance_to_player <= perception_range
-	# Add LOS check here when implemented
+	if can_see_player and GameManager.current_level:
+		can_see_player = GameManager.current_level.has_los_to(grid_position, player.grid_position)
 
 	if can_see_player:
 		# Check health for fleeing
@@ -138,25 +147,55 @@ func _hunt_behavior() -> void:
 		ai_state = AIState.WANDERING
 		return
 
-	var direction := _direction_toward(target.grid_position)
-
-	# Check if adjacent to target
+	# Attack if adjacent
 	if _grid_distance(grid_position, target.grid_position) <= 1:
 		attack_entity(target)
-	else:
-		try_move(direction)
-
-func _flee_behavior() -> void:
-	var player := GameManager.player
-	if not player:
 		return
 
-	var direction := _direction_away_from(player.grid_position)
+	# Use A* pathfinding
+	if GameManager.current_level:
+		var path: Array[Vector2i] = GameManager.current_level.find_path(grid_position, target.grid_position)
+		if path.size() > 1:
+			var next_pos: Vector2i = path[1]  # path[0] is current position
+			var dir: Vector2i = next_pos - grid_position
+			if can_move_to(next_pos):
+				try_move(dir)
+				return
+
+	# Fallback to direct movement
+	var direction: Vector2i = _direction_toward(target.grid_position)
 	try_move(direction)
+
+func _flee_behavior() -> void:
+	var player: Player = GameManager.player
+	if not player:
+		return
 
 	# Stop fleeing if far enough
 	if _grid_distance(grid_position, player.grid_position) > perception_range * 2:
 		ai_state = AIState.WANDERING
+		return
+
+	# Try all directions, pick one that maximizes distance
+	var directions: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+
+	var best_dir: Vector2i = Vector2i.ZERO
+	var best_dist: int = -1
+
+	for dir: Vector2i in directions:
+		var new_pos: Vector2i = grid_position + dir
+		if can_move_to(new_pos):
+			var dist: int = _grid_distance(new_pos, player.grid_position)
+			if dist > best_dist:
+				best_dist = dist
+				best_dir = dir
+
+	if best_dir != Vector2i.ZERO:
+		try_move(best_dir)
 
 # ============================================================================
 # PATHFINDING HELPERS

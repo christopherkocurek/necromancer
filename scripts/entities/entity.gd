@@ -32,9 +32,21 @@ signal died(killer: Entity)
 @export var evasion_bonus: int = 0
 @export var damage_dice: String = "1d4"
 
+# Protection dice (replaces flat armor_class reduction)
+var protection_dice: int = 0   # Number of dice (pd)
+var protection_sides: int = 0  # Sides per die (ps)
+
+# Energy system
+var energy: int = 0
+
 # Visual
-@export var sprite_index: int = 0
+@export var sprite_index: int = 0  # Monster/entity ID for tile lookup
 var sprite: Sprite2D
+var _pending_atlas_coords: Vector2i = Vector2i(-1, -1)  # Coords to apply after sprite creation
+
+# Shared resources (loaded once)
+static var _tileset_texture: Texture2D = null
+static var _magenta_shader: ShaderMaterial = null
 
 # State
 var is_alive: bool = true
@@ -45,7 +57,66 @@ func _ready() -> void:
 	_update_visual_position()
 
 func _setup_sprite() -> void:
-	sprite = $Sprite2D if has_node("Sprite2D") else null
+	# Get or create sprite
+	if has_node("Sprite2D"):
+		sprite = $Sprite2D
+	else:
+		sprite = Sprite2D.new()
+		sprite.name = "Sprite2D"
+		add_child(sprite)
+
+	# Load shared resources if not loaded
+	if not _tileset_texture:
+		_tileset_texture = load("res://assets/sprites/64x64_necromancer.png")
+	if not _magenta_shader:
+		_magenta_shader = load("res://assets/shaders/magenta_transparent.tres")
+
+	# Configure sprite
+	sprite.texture = _tileset_texture
+	sprite.region_enabled = true
+	sprite.material = _magenta_shader
+
+	# Apply pending atlas coords if set, otherwise use default
+	if _pending_atlas_coords != Vector2i(-1, -1):
+		_apply_atlas_coords(_pending_atlas_coords)
+	else:
+		_update_sprite_region()
+
+func _update_sprite_region() -> void:
+	if not sprite or not TileMapper:
+		return
+
+	var atlas_coords := TileMapper.get_monster_coords(sprite_index)
+	var tile_size := GameManager.TILE_SIZE
+	sprite.region_rect = Rect2(
+		atlas_coords.x * tile_size,
+		atlas_coords.y * tile_size,
+		tile_size,
+		tile_size
+	)
+
+func set_sprite_from_monster_id(monster_id: int) -> void:
+	sprite_index = monster_id
+	if sprite:
+		_update_sprite_region()
+	# If sprite doesn't exist yet, _update_sprite_region will be called in _setup_sprite
+
+func set_sprite_from_atlas_coords(atlas_coords: Vector2i) -> void:
+	_pending_atlas_coords = atlas_coords
+	if sprite:
+		_apply_atlas_coords(atlas_coords)
+	# If sprite doesn't exist yet, coords will be applied in _setup_sprite
+
+func _apply_atlas_coords(atlas_coords: Vector2i) -> void:
+	if not sprite:
+		return
+	var tile_size := GameManager.TILE_SIZE
+	sprite.region_rect = Rect2(
+		atlas_coords.x * tile_size,
+		atlas_coords.y * tile_size,
+		tile_size,
+		tile_size
+	)
 
 func _update_visual_position() -> void:
 	position = Vector2(grid_position) * GameManager.TILE_SIZE
@@ -88,7 +159,8 @@ func _animate_move(from: Vector2i, to: Vector2i) -> void:
 	position = start_pos
 
 	var tween := create_tween()
-	tween.tween_property(self, "position", end_pos, 0.15).set_ease(Tween.EASE_OUT)
+	# DO NOT EDIT: Movement tween for smooth tile transitions
+	tween.tween_property(self, "position", end_pos, 0.01).set_ease(Tween.EASE_OUT)
 
 # ============================================================================
 # COMBAT
@@ -111,9 +183,23 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 		die(source)
 
 func _calculate_damage_reduction(base_damage: int, _damage_type: String) -> int:
-	# Basic armor reduction
-	var reduction := armor_class / 5
-	return max(1, base_damage - reduction)
+	# Roll protection dice for damage reduction (Sil-Q system)
+	var prot: int = roll_protection()
+	var final_damage: int = max(0, base_damage - prot)
+	if protection_dice > 0:
+		GameManager.log_message("[%s] Protection: %dd%d = %d (%d -> %d dmg)" % [
+			entity_name, protection_dice, protection_sides, prot, base_damage, final_damage
+		], Color.GRAY)
+	return final_damage
+
+func roll_protection(_damage_type: int = 1) -> int:
+	# Roll protection dice for damage reduction
+	if protection_dice <= 0 or protection_sides <= 0:
+		return 0
+	var total: int = 0
+	for i in range(protection_dice):
+		total += randi_range(1, protection_sides)
+	return total
 
 func _flash_damage() -> void:
 	if sprite:
@@ -162,6 +248,10 @@ func tick_status_effects() -> void:
 
 	for status_name in status_effects:
 		var effect: Dictionary = status_effects[status_name]
+
+		# Process effect each tick
+		_process_status_effect(status_name, effect)
+
 		effect.duration -= 1
 		EventBus.status_tick.emit(self, status_name, effect.duration)
 
@@ -170,6 +260,20 @@ func tick_status_effects() -> void:
 
 	for status_name in to_remove:
 		remove_status(status_name)
+
+func _process_status_effect(status_name: String, effect: Dictionary) -> void:
+	var power: int = effect.get("data", 1) if effect.has("data") and effect.data != null else 1
+	match status_name:
+		"poison":
+			take_damage(power, "poison", null)
+		"regeneration":
+			heal(power, null)
+		"burning":
+			take_damage(power * 2, "fire", null)
+		"bleeding":
+			take_damage(power, "physical", null)
+		_:
+			pass  # Other effects handled elsewhere
 
 # ============================================================================
 # ATTACK
@@ -194,6 +298,24 @@ func attack_entity(target: Entity) -> void:
 		# Could emit a critical hit event here
 
 	target.take_damage(damage, "physical", self)
+
+# ============================================================================
+# ENERGY SYSTEM
+# ============================================================================
+
+func get_energy_gain() -> int:
+	# Get energy gain based on speed (uses Constants.ENERGY_TABLE)
+	var speed_index: int = clampi(speed, 0, Constants.ENERGY_TABLE.size() - 1)
+	return Constants.ENERGY_TABLE[speed_index]
+
+func can_act() -> bool:
+	return energy >= Constants.ACTION_COST and is_alive
+
+func consume_energy(amount: int = Constants.ACTION_COST) -> void:
+	energy -= amount
+
+func grant_energy() -> void:
+	energy += get_energy_gain()
 
 # ============================================================================
 # INFO

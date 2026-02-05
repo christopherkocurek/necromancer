@@ -54,20 +54,100 @@ var max_inventory: int = 23  # a-w
 var last_direction: Vector2i = Vector2i.ZERO
 var is_running: bool = false
 
+# ============================================================================
+# ABILITY TRACKING (Phase 4)
+# ============================================================================
+
+# Ability arrays (S_MAX x ABILITIES_MAX)
+var innate_ability: Array = []   # Learned permanently
+var active_ability: Array = []   # Currently enabled
+var have_ability: Array = []     # Includes item grants
+
+# Action tracking (for abilities like Charge, Dodging, Controlled Retreat)
+var previous_action: Array = []  # Last 3 actions [0]=most recent
+
+# Combat state (reset each turn)
+var ripostes_this_turn: int = 0
+var attacks_this_turn: int = 0
+var consecutive_attacks: int = 0
+var last_attack_monster_idx: int = -1
+var knocked_back: bool = false
+var moved_this_turn: bool = false
+
 func _ready() -> void:
 	super._ready()
 	entity_name = "Necromancer"
+	_init_ability_arrays()
 	_apply_racial_modifiers()
+	_setup_player_sprite()
+
+func _init_ability_arrays() -> void:
+	# Initialize ability tracking arrays (S_MAX x ABILITIES_MAX)
+	innate_ability.clear()
+	active_ability.clear()
+	have_ability.clear()
+	for i in range(Constants.S_MAX):
+		var innate_row: Array = []
+		var active_row: Array = []
+		var have_row: Array = []
+		for j in range(Constants.ABILITIES_MAX):
+			innate_row.append(false)
+			active_row.append(false)
+			have_row.append(false)
+		innate_ability.append(innate_row)
+		active_ability.append(active_row)
+		have_ability.append(have_row)
+	# Initialize action tracking
+	previous_action.resize(Constants.ACTION_MAX)
+	previous_action.fill(Constants.ACTION_NOTHING)
+
+func record_action(action: int) -> void:
+	previous_action.insert(0, action)
+	if previous_action.size() > Constants.ACTION_MAX:
+		previous_action.resize(Constants.ACTION_MAX)
+
+func reset_turn_state() -> void:
+	ripostes_this_turn = 0
+	attacks_this_turn = 0
+	moved_this_turn = false
+	knocked_back = false
+
+func has_ability(skill: int, ability: int) -> bool:
+	if skill < 0 or skill >= Constants.S_MAX:
+		return false
+	if ability < 0 or ability >= Constants.ABILITIES_MAX:
+		return false
+	return active_ability[skill][ability]
+
+func learn_ability(skill: int, ability: int) -> void:
+	if skill < 0 or skill >= Constants.S_MAX:
+		return
+	if ability < 0 or ability >= Constants.ABILITIES_MAX:
+		return
+	innate_ability[skill][ability] = true
+	active_ability[skill][ability] = true
+	have_ability[skill][ability] = true
+
+func _setup_player_sprite() -> void:
+	# Map race to sprite index (R:0-3 in PRF)
+	var race_to_sprite: Dictionary[String, int] = {
+		"Noldor": 0,
+		"Sindar": 1,
+		"Man": 2,
+		"Dwarf": 3,
+	}
+	var race_sprite_id: int = race_to_sprite.get(race_name, 2)  # Default to Man
+	set_sprite_from_monster_id(race_sprite_id)
 
 func _apply_racial_modifiers() -> void:
-	var race_data := DataManager.get_race(race_name)
+	var race_data: DataManager.RaceData = DataManager.get_race(race_name)
 	if race_data:
 		strength += race_data.str_mod
 		dexterity += race_data.dex_mod
 		constitution += race_data.con_mod
 		grace += race_data.gra_mod
 
-	var house_data := DataManager.get_house(house_name)
+	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
 	if house_data:
 		strength += house_data.str_mod
 		dexterity += house_data.dex_mod
@@ -146,25 +226,25 @@ func has_lore_for(monster_type: String) -> bool:
 # INVENTORY
 # ============================================================================
 
-func pick_up_item(item: Resource) -> bool:
+func pick_up_item(item_data: Variant) -> bool:
 	if inventory.size() >= max_inventory:
 		GameManager.log_message("Your pack is full!", Color.RED)
 		return false
 
-	inventory.append(item)
-	EventBus.item_picked_up.emit(self, item)
+	inventory.append(item_data)
+	EventBus.item_picked_up.emit(self, item_data)
 	return true
 
-func drop_item(item: Resource) -> bool:
-	var idx := inventory.find(item)
+func drop_item(item_data: Variant) -> bool:
+	var idx := inventory.find(item_data)
 	if idx < 0:
 		return false
 
 	inventory.remove_at(idx)
-	EventBus.item_dropped.emit(self, item, grid_position)
+	EventBus.item_dropped.emit(self, item_data, grid_position)
 	return true
 
-func equip_item(item: Resource, slot: String) -> bool:
+func equip_item(item_data: Variant, slot: String) -> bool:
 	if not equipment.has(slot):
 		return false
 
@@ -172,9 +252,9 @@ func equip_item(item: Resource, slot: String) -> bool:
 	if equipment[slot] != null:
 		unequip_slot(slot)
 
-	equipment[slot] = item
-	inventory.erase(item)
-	EventBus.item_equipped.emit(self, item, slot)
+	equipment[slot] = item_data
+	inventory.erase(item_data)
+	EventBus.item_equipped.emit(self, item_data, slot)
 	_recalculate_stats()
 	return true
 
@@ -208,13 +288,29 @@ func handle_input() -> bool:
 	if Input.is_action_just_pressed("wait"):
 		return true  # Skip turn
 
-	if Input.is_action_just_pressed("zoom_in"):
-		GameManager.cycle_zoom()
-		return false  # Free action
+	if Input.is_action_just_pressed("pickup"):
+		return try_pickup()
 
-	if Input.is_action_just_pressed("zoom_out"):
-		# Cycle backwards through zoom
+	return false
+
+func try_pickup() -> bool:
+	if not GameManager.current_level:
 		return false
+
+	var items_here: Array[Item] = GameManager.current_level.get_items_at(grid_position)
+	if items_here.is_empty():
+		GameManager.log_message("There is nothing here to pick up.", Color.GRAY)
+		return false
+
+	# Pick up the first item
+	var item: Item = items_here[0]
+	var item_data = item.get_data()
+
+	if pick_up_item(item_data):
+		GameManager.current_level.remove_item(item)
+		item.queue_free()
+		GameManager.log_message("You pick up the %s." % item.get_display_name(), Color.WHITE)
+		return true
 
 	return false
 
@@ -247,7 +343,14 @@ func can_move_to(target: Vector2i) -> bool:
 
 	# Check terrain passability
 	if GameManager.current_level.has_method("is_passable"):
-		if not GameManager.current_level.is_passable(target):
+		var passable: bool = GameManager.current_level.is_passable(target)
+		if not passable:
+			var tile: int = GameManager.current_level.get_tile(target)
+			# Try to open closed doors
+			if tile == Level.Tile.DOOR_CLOSED:
+				GameManager.current_level.set_tile(target, Level.Tile.DOOR_OPEN)
+				GameManager.log_message("You open the door.", Color.WHITE)
+				return false  # Opening door takes a turn but doesn't move
 			return false
 
 	# Check for blocking entities

@@ -70,6 +70,9 @@ func game_over(victory: bool, reason: String = "") -> void:
 func cycle_zoom() -> void:
 	current_zoom_index = (current_zoom_index + 1) % ZOOM_LEVELS.size()
 
+func cycle_zoom_reverse() -> void:
+	current_zoom_index = (current_zoom_index - 1 + ZOOM_LEVELS.size()) % ZOOM_LEVELS.size()
+
 func get_current_zoom() -> float:
 	return ZOOM_LEVELS[current_zoom_index]
 

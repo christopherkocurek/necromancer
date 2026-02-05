@@ -3,14 +3,27 @@ class_name DamageFloater
 ## A floating text indicator that rises and fades.
 ## Used for damage numbers, healing, status effects, and other combat feedback.
 
-@onready var label: Label = $Label
+var label: Label
 
 var velocity: Vector2 = Vector2(0, -60)  # Pixels per second upward
 var lifetime: float = 1.0
 var elapsed: float = 0.0
 var start_scale: Vector2 = Vector2(1.0, 1.0)
 
+# Pending setup values (set before _ready)
+var _pending_text: String = ""
+var _pending_color: Color = Color.WHITE
+var _pending_size: int = 16
+
 func _ready() -> void:
+	label = $Label
+
+	# Apply pending setup
+	if label and _pending_text != "":
+		label.text = _pending_text
+		label.add_theme_color_override("font_color", _pending_color)
+		label.add_theme_font_size_override("font_size", _pending_size)
+
 	# Start with a slight pop animation
 	scale = start_scale * 1.2
 	var tween := create_tween()
@@ -35,6 +48,11 @@ func _process(delta: float) -> void:
 
 func setup(text: String, color: Color, size: int = 16, duration: float = 1.0) -> void:
 	lifetime = duration
+	_pending_text = text
+	_pending_color = color
+	_pending_size = size
+
+	# Apply immediately if label exists (called after _ready)
 	if label:
 		label.text = text
 		label.add_theme_color_override("font_color", color)
