@@ -292,13 +292,19 @@ func attack_entity(target: Entity) -> void:
 		], Color.GRAY)
 		return
 
-	# Base damage
+	# Base damage from weapon dice
+	var weapon_weight: int = _get_weapon_weight()
 	var damage: int = DataManager.roll_dice(damage_dice)
-	damage += strength / 2
+
+	# STR damage bonus capped by weapon weight
+	# Heavier weapons can utilize more STR, lighter weapons cap the bonus
+	var str_bonus: int = strength / 2
+	var weight_cap: int = weapon_weight / 10
+	var actual_str_bonus: int = mini(str_bonus, weight_cap)
+	damage += actual_str_bonus
 
 	# Critical hit calculation: (hit_result × 10 + 4) / (70 + weapon_weight)
-	# Heavier weapons = harder crits but more damage potential
-	var weapon_weight: int = _get_weapon_weight()
+	# Heavier weapons = harder crits but more damage potential from STR
 	var crit_dice: int = (hit_result * 10 + 4) / (70 + weapon_weight)
 
 	# Apply crit bonus dice

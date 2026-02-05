@@ -1,0 +1,87 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvk2x9q8ycmwh"]
+
+[ext_resource type="Script" path="res://scripts/ui/inventory_panel.gd" id="1_inv"]
+
+[node name="InventoryPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_inv")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.8)
+
+[node name="HSplitContainer" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InventorySection" type="VBoxContainer" parent="HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="HSplitContainer/InventorySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Inventory"
+horizontal_alignment = 1
+
+[node name="InventoryGrid" type="GridContainer" parent="HSplitContainer/InventorySection"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 4
+
+[node name="WeightLabel" type="Label" parent="HSplitContainer/InventorySection"]
+layout_mode = 2
+text = "Weight: 0.0 lb"
+
+[node name="HSeparator" type="HSeparator" parent="HSplitContainer/InventorySection"]
+layout_mode = 2
+
+[node name="ItemInfo" type="RichTextLabel" parent="HSplitContainer/InventorySection"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+bbcode_enabled = true
+text = "Select an item to see details."
+fit_content = true
+scroll_active = false
+
+[node name="EquipmentSection" type="VBoxContainer" parent="HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="HSplitContainer/EquipmentSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Equipment"
+horizontal_alignment = 1
+
+[node name="EquipmentSlots" type="Control" parent="HSplitContainer/EquipmentSection"]
+custom_minimum_size = Vector2(250, 400)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HintLabel" type="Label" parent="HSplitContainer/EquipmentSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+text = "[E] Equip  [D] Drop  [Esc] Close"
+horizontal_alignment = 1

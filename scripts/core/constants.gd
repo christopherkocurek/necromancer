@@ -313,3 +313,69 @@ const ACTION_MISC: int = 10
 const ACTION_ARCHERY: int = 11
 const ACTION_MELEE: int = 12
 const ACTION_MAX: int = 3  # Track last 3 actions
+
+# ============================================================================
+# CHARACTER CREATION
+# ============================================================================
+
+# Stat allocation: 13 points total
+# Cost curve indexed by stat value + 4 (so stat -4 = index 0, stat +6 = index 10)
+const STAT_POINTS_TOTAL: int = 13
+const STAT_COSTS: Array[int] = [-4, -3, -2, -1, 0, 1, 3, 6, 10, 15, 21]
+# Index:                         0   1   2   3  4  5  6  7   8   9  10
+# Stat:                         -4  -3  -2  -1  0 +1 +2 +3  +4  +5  +6
+
+static func get_stat_cost(stat_value: int) -> int:
+	var index: int = stat_value + 4
+	if index < 0 or index >= STAT_COSTS.size():
+		return 999  # Invalid
+	return STAT_COSTS[index]
+
+# ============================================================================
+# EQUIPMENT SLOTS
+# ============================================================================
+
+enum EquipSlot {
+	WEAPON,
+	OFF_HAND,
+	BOW,
+	QUIVER,
+	HEAD,
+	BODY,
+	CLOAK,
+	HANDS,
+	FEET,
+	NECK,
+	RING_L,
+	RING_R,
+	LIGHT
+}
+
+# TVAL to equipment slot mapping
+const TVAL_TO_SLOT: Dictionary = {
+	17: EquipSlot.QUIVER,    # TV_ARROW
+	19: EquipSlot.BOW,       # TV_BOW
+	20: EquipSlot.WEAPON,    # TV_DIGGING
+	21: EquipSlot.WEAPON,    # TV_HAFTED
+	22: EquipSlot.WEAPON,    # TV_POLEARM
+	23: EquipSlot.WEAPON,    # TV_SWORD
+	30: EquipSlot.FEET,      # TV_BOOTS
+	31: EquipSlot.HANDS,     # TV_GLOVES
+	32: EquipSlot.HEAD,      # TV_HELM
+	33: EquipSlot.HEAD,      # TV_CROWN
+	34: EquipSlot.OFF_HAND,  # TV_SHIELD
+	35: EquipSlot.CLOAK,     # TV_CLOAK
+	36: EquipSlot.BODY,      # TV_SOFT_ARMOR
+	37: EquipSlot.BODY,      # TV_MAIL
+	39: EquipSlot.LIGHT,     # TV_LIGHT
+	40: EquipSlot.NECK,      # TV_AMULET
+	45: EquipSlot.RING_L,    # TV_RING (can go left or right)
+}
+
+# Non-equippable TVALs
+const TVAL_CONSUMABLES: Array[int] = [55, 56, 66, 75, 77, 80]  # staff, wand, horn, potion, flask, food
+
+static func get_slot_for_tval(tval: int) -> int:
+	if TVAL_TO_SLOT.has(tval):
+		return TVAL_TO_SLOT[tval]
+	return -1  # Not equippable
