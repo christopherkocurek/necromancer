@@ -788,3 +788,13 @@ N:153:Grace
 I:7:13:12
 D:You gain a point of grace.
 
+N:154:Song of Banishment
+I:7:14:6
+P:7/0:7/5
+D:You sing a song of power that drives undead away. Undead within
+D: radius 3 must save against your Grace + Lore or flee for 3 turns.
+D: This ignores their normal fear immunity. Usable once per floor.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+T:39:0:99  # Light Source
+

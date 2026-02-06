@@ -201,6 +201,7 @@ enum LoreAbility {
 	LOR_WORD_OF_MASTERY = 11,   # 151: Paralyze target
 	LOR_DEVICE_MASTERY = 12,    # 152: +50% wand/staff charges
 	LOR_GRACE = 13,             # 153: Passive +1 Grace stat
+	LOR_SONG_OF_BANISHMENT = 14, # 154: AOE undead flee, ignores NO_FEAR, 1/floor
 }
 
 # ============================================================================

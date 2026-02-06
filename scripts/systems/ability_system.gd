@@ -25,6 +25,7 @@ enum LoreAbility {
 	WORD_OF_MASTERY = 151,
 	DEVICE_MASTERY = 152,
 	GRACE = 153,
+	SONG_OF_BANISHMENT = 154,
 }
 
 # Ability types
@@ -46,6 +47,7 @@ var player: Player = null
 
 func _ready() -> void:
 	EventBus.round_completed.connect(_on_round_completed)
+	EventBus.level_entered.connect(_on_level_entered)
 
 func set_player(p: Player) -> void:
 	player = p
@@ -114,6 +116,12 @@ func _on_round_completed(_round: int) -> void:
 	# Regenerate voice
 	regenerate_voice()
 
+func _on_level_entered(_depth: int) -> void:
+	# Reset per-floor abilities (Song of Banishment)
+	if cooldowns.has(LoreAbility.SONG_OF_BANISHMENT):
+		cooldowns.erase(LoreAbility.SONG_OF_BANISHMENT)
+		ability_cooldown_ended.emit(LoreAbility.SONG_OF_BANISHMENT)
+
 # ============================================================================
 # ABILITY CHECKS
 # ============================================================================
@@ -158,6 +166,8 @@ func get_voice_cost(ability_id: int) -> int:
 			return 2
 		LoreAbility.LORE_OF_BATTLE:
 			return 1
+		LoreAbility.SONG_OF_BANISHMENT:
+			return 3
 		_:
 			return 0  # Passive or no cost
 
@@ -166,7 +176,7 @@ func get_ability_type(ability_id: int) -> AbilityType:
 		LoreAbility.WORD_OF_COMMAND, LoreAbility.WORD_OF_OPENING, \
 		LoreAbility.WORD_OF_SHUTTING, LoreAbility.WORD_OF_MASTERY, \
 		LoreAbility.LORE_OF_SLEEP, LoreAbility.LORE_OF_SILENCE, \
-		LoreAbility.LORE_OF_BATTLE:
+		LoreAbility.LORE_OF_BATTLE, LoreAbility.SONG_OF_BANISHMENT:
 			return AbilityType.ACTIVE
 		LoreAbility.DEADLY_LORE:
 			return AbilityType.TRIGGERED  # Triggers on crit
@@ -215,6 +225,8 @@ func _execute_ability(ability_id: int, target: Variant) -> bool:
 			return _lore_of_sleep(target)
 		LoreAbility.WORD_OF_MASTERY:
 			return _word_of_mastery(target)
+		LoreAbility.SONG_OF_BANISHMENT:
+			return _song_of_banishment()
 		_:
 			GameManager.log_message("Ability not implemented.", ThemeColors.MSG_SYSTEM)
 			return false
@@ -470,6 +482,55 @@ func _word_of_mastery(target: Variant) -> bool:
 		GameManager.log_message("The %s shakes off your command!" % monster.entity_name, ThemeColors.MSG_SYSTEM)
 		return false
 
+## Song of Banishment (154): AOE undead flee, ignores NO_FEAR, 1/floor
+func _song_of_banishment() -> bool:
+	if not player or not GameManager.current_level:
+		return false
+
+	var lore_skill: int = player.get_skill("lore")
+	var grace: int = player.grace if player.grace else 0
+	var radius: int = 3
+
+	var affected: int = 0
+	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, radius)
+
+	GameManager.log_message("You sing a song of banishment against the dead!", ThemeColors.MSG_INFO)
+
+	for entity in entities:
+		if entity == player or not is_instance_valid(entity):
+			continue
+		if not entity is Monster:
+			continue
+
+		var monster: Monster = entity
+
+		# Only affects undead
+		if not monster.monster_data or not monster.monster_data.has_flag("UNDEAD"):
+			continue
+
+		# Save: monster Will vs player Grace + Lore
+		var monster_will: int = monster.monster_data.will if monster.monster_data else 5
+		var player_roll: int = randi_range(1, 20) + grace + lore_skill
+		var monster_roll: int = randi_range(1, 20) + monster_will
+
+		if player_roll > monster_roll:
+			# Force flee - ignores NO_FEAR by directly setting morale and status
+			monster.current_morale = -100
+			monster.apply_status(Constants.EFFECT_AFRAID, 3)
+			affected += 1
+			GameManager.log_message("The %s is driven back by your song!" % monster.entity_name, ThemeColors.MSG_WARNING)
+		else:
+			GameManager.log_message("The %s resists the banishment." % monster.entity_name, ThemeColors.MSG_SYSTEM)
+
+	if affected == 0:
+		GameManager.log_message("No undead were affected.", ThemeColors.MSG_SYSTEM)
+	else:
+		GameManager.log_message("%d undead banished!" % affected, ThemeColors.ABILITY_LEARNED)
+
+	# 1/floor cooldown (very high cooldown = effectively once per floor)
+	start_cooldown(LoreAbility.SONG_OF_BANISHMENT, 9999)
+	return true
+
 # ============================================================================
 # PASSIVE ABILITY CHECKS (called from other systems)
 # ============================================================================
@@ -534,14 +595,14 @@ func apply_grace_bonus() -> void:
 
 func _get_skill_for_ability(ability_id: int) -> int:
 	# All Lore abilities are in skill 7 (S_LOR)
-	if ability_id >= 140 and ability_id <= 153:
+	if ability_id >= 140 and ability_id <= 154:
 		return Constants.Skill.S_LOR
 	return -1
 
 func _get_ability_index(ability_id: int) -> int:
 	# Convert global ability ID to skill-local index
 	# Lore abilities: 140 -> 0, 141 -> 1, etc.
-	if ability_id >= 140 and ability_id <= 153:
+	if ability_id >= 140 and ability_id <= 154:
 		return ability_id - 140
 	return -1
 
@@ -561,6 +622,7 @@ func _get_ability_name(ability_id: int) -> String:
 		LoreAbility.WORD_OF_MASTERY: return "Word of Mastery"
 		LoreAbility.DEVICE_MASTERY: return "Device Mastery"
 		LoreAbility.GRACE: return "Grace"
+		LoreAbility.SONG_OF_BANISHMENT: return "Song of Banishment"
 		_: return "Unknown Ability"
 
 ## Get list of all implemented Lore abilities
@@ -580,4 +642,5 @@ func get_lore_abilities() -> Array[int]:
 		LoreAbility.WORD_OF_MASTERY,
 		LoreAbility.DEVICE_MASTERY,
 		LoreAbility.GRACE,
+		LoreAbility.SONG_OF_BANISHMENT,
 	]

@@ -465,9 +465,9 @@ D: with malevolent power.
 
 
 ##### LAYER 4: THE NECROPOLIS (Depths 9-12, 450-600ft) #####
-# Theme: Undead hordes, necromancers, crypts
-# Key need: LIGHT, FIRE
-# Feel: Death, endless undead, attrition
+# Theme: Undead hordes mixed with living servants and cave creatures
+# Key need: LIGHT, FIRE, WILL
+# Feel: Death and corruption, but also mortal servants of evil
 
 N:71:Skeleton
 W:9:1
@@ -574,6 +574,90 @@ F:NO_CONF | NO_SLEEP | HURT_LITE | RES_CRIT
 D:A towering construct of fused bones, animated by
 D: necromantic power. It feels no pain.
 
+# Layer 4 - Living Servants & Cave Creatures
+N:80:Easterling Infiltrator
+W:9:1
+G:@:U
+I:2:8d4:0
+A:15:5:6:5
+P:[+7,2d4]
+B:HIT:HURT:(+8,2d6)
+F:MAN | MALE | DROP_33 | OPEN_DOOR | SMART | FRIENDS
+D:A scout from the East, sent to map the defenses of
+D: the Free Peoples. He strikes from the shadows.
+
+N:81:Cave Troll
+W:10:1
+G:T:s
+I:2:18d4:0
+A:20:2:1:5
+P:[+5,3d4]
+B:HIT:BATTER:(+10,3d7)
+F:MALE | FRIEND | DROP_33 | REGENERATE | OPEN_DOOR
+F:BASH_DOOR | TROLL | SMART | KNOCK_BACK | TERRITORIAL
+D:A massive troll that makes its lair in the deeper
+D: tunnels. Less intelligent than hill trolls, but far stronger.
+
+N:82:Dark Ritualist
+W:10:2
+G:@:v
+I:2:8d4:0
+A:10:6:4:8
+P:[+6,1d4]
+B:HIT:DARK:(+7,1d8)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | UNLOCK_DOOR | SMART
+S:SPELL_PCT_50 | POW_10
+S:DARKNESS | SLOW | SCARE
+D:A sorcerer who tends the crypts, performing dark rituals
+D: to raise and strengthen the undead legions.
+
+N:83:Corsair of Umbar
+W:11:2
+G:@:B
+I:2:10d4:0
+A:15:5:4:6
+P:[+8,2d4]
+B:HIT:HURT:(+10,2d7)
+B:HIT:WOUND:(+8,1d6)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | SMART | FLANKING
+D:A pirate from the southern coasts, hired by Sauron's agents.
+D: He fights with twin blades and dirty tricks.
+
+N:84:Dunlending Berserker
+W:11:2
+G:@:r
+I:2:12d4:0
+A:25:2:1:7
+P:[+4,2d4]
+B:HIT:HURT:(+12,3d6)
+F:MAN | MALE | DROP_33 | BASH_DOOR | NO_FEAR | CHARGE
+D:A wildman from Dunland, sworn to Sauron in exchange for
+D: vengeance against Rohan. He fights without armor or fear.
+
+N:85:Tunnel Crawler
+W:9:1
+G:c:u
+I:1:12d4:0
+A:5:3:8:3
+P:[+3,3d4]
+B:BITE:POISON:(+8,2d6)
+B:CLAW:HURT:(+6,1d8)
+F:RES_POIS | TERRITORIAL | MINDLESS
+D:A massive centipede-like creature that burrows through
+D: the deep tunnels. Its armored carapace is tough to pierce.
+
+N:86:Pale Crawler
+W:10:3
+G:w:w
+I:2:6d4:0
+A:5:5:10:4
+P:[+8]
+B:TOUCH:CONFUSE:(+10)
+B:BITE:POISON:(+8,1d8)
+F:TERRITORIAL | RAND_25 | RES_POIS
+D:A blind, pallid creature adapted to the absolute darkness
+D: of the deep. Its touch causes disorientation.
+
 # Layer 4 Unique
 N:79:Grishnákh, Crypt Lord
 W:12:10
@@ -594,9 +678,9 @@ D: He commands the endless dead of Dol Guldur.
 
 
 ##### LAYER 5: THE WRAITH DOMAIN (Depths 12-15, 600-750ft) #####
-# Theme: Incorporeal spirits, fear, darkness
+# Theme: Wraiths and shadows mixed with elite mortal servants
 # Key need: WILL (high), SEE INVISIBLE
-# Feel: Terror, the unseen, madness
+# Feel: Terror, the unseen, madness - but also mortal foes
 
 N:91:Phantom
 W:12:1
@@ -693,6 +777,70 @@ F:FLYING | RAND_25 | OPEN_DOOR | UNLOCK_DOOR
 F:HURT_LITE | SMART
 D:A lesser vampire, created by one of the greater lords.
 D: It hungers eternally for blood.
+
+# Layer 5 - Elite Mortal Servants & Creatures
+N:100:Black Númenórean Acolyte
+W:12:1
+G:@:D
+I:2:10d4:1
+A:10:8:4:11
+P:[+10,2d4]
+B:HIT:HURT:(+12,2d8)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | UNLOCK_DOOR | SMART
+S:SPELL_PCT_40 | POW_12
+S:DARKNESS | SLOW | SCARE
+D:A student of the Black Númenórean arts, serving his
+D: masters in the Wraith Domain. His dark magic is growing.
+
+N:101:Haradrim Assassin
+W:13:2
+G:@:D1
+I:3:9d4:0
+A:10:8:10:7
+P:[+14,1d4]
+B:HIT:WOUND:(+16,2d7)
+B:HIT:POISON:(+14,1d6)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | SMART
+D:An elite killer from the southern lands, trained in the
+D: arts of silent death. His blades are coated in venom.
+
+N:102:Cave Worm
+W:13:2
+G:w:U
+I:1:20d4:0
+A:5:4:2:6
+P:[+6,4d4]
+B:BITE:HURT:(+14,3d8)
+B:CRUSH:BATTER:(+12,2d8)
+F:TERRITORIAL | REGENERATE | BASH_DOOR | NO_FEAR
+D:A massive worm that tunnels through the deepest rock.
+D: Its armored hide turns aside all but the strongest blows.
+
+N:103:Oathbreaker Captain
+W:14:2
+G:@:U1
+I:2:12d4:1
+A:15:7:3:10
+P:[+12,3d4]
+B:HIT:HURT:(+16,2d9)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | BASH_DOOR | SMART
+F:ESCORT | CHARGE
+D:A former captain of Gondor who broke his oath and now
+D: serves the darkness. His skill at arms remains formidable.
+
+N:104:Morgul Sorcerer
+W:14:3
+G:@:v1
+I:2:10d4:0
+A:10:10:5:14
+P:[+10,2d4]
+B:HIT:DARK:(+14,2d8)
+F:MAN | MALE | DROP_100 | OPEN_DOOR | UNLOCK_DOOR | SMART
+S:SPELL_PCT_50 | POW_16
+S:DARKNESS | SLOW | HOLD | SCARE | CONF
+D:A sorcerer trained in the arts of Morgul, commanding
+D: dark powers that chill the blood. He is nearly as
+D: dangerous as the wraiths he serves alongside.
 
 # Layer 5 Unique
 N:98:The Wailing Horror
@@ -902,6 +1050,38 @@ S:SPELL_PCT_30 | POW_24
 S:HOLD | DARKNESS | SNG_BINDING
 D:A wraith from beyond the circles of the world,
 D: summoned to guard Sauron's innermost chambers.
+
+# Layer 7 - Elite Living Guards
+N:136:Black Númenórean Lord
+W:18:2
+G:@:v
+I:2:16d4:1
+A:10:14:5:18
+P:[+18,4d4]
+B:HIT:HURT:(+22,3d9)
+F:MAN | MALE | DROP_100 | DROP_GOOD | OPEN_DOOR | UNLOCK_DOOR
+F:SMART | BASH_DOOR
+S:SPELL_PCT_40 | POW_20
+S:DARKNESS | HOLD | SCARE | SLOW
+D:One of the lords of the Black Númenórean order,
+D: second only to the Mouth of Sauron. His command of
+D: dark sorcery rivals that of the lesser Nazgûl.
+
+N:137:Mouth of Sauron
+W:19:4
+G:@:r
+I:2:24d4:1
+A:10:16:5:22
+P:[+22,4d4]
+B:HIT:DARK:(+26,3d10)
+B:TOUCH:LOSE_GRA:(+24)
+F:UNIQUE | MALE | SMART | ESCORT
+F:DROP_100 | DROP_GREAT | OPEN_DOOR | UNLOCK_DOOR | BASH_DOOR
+S:SPELL_PCT_40 | POW_24
+S:DARKNESS | HOLD | SCARE | SLOW | CONF
+D:The lieutenant of Barad-dûr, a living man of great
+D: age and terrible power. He speaks with the voice
+D: of Sauron himself and has forgotten his own name.
 
 N:134:Thráin's Shade
 W:20:100
