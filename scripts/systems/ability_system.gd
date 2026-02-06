@@ -13,12 +13,12 @@ signal voice_charges_changed(current: int, max_charges: int)
 enum LoreAbility {
 	WORD_OF_COMMAND = 140,
 	LORE_OF_BATTLE = 141,
-	DEEP_MEMORY = 142,        # DEFERRED
+	DEEP_MEMORY = 142,
 	WORD_OF_OPENING = 143,
 	LORE_OF_SILENCE = 144,
 	HERBCRAFT = 145,
 	WORD_OF_SHUTTING = 146,
-	INNER_LIGHT = 147,        # DEFERRED
+	INNER_LIGHT = 147,
 	DEADLY_LORE = 148,
 	LORE_OF_ENDURANCE = 149,
 	LORE_OF_SLEEP = 150,
@@ -630,12 +630,12 @@ func get_lore_abilities() -> Array[int]:
 	return [
 		LoreAbility.WORD_OF_COMMAND,
 		LoreAbility.LORE_OF_BATTLE,
-		# LoreAbility.DEEP_MEMORY,  # DEFERRED
+		LoreAbility.DEEP_MEMORY,
 		LoreAbility.WORD_OF_OPENING,
 		LoreAbility.LORE_OF_SILENCE,
 		LoreAbility.HERBCRAFT,
 		LoreAbility.WORD_OF_SHUTTING,
-		# LoreAbility.INNER_LIGHT,  # DEFERRED
+		LoreAbility.INNER_LIGHT,
 		LoreAbility.DEADLY_LORE,
 		LoreAbility.LORE_OF_ENDURANCE,
 		LoreAbility.LORE_OF_SLEEP,

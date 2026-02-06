@@ -765,16 +765,27 @@ func _observe_visible_monsters() -> void:
 	if not monster_memory or not current_level:
 		return
 
+	# Deep Memory: grant bonus observations on first sighting
+	var has_deep_memory: bool = player != null and player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_DEEP_MEMORY)
+	var player_lore: int = player.get_skill("lore") if player != null else 0
+
 	# Record observations for all visible monsters and update health bars
 	for entity in current_level.entities:
 		if not is_instance_valid(entity):
 			continue
 		if entity is Monster and entity.is_alive:
 			if current_level.is_tile_visible(entity.grid_position):
+				# Deep Memory: on first sighting, grant Lore/3 bonus observations
+				if has_deep_memory and entity.monster_data and "index" in entity.monster_data:
+					var monster_id: int = entity.monster_data.index
+					if monster_memory.get_observation_count(monster_id) == 0:
+						var bonus: int = maxi(1, player_lore / 3)
+						for i in range(bonus):
+							monster_memory.record_observation(entity)
 				monster_memory.record_observation(entity)
-				# Update health bar based on knowledge tier
+				# Update health bar based on knowledge tier (use effective tier with lore bonus)
 				if entity.monster_data and "index" in entity.monster_data:
-					var tier: int = monster_memory.get_knowledge_tier(entity.monster_data.index)
+					var tier: int = monster_memory.get_effective_tier(entity.monster_data.index, player_lore)
 					entity.update_health_bar(tier)
 
 func get_monster_memory() -> RefCounted:

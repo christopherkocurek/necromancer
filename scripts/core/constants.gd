@@ -189,12 +189,12 @@ enum SmithingAbility {
 enum LoreAbility {
 	LOR_WORD_OF_COMMAND = 0,    # 140: AOE fear/stun
 	LOR_LORE_OF_BATTLE = 1,     # 141: Provoke target
-	LOR_DEEP_MEMORY = 2,        # 142: Reveal map (DEFERRED)
+	LOR_DEEP_MEMORY = 2,        # 142: Auto-identify monsters (passive)
 	LOR_WORD_OF_OPENING = 3,    # 143: Unlock doors, reveal traps
 	LOR_LORE_OF_SILENCE = 4,    # 144: Reduce monster perception
 	LOR_HERBCRAFT = 5,          # 145: Double healing from potions
 	LOR_WORD_OF_SHUTTING = 6,   # 146: Lock doors permanently
-	LOR_INNER_LIGHT = 7,        # 147: +light radius (DEFERRED)
+	LOR_INNER_LIGHT = 7,        # 147: +light radius, bonus vs HURT_LITE
 	LOR_DEADLY_LORE = 8,        # 148: Instant kill if HP <= 2xLore
 	LOR_LORE_OF_ENDURANCE = 9,  # 149: +Will/2, +2d2 protection
 	LOR_LORE_OF_SLEEP = 10,     # 150: Put target to sleep

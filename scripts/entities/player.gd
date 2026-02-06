@@ -120,6 +120,12 @@ var _fade_turns: int = 0
 # Follow-Through recursion guard
 var _in_follow_through: bool = false
 
+# Sprinting state
+var _sprinting_turns: int = 0  # Turns remaining at double speed
+
+# Vanish state
+var _vanish_turns: int = 0  # Turns remaining invisible
+
 # Stealth system (Phase B)
 var stealth_mode: bool = false       # Toggle with ';' key
 var noise_this_turn: int = 0         # Accumulated noise from actions
@@ -134,6 +140,7 @@ func _ready() -> void:
 	_apply_racial_modifiers()
 	_setup_player_sprite()
 	EventBus.level_entered.connect(_on_level_entered)
+	EventBus.attack_missed.connect(_on_attack_evaded)
 
 func _init_ability_arrays() -> void:
 	# Initialize ability tracking arrays (S_MAX x ABILITIES_MAX)
@@ -161,6 +168,17 @@ func record_action(action: int) -> void:
 		previous_action.resize(Constants.ACTION_MAX)
 
 func reset_turn_state() -> void:
+	# Concentration: track consecutive attacks without moving
+	if attacked_this_turn and not moved_this_turn:
+		consecutive_attacks += 1
+	elif moved_this_turn:
+		consecutive_attacks = 0
+	# Vanish turn decay
+	if _vanish_turns > 0:
+		_vanish_turns -= 1
+		if _vanish_turns <= 0:
+			_fade_bonus = maxi(0, _fade_bonus - 20)
+			GameManager.log_message("You become visible again.", ThemeColors.MSG_SYSTEM)
 	moved_last_turn = moved_this_turn  # Preserve for Dodging/Concentration
 	ripostes_this_turn = 0
 	attacks_this_turn = 0
@@ -178,6 +196,52 @@ func _on_level_entered(_depth: int) -> void:
 		_fade_turns -= 1
 		if _fade_turns <= 0:
 			_fade_bonus = 0
+
+## Riposte: free counterattack when evading an adjacent monster's attack (1/turn)
+func _on_attack_evaded(attacker: Node, defender: Node) -> void:
+	if defender != self:
+		return
+	if not is_instance_valid(attacker) or not attacker is Monster:
+		return
+	if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_RIPOSTE):
+		return
+	if ripostes_this_turn > 0:
+		return
+	# Must be adjacent
+	var dist: int = max(abs(attacker.grid_position.x - grid_position.x),
+						abs(attacker.grid_position.y - grid_position.y))
+	if dist > 1:
+		return
+	ripostes_this_turn += 1
+	GameManager.log_message("You riposte!", ThemeColors.COMBAT_HIT)
+	call_deferred("attack_entity", attacker)
+
+## Sprinting: activate to gain +1 speed for 3 turns (costs a turn)
+func activate_sprinting() -> bool:
+	if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_SPRINTING):
+		GameManager.log_message("You haven't learned Sprinting.", ThemeColors.MSG_ERROR)
+		return false
+	if _sprinting_turns > 0:
+		GameManager.log_message("You're already sprinting!", ThemeColors.MSG_SYSTEM)
+		return false
+	_sprinting_turns = 3 + get_skill("evasion") / 5
+	apply_status("fast", _sprinting_turns)
+	GameManager.log_message("You break into a sprint!", ThemeColors.ABILITY_LEARNED)
+	return true
+
+## Vanish: become effectively invisible for 3 turns (active ability)
+func activate_vanish() -> bool:
+	if not has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_VANISH):
+		GameManager.log_message("You haven't learned Vanish.", ThemeColors.MSG_ERROR)
+		return false
+	if _vanish_turns > 0:
+		GameManager.log_message("You're already hidden!", ThemeColors.MSG_SYSTEM)
+		return false
+	_vanish_turns = 3
+	# Massive stealth bonus while vanished
+	_fade_bonus += 20
+	GameManager.log_message("You vanish from sight!", ThemeColors.ABILITY_LEARNED)
+	return true
 
 func has_ability(skill: int, ability: int) -> bool:
 	if skill < 0 or skill >= Constants.S_MAX:
@@ -645,9 +709,10 @@ func get_total_attack(target: Entity) -> int:
 	# Flanking: +1 per adjacent ally attacking same target
 	att += _count_adjacent_allies_to(target)
 
-	# Charge: +3 when moved straight toward target last action
-	if _is_charging_toward(target):
-		att += 3
+	# Charge: +3 when moved straight toward target last action (requires ability)
+	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_CHARGE):
+		if _is_charging_toward(target):
+			att += 3
 
 	# Opening Strike: +melee skill on first attack against each monster
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_OPENING_STRIKE):
@@ -699,6 +764,11 @@ func get_total_evasion(attacker: Entity) -> int:
 		var adjacent_hostiles: int = _count_adjacent_monsters()
 		if adjacent_hostiles > 1:
 			evn -= (adjacent_hostiles - 1)
+
+	# Parry: +Evasion/4 when wielding a melee weapon (active defense)
+	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
+		if equipment.get("weapon") != null:
+			evn += get_skill("evasion") / 4
 
 	# Heavy Armour Use: remove heavy armor evasion penalty
 	# (The base evasion_bonus already includes armor penalty; this adds back the penalty amount)
@@ -752,6 +822,26 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 	# Track Opening Strike usage
 	if is_instance_valid(target):
 		_opening_strike_used[target.get_instance_id()] = true
+
+	# Throat Slit: instant kill if target unwary and damage >= target current_health / 2
+	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_THROAT_SLIT):
+		if is_instance_valid(target) and target is Monster and target.is_alive:
+			var mon: Monster = target as Monster
+			if mon.alertness < Constants.ALERTNESS_ALERT:
+				if damage >= target.current_health / 2:
+					target.current_health = 0
+					GameManager.log_message("You slit %s's throat!" % target.entity_name, ThemeColors.COMBAT_CRIT)
+					target.die(self)
+					return
+
+	# Inner Light: bonus damage vs HURT_LITE enemies equal to Lore/3
+	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_INNER_LIGHT):
+		if is_instance_valid(target) and target is Monster and target.current_health > 0:
+			var mon: Monster = target as Monster
+			if mon.monster_data and mon.monster_data.has_flag("HURT_LITE"):
+				var light_dmg: int = maxi(1, get_skill("lore") / 3)
+				target.take_damage(light_dmg, "light", self)
+				GameManager.log_message("Your inner light burns %s! (+%d)" % [target.entity_name, light_dmg], ThemeColors.ABILITY_LEARNED)
 
 	# Knock Back: push target 1 tile away on crit
 	if is_crit and has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_KNOCK_BACK):
@@ -857,6 +947,19 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	var att: int = skills["archery"] + (dexterity / 2)
 	# Weapon proficiency bonus (BOW_PROFICIENCY or SLING_PROFICIENCY)
 	att += _get_ranged_proficiency_bonus()
+	# Keen Eyes: +Perception/2 to ranged attack
+	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_KEEN_EYES):
+		att += get_skill("perception") / 2
+	# Ambush: +Stealth to ranged attack vs unwary targets
+	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_AMBUSH):
+		if is_instance_valid(target) and target is Monster:
+			var mon: Monster = target as Monster
+			if mon.alertness < Constants.ALERTNESS_ALERT:
+				att += get_skill("stealth")
+	# Point Blank: +archery/2 at range 1 (melee range)
+	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_POINT_BLANK):
+		if distance <= 1:
+			att += get_skill("archery") / 2
 	# Distance penalty: -1 per tile beyond 1
 	att -= maxi(0, distance - 1)
 
@@ -904,7 +1007,27 @@ func ranged_attack(target: Entity, distance: int) -> void:
 			target.entity_name, attack_score, evasion_score, damage
 		], ThemeColors.COMBAT_HIT)
 
+	# Puncture: ignore 1 point of protection per archery skill point
+	# (Applied as bonus damage since we can't modify protection here)
+	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_PUNCTURE):
+		damage += get_skill("archery") / 3
+
 	target.take_damage(damage, "physical", self)
+
+	# Crippling Shot: apply slow on ranged crit
+	if crit_dice > 0 and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
+		if is_instance_valid(target) and target.is_alive:
+			target.apply_status("slow", 3 + randi_range(1, 3))
+			GameManager.log_message("Your shot cripples %s!" % target.entity_name, ThemeColors.COMBAT_CRIT)
+
+	# Rout: fleeing enemies take extra damage from ranged attacks
+	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_ROUT):
+		if is_instance_valid(target) and target.is_alive and target is Monster:
+			var mon: Monster = target as Monster
+			if mon.morale < 0:
+				var rout_dmg: int = maxi(1, get_skill("archery") / 3)
+				target.take_damage(rout_dmg, "physical", self)
+				GameManager.log_message("Routing shot! (+%d)" % rout_dmg, ThemeColors.COMBAT_HIT)
 
 ## Get proficiency bonus for equipped ranged weapon
 func _get_ranged_proficiency_bonus() -> int:
