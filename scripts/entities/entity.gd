@@ -271,6 +271,48 @@ func _spawn_death_particles() -> void:
 		ptween.chain().tween_callback(particle.queue_free)
 
 # ============================================================================
+# VFX HELPERS (shared by Player for ability effects)
+# ============================================================================
+
+## Flash the sprite a specific color, then fade back to original.
+func vfx_flash(flash_color: Color, hold_time: float = 0.05, fade_time: float = 0.15) -> void:
+	if not sprite:
+		return
+	var orig := sprite.modulate
+	sprite.modulate = flash_color
+	var t := create_tween()
+	t.tween_interval(hold_time)
+	t.tween_property(sprite, "modulate", orig, fade_time)
+
+## Spawn burst particles of a given color outward from this entity.
+func vfx_particles(color: Color, count: int = 5, spread: float = 30.0, duration: float = 0.4) -> void:
+	for i in range(count):
+		var particle := Node2D.new()
+		var dot := ColorRect.new()
+		dot.size = Vector2(3, 3)
+		dot.position = Vector2(-1.5, -1.5)
+		dot.color = color
+		particle.add_child(dot)
+		particle.position = Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2)
+		add_child(particle)
+		var angle: float = TAU * i / float(count) + randf_range(-0.4, 0.4)
+		var target_pos: Vector2 = particle.position + Vector2.from_angle(angle) * randf_range(spread * 0.6, spread)
+		var pt := create_tween()
+		pt.set_parallel(true)
+		pt.tween_property(particle, "position", target_pos, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		pt.tween_property(dot, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN)
+		pt.chain().tween_callback(particle.queue_free)
+
+## Spawn a floating text label at this entity's position.
+func vfx_floater(text: String, color: Color, size: int = 16) -> void:
+	if not GameManager.current_level:
+		return
+	var effects_node: Node = GameManager.current_level.get_node_or_null("Effects")
+	if not effects_node:
+		return
+	DamageFloater.create_at(effects_node, get_world_position() + Vector2(0, -12), text, color, size)
+
+# ============================================================================
 # STATUS EFFECTS
 # ============================================================================
 

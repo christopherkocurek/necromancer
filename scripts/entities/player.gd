@@ -17,6 +17,25 @@ var _trait_fortune_used: bool = false   # Fortune's Favor: once per floor
 var _trait_undying_used: bool = false    # Undying Resolve: once per run
 var _trait_shadow_step_used: bool = false # Shadow Step: once per floor
 
+# Steady Aim: bonus when stationary
+var _steady_aim_ready: bool = false
+
+# Oath of Enmity: locked target type
+var _oath_target_type: String = ""
+
+# Nimble Striker: hit-and-run bonuses
+var _nimble_evn_bonus: int = 0
+var _nimble_free_move: bool = false
+
+# Whisper of the Valar: reveal monsters
+var _whisper_used: bool = false
+var _whisper_turns: int = 0
+var _whisper_revealed: Array = []
+
+# Patient Stalker: ambush buildup
+var _stalker_turns: int = 0
+var _stalker_double_ready: bool = false
+
 # Racial state tracking
 var _hobbit_luck_used: bool = false  # HOBBIT_LUCK: once per floor reroll
 
@@ -178,7 +197,39 @@ func reset_turn_state() -> void:
 		_vanish_turns -= 1
 		if _vanish_turns <= 0:
 			_fade_bonus = maxi(0, _fade_bonus - 20)
+			# VFX: restore sprite opacity
+			if sprite:
+				var reappear_tween := create_tween()
+				reappear_tween.tween_property(sprite, "modulate:a", 1.0, 0.2)
 			GameManager.log_message("You become visible again.", ThemeColors.MSG_SYSTEM)
+
+	# Steady Aim: ready when standing still with no attacks
+	if trait_effect_id == "steady_aim":
+		if not moved_this_turn and attacks_this_turn == 0:
+			_steady_aim_ready = true
+		if moved_this_turn:
+			_steady_aim_ready = false
+
+	# Nimble Striker: reset per-turn bonuses
+	_nimble_evn_bonus = 0
+	_nimble_free_move = false
+
+	# Whisper of the Valar: tick down reveal duration
+	if _whisper_turns > 0:
+		_whisper_turns -= 1
+		if _whisper_turns <= 0:
+			_whisper_revealed.clear()
+
+	# Patient Stalker: build up ambush turns while stealthing undetected
+	if trait_effect_id == "patient_stalker":
+		if stealth_mode and not _any_adjacent_alert_enemy():
+			_stalker_turns += 1
+			if _stalker_turns >= 3:
+				_stalker_double_ready = true
+		else:
+			_stalker_turns = 0
+			_stalker_double_ready = false
+
 	moved_last_turn = moved_this_turn  # Preserve for Dodging/Concentration
 	ripostes_this_turn = 0
 	attacks_this_turn = 0
@@ -213,6 +264,9 @@ func _on_attack_evaded(attacker: Node, defender: Node) -> void:
 	if dist > 1:
 		return
 	ripostes_this_turn += 1
+	# VFX: bright steel flash on self + floater
+	vfx_flash(ThemeColors.FLASH_RIPOSTE, 0.04, 0.12)
+	vfx_floater("Riposte!", ThemeColors.SECONDARY, 16)
 	GameManager.log_message("You riposte!", ThemeColors.COMBAT_HIT)
 	call_deferred("attack_entity", attacker)
 
@@ -226,6 +280,10 @@ func activate_sprinting() -> bool:
 		return false
 	_sprinting_turns = 3 + get_skill("evasion") / 5
 	apply_status("fast", _sprinting_turns)
+	# VFX: green speed flash + particles + floater
+	vfx_flash(ThemeColors.FLASH_SPRINT, 0.05, 0.15)
+	vfx_particles(ThemeColors.ABILITY_LEARNED, 4, 20.0, 0.3)
+	vfx_floater("Sprint!", ThemeColors.ABILITY_LEARNED, 16)
 	GameManager.log_message("You break into a sprint!", ThemeColors.ABILITY_LEARNED)
 	return true
 
@@ -240,6 +298,13 @@ func activate_vanish() -> bool:
 	_vanish_turns = 3
 	# Massive stealth bonus while vanished
 	_fade_bonus += 20
+	# VFX: fade sprite to semi-transparent + dark smoke particles + floater
+	vfx_flash(ThemeColors.FLASH_VANISH, 0.06, 0.2)
+	vfx_particles(ThemeColors.BG_RAISED, 6, 20.0, 0.5)
+	vfx_floater("Vanish!", ThemeColors.SKILL_STEALTH, 16)
+	if sprite:
+		var vanish_tween := create_tween()
+		vanish_tween.tween_property(sprite, "modulate:a", 0.35, 0.25).set_ease(Tween.EASE_IN)
 	GameManager.log_message("You vanish from sight!", ThemeColors.ABILITY_LEARNED)
 	return true
 
@@ -312,6 +377,9 @@ func _apply_trait() -> void:
 					active_ability[Constants.Skill.S_LOR][Constants.LoreAbility.LOR_SONG_OF_BANISHMENT] = true
 					have_ability[Constants.Skill.S_LOR][Constants.LoreAbility.LOR_SONG_OF_BANISHMENT] = true
 			GameManager.log_message("You know the Song of Banishment!", ThemeColors.ABILITY_LEARNED)
+		"echoes_firstborn":
+			# Reduce speed by 1 tier (slower but more graceful)
+			speed = maxi(1, speed - 1)
 
 	GameManager.log_message("Trait: %s" % trait_name, ThemeColors.PRIMARY)
 
@@ -320,6 +388,18 @@ func reset_per_floor_traits() -> void:
 	_trait_fortune_used = false
 	_trait_shadow_step_used = false
 	_hobbit_luck_used = false
+
+	# Oath of Enmity: clear oath target on new floor
+	_oath_target_type = ""
+
+	# Whisper of the Valar: reset per-floor
+	_whisper_used = false
+	_whisper_turns = 0
+	_whisper_revealed.clear()
+
+	# Echoes of the Firstborn: gain 2 voice charges on floor entry
+	if trait_effect_id == "echoes_firstborn":
+		voice_charges = mini(voice_charges + 2, max_voice)
 
 ## Defiance: +1 attack/damage vs enemies whose native depth > current_depth + 3
 func get_defiance_bonus(monster: Entity) -> int:
@@ -400,6 +480,84 @@ func trigger_rallying_cry() -> void:
 func has_forge_intuition() -> bool:
 	return trait_effect_id == "forge_intuition"
 
+## Steady Aim: UI helper to show when aim bonus is ready
+func has_steady_aim_bonus() -> bool:
+	return trait_effect_id == "steady_aim" and _steady_aim_ready
+
+## Oath of Enmity: attack bonus/penalty based on oath target
+func get_oath_bonus(target: Entity) -> int:
+	if trait_effect_id != "oath_of_enmity":
+		return 0
+	if _oath_target_type.is_empty():
+		return 0  # Oath not yet set
+	if not is_instance_valid(target) or not target is Monster:
+		return 0
+	var mon: Monster = target as Monster
+	if mon.entity_name == _oath_target_type:
+		return 2
+	return -1  # Penalty vs non-oath targets
+
+## Whisper of the Valar: activate to reveal nearby monsters for 5 turns
+func activate_whisper_of_valar() -> bool:
+	if trait_effect_id != "whisper_of_valar":
+		return false
+	if _whisper_used:
+		GameManager.log_message("The Valar have already spoken this floor.", ThemeColors.MSG_SYSTEM)
+		return false
+	if voice_charges < 3:
+		GameManager.log_message("Not enough voice charges (need 3, have %d)." % voice_charges, ThemeColors.MSG_ERROR)
+		return false
+	voice_charges -= 3
+	_whisper_used = true
+	_whisper_turns = 5
+	_whisper_revealed.clear()
+	if GameManager.current_level:
+		var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(grid_position, 6)
+		for entity in entities:
+			if is_instance_valid(entity) and entity is Monster and entity.is_alive:
+				_whisper_revealed.append(entity.get_instance_id())
+	GameManager.log_message("The Valar whisper of hidden foes nearby...", ThemeColors.PRIMARY)
+	return true
+
+## Whisper of the Valar: check if a specific entity is revealed
+func is_whisper_revealed(entity: Entity) -> bool:
+	if _whisper_turns <= 0:
+		return false
+	if not is_instance_valid(entity):
+		return false
+	return entity.get_instance_id() in _whisper_revealed
+
+## Nimble Striker: check if free move is available after kill
+func has_nimble_free_move() -> bool:
+	return trait_effect_id == "nimble_striker" and _nimble_free_move
+
+## Patient Stalker: check for adjacent alert enemies
+func _any_adjacent_alert_enemy() -> bool:
+	if not GameManager.current_level:
+		return false
+	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(grid_position, 1)
+	for entity in entities:
+		if entity == self:
+			continue
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var mon: Monster = entity as Monster
+		if mon.is_alive and mon.alertness >= Constants.ALERTNESS_ALERT:
+			return true
+	return false
+
+## Blood of Numenor: healing reduction handled in consumable_system.gd (separate agent)
+# Note: the +1 holy damage vs UNDEAD/EVIL is in _on_successful_hit()
+# Note: entrancement immunity is in apply_status()
+
+## Shield Brother: enemy evasion penalty handled in monster.gd (separate agent)
+# Note: +1 attack with shield is in get_total_attack()
+# Note: ranged damage halving is in take_damage()
+
+## Echoes of the Firstborn: voice cost reduction handled in ability_system.gd (separate agent)
+# Note: speed reduction is in _apply_trait()
+# Note: voice charge gain on floor entry is in reset_per_floor_traits()
+
 func _recalculate_stats() -> void:
 	# Base stats (no levels in Sil-Q)
 	max_health = 10 + constitution * 2
@@ -477,6 +635,10 @@ func roll_protection(_damage_type: int = 1) -> int:
 			shield_mult = 2
 	for i in range(_shield_dice * shield_mult):
 		total += randi_range(1, _shield_sides if _shield_sides > 0 else protection_sides)
+
+	# Mithril Skin: innate +1d2 protection
+	if trait_effect_id == "mithril_skin":
+		total += randi_range(1, 2)
 
 	return total
 
@@ -733,6 +895,15 @@ func get_total_attack(target: Entity) -> int:
 	# Weapon proficiency: +1 if race has proficiency for equipped weapon type
 	att += _get_weapon_proficiency_bonus()
 
+	# Oath of Enmity: +2 vs oath target, -1 vs non-oath targets
+	att += get_oath_bonus(target)
+
+	# Shield Brother: +1 attack when wielding a shield
+	if trait_effect_id == "shield_brother":
+		var off_hand = equipment.get("off_hand")
+		if off_hand != null and "tval" in off_hand and off_hand.tval == 34:
+			att += 1
+
 	# Blind: halve attack
 	if status_fx and status_fx.is_blind():
 		att = att / 2
@@ -783,6 +954,9 @@ func get_total_evasion(attacker: Entity) -> int:
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
 		evn += _get_bane_bonus(attacker)
 
+	# Nimble Striker: evasion bonus from hit-and-run
+	evn += _nimble_evn_bonus
+
 	# Blind: halve evasion
 	if status_fx and status_fx.is_blind():
 		evn = evn / 2
@@ -791,6 +965,10 @@ func get_total_evasion(attacker: Entity) -> int:
 	if not has_light() and is_instance_valid(attacker):
 		if GameManager.current_level and not GameManager.current_level.is_tile_visible(attacker.grid_position):
 			evn = evn / 2
+
+	# Mithril Skin: cap evasion at 10 (heavy but tough)
+	if trait_effect_id == "mithril_skin":
+		evn = mini(evn, 10)
 
 	return evn
 
@@ -813,6 +991,13 @@ func _get_bonus_damage_dice() -> int:
 
 ## Post-hit ability hooks: Knock Back, Mighty Blow, Follow-Through, Opening Strike tracking
 func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
+	# Patient Stalker: double damage on ambush attack after 3+ stealth turns
+	if _stalker_double_ready:
+		damage *= 2
+		_stalker_double_ready = false
+		_stalker_turns = 0
+		GameManager.log_message("Your patience pays off! Double damage!", ThemeColors.COMBAT_CRIT)
+
 	var was_crit: bool = hit_result > 0  # Any positive hit_result means we may crit
 	var crit_threshold: int = _get_crit_threshold()
 	var weapon_weight: int = _get_weapon_weight()
@@ -829,10 +1014,22 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 			var mon: Monster = target as Monster
 			if mon.alertness < Constants.ALERTNESS_ALERT:
 				if damage >= target.current_health / 2:
+					# VFX: blood-red flash on target + red particles + floater
+					target.vfx_flash(ThemeColors.FLASH_THROAT_SLIT, 0.08, 0.2)
+					target.vfx_particles(ThemeColors.DMG_PHYSICAL, 8, 35.0, 0.5)
+					vfx_floater("Throat Slit!", ThemeColors.COMBAT_CRIT, 18)
 					target.current_health = 0
 					GameManager.log_message("You slit %s's throat!" % target.entity_name, ThemeColors.COMBAT_CRIT)
 					target.die(self)
 					return
+
+	# Charge VFX: impact particles when charging into melee
+	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_CHARGE):
+		if _is_charging_toward(target):
+			if is_instance_valid(target):
+				target.vfx_flash(ThemeColors.FLASH_CHARGE, 0.06, 0.15)
+				target.vfx_particles(ThemeColors.PRIMARY, 6, 25.0, 0.3)
+				vfx_floater("Charge!", ThemeColors.PRIMARY_BRIGHT, 16)
 
 	# Inner Light: bonus damage vs HURT_LITE enemies equal to Lore/3
 	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_INNER_LIGHT):
@@ -858,6 +1055,31 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_FOLLOW_THROUGH):
 		if is_instance_valid(target) and target.current_health <= 0:
 			_try_follow_through(target.grid_position)
+
+	# Nimble Striker: +2 evasion when hitting after moving; free move on kill
+	if trait_effect_id == "nimble_striker" and moved_this_turn:
+		_nimble_evn_bonus = 2
+		if is_instance_valid(target) and target.current_health <= 0:
+			_nimble_free_move = true
+
+	# Oath of Enmity: +1 extra damage die vs oath target (matching weapon dice)
+	if trait_effect_id == "oath_of_enmity" and not _oath_target_type.is_empty():
+		if is_instance_valid(target) and target is Monster:
+			var mon: Monster = target as Monster
+			if mon.entity_name == _oath_target_type:
+				var oath_dmg_dice: String = get_weapon_damage_dice()
+				var oath_dmg: int = DataManager.roll_dice(oath_dmg_dice)
+				if target.current_health > 0:
+					target.take_damage(oath_dmg, "physical", self)
+					GameManager.log_message("Your oath empowers the strike! (+%d)" % oath_dmg, ThemeColors.PRIMARY)
+
+	# Blood of Numenor: +1 holy damage vs UNDEAD or EVIL targets
+	if trait_effect_id == "blood_of_numenor":
+		if is_instance_valid(target) and target is Monster and target.current_health > 0:
+			var mon: Monster = target as Monster
+			if mon.monster_data and (mon.monster_data.has_flag("UNDEAD") or mon.monster_data.has_flag("EVIL")):
+				target.take_damage(1, "holy", self)
+				GameManager.log_message("Your Numenorean blood sears %s! (+1)" % target.entity_name, ThemeColors.PRIMARY)
 
 func _try_knock_back(target: Entity) -> void:
 	if not is_instance_valid(target) or not GameManager.current_level:
@@ -993,6 +1215,14 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	var crit_dice: int = (hit_result * 10 + 4) / (crit_threshold + bow_weight)
 	crit_dice = _apply_crit_resistance(target, crit_dice)
 
+	# Steady Aim: +3 attack (already applied above would be ideal, but spec says
+	# add after crit calc) and +1 crit die when stationary
+	if trait_effect_id == "steady_aim" and _steady_aim_ready:
+		att += 3
+		crit_dice += 1
+		_steady_aim_ready = false
+		GameManager.log_message("Steady aim!", ThemeColors.ABILITY_LEARNED)
+
 	var crit_damage: int = 0
 	for i in range(crit_dice):
 		crit_damage += DataManager.roll_dice(dmg_dice)
@@ -1017,6 +1247,10 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	# Crippling Shot: apply slow on ranged crit
 	if crit_dice > 0 and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
 		if is_instance_valid(target) and target.is_alive:
+			# VFX: icy blue-white flash on target + impact particles + floater
+			target.vfx_flash(ThemeColors.FLASH_CRIPPLE, 0.06, 0.2)
+			target.vfx_particles(ThemeColors.STATUS_SLOW, 6, 25.0, 0.4)
+			target.vfx_floater("Crippled!", ThemeColors.STATUS_SLOW, 16)
 			target.apply_status("slow", 3 + randi_range(1, 3))
 			GameManager.log_message("Your shot cripples %s!" % target.entity_name, ThemeColors.COMBAT_CRIT)
 
@@ -1238,8 +1472,18 @@ func get_stealth_score() -> int:
 		score += get_skill("stealth") / 3
 	# Fade bonus (temporary boost after kill)
 	score += _fade_bonus
+
+	# Wayfarer's Instinct: reduce noise by 2 (min 0)
+	var effective_noise: int = noise_this_turn
+	if trait_effect_id == "wayfarers_instinct":
+		effective_noise = maxi(0, effective_noise - 2)
+
+	# Patient Stalker: +3 stealth when stealthing with no adjacent alert enemies
+	if trait_effect_id == "patient_stalker" and stealth_mode and not _any_adjacent_alert_enemy():
+		score += 3
+
 	# Noise penalty
-	score -= noise_this_turn
+	score -= effective_noise
 	return score
 
 ## Get combat noise bonus for monster perception (canon section 2.4)
@@ -1631,6 +1875,11 @@ func _interact_with_npc(npc: Entity) -> void:
 	EventBus.npc_interacted.emit(self, npc)
 
 func apply_status(status_name: String, duration: int, data: Variant = null) -> void:
+	# Blood of Numenor: immune to entrancement
+	if trait_effect_id == "blood_of_numenor" and status_name == "entranced":
+		GameManager.log_message("Your Numenorean blood resists!", ThemeColors.PRIMARY)
+		return
+
 	var reduced_dur: int = duration
 
 	# DWARVEN_RESILIENCE: halve fear, confusion, and entranced durations
@@ -1662,6 +1911,14 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	# Vengeance: track that we were hit for +2 attack next turn
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_VENGEANCE):
 		_vengeance_active = true
+
+	# Shield Brother: halve ranged damage when blocking with a shield
+	if trait_effect_id == "shield_brother" and damage_type == "ranged":
+		if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_BLOCKING):
+			var off_hand = equipment.get("off_hand")
+			if off_hand != null and "tval" in off_hand and off_hand.tval == 34:
+				amount = maxi(1, amount / 2)
+				GameManager.log_message("Your shield deflects the blow!", ThemeColors.PRIMARY)
 
 	# HOBBIT_LUCK: reroll lethal damage once per floor (halves incoming damage)
 	if current_health > 0 and current_health - amount <= 0:
@@ -1747,3 +2004,8 @@ func record_damage_dealt(amount: int) -> void:
 func record_kill(monster: Monster) -> void:
 	var was_silent: bool = false  # TODO: Detect silent kills
 	run_stats.record_kill(monster.entity_name, monster.experience_value, was_silent)
+
+	# Oath of Enmity: lock onto first kill's type as oath target
+	if trait_effect_id == "oath_of_enmity" and _oath_target_type.is_empty():
+		_oath_target_type = monster.entity_name
+		GameManager.log_message("You swear an oath against all %s!" % _oath_target_type, ThemeColors.PRIMARY)

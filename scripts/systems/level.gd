@@ -709,3 +709,47 @@ func search_for_secrets(center: Vector2i, perception: int) -> int:
 func place_trap(pos: Vector2i, trap_type: int) -> void:
 	set_tile(pos, Tile.TRAP)
 	trap_types[pos] = trap_type
+
+# ============================================================================
+# WAYFARER'S INSTINCT (Trait: reveal nearby traps, doors, stairs on floor entry)
+# ============================================================================
+
+## Reveal traps within trap_radius and doors/stairs within feature_radius of center.
+func reveal_for_wayfarer(center: Vector2i, trap_radius: int, feature_radius: int) -> void:
+	var max_radius: int = maxi(trap_radius, feature_radius)
+	var traps_found: int = 0
+	var features_found: int = 0
+
+	for dy in range(-max_radius, max_radius + 1):
+		for dx in range(-max_radius, max_radius + 1):
+			var pos: Vector2i = center + Vector2i(dx, dy)
+			if not is_in_bounds(pos):
+				continue
+
+			var dist: int = maxi(absi(dx), absi(dy))  # Chebyshev distance
+			var tile: int = get_tile(pos)
+
+			# Reveal traps within trap_radius
+			if dist <= trap_radius:
+				if tile == Tile.TRAP:
+					set_explored(pos, true)
+					set_tile_visible(pos, true)
+					traps_found += 1
+
+			# Reveal doors and stairs within feature_radius
+			if dist <= feature_radius:
+				if tile in [Tile.DOOR_CLOSED, Tile.DOOR_OPEN, Tile.DOOR_LOCKED, Tile.DOOR_JAMMED, Tile.DOOR_SECRET, Tile.STAIRS_DOWN, Tile.STAIRS_UP]:
+					set_explored(pos, true)
+					set_tile_visible(pos, true)
+					# Reveal secret doors as closed doors
+					if tile == Tile.DOOR_SECRET:
+						reveal_secret_door(pos)
+					features_found += 1
+
+	if traps_found > 0 or features_found > 0:
+		var parts: Array[String] = []
+		if traps_found > 0:
+			parts.append("%d trap%s" % [traps_found, "s" if traps_found != 1 else ""])
+		if features_found > 0:
+			parts.append("%d feature%s" % [features_found, "s" if features_found != 1 else ""])
+		GameManager.log_message("Your wayfarer's instinct reveals %s nearby." % ", ".join(parts), ThemeColors.ABILITY_LEARNED)

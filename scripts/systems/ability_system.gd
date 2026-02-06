@@ -143,7 +143,7 @@ func can_use_ability(ability_id: int) -> Dictionary:
 		var remaining: int = get_cooldown_remaining(ability_id)
 		return {"can_use": false, "reason": "On cooldown (%d turns remaining)." % remaining}
 
-	var cost: int = get_voice_cost(ability_id)
+	var cost: int = get_effective_voice_cost(ability_id)
 	if cost > 0 and get_voice_charges() < cost:
 		return {"can_use": false, "reason": "Not enough voice charges (%d required, %d available)." % [cost, get_voice_charges()]}
 
@@ -171,6 +171,14 @@ func get_voice_cost(ability_id: int) -> int:
 		_:
 			return 0  # Passive or no cost
 
+## Get the effective voice cost after trait discounts (Echoes of the Firstborn)
+func get_effective_voice_cost(ability_id: int) -> int:
+	var cost: int = get_voice_cost(ability_id)
+	if cost > 0 and player and player.trait_effect_id == "echoes_firstborn":
+		if ability_id >= 140 and ability_id <= 154:  # Lore ability range
+			cost = maxi(1, cost - 1)
+	return cost
+
 func get_ability_type(ability_id: int) -> AbilityType:
 	match ability_id:
 		LoreAbility.WORD_OF_COMMAND, LoreAbility.WORD_OF_OPENING, \
@@ -194,8 +202,8 @@ func activate_ability(ability_id: int, target: Variant = null) -> bool:
 		ability_failed.emit(ability_id, check.reason)
 		return false
 
-	# Consume voice charges
-	var cost: int = get_voice_cost(ability_id)
+	# Consume voice charges (applies Echoes of the Firstborn discount if applicable)
+	var cost: int = get_effective_voice_cost(ability_id)
 	if cost > 0:
 		consume_voice_charges(cost)
 

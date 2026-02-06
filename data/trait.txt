@@ -63,3 +63,63 @@ N:9:Shadow Step
 E:shadow_step
 D:Once per floor, you can teleport to any visible unaware
 D: enemy's position, appearing adjacent to them. Costs 50 energy.
+
+N:10:Steady Aim
+E:steady_aim
+D:When you stand still without attacking for a turn, your next
+D: ranged attack gains +3 to hit and +1 critical die. Consumed
+D: on attack or movement.
+
+N:11:Oath of Enmity
+E:oath_of_enmity
+D:The first enemy type you kill on each floor becomes your sworn
+D: foe: +2 attack, +1 damage die against that type. -1 attack
+D: against all other types.
+
+N:12:Mithril Skin
+E:mithril_skin
+D:You gain +1d2 innate protection, as if wearing hidden armor.
+D: However, your evasion from all sources is capped at 10.
+D: Requires CON 3+.
+
+N:13:Wayfarer's Instinct
+E:wayfarers_instinct
+D:You detect traps within radius 3 and on entering a floor,
+D: doors and stairs within radius 8 are revealed. Movement
+D: noise is reduced by 2.
+
+N:14:Nimble Striker
+E:nimble_striker
+D:When you move then attack in the same turn, gain +2 evasion
+D: until your next turn. If you kill this way, your next move
+D: costs no extra energy.
+
+N:15:Whisper of the Valar
+E:whisper_of_valar
+D:Once per floor, spend 3 voice charges to reveal all enemies
+D: within radius 6 for 5 turns. Revealed enemies suffer -2
+D: to Will saves. Requires GRA 2+.
+
+N:16:Blood of Numenor
+E:blood_of_numenor
+D:Your attacks deal +1 damage against Undead and Evil enemies.
+D: You are immune to the Entranced status. However, you heal
+D: 1 less from food and rest. Man race only.
+
+N:17:Patient Stalker
+E:patient_stalker
+D:While in stealth with no alert enemies adjacent, gain +3
+D: stealth. After 3+ consecutive stealth turns, your first
+D: attack deals double damage.
+
+N:18:Shield Brother
+E:shield_brother
+D:While wielding a shield: +1 melee attack and adjacent enemies
+D: suffer -1 evasion. If you know Blocking, it also halves
+D: incoming ranged damage.
+
+N:19:Echoes of the Firstborn
+E:echoes_firstborn
+D:You begin each floor with +2 voice charges. All Lore abilities
+D: cost 1 fewer voice charge (minimum 1). However, your base
+D: speed is reduced by 1 tier.

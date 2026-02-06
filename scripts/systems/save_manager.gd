@@ -184,6 +184,9 @@ func _serialize_player(player: Player) -> Dictionary:
 		"trait_effect_id": player.trait_effect_id,
 		"trait_undying_used": player._trait_undying_used,
 		"hobbit_luck_used": player._hobbit_luck_used,
+		"oath_target_type": player._oath_target_type,
+		"whisper_used": player._whisper_used,
+		"stalker_turns": player._stalker_turns,
 		# Position
 		"grid_position": {"x": player.grid_position.x, "y": player.grid_position.y},
 		# Core stats
@@ -350,6 +353,9 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	player.trait_effect_id = data.get("trait_effect_id", "")
 	player._trait_undying_used = data.get("trait_undying_used", false)
 	player._hobbit_luck_used = data.get("hobbit_luck_used", false)
+	player._oath_target_type = data.get("oath_target_type", "")
+	player._whisper_used = data.get("whisper_used", false)
+	player._stalker_turns = data.get("stalker_turns", 0)
 
 	# Position
 	var pos: Dictionary = data.get("grid_position", {"x": 0, "y": 0})

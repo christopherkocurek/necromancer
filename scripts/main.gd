@@ -191,6 +191,10 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	hud.update_player_stats(player)
 	hud.refresh_minimap()
 
+	# Wayfarer's Instinct: reveal traps/doors/stairs near player on floor entry
+	if player and player.trait_effect_id == "wayfarers_instinct":
+		current_level.reveal_for_wayfarer(player.grid_position, 3, 8)
+
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
 	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, ThemeColors.MSG_INFO)
@@ -354,6 +358,10 @@ func _descend() -> void:
 
 	GameManager.log_message("You descend deeper into the darkness... (Depth %d)" % GameManager.current_depth, ThemeColors.MSG_INFO)
 
+	# Wayfarer's Instinct: reveal traps/doors/stairs near player on floor entry
+	if player and player.trait_effect_id == "wayfarers_instinct":
+		current_level.reveal_for_wayfarer(player.grid_position, 3, 8)
+
 	# Show layer entry message if entering a new layer
 	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
 	if not entry_msg.is_empty():
@@ -392,6 +400,10 @@ func _ascend() -> void:
 	current_level.apply_fov_to_tilemap()
 
 	GameManager.log_message("You climb back up... (Depth %d)" % GameManager.current_depth, ThemeColors.MSG_INFO)
+
+	# Wayfarer's Instinct: reveal traps/doors/stairs near player on floor entry
+	if player and player.trait_effect_id == "wayfarers_instinct":
+		current_level.reveal_for_wayfarer(player.grid_position, 3, 8)
 
 	# Show layer entry message if entering a new layer (when ascending)
 	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
@@ -769,12 +781,25 @@ func _observe_visible_monsters() -> void:
 	var has_deep_memory: bool = player != null and player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_DEEP_MEMORY)
 	var player_lore: int = player.get_skill("lore") if player != null else 0
 
+	# Whisper of the Valar: check if player has active whisper reveals
+	var has_whisper: bool = player != null and "_whisper_turns" in player and player._whisper_turns > 0
+	var whisper_revealed: Array = player._whisper_revealed if has_whisper and "_whisper_revealed" in player else []
+
 	# Record observations for all visible monsters and update health bars
 	for entity in current_level.entities:
 		if not is_instance_valid(entity):
 			continue
 		if entity is Monster and entity.is_alive:
-			if current_level.is_tile_visible(entity.grid_position):
+			var is_visible: bool = current_level.is_tile_visible(entity.grid_position)
+
+			# Whisper of the Valar: treat whisper-revealed monsters as visible
+			if not is_visible and has_whisper:
+				if entity.get_instance_id() in whisper_revealed:
+					is_visible = true
+					# Make entity sprite visible so player can see it
+					entity.visible = true
+
+			if is_visible:
 				# Deep Memory: on first sighting, grant Lore/3 bonus observations
 				if has_deep_memory and entity.monster_data and "index" in entity.monster_data:
 					var monster_id: int = entity.monster_data.index

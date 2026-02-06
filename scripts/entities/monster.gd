@@ -548,6 +548,15 @@ func get_total_evasion(attacker: Entity) -> int:
 	if status_fx and status_fx.is_blind():
 		evn = evn / 2
 
+	# Shield Brother: player with shield_brother trait and a shield reduces adjacent monster evasion by 1
+	var sb_player: Player = GameManager.player
+	if is_instance_valid(sb_player) and sb_player.trait_effect_id == "shield_brother":
+		var dist_to_player: int = _grid_distance(grid_position, sb_player.grid_position)
+		if dist_to_player <= 1:
+			var off_hand_item = sb_player.equipment.get("off_hand")
+			if off_hand_item != null and "tval" in off_hand_item and off_hand_item.tval == 34:
+				evn -= 1
+
 	return evn
 
 ## Resolve monster attack special effects (FIRE, COLD, BLIND, etc.)

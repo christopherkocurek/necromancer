@@ -156,6 +156,14 @@ const FLASH_WHITE_HOT := Color(3.0, 2.0, 2.0, 1.0)
 const FLASH_RED_HOLD := Color(1.8, 0.4, 0.4, 1.0)
 const FLASH_HEAL := Color(0.4, 2.0, 0.6, 1.0)
 
+# Ability VFX flashes
+const FLASH_THROAT_SLIT := Color(2.5, 0.2, 0.2, 1.0)   # Deep blood red
+const FLASH_RIPOSTE := Color(2.5, 2.5, 3.0, 1.0)        # Bright steel white
+const FLASH_CHARGE := Color(2.0, 1.6, 0.6, 1.0)          # Warm impact gold
+const FLASH_VANISH := Color(0.3, 0.3, 0.5, 0.6)          # Dark shadow
+const FLASH_SPRINT := Color(0.8, 2.0, 0.8, 1.0)          # Speed green
+const FLASH_CRIPPLE := Color(1.5, 1.8, 2.5, 1.0)         # Icy blue-white
+
 # ============================================================================
 # FONT SIZES
 # ============================================================================
