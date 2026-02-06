@@ -1,0 +1,12 @@
+# API keys and secrets
+.env
+*.env
+
+# Generated images
+staging/
+
+# Logs
+logs/*.log
+
+# Progress files (can be regenerated)
+progress.json

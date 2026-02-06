@@ -202,7 +202,7 @@ func enhance_weapon(player: Player, weapon: Variant, material: Variant) -> bool:
 		# Failure - consume material but don't enhance
 		_consume_material(player, material)
 		smithing_failed.emit(weapon, "Smithing failed - material consumed")
-		GameManager.log_message("Your smithing attempt fails. The material is ruined.", Color.ORANGE_RED)
+		GameManager.log_message("Your smithing attempt fails. The material is ruined.", ThemeColors.MSG_ERROR)
 		return false
 
 	# Success - enhance the weapon
@@ -212,7 +212,7 @@ func enhance_weapon(player: Player, weapon: Variant, material: Variant) -> bool:
 	if "damage_dice" in weapon:
 		weapon.damage_dice = _enhance_dice(weapon.damage_dice)
 		item_enhanced.emit(weapon, "Weapon damage increased!")
-		GameManager.log_message("You successfully enhance the %s!" % _get_item_name(weapon), Color.GREEN)
+		GameManager.log_message("You successfully enhance the %s!" % _get_item_name(weapon), ThemeColors.ABILITY_LEARNED)
 		return true
 
 	return false
@@ -231,7 +231,7 @@ func enhance_armor(player: Player, armor: Variant, material: Variant) -> bool:
 		# Failure - consume material but don't enhance
 		_consume_material(player, material)
 		smithing_failed.emit(armor, "Smithing failed - material consumed")
-		GameManager.log_message("Your smithing attempt fails. The material is ruined.", Color.ORANGE_RED)
+		GameManager.log_message("Your smithing attempt fails. The material is ruined.", ThemeColors.MSG_ERROR)
 		return false
 
 	# Success - enhance the armor
@@ -241,7 +241,7 @@ func enhance_armor(player: Player, armor: Variant, material: Variant) -> bool:
 	if "protection_dice" in armor:
 		armor.protection_dice = _enhance_dice(armor.protection_dice)
 		item_enhanced.emit(armor, "Armor protection increased!")
-		GameManager.log_message("You successfully enhance the %s!" % _get_item_name(armor), Color.GREEN)
+		GameManager.log_message("You successfully enhance the %s!" % _get_item_name(armor), ThemeColors.ABILITY_LEARNED)
 		return true
 
 	return false
@@ -295,7 +295,7 @@ func reforge_salvage(player: Player, salvage: Variant, depth: int) -> Variant:
 	if not roll_success(player):
 		_consume_material(player, salvage)
 		smithing_failed.emit(salvage, "Reforging failed")
-		GameManager.log_message("Your reforging attempt fails. The salvage is lost.", Color.ORANGE_RED)
+		GameManager.log_message("Your reforging attempt fails. The salvage is lost.", ThemeColors.MSG_ERROR)
 		return null
 
 	# Success - create random item
@@ -305,7 +305,7 @@ func reforge_salvage(player: Player, salvage: Variant, depth: int) -> Variant:
 	if new_item:
 		player.inventory.append(new_item)
 		item_enhanced.emit(new_item, "Reforged into new item!")
-		GameManager.log_message("You reforge the salvage into a %s!" % new_item.name, Color.GREEN)
+		GameManager.log_message("You reforge the salvage into a %s!" % new_item.name, ThemeColors.ABILITY_LEARNED)
 
 	return new_item
 

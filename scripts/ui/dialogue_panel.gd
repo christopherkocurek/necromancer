@@ -40,7 +40,7 @@ func open_dialogue(npc: Node) -> void:
 
 	current_npc = npc
 	is_active = true
-	visible = true
+	PanelTransition.open_panel(self)
 
 	# Get the first dialogue node (duck typing)
 	var dialogue_node = npc.interact() if npc.has_method("interact") else null
@@ -82,23 +82,26 @@ func _display_dialogue(node) -> void:
 
 func close_dialogue() -> void:
 	"""Close the dialogue panel."""
-	visible = false
 	is_active = false
 
-	# Emit event before clearing NPC reference
-	if current_npc:
-		EventBus.dialogue_ended.emit(current_npc)
-
-		# Check if dialogue is complete and trigger any end effects
-		if current_npc.dialogue_complete and current_npc.has_method("on_dialogue_complete"):
-			current_npc.on_dialogue_complete()
-
+	# Capture NPC reference before close animation clears it
+	var npc_ref: Node = current_npc
 	current_npc = null
 
-	# Return to playing state
-	GameManager.change_state(GameManager.GameState.PLAYING)
+	PanelTransition.close_panel(self, func():
+		# Emit event after close animation
+		if npc_ref and is_instance_valid(npc_ref):
+			EventBus.dialogue_ended.emit(npc_ref)
 
-	dialogue_closed.emit()
+			# Check if dialogue is complete and trigger any end effects
+			if npc_ref.dialogue_complete and npc_ref.has_method("on_dialogue_complete"):
+				npc_ref.on_dialogue_complete()
+
+		# Return to playing state
+		GameManager.change_state(GameManager.GameState.PLAYING)
+
+		dialogue_closed.emit()
+	)
 
 func is_dialogue_active() -> bool:
 	return is_active and visible

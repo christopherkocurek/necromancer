@@ -137,21 +137,21 @@ func on_thrain_found() -> void:
 		current_state = QuestState.THRAIN_FOUND
 		thrain_found.emit()
 		quest_updated.emit(current_state)
-		GameManager.log_message("Quest Updated: You have found Thrain, son of Thror!", Color.GOLD)
+		GameManager.log_message("Quest Updated: You have found Thrain, son of Thror!", ThemeColors.PRIMARY)
 
 func on_ring_acquired() -> void:
 	"""Called when player receives the Ring of Thrain."""
 	has_ring_of_thrain = true
 	ring_acquired.emit()
 	_update_quest_state()
-	GameManager.log_message("Quest Updated: You have received the Ring of Thrain!", Color.GOLD)
+	GameManager.log_message("Quest Updated: You have received the Ring of Thrain!", ThemeColors.PRIMARY)
 
 func on_key_acquired() -> void:
 	"""Called when player receives the Key to Erebor."""
 	has_key_to_erebor = true
 	key_acquired.emit()
 	_update_quest_state()
-	GameManager.log_message("Quest Updated: You have received the Key to Erebor!", Color.GOLD)
+	GameManager.log_message("Quest Updated: You have received the Key to Erebor!", ThemeColors.PRIMARY)
 
 func on_rod_piece_acquired(piece_num: int) -> void:
 	"""Called when player receives a piece of the Rod of Istari."""
@@ -161,7 +161,7 @@ func on_rod_piece_acquired(piece_num: int) -> void:
 		3: rod_piece_3 = true
 
 	rod_piece_acquired.emit(piece_num)
-	GameManager.log_message("Quest Updated: You have found a piece of the Rod of Istari!", Color.GOLD)
+	GameManager.log_message("Quest Updated: You have found a piece of the Rod of Istari!", ThemeColors.PRIMARY)
 
 	# Check if all pieces collected
 	if rod_piece_1 and rod_piece_2 and rod_piece_3:
@@ -192,8 +192,8 @@ func _assemble_rod() -> void:
 		var assembled_rod: DataManager.ItemData = create_rod_of_istari()
 		player.inventory.append(assembled_rod)
 
-	GameManager.log_message("The three pieces of the Rod fuse together with blinding light!", Color.GOLD)
-	GameManager.log_message("The Rod of Istari is whole once more!", Color.CYAN)
+	GameManager.log_message("The three pieces of the Rod fuse together with blinding light!", ThemeColors.PRIMARY)
+	GameManager.log_message("The Rod of Istari is whole once more!", ThemeColors.MSG_INFO)
 	_update_quest_state()
 
 func on_thrain_dialogue_complete() -> void:
@@ -210,7 +210,7 @@ func _update_quest_state() -> void:
 		if current_state != QuestState.ROD_ASSEMBLED and current_state != QuestState.BANISHED:
 			current_state = QuestState.ROD_ASSEMBLED
 			banishment_available.emit()
-			GameManager.log_message("With the Rod of Istari, you may attempt to banish the Necromancer!", Color.CYAN)
+			GameManager.log_message("With the Rod of Istari, you may attempt to banish the Necromancer!", ThemeColors.MSG_INFO)
 	elif rod_piece_1 or rod_piece_2 or rod_piece_3:
 		# GDScript enums don't have ordinal() - compare directly
 		if current_state < QuestState.HAS_ROD_PIECE:
@@ -221,7 +221,7 @@ func _update_quest_state() -> void:
 		if current_state != QuestState.HAS_BOTH and current_state != QuestState.ESCAPED and current_state != QuestState.ROD_ASSEMBLED:
 			current_state = QuestState.HAS_BOTH
 			escape_available.emit()
-			GameManager.log_message("You have both the Ring and the Key! Escape to the surface!", Color.CYAN)
+			GameManager.log_message("You have both the Ring and the Key! Escape to the surface!", ThemeColors.MSG_INFO)
 	elif has_key_to_erebor:
 		if current_state == QuestState.THRAIN_FOUND or current_state == QuestState.NOT_STARTED:
 			current_state = QuestState.HAS_KEY
@@ -236,7 +236,7 @@ func set_throne_room(value: bool) -> void:
 	"""Set whether player is in Sauron's throne room."""
 	in_throne_room = value
 	if value:
-		GameManager.log_message("You have entered the Throne Room of the Necromancer!", Color.PURPLE)
+		GameManager.log_message("You have entered the Throne Room of the Necromancer!", ThemeColors.STATUS_AFRAID)
 
 # ============================================================================
 # VICTORY CONDITIONS
@@ -286,9 +286,9 @@ func attempt_escape() -> bool:
 	"""Attempt escape victory (called when ascending from depth 1)."""
 	var check: Dictionary = can_escape()
 	if not check.can_escape:
-		GameManager.log_message("You cannot escape yet:", Color.RED)
+		GameManager.log_message("You cannot escape yet:", ThemeColors.MSG_ERROR)
 		for missing in check.missing:
-			GameManager.log_message("  - " + missing, Color.YELLOW)
+			GameManager.log_message("  - " + missing, ThemeColors.MSG_WARNING)
 		return false
 
 	# Success!
@@ -296,9 +296,9 @@ func attempt_escape() -> bool:
 	quest_updated.emit(current_state)
 	victory_achieved.emit("escape")
 
-	GameManager.log_message("You emerge from the darkness into the light of day!", Color.GOLD)
-	GameManager.log_message("The Ring of Thrain guides you through the hidden gates.", Color.CYAN)
-	GameManager.log_message("YOU HAVE ESCAPED DOL GULDUR!", Color.GREEN)
+	GameManager.log_message("You emerge from the darkness into the light of day!", ThemeColors.PRIMARY)
+	GameManager.log_message("The Ring of Thrain guides you through the hidden gates.", ThemeColors.MSG_INFO)
+	GameManager.log_message("YOU HAVE ESCAPED DOL GULDUR!", ThemeColors.ABILITY_LEARNED)
 
 	# Record in run stats
 	if player and player.run_stats:
@@ -312,9 +312,9 @@ func attempt_banishment() -> bool:
 	"""Attempt banishment victory (called when using Rod in Throne Room)."""
 	var check: Dictionary = can_banish()
 	if not check.can_banish:
-		GameManager.log_message("You cannot perform the banishment:", Color.RED)
+		GameManager.log_message("You cannot perform the banishment:", ThemeColors.MSG_ERROR)
 		for missing in check.missing:
-			GameManager.log_message("  - " + missing, Color.YELLOW)
+			GameManager.log_message("  - " + missing, ThemeColors.MSG_WARNING)
 		return false
 
 	# Will check vs Sauron (difficulty 25)
@@ -323,8 +323,8 @@ func attempt_banishment() -> bool:
 	var player_roll: int = randi_range(1, 20) + will_skill + (lore_skill / 2)
 	var sauron_difficulty: int = 25
 
-	GameManager.log_message("You raise the Rod of Istari and speak the words of banishment!", Color.GOLD)
-	GameManager.log_message("Your will: %d vs Sauron's power: %d" % [player_roll, sauron_difficulty], Color.CYAN)
+	GameManager.log_message("You raise the Rod of Istari and speak the words of banishment!", ThemeColors.PRIMARY)
+	GameManager.log_message("Your will: %d vs Sauron's power: %d" % [player_roll, sauron_difficulty], ThemeColors.MSG_INFO)
 
 	if player_roll >= sauron_difficulty:
 		# Success!
@@ -333,9 +333,9 @@ func attempt_banishment() -> bool:
 		necromancer_defeated = true
 		victory_achieved.emit("banishment")
 
-		GameManager.log_message("Light erupts from the Rod, shattering the dark throne!", Color.GOLD)
-		GameManager.log_message("Sauron's spirit is cast out, his power broken!", Color.GREEN)
-		GameManager.log_message("YOU HAVE BANISHED THE NECROMANCER!", Color.GREEN)
+		GameManager.log_message("Light erupts from the Rod, shattering the dark throne!", ThemeColors.PRIMARY)
+		GameManager.log_message("Sauron's spirit is cast out, his power broken!", ThemeColors.ABILITY_LEARNED)
+		GameManager.log_message("YOU HAVE BANISHED THE NECROMANCER!", ThemeColors.ABILITY_LEARNED)
 
 		# Record in run stats
 		if player and player.run_stats:
@@ -347,12 +347,12 @@ func attempt_banishment() -> bool:
 		return true
 	else:
 		# Failure - consequences
-		GameManager.log_message("The Rod flickers and dims! Sauron's will overpowers you!", Color.RED)
+		GameManager.log_message("The Rod flickers and dims! Sauron's will overpowers you!", ThemeColors.MSG_ERROR)
 		if player:
 			var damage: int = player.max_health / 2
 			player.take_damage(damage, "dark", null)
-			GameManager.log_message("You take %d damage from the backlash!" % damage, Color.RED)
-		GameManager.log_message("You must grow stronger before attempting again.", Color.YELLOW)
+			GameManager.log_message("You take %d damage from the backlash!" % damage, ThemeColors.MSG_ERROR)
+		GameManager.log_message("You must grow stronger before attempting again.", ThemeColors.MSG_WARNING)
 		return false
 
 func on_surface_reached() -> void:

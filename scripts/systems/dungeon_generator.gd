@@ -55,6 +55,9 @@ func generate(target_level: Level, depth: int) -> void:
 	# Connect rooms with corridors
 	_connect_rooms()
 
+	# Assign room lighting data (must be after rooms exist, before vaults)
+	_assign_room_data(depth)
+
 	# Try to place vaults (special pre-designed rooms)
 	_try_place_vaults(depth)
 
@@ -157,6 +160,18 @@ func _connect_rooms() -> void:
 			else:
 				_carve_v_corridor(center_a.y, center_b.y, center_a.x)
 				_carve_h_corridor(center_a.x, center_b.x, center_b.y)
+
+func _assign_room_data(depth: int) -> void:
+	level.rooms = rooms.duplicate()
+	for room_idx in range(rooms.size()):
+		var room: Rect2i = rooms[room_idx]
+		level.set_room_id_by_rect(room, room_idx)
+
+	# Room lighting probability (Sil-Q style: shallow=lit, deep=dark)
+	var lit_chance: float = clampf(0.80 - depth * 0.04, 0.10, 0.80)
+	for room_idx in range(rooms.size()):
+		if randf() < lit_chance:
+			level.set_room_lit_by_rect(rooms[room_idx], true)
 
 func _carve_h_corridor(x1: int, x2: int, y: int) -> void:
 	var start := mini(x1, x2)

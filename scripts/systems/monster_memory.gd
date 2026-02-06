@@ -78,13 +78,13 @@ func _get_tier_for_count(count: int) -> int:
 func _log_tier_advancement(monster_name: String, tier: int) -> void:
 	match tier:
 		KnowledgeTier.IDENTIFIED:
-			GameManager.log_message("You can now identify %s." % monster_name, Color.CYAN)
+			GameManager.log_message("You can now identify %s." % monster_name, ThemeColors.MSG_INFO)
 		KnowledgeTier.BASIC:
-			GameManager.log_message("You've learned basic information about %s." % monster_name, Color.CYAN)
+			GameManager.log_message("You've learned basic information about %s." % monster_name, ThemeColors.MSG_INFO)
 		KnowledgeTier.DETAILED:
-			GameManager.log_message("You've learned detailed information about %s." % monster_name, Color.CYAN)
+			GameManager.log_message("You've learned detailed information about %s." % monster_name, ThemeColors.MSG_INFO)
 		KnowledgeTier.COMPLETE:
-			GameManager.log_message("You have complete knowledge of %s!" % monster_name, Color.GREEN)
+			GameManager.log_message("You have complete knowledge of %s!" % monster_name, ThemeColors.ABILITY_LEARNED)
 
 # ============================================================================
 # KNOWLEDGE QUERIES

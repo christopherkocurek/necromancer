@@ -197,11 +197,11 @@ func _calculate_damage_reduction(base_damage: int, _damage_type: String) -> int:
 		if self is Player:
 			GameManager.log_message("Your armor absorbs %d damage (rolled %dd%d)." % [
 				prot, protection_dice, protection_sides
-			], Color.LIGHT_BLUE)
+			], ThemeColors.SECONDARY)
 		else:
 			GameManager.log_message("%s's armor absorbs %d damage." % [
 				entity_name, prot
-			], Color.GRAY)
+			], ThemeColors.MSG_SYSTEM)
 	return final_damage
 
 func roll_protection(_damage_type: int = 1) -> int:
@@ -214,11 +214,15 @@ func roll_protection(_damage_type: int = 1) -> int:
 	return total
 
 func _flash_damage() -> void:
-	if sprite:
-		var original_modulate := sprite.modulate
-		sprite.modulate = Color(1.5, 0.5, 0.5)
-		var tween := create_tween()
-		tween.tween_property(sprite, "modulate", original_modulate, 0.2)
+	if not sprite:
+		return
+	var original_modulate := sprite.modulate
+	# Phase 1: White-hot overexpose (0.05s)
+	sprite.modulate = ThemeColors.FLASH_WHITE_HOT
+	var tween := create_tween()
+	# Phase 2: Red hold + fade back (0.15s)
+	tween.tween_property(sprite, "modulate", ThemeColors.FLASH_RED_HOLD, 0.05)
+	tween.tween_property(sprite, "modulate", original_modulate, 0.15)
 
 func heal(amount: int, source: Entity = null) -> void:
 	var old_health := current_health
@@ -235,9 +239,36 @@ func die(killer: Entity = null) -> void:
 	_play_death_animation()
 
 func _play_death_animation() -> void:
+	# Brief white flash before fade
+	if sprite:
+		sprite.modulate = Color(2.0, 2.0, 2.0)
+	# Spawn burst particles
+	_spawn_death_particles()
+	# Fade out and free
 	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.5)
+	if sprite:
+		tween.tween_property(sprite, "modulate", Color.WHITE, 0.05)
+	tween.tween_property(self, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(queue_free)
+
+func _spawn_death_particles() -> void:
+	for i in range(5):
+		var particle := Node2D.new()
+		var dot := ColorRect.new()
+		dot.size = Vector2(4, 4)
+		dot.position = Vector2(-2, -2)
+		dot.color = ThemeColors.DMG_PHYSICAL
+		particle.add_child(dot)
+		particle.position = Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2)
+		add_child(particle)
+		# Burst outward with random angle
+		var angle: float = TAU * i / 5.0 + randf_range(-0.3, 0.3)
+		var target_pos: Vector2 = particle.position + Vector2.from_angle(angle) * randf_range(20, 40)
+		var ptween := create_tween()
+		ptween.set_parallel(true)
+		ptween.tween_property(particle, "position", target_pos, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		ptween.tween_property(dot, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
+		ptween.chain().tween_callback(particle.queue_free)
 
 # ============================================================================
 # STATUS EFFECTS
@@ -247,6 +278,13 @@ func apply_status(status_name: String, duration: int, _data: Variant = null) -> 
 	# Delegate to new StatusEffects system
 	var effect_id: StringName = StringName(status_name)
 	status_fx.apply_effect(effect_id, duration)
+	# Status VFX: brief tint
+	if sprite:
+		var status_color: Color = ThemeColors.get_status_color(status_name)
+		var orig := sprite.modulate
+		sprite.modulate = Color(status_color, 1.0)
+		var vfx_tween := create_tween()
+		vfx_tween.tween_property(sprite, "modulate", orig, 0.3)
 	# Sync legacy dict for backwards compatibility (HUD reads this)
 	_sync_status_dict()
 
@@ -285,7 +323,7 @@ func attack_entity(target: Entity) -> void:
 		EventBus.attack_missed.emit(self, target)
 		GameManager.log_message("%s misses %s (%d vs %d)" % [
 			entity_name, target.entity_name, attack_score, evasion_score
-		], Color.GRAY)
+		], ThemeColors.COMBAT_MISS)
 		return
 
 	# Base damage from weapon dice
@@ -321,11 +359,12 @@ func attack_entity(target: Entity) -> void:
 	if crit_dice > 0:
 		GameManager.log_message("%s CRITS %s! (%d vs %d, +%d dice = %d dmg)" % [
 			entity_name, target.entity_name, attack_score, evasion_score, crit_dice, damage
-		], Color.ORANGE)
+		], ThemeColors.COMBAT_CRIT)
+		EventBus.critical_hit.emit(self, target, damage)
 	else:
 		GameManager.log_message("%s hits %s (%d vs %d = %d dmg)" % [
 			entity_name, target.entity_name, attack_score, evasion_score, damage
-		], Color.WHITE)
+		], ThemeColors.COMBAT_HIT)
 
 	target.take_damage(damage, "physical", self)
 
@@ -407,7 +446,7 @@ func ranged_attack(target: Entity, distance: int) -> void:
 		EventBus.attack_missed.emit(self, target)
 		GameManager.log_message("%s's shot misses %s (%d vs %d)" % [
 			entity_name, target.entity_name, attack_score, evasion_score
-		], Color.GRAY)
+		], ThemeColors.COMBAT_MISS)
 		return
 
 	# Damage from arrow/bolt
@@ -433,11 +472,11 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	if crit_dice > 0:
 		GameManager.log_message("%s CRITS %s with a shot! (%d vs %d, +%d dice = %d dmg)" % [
 			entity_name, target.entity_name, attack_score, evasion_score, crit_dice, damage
-		], Color.ORANGE)
+		], ThemeColors.COMBAT_CRIT)
 	else:
 		GameManager.log_message("%s hits %s with a shot (%d vs %d = %d dmg)" % [
 			entity_name, target.entity_name, attack_score, evasion_score, damage
-		], Color.WHITE)
+		], ThemeColors.COMBAT_HIT)
 
 	target.take_damage(damage, "physical", self)
 

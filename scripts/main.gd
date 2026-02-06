@@ -22,9 +22,12 @@ var look_panel: Control = null
 var dialogue_panel: Control = null  # DialoguePanel - using Control to avoid load order issues
 var smithing_panel: Control = null
 var target_panel: Control = null    # TargetPanel for archery/wand targeting
+var bestiary_panel: Control = null   # BestiaryPanel for monster lore
+var settings_panel: Control = null   # SettingsPanel for accessibility/display/controls
 
 var current_level: Level = null
 var player: Player = null
+var transition_overlay: ColorRect = null
 
 # Quest system (using Node type to avoid load order issues)
 var quest_system: Node = null
@@ -47,6 +50,8 @@ const TARGET_PANEL_SCENE := preload("res://scenes/ui/target_panel.tscn")
 const QuestSystemScript := preload("res://scripts/systems/quest_system.gd")
 const AutoExploreScript := preload("res://scripts/systems/auto_explore.gd")
 const MonsterMemoryScript := preload("res://scripts/systems/monster_memory.gd")
+const BestiaryPanelScript := preload("res://scripts/ui/bestiary_panel.gd")
+const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 
 func _ready() -> void:
 	_setup_ui_panels()
@@ -102,6 +107,17 @@ func _setup_ui_panels() -> void:
 	smithing_panel.closed.connect(_on_smithing_closed)
 	ui_layer.add_child(smithing_panel)
 
+	# Instantiate bestiary panel (hidden by default, script-only - no scene needed)
+	bestiary_panel = BestiaryPanelScript.new()
+	bestiary_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bestiary_panel.closed.connect(_on_bestiary_closed)
+	ui_layer.add_child(bestiary_panel)
+
+	# Instantiate settings panel (hidden by default)
+	settings_panel = SETTINGS_PANEL_SCENE.instantiate()
+	settings_panel.closed.connect(_on_settings_closed)
+	ui_layer.add_child(settings_panel)
+
 	# Initialize Phase 8C systems (using preloaded scripts)
 	auto_explore = AutoExploreScript.new()
 	monster_memory = MonsterMemoryScript.new()
@@ -109,6 +125,13 @@ func _setup_ui_panels() -> void:
 	# Create quest system using preloaded script
 	quest_system = QuestSystemScript.new()
 	add_child(quest_system)
+
+	# Transition overlay (full screen black, initially transparent)
+	transition_overlay = ColorRect.new()
+	transition_overlay.color = Color(0, 0, 0, 0)
+	transition_overlay.anchors_preset = Control.PRESET_FULL_RECT
+	transition_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_layer.add_child(transition_overlay)
 
 	# Connect NPC interaction event
 	EventBus.npc_interacted.connect(_on_npc_interacted)
@@ -153,9 +176,11 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	turn_system.set_player(player)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
-	# Initial FOV update (use layer-based FOV radius)
-	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	# Initial FOV update: geometry → lighting → entity visibility → tilemap
+	var fov_radius: int = current_level.get_fov_radius()
+	var light_radius: int = player.get_light_radius()
 	current_level.update_fov(player.grid_position, fov_radius)
+	current_level.apply_lighting(player.grid_position, light_radius)
 	current_level.update_entity_visibility()
 	current_level.apply_fov_to_tilemap()
 
@@ -165,13 +190,13 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
-	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, Color.CYAN)
-	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Skills: @  Pickup: G", Color.GRAY)
+	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, ThemeColors.MSG_INFO)
+	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Skills: @  Pickup: G", ThemeColors.MSG_SYSTEM)
 
 	# Show layer entry message
 	var entry_msg := LayerConfig.get_entry_message(1, 0)
 	if not entry_msg.is_empty():
-		GameManager.log_message(entry_msg, Color.YELLOW)
+		GameManager.log_message(entry_msg, ThemeColors.MSG_WARNING)
 
 func _generate_level(depth: int) -> void:
 	# Clean up old level
@@ -241,6 +266,13 @@ func _process(_delta: float) -> void:
 	# Check for level transitions
 	_check_stairs()
 
+	# Tutorial hints (self-throttles via _is_showing check)
+	if player and player.is_alive:
+		TutorialManager.check_hints(player)
+		if current_level:
+			var hint_tile: int = current_level.get_tile(player.grid_position)
+			TutorialManager.check_tile_hints(player, hint_tile)
+
 	# Handle zoom
 	if Input.is_action_just_pressed("zoom_in"):
 		GameManager.cycle_zoom()
@@ -264,7 +296,23 @@ func _check_stairs() -> void:
 				if GameManager.current_depth > 1:
 					_ascend()
 
+func _fade_to_black(duration: float = 0.15) -> void:
+	if not transition_overlay:
+		return
+	var tween := create_tween()
+	tween.tween_property(transition_overlay, "color:a", 1.0, duration)
+	await tween.finished
+
+func _fade_from_black(duration: float = 0.3) -> void:
+	if not transition_overlay:
+		return
+	var tween := create_tween()
+	tween.tween_property(transition_overlay, "color:a", 0.0, duration)
+	await tween.finished
+
 func _descend() -> void:
+	await _fade_to_black(0.15)
+
 	var previous_depth := GameManager.current_depth
 	GameManager.descend_level()
 
@@ -290,20 +338,26 @@ func _descend() -> void:
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
-	# Update FOV (use layer-based FOV radius)
-	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	# Update FOV: geometry → lighting → entity visibility → tilemap
+	var fov_radius: int = current_level.get_fov_radius()
+	var light_radius: int = player.get_light_radius()
 	current_level.update_fov(player.grid_position, fov_radius)
+	current_level.apply_lighting(player.grid_position, light_radius)
 	current_level.update_entity_visibility()
 	current_level.apply_fov_to_tilemap()
 
-	GameManager.log_message("You descend deeper into the darkness... (Depth %d)" % GameManager.current_depth, Color.CYAN)
+	GameManager.log_message("You descend deeper into the darkness... (Depth %d)" % GameManager.current_depth, ThemeColors.MSG_INFO)
 
 	# Show layer entry message if entering a new layer
 	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
 	if not entry_msg.is_empty():
-		GameManager.log_message(entry_msg, Color.YELLOW)
+		GameManager.log_message(entry_msg, ThemeColors.MSG_WARNING)
+
+	await _fade_from_black(0.3)
 
 func _ascend() -> void:
+	await _fade_to_black(0.15)
+
 	var previous_depth := GameManager.current_depth
 	GameManager.ascend_level()
 
@@ -322,18 +376,22 @@ func _ascend() -> void:
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
-	# Update FOV (use layer-based FOV radius)
-	var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+	# Update FOV: geometry → lighting → entity visibility → tilemap
+	var fov_radius: int = current_level.get_fov_radius()
+	var light_radius: int = player.get_light_radius()
 	current_level.update_fov(player.grid_position, fov_radius)
+	current_level.apply_lighting(player.grid_position, light_radius)
 	current_level.update_entity_visibility()
 	current_level.apply_fov_to_tilemap()
 
-	GameManager.log_message("You climb back up... (Depth %d)" % GameManager.current_depth, Color.CYAN)
+	GameManager.log_message("You climb back up... (Depth %d)" % GameManager.current_depth, ThemeColors.MSG_INFO)
 
 	# Show layer entry message if entering a new layer (when ascending)
 	var entry_msg := LayerConfig.get_entry_message(GameManager.current_depth, previous_depth)
 	if not entry_msg.is_empty():
-		GameManager.log_message(entry_msg, Color.YELLOW)
+		GameManager.log_message(entry_msg, ThemeColors.MSG_WARNING)
+
+	await _fade_from_black(0.3)
 
 func _update_camera_zoom() -> void:
 	var camera := player.get_node("Camera2D") as Camera2D
@@ -381,10 +439,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_try_use_forge()
 		get_viewport().set_input_as_handled()
 
-	# Pause/menu
+	# Help overlay (? key = Shift+/)
+	if event.is_action_pressed("help_overlay"):
+		HelpOverlay.toggle()
+		get_viewport().set_input_as_handled()
+
+	# Escape: open settings panel when no other panel is open
 	if event.is_action_pressed("ui_cancel"):
-		# Pause menu (to be implemented)
-		pass
+		_toggle_settings()
+		get_viewport().set_input_as_handled()
 
 # ============================================================================
 # UI PANEL MANAGEMENT
@@ -396,7 +459,9 @@ func _is_ui_open() -> bool:
 		   (abilities_panel and abilities_panel.visible) or \
 		   (look_panel and look_panel.visible) or \
 		   (dialogue_panel and dialogue_panel.visible) or \
-		   (smithing_panel and smithing_panel.visible)
+		   (smithing_panel and smithing_panel.visible) or \
+		   (bestiary_panel and bestiary_panel.visible) or \
+		   (settings_panel and settings_panel.visible)
 
 func _toggle_inventory() -> void:
 	if inventory_panel.visible:
@@ -477,7 +542,7 @@ func _open_targeting() -> void:
 	if not player or not player.is_alive:
 		return
 	if not player.can_fire_ranged():
-		GameManager.log_message("You need a bow and arrows to fire.", Color.GRAY)
+		GameManager.log_message("You need a bow and arrows to fire.", ThemeColors.MSG_SYSTEM)
 		return
 	# Close other panels
 	if look_panel and look_panel.visible:
@@ -499,9 +564,35 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 			player.ranged_attack(target_entity, dist)
 			player.consume_energy()
 	else:
-		GameManager.log_message("Nothing to hit there.", Color.GRAY)
+		GameManager.log_message("Nothing to hit there.", ThemeColors.MSG_SYSTEM)
 
 func _on_target_cancelled() -> void:
+	GameManager.is_player_turn = true
+
+# ============================================================================
+# SETTINGS PANEL
+# ============================================================================
+
+func _toggle_settings() -> void:
+	if settings_panel and settings_panel.visible:
+		settings_panel.close()
+	else:
+		# Close other panels first
+		if inventory_panel and inventory_panel.visible:
+			inventory_panel.close()
+		if skills_panel and skills_panel.visible:
+			skills_panel.close()
+		if abilities_panel and abilities_panel.visible:
+			abilities_panel.close()
+		if look_panel and look_panel.visible:
+			look_panel.close()
+		if bestiary_panel and bestiary_panel.visible:
+			bestiary_panel.close()
+		if settings_panel:
+			settings_panel.open()
+			GameManager.is_player_turn = false
+
+func _on_settings_closed() -> void:
 	GameManager.is_player_turn = true
 
 # ============================================================================
@@ -510,6 +601,9 @@ func _on_target_cancelled() -> void:
 
 func _on_player_died(cause: String, killer_name: String) -> void:
 	current_state = GameState.GAME_OVER
+
+	# Record death for god mode scaling
+	AccessibilityManager.record_death()
 
 	# Update run stats with final info
 	player.run_stats.died_from = cause
@@ -522,9 +616,9 @@ func _on_player_died(cause: String, killer_name: String) -> void:
 
 	# Log the death
 	if killer_name.is_empty():
-		GameManager.log_message("You have died. %s" % cause, Color.RED)
+		GameManager.log_message("You have died. %s" % cause, ThemeColors.MSG_ERROR)
 	else:
-		GameManager.log_message("You have been slain by %s." % killer_name, Color.RED)
+		GameManager.log_message("You have been slain by %s." % killer_name, ThemeColors.MSG_ERROR)
 
 func _on_new_game_requested() -> void:
 	# Clean up current game
@@ -555,7 +649,7 @@ func _try_use_forge() -> void:
 
 	var tile: int = current_level.get_tile(player.grid_position)
 	if tile != Level.Tile.FORGE:
-		GameManager.log_message("You need to be standing on a forge to use it.", Color.YELLOW)
+		GameManager.log_message("You need to be standing on a forge to use it.", ThemeColors.MSG_WARNING)
 		return
 
 	_open_smithing_panel()
@@ -618,9 +712,11 @@ func _process_auto_explore() -> void:
 		player.consume_energy()
 		auto_explore.confirm_step_taken()
 
-		# Update FOV
-		var fov_radius := current_level.get_fov_radius()
+		# Update FOV: geometry → lighting → entity visibility → tilemap
+		var fov_radius: int = current_level.get_fov_radius()
+		var light_radius: int = player.get_light_radius()
 		current_level.update_fov(player.grid_position, fov_radius)
+		current_level.apply_lighting(player.grid_position, light_radius)
 		current_level.update_entity_visibility()
 		current_level.apply_fov_to_tilemap()
 
@@ -653,3 +749,27 @@ func _observe_visible_monsters() -> void:
 
 func get_monster_memory() -> RefCounted:
 	return monster_memory
+
+# ============================================================================
+# BESTIARY (Phase 9)
+# ============================================================================
+
+func _toggle_bestiary() -> void:
+	if bestiary_panel and bestiary_panel.visible:
+		bestiary_panel.close()
+	else:
+		# Close other panels first
+		if inventory_panel and inventory_panel.visible:
+			inventory_panel.close()
+		if skills_panel and skills_panel.visible:
+			skills_panel.close()
+		if abilities_panel and abilities_panel.visible:
+			abilities_panel.close()
+		if look_panel and look_panel.visible:
+			look_panel.close()
+		if bestiary_panel and monster_memory:
+			bestiary_panel.open(monster_memory)
+			GameManager.is_player_turn = false
+
+func _on_bestiary_closed() -> void:
+	GameManager.is_player_turn = true

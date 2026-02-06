@@ -1,0 +1,2303 @@
+{
+  "generated": "2026-02-05T13:49:31.866519",
+  "grid_size": 32,
+  "tile_size": 64,
+  "total_tiles": 459,
+  "coordinates": {
+    "terrain_0_light": {
+      "x": 0,
+      "y": 0,
+      "name": "darkness"
+    },
+    "terrain_0_dark": {
+      "x": 1,
+      "y": 0,
+      "name": "darkness (dark)"
+    },
+    "terrain_1_light": {
+      "x": 2,
+      "y": 0,
+      "name": "open floor"
+    },
+    "terrain_1_dark": {
+      "x": 3,
+      "y": 0,
+      "name": "open floor (dark)"
+    },
+    "terrain_4_light": {
+      "x": 4,
+      "y": 0,
+      "name": "open door"
+    },
+    "terrain_4_dark": {
+      "x": 5,
+      "y": 0,
+      "name": "open door (dark)"
+    },
+    "terrain_6_light": {
+      "x": 6,
+      "y": 0,
+      "name": "warded door"
+    },
+    "terrain_6_dark": {
+      "x": 7,
+      "y": 0,
+      "name": "warded door (dark)"
+    },
+    "terrain_7_light": {
+      "x": 8,
+      "y": 0,
+      "name": "warded door"
+    },
+    "terrain_7_dark": {
+      "x": 9,
+      "y": 0,
+      "name": "warded door (dark)"
+    },
+    "terrain_8_light": {
+      "x": 10,
+      "y": 0,
+      "name": "warded door"
+    },
+    "terrain_8_dark": {
+      "x": 11,
+      "y": 0,
+      "name": "warded door (dark)"
+    },
+    "terrain_9_light": {
+      "x": 12,
+      "y": 0,
+      "name": "fading daylight"
+    },
+    "terrain_9_dark": {
+      "x": 13,
+      "y": 0,
+      "name": "fading daylight (dark)"
+    },
+    "terrain_10_light": {
+      "x": 14,
+      "y": 0,
+      "name": "open floor"
+    },
+    "terrain_10_dark": {
+      "x": 15,
+      "y": 0,
+      "name": "open floor (dark)"
+    },
+    "terrain_11_light": {
+      "x": 16,
+      "y": 0,
+      "name": "wall"
+    },
+    "terrain_11_dark": {
+      "x": 17,
+      "y": 0,
+      "name": "wall (dark)"
+    },
+    "terrain_13_light": {
+      "x": 18,
+      "y": 0,
+      "name": "morgul runes"
+    },
+    "terrain_13_dark": {
+      "x": 19,
+      "y": 0,
+      "name": "morgul runes (dark)"
+    },
+    "terrain_15_light": {
+      "x": 20,
+      "y": 0,
+      "name": "torture rack"
+    },
+    "terrain_15_dark": {
+      "x": 21,
+      "y": 0,
+      "name": "torture rack (dark)"
+    },
+    "terrain_17_light": {
+      "x": 22,
+      "y": 0,
+      "name": "jagged pit"
+    },
+    "terrain_17_dark": {
+      "x": 23,
+      "y": 0,
+      "name": "jagged pit (dark)"
+    },
+    "terrain_18_light": {
+      "x": 24,
+      "y": 0,
+      "name": "poisoned spike pit"
+    },
+    "terrain_18_dark": {
+      "x": 25,
+      "y": 0,
+      "name": "poisoned spike pit (dark)"
+    },
+    "terrain_19_light": {
+      "x": 26,
+      "y": 0,
+      "name": "poison needle trap"
+    },
+    "terrain_19_dark": {
+      "x": 27,
+      "y": 0,
+      "name": "poison needle trap (dark)"
+    },
+    "terrain_22_light": {
+      "x": 28,
+      "y": 0,
+      "name": "orc alarm"
+    },
+    "terrain_22_dark": {
+      "x": 29,
+      "y": 0,
+      "name": "orc alarm (dark)"
+    },
+    "terrain_24_light": {
+      "x": 30,
+      "y": 0,
+      "name": "rusted caltrops"
+    },
+    "terrain_24_dark": {
+      "x": 31,
+      "y": 0,
+      "name": "rusted caltrops (dark)"
+    },
+    "terrain_26_light": {
+      "x": 0,
+      "y": 1,
+      "name": "thick web"
+    },
+    "terrain_26_dark": {
+      "x": 1,
+      "y": 1,
+      "name": "thick web (dark)"
+    },
+    "terrain_29_light": {
+      "x": 2,
+      "y": 1,
+      "name": "prison bars"
+    },
+    "terrain_29_dark": {
+      "x": 3,
+      "y": 1,
+      "name": "prison bars (dark)"
+    },
+    "terrain_32_light": {
+      "x": 4,
+      "y": 1,
+      "name": "iron door"
+    },
+    "terrain_32_dark": {
+      "x": 5,
+      "y": 1,
+      "name": "iron door (dark)"
+    },
+    "terrain_50_light": {
+      "x": 6,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_50_dark": {
+      "x": 7,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_51_light": {
+      "x": 8,
+      "y": 1,
+      "name": "quartz vein"
+    },
+    "terrain_51_dark": {
+      "x": 9,
+      "y": 1,
+      "name": "quartz vein (dark)"
+    },
+    "terrain_52_light": {
+      "x": 10,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_52_dark": {
+      "x": 11,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_53_light": {
+      "x": 12,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_53_dark": {
+      "x": 13,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_54_light": {
+      "x": 14,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_54_dark": {
+      "x": 15,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_55_light": {
+      "x": 16,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_55_dark": {
+      "x": 17,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_56_light": {
+      "x": 18,
+      "y": 1,
+      "name": "dark stone wall"
+    },
+    "terrain_56_dark": {
+      "x": 19,
+      "y": 1,
+      "name": "dark stone wall (dark)"
+    },
+    "terrain_57_light": {
+      "x": 20,
+      "y": 1,
+      "name": "dark stone wall"
+    },
+    "terrain_57_dark": {
+      "x": 21,
+      "y": 1,
+      "name": "dark stone wall (dark)"
+    },
+    "terrain_58_light": {
+      "x": 22,
+      "y": 1,
+      "name": "dark stone wall"
+    },
+    "terrain_58_dark": {
+      "x": 23,
+      "y": 1,
+      "name": "dark stone wall (dark)"
+    },
+    "terrain_59_light": {
+      "x": 24,
+      "y": 1,
+      "name": "dark stone wall"
+    },
+    "terrain_59_dark": {
+      "x": 25,
+      "y": 1,
+      "name": "dark stone wall (dark)"
+    },
+    "terrain_60_light": {
+      "x": 26,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_60_dark": {
+      "x": 27,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_61_light": {
+      "x": 28,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_61_dark": {
+      "x": 29,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_62_light": {
+      "x": 30,
+      "y": 1,
+      "name": "unused"
+    },
+    "terrain_62_dark": {
+      "x": 31,
+      "y": 1,
+      "name": "unused (dark)"
+    },
+    "terrain_63_light": {
+      "x": 0,
+      "y": 2,
+      "name": "dark stone wall"
+    },
+    "terrain_63_dark": {
+      "x": 1,
+      "y": 2,
+      "name": "dark stone wall (dark)"
+    },
+    "terrain_64_light": {
+      "x": 2,
+      "y": 2,
+      "name": "orc forge (exhausted)"
+    },
+    "terrain_64_dark": {
+      "x": 3,
+      "y": 2,
+      "name": "orc forge (exhausted) (dark)"
+    },
+    "terrain_65_light": {
+      "x": 4,
+      "y": 2,
+      "name": "orc forge (1 use remaining)"
+    },
+    "terrain_65_dark": {
+      "x": 5,
+      "y": 2,
+      "name": "orc forge (1 use remaining) (dark)"
+    },
+    "terrain_66_light": {
+      "x": 6,
+      "y": 2,
+      "name": "orc forge (2 uses remaining)"
+    },
+    "terrain_66_dark": {
+      "x": 7,
+      "y": 2,
+      "name": "orc forge (2 uses remaining) (dark)"
+    },
+    "terrain_67_light": {
+      "x": 8,
+      "y": 2,
+      "name": "orc forge (3 uses remaining)"
+    },
+    "terrain_67_dark": {
+      "x": 9,
+      "y": 2,
+      "name": "orc forge (3 uses remaining) (dark)"
+    },
+    "terrain_68_light": {
+      "x": 10,
+      "y": 2,
+      "name": "orc forge (4 uses remaining)"
+    },
+    "terrain_68_dark": {
+      "x": 11,
+      "y": 2,
+      "name": "orc forge (4 uses remaining) (dark)"
+    },
+    "terrain_69_light": {
+      "x": 12,
+      "y": 2,
+      "name": "orc forge (5 uses remaining)"
+    },
+    "terrain_69_dark": {
+      "x": 13,
+      "y": 2,
+      "name": "orc forge (5 uses remaining) (dark)"
+    },
+    "terrain_70_light": {
+      "x": 14,
+      "y": 2,
+      "name": "shadow forge (exhausted)"
+    },
+    "terrain_70_dark": {
+      "x": 15,
+      "y": 2,
+      "name": "shadow forge (exhausted) (dark)"
+    },
+    "terrain_71_light": {
+      "x": 16,
+      "y": 2,
+      "name": "shadow forge (1 use remaining)"
+    },
+    "terrain_71_dark": {
+      "x": 17,
+      "y": 2,
+      "name": "shadow forge (1 use remaining) (dark)"
+    },
+    "terrain_72_light": {
+      "x": 18,
+      "y": 2,
+      "name": "shadow forge (2 uses remaining)"
+    },
+    "terrain_72_dark": {
+      "x": 19,
+      "y": 2,
+      "name": "shadow forge (2 uses remaining) (dark)"
+    },
+    "terrain_73_light": {
+      "x": 20,
+      "y": 2,
+      "name": "shadow forge (3 uses remaining)"
+    },
+    "terrain_73_dark": {
+      "x": 21,
+      "y": 2,
+      "name": "shadow forge (3 uses remaining) (dark)"
+    },
+    "terrain_74_light": {
+      "x": 22,
+      "y": 2,
+      "name": "shadow forge (4 uses remaining)"
+    },
+    "terrain_74_dark": {
+      "x": 23,
+      "y": 2,
+      "name": "shadow forge (4 uses remaining) (dark)"
+    },
+    "terrain_75_light": {
+      "x": 24,
+      "y": 2,
+      "name": "shadow forge (5 uses remaining)"
+    },
+    "terrain_75_dark": {
+      "x": 25,
+      "y": 2,
+      "name": "shadow forge (5 uses remaining) (dark)"
+    },
+    "terrain_76_light": {
+      "x": 26,
+      "y": 2,
+      "name": "forge Angdur (exhausted)"
+    },
+    "terrain_76_dark": {
+      "x": 27,
+      "y": 2,
+      "name": "forge Angdur (exhausted) (dark)"
+    },
+    "terrain_77_light": {
+      "x": 28,
+      "y": 2,
+      "name": "forge Angdur (1 use remaining)"
+    },
+    "terrain_77_dark": {
+      "x": 29,
+      "y": 2,
+      "name": "forge Angdur (1 use remaining) (dark)"
+    },
+    "terrain_78_light": {
+      "x": 30,
+      "y": 2,
+      "name": "forge Angdur (2 uses remaining)"
+    },
+    "terrain_78_dark": {
+      "x": 31,
+      "y": 2,
+      "name": "forge Angdur (2 uses remaining) (dark)"
+    },
+    "terrain_79_light": {
+      "x": 0,
+      "y": 3,
+      "name": "forge Angdur (3 uses remaining)"
+    },
+    "terrain_79_dark": {
+      "x": 1,
+      "y": 3,
+      "name": "forge Angdur (3 uses remaining) (dark)"
+    },
+    "terrain_80_light": {
+      "x": 2,
+      "y": 3,
+      "name": "crumbling stairs up"
+    },
+    "terrain_80_dark": {
+      "x": 3,
+      "y": 3,
+      "name": "crumbling stairs up (dark)"
+    },
+    "terrain_81_light": {
+      "x": 4,
+      "y": 3,
+      "name": "dark stairs down"
+    },
+    "terrain_81_dark": {
+      "x": 5,
+      "y": 3,
+      "name": "dark stairs down (dark)"
+    },
+    "terrain_82_light": {
+      "x": 6,
+      "y": 3,
+      "name": "narrow shaft up"
+    },
+    "terrain_82_dark": {
+      "x": 7,
+      "y": 3,
+      "name": "narrow shaft up (dark)"
+    },
+    "terrain_83_light": {
+      "x": 8,
+      "y": 3,
+      "name": "narrow shaft down"
+    },
+    "terrain_83_dark": {
+      "x": 9,
+      "y": 3,
+      "name": "narrow shaft down (dark)"
+    },
+    "terrain_87_light": {
+      "x": 10,
+      "y": 3,
+      "name": "forest floor"
+    },
+    "terrain_87_dark": {
+      "x": 11,
+      "y": 3,
+      "name": "forest floor (dark)"
+    },
+    "player_0": {
+      "x": 12,
+      "y": 3,
+      "name": "Elf"
+    },
+    "player_1": {
+      "x": 13,
+      "y": 3,
+      "name": "Man"
+    },
+    "player_2": {
+      "x": 14,
+      "y": 3,
+      "name": "Dwarf"
+    },
+    "player_3": {
+      "x": 15,
+      "y": 3,
+      "name": "Istari"
+    },
+    "monster_0": {
+      "x": 16,
+      "y": 3,
+      "name": "player (Elf)"
+    },
+    "monster_1": {
+      "x": 17,
+      "y": 3,
+      "name": "player (Man)"
+    },
+    "monster_2": {
+      "x": 18,
+      "y": 3,
+      "name": "player (Dwarf)"
+    },
+    "monster_11": {
+      "x": 19,
+      "y": 3,
+      "name": "Mirkwood Spider"
+    },
+    "monster_12": {
+      "x": 20,
+      "y": 3,
+      "name": "Giant Rat"
+    },
+    "monster_13": {
+      "x": 21,
+      "y": 3,
+      "name": "Black Squirrel"
+    },
+    "monster_14": {
+      "x": 22,
+      "y": 3,
+      "name": "Crebain"
+    },
+    "monster_15": {
+      "x": 23,
+      "y": 3,
+      "name": "Tanglethorn"
+    },
+    "monster_16": {
+      "x": 24,
+      "y": 3,
+      "name": "Giant Bat"
+    },
+    "monster_17": {
+      "x": 25,
+      "y": 3,
+      "name": "Web Spinner"
+    },
+    "monster_18": {
+      "x": 26,
+      "y": 3,
+      "name": "Orc Scout"
+    },
+    "monster_19": {
+      "x": 27,
+      "y": 3,
+      "name": "Swamp Adder"
+    },
+    "monster_20": {
+      "x": 28,
+      "y": 3,
+      "name": "Great Spider"
+    },
+    "monster_21": {
+      "x": 29,
+      "y": 3,
+      "name": "Warg Pup"
+    },
+    "monster_31": {
+      "x": 30,
+      "y": 3,
+      "name": "Orc Slave"
+    },
+    "monster_32": {
+      "x": 31,
+      "y": 3,
+      "name": "Orc Soldier"
+    },
+    "monster_33": {
+      "x": 0,
+      "y": 4,
+      "name": "Orc Crossbowman"
+    },
+    "monster_34": {
+      "x": 1,
+      "y": 4,
+      "name": "Warg"
+    },
+    "monster_35": {
+      "x": 2,
+      "y": 4,
+      "name": "Orc Thrallmaster"
+    },
+    "monster_36": {
+      "x": 3,
+      "y": 4,
+      "name": "Orc Captain"
+    },
+    "monster_37": {
+      "x": 4,
+      "y": 4,
+      "name": "Warg Rider"
+    },
+    "monster_38": {
+      "x": 5,
+      "y": 4,
+      "name": "Hill Troll"
+    },
+    "monster_39": {
+      "x": 6,
+      "y": 4,
+      "name": "Gashnak, Warg-lord"
+    },
+    "monster_40": {
+      "x": 7,
+      "y": 4,
+      "name": "Orc Warchief"
+    },
+    "monster_51": {
+      "x": 8,
+      "y": 4,
+      "name": "Dark Acolyte"
+    },
+    "monster_52": {
+      "x": 9,
+      "y": 4,
+      "name": "Ghoul"
+    },
+    "monster_53": {
+      "x": 10,
+      "y": 4,
+      "name": "Mirk-troll"
+    },
+    "monster_55": {
+      "x": 11,
+      "y": 4,
+      "name": "Dark Sorcerer"
+    },
+    "monster_58": {
+      "x": 12,
+      "y": 4,
+      "name": "Ghast"
+    },
+    "monster_59": {
+      "x": 13,
+      "y": 4,
+      "name": "Karvag the Torturer"
+    },
+    "monster_71": {
+      "x": 14,
+      "y": 4,
+      "name": "Skeleton"
+    },
+    "monster_72": {
+      "x": 15,
+      "y": 4,
+      "name": "Skeleton Warrior"
+    },
+    "monster_73": {
+      "x": 16,
+      "y": 4,
+      "name": "Zombie"
+    },
+    "monster_74": {
+      "x": 17,
+      "y": 4,
+      "name": "Wight"
+    },
+    "monster_76": {
+      "x": 18,
+      "y": 4,
+      "name": "Necromancer Adept"
+    },
+    "monster_79": {
+      "x": 19,
+      "y": 4,
+      "name": "Grishnakh, Crypt Lord"
+    },
+    "monster_91": {
+      "x": 20,
+      "y": 4,
+      "name": "Phantom"
+    },
+    "monster_92": {
+      "x": 21,
+      "y": 4,
+      "name": "Shadow"
+    },
+    "monster_93": {
+      "x": 22,
+      "y": 4,
+      "name": "Whispering Shade"
+    },
+    "monster_94": {
+      "x": 23,
+      "y": 4,
+      "name": "Wraith"
+    },
+    "monster_95": {
+      "x": 24,
+      "y": 4,
+      "name": "Fell Spirit"
+    },
+    "monster_97": {
+      "x": 25,
+      "y": 4,
+      "name": "Vampire Thrall"
+    },
+    "monster_111": {
+      "x": 26,
+      "y": 4,
+      "name": "Black Numenorean"
+    },
+    "monster_112": {
+      "x": 27,
+      "y": 4,
+      "name": "Olog-hai"
+    },
+    "monster_113": {
+      "x": 28,
+      "y": 4,
+      "name": "Vampire"
+    },
+    "monster_115": {
+      "x": 29,
+      "y": 4,
+      "name": "Vampire Lord"
+    },
+    "monster_117": {
+      "x": 30,
+      "y": 4,
+      "name": "Maia Thrall"
+    },
+    "monster_131": {
+      "x": 31,
+      "y": 4,
+      "name": "Elite Olog-hai"
+    },
+    "monster_132": {
+      "x": 0,
+      "y": 5,
+      "name": "Greater Shadow"
+    },
+    "monster_134": {
+      "x": 1,
+      "y": 5,
+      "name": "Thrain's Shade"
+    },
+    "monster_135": {
+      "x": 2,
+      "y": 5,
+      "name": "Sauron, the Necromancer"
+    },
+    "monster_301": {
+      "x": 3,
+      "y": 5,
+      "name": "Gandalf the Grey"
+    },
+    "monster_304": {
+      "x": 4,
+      "y": 5,
+      "name": "Elrond Half-elven"
+    },
+    "monster_305": {
+      "x": 5,
+      "y": 5,
+      "name": "Thorin Oakenshield"
+    },
+    "monster_306": {
+      "x": 6,
+      "y": 5,
+      "name": "Beorn the Skinchanger"
+    },
+    "monster_307": {
+      "x": 7,
+      "y": 5,
+      "name": "Radagast the Brown"
+    },
+    "item_6": {
+      "x": 8,
+      "y": 5,
+      "name": "Necklace"
+    },
+    "item_20": {
+      "x": 9,
+      "y": 5,
+      "name": "Massive Iron Crown"
+    },
+    "item_21": {
+      "x": 10,
+      "y": 5,
+      "name": "Elven Light"
+    },
+    "item_22": {
+      "x": 11,
+      "y": 5,
+      "name": "Wanderer's Robe"
+    },
+    "item_23": {
+      "x": 12,
+      "y": 5,
+      "name": "Ranger Leathers"
+    },
+    "item_26": {
+      "x": 13,
+      "y": 5,
+      "name": "Scout's Armor"
+    },
+    "item_27": {
+      "x": 14,
+      "y": 5,
+      "name": "Shadow-steel Armor"
+    },
+    "item_30": {
+      "x": 15,
+      "y": 5,
+      "name": "Gondor Corslet"
+    },
+    "item_31": {
+      "x": 16,
+      "y": 5,
+      "name": "Dwarven Hauberk"
+    },
+    "item_38": {
+      "x": 17,
+      "y": 5,
+      "name": "Mithril Corslet"
+    },
+    "item_40": {
+      "x": 18,
+      "y": 5,
+      "name": "Orc Skeleton"
+    },
+    "item_41": {
+      "x": 19,
+      "y": 5,
+      "name": "Human Skeleton"
+    },
+    "item_42": {
+      "x": 20,
+      "y": 5,
+      "name": "Elf Skeleton"
+    },
+    "item_43": {
+      "x": 21,
+      "y": 5,
+      "name": "Buckler"
+    },
+    "item_44": {
+      "x": 22,
+      "y": 5,
+      "name": "Tower Shield"
+    },
+    "item_46": {
+      "x": 23,
+      "y": 5,
+      "name": "Mithril Shield"
+    },
+    "item_56": {
+      "x": 24,
+      "y": 5,
+      "name": "Ranger's Knife"
+    },
+    "item_57": {
+      "x": 25,
+      "y": 5,
+      "name": "Orc-blade"
+    },
+    "item_60": {
+      "x": 26,
+      "y": 5,
+      "name": "Woodland Blade"
+    },
+    "item_64": {
+      "x": 27,
+      "y": 5,
+      "name": "Longsword"
+    },
+    "item_67": {
+      "x": 28,
+      "y": 5,
+      "name": "Rohirrim Blade"
+    },
+    "item_68": {
+      "x": 29,
+      "y": 5,
+      "name": "Numenorean Blade"
+    },
+    "item_69": {
+      "x": 30,
+      "y": 5,
+      "name": "Mithril Sword"
+    },
+    "item_70": {
+      "x": 31,
+      "y": 5,
+      "name": "Mithril Great-blade"
+    },
+    "item_71": {
+      "x": 0,
+      "y": 6,
+      "name": "Hunting Spear"
+    },
+    "item_72": {
+      "x": 1,
+      "y": 6,
+      "name": "Tower Guard Spear"
+    },
+    "item_74": {
+      "x": 2,
+      "y": 6,
+      "name": "Morgul Glaive"
+    },
+    "item_76": {
+      "x": 3,
+      "y": 6,
+      "name": "Woodsman's Axe"
+    },
+    "item_77": {
+      "x": 4,
+      "y": 6,
+      "name": "Dwarven War-axe"
+    },
+    "item_81": {
+      "x": 5,
+      "y": 6,
+      "name": "Erebor Great-axe"
+    },
+    "item_86": {
+      "x": 6,
+      "y": 6,
+      "name": "Oak Staff"
+    },
+    "item_98": {
+      "x": 7,
+      "y": 6,
+      "name": "Dwarf Mattock"
+    },
+    "item_100": {
+      "x": 8,
+      "y": 6,
+      "name": "Iron Helm"
+    },
+    "item_101": {
+      "x": 9,
+      "y": 6,
+      "name": "Tower Helm"
+    },
+    "item_103": {
+      "x": 10,
+      "y": 6,
+      "name": "Mithril Helm"
+    },
+    "item_104": {
+      "x": 11,
+      "y": 6,
+      "name": "Crown"
+    },
+    "item_106": {
+      "x": 12,
+      "y": 6,
+      "name": "Traveler's Cloak"
+    },
+    "item_107": {
+      "x": 13,
+      "y": 6,
+      "name": "Shadow Cloak"
+    },
+    "item_108": {
+      "x": 14,
+      "y": 6,
+      "name": "Wolf-Hame"
+    },
+    "item_109": {
+      "x": 15,
+      "y": 6,
+      "name": "Bat-Fell"
+    },
+    "item_116": {
+      "x": 16,
+      "y": 6,
+      "name": "Arrow"
+    },
+    "item_122": {
+      "x": 17,
+      "y": 6,
+      "name": "Traveler's Boots"
+    },
+    "item_123": {
+      "x": 18,
+      "y": 6,
+      "name": "Iron Greaves"
+    },
+    "item_124": {
+      "x": 19,
+      "y": 6,
+      "name": "Mithril Greaves"
+    },
+    "item_125": {
+      "x": 20,
+      "y": 6,
+      "name": "Leather Gloves"
+    },
+    "item_126": {
+      "x": 21,
+      "y": 6,
+      "name": "Iron Gauntlets"
+    },
+    "item_127": {
+      "x": 22,
+      "y": 6,
+      "name": "Mithril Gauntlets"
+    },
+    "item_128": {
+      "x": 23,
+      "y": 6,
+      "name": "Wooden Torch"
+    },
+    "item_129": {
+      "x": 24,
+      "y": 6,
+      "name": "Brass Lantern"
+    },
+    "item_132": {
+      "x": 25,
+      "y": 6,
+      "name": "Last Chances (staff)"
+    },
+    "item_133": {
+      "x": 26,
+      "y": 6,
+      "name": "Constitution (staff)"
+    },
+    "item_134": {
+      "x": 27,
+      "y": 6,
+      "name": "Grace (staff)"
+    },
+    "item_135": {
+      "x": 28,
+      "y": 6,
+      "name": "Regeneration (staff)"
+    },
+    "item_136": {
+      "x": 29,
+      "y": 6,
+      "name": "Preservation (staff)"
+    },
+    "item_137": {
+      "x": 30,
+      "y": 6,
+      "name": "the Blessed Realm (staff)"
+    },
+    "item_138": {
+      "x": 31,
+      "y": 6,
+      "name": "Haunted Dreams (staff)"
+    },
+    "item_139": {
+      "x": 0,
+      "y": 7,
+      "name": "the Vigilant Eye (staff)"
+    },
+    "item_150": {
+      "x": 1,
+      "y": 7,
+      "name": "Secrets (staff)"
+    },
+    "item_151": {
+      "x": 2,
+      "y": 7,
+      "name": "Ered Luin (staff)"
+    },
+    "item_152": {
+      "x": 3,
+      "y": 7,
+      "name": "Evasion (staff)"
+    },
+    "item_153": {
+      "x": 4,
+      "y": 7,
+      "name": "Protection (staff)"
+    },
+    "item_154": {
+      "x": 5,
+      "y": 7,
+      "name": "Strength (staff)"
+    },
+    "item_155": {
+      "x": 6,
+      "y": 7,
+      "name": "Dexterity (staff)"
+    },
+    "item_156": {
+      "x": 7,
+      "y": 7,
+      "name": "Frost (staff)"
+    },
+    "item_157": {
+      "x": 8,
+      "y": 7,
+      "name": "Warmth (staff)"
+    },
+    "item_158": {
+      "x": 9,
+      "y": 7,
+      "name": "Accuracy (staff)"
+    },
+    "item_159": {
+      "x": 10,
+      "y": 7,
+      "name": "Free Action (staff)"
+    },
+    "item_160": {
+      "x": 11,
+      "y": 7,
+      "name": "Cowardice (staff)"
+    },
+    "item_161": {
+      "x": 12,
+      "y": 7,
+      "name": "the Shadow's Vanguard (staff)"
+    },
+    "item_162": {
+      "x": 13,
+      "y": 7,
+      "name": "Venom's End (staff)"
+    },
+    "item_171": {
+      "x": 14,
+      "y": 7,
+      "name": "the Laiquendi (staff)"
+    },
+    "item_191": {
+      "x": 15,
+      "y": 7,
+      "name": "Imprisonment (scroll)"
+    },
+    "item_192": {
+      "x": 16,
+      "y": 7,
+      "name": "Freedom (scroll)"
+    },
+    "item_193": {
+      "x": 17,
+      "y": 7,
+      "name": "Light (scroll)"
+    },
+    "item_195": {
+      "x": 18,
+      "y": 7,
+      "name": "Sanctity (scroll)"
+    },
+    "item_196": {
+      "x": 19,
+      "y": 7,
+      "name": "Understanding (scroll)"
+    },
+    "item_197": {
+      "x": 20,
+      "y": 7,
+      "name": "Revelations (scroll)"
+    },
+    "item_198": {
+      "x": 21,
+      "y": 7,
+      "name": "Treasures (scroll)"
+    },
+    "item_199": {
+      "x": 22,
+      "y": 7,
+      "name": "Foes (scroll)"
+    },
+    "item_200": {
+      "x": 23,
+      "y": 7,
+      "name": "Slumber (scroll)"
+    },
+    "item_201": {
+      "x": 24,
+      "y": 7,
+      "name": "Majesty (scroll)"
+    },
+    "item_202": {
+      "x": 25,
+      "y": 7,
+      "name": "Self Knowledge (scroll)"
+    },
+    "item_203": {
+      "x": 26,
+      "y": 7,
+      "name": "Warding (scroll)"
+    },
+    "item_204": {
+      "x": 27,
+      "y": 7,
+      "name": "Dismay (scroll)"
+    },
+    "item_206": {
+      "x": 28,
+      "y": 7,
+      "name": "Recharging (scroll)"
+    },
+    "item_210": {
+      "x": 29,
+      "y": 7,
+      "name": "Summoning (scroll)"
+    },
+    "item_211": {
+      "x": 30,
+      "y": 7,
+      "name": "Shadows (scroll)"
+    },
+    "item_220": {
+      "x": 31,
+      "y": 7,
+      "name": "Wand of Frost"
+    },
+    "item_221": {
+      "x": 0,
+      "y": 8,
+      "name": "Wand of Fire"
+    },
+    "item_222": {
+      "x": 1,
+      "y": 8,
+      "name": "Wand of Slowing"
+    },
+    "item_224": {
+      "x": 2,
+      "y": 8,
+      "name": "Wand of Fear"
+    },
+    "item_225": {
+      "x": 3,
+      "y": 8,
+      "name": "Wand of Sleep"
+    },
+    "item_240": {
+      "x": 4,
+      "y": 8,
+      "name": "Terror (horn)"
+    },
+    "item_241": {
+      "x": 5,
+      "y": 8,
+      "name": "Thunder (horn)"
+    },
+    "item_242": {
+      "x": 6,
+      "y": 8,
+      "name": "Force (horn)"
+    },
+    "item_243": {
+      "x": 7,
+      "y": 8,
+      "name": "Blasting (horn)"
+    },
+    "item_250": {
+      "x": 8,
+      "y": 8,
+      "name": "Challenge (horn)"
+    },
+    "item_251": {
+      "x": 9,
+      "y": 8,
+      "name": "Flute of the Fairy"
+    },
+    "item_316": {
+      "x": 10,
+      "y": 8,
+      "name": "Esgalduin"
+    },
+    "item_317": {
+      "x": 11,
+      "y": 8,
+      "name": "Clarity"
+    },
+    "item_318": {
+      "x": 12,
+      "y": 8,
+      "name": "Cordial of the Wise"
+    },
+    "item_321": {
+      "x": 13,
+      "y": 8,
+      "name": "Antidote"
+    },
+    "item_322": {
+      "x": 14,
+      "y": 8,
+      "name": "Quickness"
+    },
+    "item_323": {
+      "x": 15,
+      "y": 8,
+      "name": "Elemental Resistance"
+    },
+    "item_324": {
+      "x": 16,
+      "y": 8,
+      "name": "Shadows"
+    },
+    "item_327": {
+      "x": 17,
+      "y": 8,
+      "name": "Draught of Might"
+    },
+    "item_330": {
+      "x": 18,
+      "y": 8,
+      "name": "Starlight Elixir"
+    },
+    "item_345": {
+      "x": 19,
+      "y": 8,
+      "name": "Blindness (bad potion)"
+    },
+    "item_346": {
+      "x": 20,
+      "y": 8,
+      "name": "Confusion (bad potion)"
+    },
+    "item_350": {
+      "x": 21,
+      "y": 8,
+      "name": "Disconnection (bad potion)"
+    },
+    "item_381": {
+      "x": 22,
+      "y": 8,
+      "name": "Waymeal"
+    },
+    "item_399": {
+      "x": 23,
+      "y": 8,
+      "name": "Travel Bread"
+    },
+    "item_400": {
+      "x": 24,
+      "y": 8,
+      "name": "Dried Meat"
+    },
+    "item_401": {
+      "x": 25,
+      "y": 8,
+      "name": "Lembas"
+    },
+    "item_403": {
+      "x": 26,
+      "y": 8,
+      "name": "Cram"
+    },
+    "item_411": {
+      "x": 27,
+      "y": 8,
+      "name": "Mallorn Torch"
+    },
+    "item_414": {
+      "x": 28,
+      "y": 8,
+      "name": "Concentrated Waymeal"
+    },
+    "item_420": {
+      "x": 29,
+      "y": 8,
+      "name": "Rusted Helm"
+    },
+    "item_421": {
+      "x": 30,
+      "y": 8,
+      "name": "Worn Boots"
+    },
+    "item_422": {
+      "x": 31,
+      "y": 8,
+      "name": "Shattered Shield"
+    },
+    "item_451": {
+      "x": 0,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_452": {
+      "x": 1,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_453": {
+      "x": 2,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_454": {
+      "x": 3,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_455": {
+      "x": 4,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_456": {
+      "x": 5,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_457": {
+      "x": 6,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_458": {
+      "x": 7,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_459": {
+      "x": 8,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_460": {
+      "x": 9,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_461": {
+      "x": 10,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_462": {
+      "x": 11,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_463": {
+      "x": 12,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_464": {
+      "x": 13,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_465": {
+      "x": 14,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_466": {
+      "x": 15,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_467": {
+      "x": 16,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_468": {
+      "x": 17,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_469": {
+      "x": 18,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_470": {
+      "x": 19,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_471": {
+      "x": 20,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_472": {
+      "x": 21,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_473": {
+      "x": 22,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_474": {
+      "x": 23,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_475": {
+      "x": 24,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_476": {
+      "x": 25,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_477": {
+      "x": 26,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_478": {
+      "x": 27,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_479": {
+      "x": 28,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_480": {
+      "x": 29,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_481": {
+      "x": 30,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_482": {
+      "x": 31,
+      "y": 9,
+      "name": "Note"
+    },
+    "item_483": {
+      "x": 0,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_484": {
+      "x": 1,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_485": {
+      "x": 2,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_486": {
+      "x": 3,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_487": {
+      "x": 4,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_488": {
+      "x": 5,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_489": {
+      "x": 6,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_490": {
+      "x": 7,
+      "y": 10,
+      "name": "Note"
+    },
+    "item_492": {
+      "x": 8,
+      "y": 10,
+      "name": "Shattered Elven Mail"
+    },
+    "item_494": {
+      "x": 9,
+      "y": 10,
+      "name": "Twisted Shadow-plate"
+    },
+    "item_500": {
+      "x": 10,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_501": {
+      "x": 11,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_502": {
+      "x": 12,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_503": {
+      "x": 13,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_504": {
+      "x": 14,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_505": {
+      "x": 15,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_506": {
+      "x": 16,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_507": {
+      "x": 17,
+      "y": 10,
+      "name": "Thrain's Memory"
+    },
+    "item_541": {
+      "x": 18,
+      "y": 10,
+      "name": "Thror's Coin"
+    },
+    "item_543": {
+      "x": 19,
+      "y": 10,
+      "name": "Dwarven Chronicle Page"
+    },
+    "item_544": {
+      "x": 20,
+      "y": 10,
+      "name": "Durin's Day Fragment"
+    },
+    "item_550": {
+      "x": 21,
+      "y": 10,
+      "name": "Prisoner's Account"
+    },
+    "item_551": {
+      "x": 22,
+      "y": 10,
+      "name": "Prisoner's Account"
+    },
+    "item_552": {
+      "x": 23,
+      "y": 10,
+      "name": "Orc Report"
+    },
+    "item_553": {
+      "x": 24,
+      "y": 10,
+      "name": "Orc Report"
+    },
+    "item_554": {
+      "x": 25,
+      "y": 10,
+      "name": "Historical Fragment"
+    },
+    "item_555": {
+      "x": 26,
+      "y": 10,
+      "name": "Historical Fragment"
+    },
+    "item_556": {
+      "x": 27,
+      "y": 10,
+      "name": "Necromancer Sighting"
+    },
+    "item_557": {
+      "x": 28,
+      "y": 10,
+      "name": "Necromancer Sighting"
+    },
+    "artifact_1": {
+      "x": 29,
+      "y": 10,
+      "name": "Ring of Barahir"
+    },
+    "artifact_7": {
+      "x": 30,
+      "y": 10,
+      "name": "Ring of the Nazgul"
+    },
+    "artifact_9": {
+      "x": 31,
+      "y": 10,
+      "name": "Ring of the Witch-King"
+    },
+    "artifact_20": {
+      "x": 0,
+      "y": 11,
+      "name": "Robe of Radagast"
+    },
+    "artifact_21": {
+      "x": 1,
+      "y": 11,
+      "name": "Robe of Galadriel"
+    },
+    "artifact_22": {
+      "x": 2,
+      "y": 11,
+      "name": "Robe of Rivendell"
+    },
+    "artifact_24": {
+      "x": 3,
+      "y": 11,
+      "name": "Leather of the Ranger"
+    },
+    "artifact_25": {
+      "x": 4,
+      "y": 11,
+      "name": "Leather of Halbarad"
+    },
+    "artifact_26": {
+      "x": 5,
+      "y": 11,
+      "name": "Woodman's Leather"
+    },
+    "artifact_28": {
+      "x": 6,
+      "y": 11,
+      "name": "Leather of Bard"
+    },
+    "artifact_29": {
+      "x": 7,
+      "y": 11,
+      "name": "Leather of the Beornings"
+    },
+    "artifact_32": {
+      "x": 8,
+      "y": 11,
+      "name": "Mail of Eol"
+    },
+    "artifact_34": {
+      "x": 9,
+      "y": 11,
+      "name": "Mail of Thranduil"
+    },
+    "artifact_35": {
+      "x": 10,
+      "y": 11,
+      "name": "Hauberk of Dain"
+    },
+    "artifact_36": {
+      "x": 11,
+      "y": 11,
+      "name": "Mithril Shirt"
+    },
+    "artifact_37": {
+      "x": 12,
+      "y": 11,
+      "name": "Corslet of the Tower Guard"
+    },
+    "artifact_39": {
+      "x": 13,
+      "y": 11,
+      "name": "Corslet of Celeborn"
+    },
+    "artifact_40": {
+      "x": 14,
+      "y": 11,
+      "name": "Shield of Elendil"
+    },
+    "artifact_41": {
+      "x": 15,
+      "y": 11,
+      "name": "Starlight (shield)"
+    },
+    "artifact_42": {
+      "x": 16,
+      "y": 11,
+      "name": "Shield of the Mark"
+    },
+    "artifact_43": {
+      "x": 17,
+      "y": 11,
+      "name": "Shield of Glorfindel"
+    },
+    "artifact_44": {
+      "x": 18,
+      "y": 11,
+      "name": "Shield of the Dunedain"
+    },
+    "artifact_45": {
+      "x": 19,
+      "y": 11,
+      "name": "Shield of Dale"
+    },
+    "artifact_46": {
+      "x": 20,
+      "y": 11,
+      "name": "Shield of Gil-galad"
+    },
+    "artifact_47": {
+      "x": 21,
+      "y": 11,
+      "name": "Shield of the White Tower"
+    },
+    "artifact_48": {
+      "x": 22,
+      "y": 11,
+      "name": "Shield of Dol Amroth"
+    },
+    "artifact_52": {
+      "x": 23,
+      "y": 11,
+      "name": "Morgul-blade"
+    },
+    "artifact_53": {
+      "x": 24,
+      "y": 11,
+      "name": "Sting"
+    },
+    "artifact_55": {
+      "x": 25,
+      "y": 11,
+      "name": "Sword of Harad"
+    },
+    "artifact_56": {
+      "x": 26,
+      "y": 11,
+      "name": "Sword of the Corsairs"
+    },
+    "artifact_58": {
+      "x": 27,
+      "y": 11,
+      "name": "Sword of Haldir"
+    },
+    "artifact_59": {
+      "x": 28,
+      "y": 11,
+      "name": "Westernesse (sword)"
+    },
+    "artifact_60": {
+      "x": 29,
+      "y": 11,
+      "name": "Sword of the Grey Company"
+    },
+    "artifact_64": {
+      "x": 30,
+      "y": 11,
+      "name": "Orcrist"
+    },
+    "artifact_65": {
+      "x": 31,
+      "y": 11,
+      "name": "Glamdring"
+    },
+    "artifact_66": {
+      "x": 0,
+      "y": 12,
+      "name": "Narsil"
+    },
+    "artifact_67": {
+      "x": 1,
+      "y": 12,
+      "name": "Sword of Isildur"
+    },
+    "artifact_71": {
+      "x": 2,
+      "y": 12,
+      "name": "Spear of Gondor"
+    },
+    "artifact_72": {
+      "x": 3,
+      "y": 12,
+      "name": "Guthwine"
+    },
+    "artifact_74": {
+      "x": 4,
+      "y": 12,
+      "name": "Herugrim"
+    },
+    "artifact_75": {
+      "x": 5,
+      "y": 12,
+      "name": "Blade of the Witch-Realm"
+    },
+    "artifact_76": {
+      "x": 6,
+      "y": 12,
+      "name": "Flame of the West"
+    },
+    "artifact_80": {
+      "x": 7,
+      "y": 12,
+      "name": "Ringil"
+    },
+    "artifact_81": {
+      "x": 8,
+      "y": 12,
+      "name": "Aiglos"
+    },
+    "artifact_83": {
+      "x": 9,
+      "y": 12,
+      "name": "Axe of the Eldar"
+    },
+    "artifact_85": {
+      "x": 10,
+      "y": 12,
+      "name": "Aeglos (spear)"
+    },
+    "artifact_86": {
+      "x": 11,
+      "y": 12,
+      "name": "Axe of the Eorlingas"
+    },
+    "artifact_87": {
+      "x": 12,
+      "y": 12,
+      "name": "Axe of the Galadhrim"
+    },
+    "artifact_89": {
+      "x": 13,
+      "y": 12,
+      "name": "Axe of Erebor"
+    },
+    "artifact_90": {
+      "x": 14,
+      "y": 12,
+      "name": "Morgul Axe"
+    },
+    "artifact_95": {
+      "x": 15,
+      "y": 12,
+      "name": "Mattock of Durin's Folk"
+    },
+    "artifact_96": {
+      "x": 16,
+      "y": 12,
+      "name": "Baruk Khazad (mattock)"
+    },
+    "artifact_99": {
+      "x": 17,
+      "y": 12,
+      "name": "Staff of Gondor"
+    },
+    "artifact_100": {
+      "x": 18,
+      "y": 12,
+      "name": "Staff of the Woodland Realm"
+    },
+    "artifact_101": {
+      "x": 19,
+      "y": 12,
+      "name": "Spider-bane (staff)"
+    },
+    "artifact_104": {
+      "x": 20,
+      "y": 12,
+      "name": "Staff of Gandalf"
+    },
+    "artifact_107": {
+      "x": 21,
+      "y": 12,
+      "name": "Mattock of the Longbeards"
+    },
+    "artifact_108": {
+      "x": 22,
+      "y": 12,
+      "name": "Mattock of Nogrod"
+    },
+    "artifact_117": {
+      "x": 23,
+      "y": 12,
+      "name": "Helm of Elrond"
+    },
+    "artifact_118": {
+      "x": 24,
+      "y": 12,
+      "name": "Helm of the Dunedain"
+    },
+    "artifact_119": {
+      "x": 25,
+      "y": 12,
+      "name": "Helm of the Oathbreaker"
+    },
+    "artifact_120": {
+      "x": 26,
+      "y": 12,
+      "name": "Helm of the Dragonslayer"
+    },
+    "artifact_121": {
+      "x": 27,
+      "y": 12,
+      "name": "Crown of Angmar"
+    },
+    "artifact_122": {
+      "x": 28,
+      "y": 12,
+      "name": "Crown of Thrain"
+    },
+    "artifact_123": {
+      "x": 29,
+      "y": 12,
+      "name": "Crown of Rivendell"
+    },
+    "artifact_131": {
+      "x": 30,
+      "y": 12,
+      "name": "Cloak of Lothlorien"
+    },
+    "artifact_132": {
+      "x": 31,
+      "y": 12,
+      "name": "Cloak of Elrond"
+    },
+    "artifact_134": {
+      "x": 0,
+      "y": 13,
+      "name": "Ranger's Cloak"
+    },
+    "artifact_137": {
+      "x": 1,
+      "y": 13,
+      "name": "Hame of the Werewolf"
+    },
+    "artifact_138": {
+      "x": 2,
+      "y": 13,
+      "name": "Fell of the Vampire"
+    },
+    "artifact_150": {
+      "x": 3,
+      "y": 13,
+      "name": "Black Arrow"
+    },
+    "artifact_154": {
+      "x": 4,
+      "y": 13,
+      "name": "Boots of Elrond"
+    },
+    "artifact_155": {
+      "x": 5,
+      "y": 13,
+      "name": "Boots of the Ranger"
+    },
+    "artifact_156": {
+      "x": 6,
+      "y": 13,
+      "name": "Boots of the Burglar"
+    },
+    "artifact_158": {
+      "x": 7,
+      "y": 13,
+      "name": "Boots of Gondor"
+    },
+    "artifact_159": {
+      "x": 8,
+      "y": 13,
+      "name": "Boots of the Helcaraxe"
+    },
+    "artifact_161": {
+      "x": 9,
+      "y": 13,
+      "name": "Gloves of the Archer"
+    },
+    "artifact_162": {
+      "x": 10,
+      "y": 13,
+      "name": "Gloves of the Smith"
+    },
+    "artifact_163": {
+      "x": 11,
+      "y": 13,
+      "name": "Gloves of the Healer"
+    },
+    "artifact_165": {
+      "x": 12,
+      "y": 13,
+      "name": "Gauntlets of the Iron Hills"
+    },
+    "artifact_166": {
+      "x": 13,
+      "y": 13,
+      "name": "Gauntlets of the Mark"
+    },
+    "artifact_167": {
+      "x": 14,
+      "y": 13,
+      "name": "Silverhand (gauntlets)"
+    },
+    "artifact_175": {
+      "x": 15,
+      "y": 13,
+      "name": "Map of Thrain"
+    },
+    "artifact_182": {
+      "x": 16,
+      "y": 13,
+      "name": "Ultimate Robe"
+    },
+    "artifact_183": {
+      "x": 17,
+      "y": 13,
+      "name": "Ultimate Leather"
+    },
+    "artifact_184": {
+      "x": 18,
+      "y": 13,
+      "name": "Ultimate Mail"
+    },
+    "artifact_185": {
+      "x": 19,
+      "y": 13,
+      "name": "Ultimate Plate"
+    },
+    "artifact_186": {
+      "x": 20,
+      "y": 13,
+      "name": "Ultimate Shield"
+    },
+    "artifact_187": {
+      "x": 21,
+      "y": 13,
+      "name": "Ultimate Sword"
+    },
+    "artifact_188": {
+      "x": 22,
+      "y": 13,
+      "name": "Ultimate Polearm"
+    },
+    "artifact_189": {
+      "x": 23,
+      "y": 13,
+      "name": "Ultimate Axe"
+    },
+    "artifact_190": {
+      "x": 24,
+      "y": 13,
+      "name": "Ultimate Staff"
+    },
+    "artifact_192": {
+      "x": 25,
+      "y": 13,
+      "name": "Ultimate Mattock"
+    },
+    "artifact_193": {
+      "x": 26,
+      "y": 13,
+      "name": "Ultimate Helm"
+    },
+    "artifact_194": {
+      "x": 27,
+      "y": 13,
+      "name": "Ultimate Cloak"
+    },
+    "artifact_196": {
+      "x": 28,
+      "y": 13,
+      "name": "Ultimate Boots"
+    },
+    "artifact_197": {
+      "x": 29,
+      "y": 13,
+      "name": "Ultimate Gloves"
+    },
+    "artifact_198": {
+      "x": 30,
+      "y": 13,
+      "name": "Ultimate Light"
+    },
+    "artifact_199": {
+      "x": 31,
+      "y": 13,
+      "name": "Crown of the Noldor"
+    },
+    "artifact_201": {
+      "x": 0,
+      "y": 14,
+      "name": "Ring of Mordor"
+    },
+    "artifact_204": {
+      "x": 1,
+      "y": 14,
+      "name": "Mantle of Stars"
+    },
+    "artifact_205": {
+      "x": 2,
+      "y": 14,
+      "name": "Helm of Erebor"
+    },
+    "artifact_206": {
+      "x": 3,
+      "y": 14,
+      "name": "Axe of Durin"
+    },
+    "artifact_207": {
+      "x": 4,
+      "y": 14,
+      "name": "Crown of the Smith"
+    },
+    "artifact_208": {
+      "x": 5,
+      "y": 14,
+      "name": "Shield of Erebor"
+    },
+    "artifact_209": {
+      "x": 6,
+      "y": 14,
+      "name": "Cloak of Shadow"
+    },
+    "artifact_211": {
+      "x": 7,
+      "y": 14,
+      "name": "Hadhafang"
+    },
+    "artifact_212": {
+      "x": 8,
+      "y": 14,
+      "name": "Noldorin Knife"
+    },
+    "artifact_218": {
+      "x": 9,
+      "y": 14,
+      "name": "Gauntlets of the Noldor"
+    },
+    "artifact_220": {
+      "x": 10,
+      "y": 14,
+      "name": "Staff of the Istari"
+    }
+  }
+}

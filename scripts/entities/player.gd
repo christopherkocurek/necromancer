@@ -319,7 +319,7 @@ func gain_experience(amount: int, source: String = "misc") -> void:
 	xp_available += boosted
 	experience_gained.emit(boosted)
 
-	GameManager.log_message("Gained %d XP (%s)" % [boosted, source], Color.YELLOW)
+	GameManager.log_message("Gained %d XP (%s)" % [boosted, source], ThemeColors.MSG_XP)
 
 func get_skill_cost(current_level: int, points_to_buy: int = 1) -> int:
 	# Cost for nth skill point = 100 × n
@@ -349,17 +349,17 @@ func get_total_skill_points() -> int:
 
 func invest_skill(skill_name: String) -> bool:
 	if not skills.has(skill_name):
-		GameManager.log_message("Unknown skill: %s" % skill_name, Color.RED)
+		GameManager.log_message("Unknown skill: %s" % skill_name, ThemeColors.MSG_ERROR)
 		return false
 
 	var current: int = skills[skill_name]
 	if current >= 20:
-		GameManager.log_message("%s is already at maximum!" % skill_name.capitalize(), Color.RED)
+		GameManager.log_message("%s is already at maximum!" % skill_name.capitalize(), ThemeColors.MSG_ERROR)
 		return false
 
 	var cost: int = get_skill_cost(current)
 	if xp_available < cost:
-		GameManager.log_message("Need %d XP to raise %s (have %d)" % [cost, skill_name, xp_available], Color.RED)
+		GameManager.log_message("Need %d XP to raise %s (have %d)" % [cost, skill_name, xp_available], ThemeColors.MSG_ERROR)
 		return false
 
 	# Spend XP and increase skill
@@ -367,7 +367,7 @@ func invest_skill(skill_name: String) -> bool:
 	skills[skill_name] += 1
 	xp_spent.emit(cost, skill_name)
 
-	GameManager.log_message("Raised %s to %d (-%d XP)" % [skill_name.capitalize(), skills[skill_name], cost], Color.GREEN)
+	GameManager.log_message("Raised %s to %d (-%d XP)" % [skill_name.capitalize(), skills[skill_name], cost], ThemeColors.ABILITY_LEARNED)
 	_recalculate_stats()
 	return true
 
@@ -384,7 +384,7 @@ func learn_lore(monster_type: String, lore_ability: Resource) -> void:
 	if not lore_known[monster_type].has(lore_ability):
 		lore_known[monster_type].append(lore_ability)
 		EventBus.lore_learned.emit(self, monster_type, lore_ability)
-		GameManager.log_message("You have learned lore about %s!" % monster_type, Color.CYAN)
+		GameManager.log_message("You have learned lore about %s!" % monster_type, ThemeColors.MSG_INFO)
 
 func get_lore_for(monster_type: String) -> Array:
 	return lore_known.get(monster_type, [])
@@ -398,7 +398,7 @@ func has_lore_for(monster_type: String) -> bool:
 
 func pick_up_item(item_data: Variant) -> bool:
 	if inventory.size() >= max_inventory:
-		GameManager.log_message("Your pack is full!", Color.RED)
+		GameManager.log_message("Your pack is full!", ThemeColors.MSG_ERROR)
 		return false
 
 	inventory.append(item_data)
@@ -613,7 +613,7 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 		var mighty_dmg: int = maxi(1, strength / 2)
 		if is_instance_valid(target) and target.current_health > 0:
 			target.take_damage(mighty_dmg, "physical", self)
-			GameManager.log_message("Mighty blow! (+%d)" % mighty_dmg, Color.ORANGE)
+			GameManager.log_message("Mighty blow! (+%d)" % mighty_dmg, ThemeColors.COMBAT_CRIT)
 
 	# Follow-Through: if target died, free attack on adjacent enemy
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_FOLLOW_THROUGH):
@@ -629,7 +629,7 @@ func _try_knock_back(target: Entity) -> void:
 	var dest: Vector2i = target.grid_position + push_dir
 	if GameManager.current_level.is_in_bounds(dest) and GameManager.current_level.is_passable(dest) and GameManager.current_level.get_entity_at(dest) == null:
 		target.move_to(dest, false)
-		GameManager.log_message("You knock %s back!" % target.entity_name, Color.YELLOW)
+		GameManager.log_message("You knock %s back!" % target.entity_name, ThemeColors.MSG_WARNING)
 
 func _try_follow_through(dead_pos: Vector2i) -> void:
 	if _in_follow_through:
@@ -650,7 +650,7 @@ func _try_follow_through(dead_pos: Vector2i) -> void:
 			# Check adjacency to player (must be within 1 tile)
 			var dist_to_player: Vector2i = check_pos - grid_position
 			if absi(dist_to_player.x) <= 1 and absi(dist_to_player.y) <= 1:
-				GameManager.log_message("Follow-through!", Color.YELLOW)
+				GameManager.log_message("Follow-through!", ThemeColors.MSG_WARNING)
 				_in_follow_through = true
 				attack_entity(adj_entity)
 				_in_follow_through = false
@@ -728,7 +728,7 @@ func consume_arrow() -> bool:
 				quiver.pval -= 1
 				if quiver.pval <= 0:
 					equipment["quiver"] = null
-					GameManager.log_message("Your quiver is empty!", Color.YELLOW)
+					GameManager.log_message("Your quiver is empty!", ThemeColors.MSG_WARNING)
 				return true
 	# Check inventory arrows
 	for i in range(inventory.size()):
@@ -879,9 +879,9 @@ func add_noise(amount: int) -> void:
 func toggle_stealth_mode() -> void:
 	stealth_mode = not stealth_mode
 	if stealth_mode:
-		GameManager.log_message("You enter stealth mode.", Color.DARK_GREEN)
+		GameManager.log_message("You enter stealth mode.", ThemeColors.MSG_STEALTH)
 	else:
-		GameManager.log_message("You leave stealth mode.", Color.GRAY)
+		GameManager.log_message("You leave stealth mode.", ThemeColors.MSG_SYSTEM)
 
 # ============================================================================
 # LIGHT SYSTEM (Phase C)
@@ -941,9 +941,9 @@ func tick_light_fuel() -> void:
 	if light_item.fuel > 0:
 		light_item.fuel -= 1
 		if light_item.fuel == 0:
-			GameManager.log_message("Your light source goes out!", Color.RED)
+			GameManager.log_message("Your light source goes out!", ThemeColors.MSG_ERROR)
 		elif light_item.fuel <= 100:
-			GameManager.log_message("Your light source is flickering...", Color.YELLOW)
+			GameManager.log_message("Your light source is flickering...", ThemeColors.MSG_WARNING)
 
 ## Check if player has an active (fueled) light source
 func has_light() -> bool:
@@ -964,7 +964,7 @@ func handle_input() -> bool:
 
 	# STUNNED/ENTRANCED: Cannot act at all - skip turn
 	if not can_take_turn():
-		GameManager.log_message("You are unable to act!", Color.RED)
+		GameManager.log_message("You are unable to act!", ThemeColors.MSG_ERROR)
 		return true  # Consume turn
 
 	# CONFUSED: 50% chance of random movement instead of intended
@@ -979,7 +979,7 @@ func handle_input() -> bool:
 					Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
 				]
 				random_dirs.shuffle()
-				GameManager.log_message("You stumble about in confusion!", Color.PURPLE)
+				GameManager.log_message("You stumble about in confusion!", ThemeColors.STATUS_CONFUSED)
 				for rdir: Vector2i in random_dirs:
 					if can_move_to(grid_position + rdir):
 						moved_this_turn = true
@@ -993,7 +993,7 @@ func handle_input() -> bool:
 		if direction != Vector2i.ZERO:
 			var flee_dir: Vector2i = _get_flee_direction()
 			if flee_dir != Vector2i.ZERO:
-				GameManager.log_message("Terror drives you to flee!", Color.YELLOW)
+				GameManager.log_message("Terror drives you to flee!", ThemeColors.STATUS_AFRAID)
 				moved_this_turn = true
 				return try_move(flee_dir)
 			# No flee direction available, allow normal movement
@@ -1042,7 +1042,7 @@ func _use_first_consumable(target_tval: int) -> bool:
 				return true  # Turn consumed
 			return false  # Couldn't use (e.g., blind reading)
 	var type_name: String = "potion" if target_tval == 75 else "food"
-	GameManager.log_message("You have no %s to use." % type_name, Color.GRAY)
+	GameManager.log_message("You have no %s to use." % type_name, ThemeColors.MSG_SYSTEM)
 	return false
 
 ## Get direction away from nearest visible enemy (for AFRAID status).
@@ -1100,17 +1100,17 @@ func _try_close_door() -> bool:
 			open_doors.append(check_pos)
 
 	if open_doors.is_empty():
-		GameManager.log_message("There is no open door nearby to close.", Color.GRAY)
+		GameManager.log_message("There is no open door nearby to close.", ThemeColors.MSG_SYSTEM)
 		return false
 
 	# Close the first open door found (if only one, auto-close)
 	var door_pos: Vector2i = open_doors[0]
 	if GameManager.current_level.close_door(door_pos):
-		GameManager.log_message("You close the door.", Color.WHITE)
+		GameManager.log_message("You close the door.", ThemeColors.TEXT_PRIMARY)
 		add_noise(Constants.NOISE_DOOR)
 		return true
 	else:
-		GameManager.log_message("Something is blocking the door.", Color.YELLOW)
+		GameManager.log_message("Something is blocking the door.", ThemeColors.MSG_WARNING)
 		return false
 
 ## Search adjacent tiles for secret doors. Returns true (always costs a turn).
@@ -1121,9 +1121,9 @@ func _try_search() -> bool:
 	var per: int = get_skill("perception")
 	var found: int = GameManager.current_level.search_for_secrets(grid_position, per)
 	if found > 0:
-		GameManager.log_message("You discover a hidden passage!", Color.GREEN)
+		GameManager.log_message("You discover a hidden passage!", ThemeColors.ABILITY_LEARNED)
 	else:
-		GameManager.log_message("You search the area but find nothing.", Color.GRAY)
+		GameManager.log_message("You search the area but find nothing.", ThemeColors.MSG_SYSTEM)
 	return true  # Searching always costs a turn
 
 func try_pickup() -> bool:
@@ -1132,7 +1132,7 @@ func try_pickup() -> bool:
 
 	var items_here: Array[Item] = GameManager.current_level.get_items_at(grid_position)
 	if items_here.is_empty():
-		GameManager.log_message("There is nothing here to pick up.", Color.GRAY)
+		GameManager.log_message("There is nothing here to pick up.", ThemeColors.MSG_SYSTEM)
 		return false
 
 	# Pick up the first item
@@ -1142,7 +1142,7 @@ func try_pickup() -> bool:
 	if pick_up_item(item_data):
 		GameManager.current_level.remove_item(item)
 		item.queue_free()
-		GameManager.log_message("You pick up the %s." % item.get_display_name(), Color.WHITE)
+		GameManager.log_message("You pick up the %s." % item.get_display_name(), ThemeColors.MSG_LOOT)
 		return true
 
 	return false
@@ -1182,28 +1182,28 @@ func can_move_to(target: Vector2i) -> bool:
 			# Try to open closed doors
 			if tile == Level.Tile.DOOR_CLOSED:
 				GameManager.current_level.set_tile(target, Level.Tile.DOOR_OPEN)
-				GameManager.log_message("You open the door.", Color.WHITE)
+				GameManager.log_message("You open the door.", ThemeColors.TEXT_PRIMARY)
 				add_noise(Constants.NOISE_DOOR)
 				return false  # Opening door takes a turn but doesn't move
 			# Locked doors
 			if tile == Level.Tile.DOOR_LOCKED:
-				GameManager.log_message("The door is locked.", Color.YELLOW)
+				GameManager.log_message("The door is locked.", ThemeColors.MSG_WARNING)
 				# Try to bash it
 				if GameManager.current_level.bash_door(target, strength):
-					GameManager.log_message("You force the door open!", Color.GREEN)
+					GameManager.log_message("You force the door open!", ThemeColors.ABILITY_LEARNED)
 					add_noise(Constants.NOISE_BASH)
 				else:
-					GameManager.log_message("You fail to force it open.", Color.GRAY)
+					GameManager.log_message("You fail to force it open.", ThemeColors.MSG_SYSTEM)
 					add_noise(Constants.NOISE_DOOR)
 				return false
 			# Jammed doors
 			if tile == Level.Tile.DOOR_JAMMED:
-				GameManager.log_message("The door is stuck.", Color.YELLOW)
+				GameManager.log_message("The door is stuck.", ThemeColors.MSG_WARNING)
 				if GameManager.current_level.bash_door(target, strength):
-					GameManager.log_message("You wrench the door open!", Color.GREEN)
+					GameManager.log_message("You wrench the door open!", ThemeColors.ABILITY_LEARNED)
 					add_noise(Constants.NOISE_BASH)
 				else:
-					GameManager.log_message("It won't budge.", Color.GRAY)
+					GameManager.log_message("It won't budge.", ThemeColors.MSG_SYSTEM)
 					add_noise(Constants.NOISE_DOOR)
 				return false
 			return false
@@ -1238,7 +1238,7 @@ func _interact_with_npc(npc: Entity) -> void:
 	if not is_instance_valid(npc):
 		return
 	if npc.get("dialogue_complete"):
-		GameManager.log_message("%s has nothing more to say." % npc.entity_name, Color.GRAY)
+		GameManager.log_message("%s has nothing more to say." % npc.entity_name, ThemeColors.MSG_SYSTEM)
 		return
 
 	# Emit event for UI to handle
@@ -1260,7 +1260,7 @@ func apply_status(status_name: String, duration: int, data: Variant = null) -> v
 	# Majesty (Will): immune to fear
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_MAJESTY):
 		if status_name == "afraid":
-			GameManager.log_message("Your majesty overcomes the fear!", Color.GOLD)
+			GameManager.log_message("Your majesty overcomes the fear!", ThemeColors.PRIMARY)
 			return
 
 	super.apply_status(status_name, reduced_dur, data)
@@ -1279,10 +1279,15 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 			if randi_range(1, 100) <= save_chance:
 				# Survive at exactly 1 HP (set directly to bypass armor reduction)
 				current_health = 1
-				GameManager.log_message("You defy death!", Color.GOLD)
+				GameManager.log_message("You defy death!", ThemeColors.PRIMARY)
 				EventBus.entity_damaged.emit(self, amount - 1, damage_type, source)
 				_flash_damage()
 				return
+
+	# God Mode (Hades-style protective blessing)
+	var god_reduction: float = AccessibilityManager.get_god_mode_reduction()
+	if god_reduction > 0.0:
+		amount = maxi(1, int(amount * (1.0 - god_reduction)))
 
 	super.take_damage(amount, damage_type, source)
 
@@ -1310,7 +1315,7 @@ func die(killer: Entity = null) -> void:
 	run_stats.record_death(cause, killer_name, killer_id)
 
 	# Log death
-	GameManager.log_message("You have been slain by %s!" % cause, Color.RED)
+	GameManager.log_message("You have been slain by %s!" % cause, ThemeColors.MSG_ERROR)
 
 	# Emit signals
 	player_died.emit(cause, killer_name)

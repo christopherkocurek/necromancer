@@ -315,7 +315,7 @@ func _wake_up() -> void:
 	if is_sleeping:
 		is_sleeping = false
 		alertness = Constants.ALERTNESS_ALERT
-		GameManager.log_message("The %s wakes up!" % entity_name, Color.YELLOW)
+		GameManager.log_message("The %s wakes up!" % entity_name, ThemeColors.MSG_WARNING)
 
 func _get_player_stealth(player: Player) -> int:
 	# Use player's full stealth score (includes mode bonus, noise penalty)
@@ -457,13 +457,13 @@ func can_move_to(target: Vector2i) -> bool:
 			var tile: int = GameManager.current_level.get_tile(target)
 			if tile == Level.Tile.DOOR_CLOSED and can_open_doors:
 				GameManager.current_level.set_tile(target, Level.Tile.DOOR_OPEN)
-				GameManager.log_message("The %s opens the door." % entity_name, Color.GRAY)
+				GameManager.log_message("The %s opens the door." % entity_name, ThemeColors.MSG_SYSTEM)
 				if GameManager.current_level.has_method("add_floor_noise"):
 					GameManager.current_level.add_floor_noise(Constants.NOISE_DOOR)
 				return false  # Opening door costs move, doesn't move through
 			if (tile == Level.Tile.DOOR_JAMMED or tile == Level.Tile.DOOR_LOCKED) and monster_data and monster_data.has_flag("BASH_DOOR"):
 				if GameManager.current_level.bash_door(target, strength):
-					GameManager.log_message("The %s bashes open the door!" % entity_name, Color.YELLOW)
+					GameManager.log_message("The %s bashes open the door!" % entity_name, ThemeColors.MSG_WARNING)
 					if GameManager.current_level.has_method("add_floor_noise"):
 						GameManager.current_level.add_floor_noise(Constants.NOISE_BASH)
 				return false
@@ -542,11 +542,11 @@ func _resolve_attack_effect(target: Entity, effect: String) -> void:
 		"FIRE":
 			target.apply_status(Constants.EFFECT_BURNING, 3 + randi_range(1, 3))
 			if target is Player:
-				GameManager.log_message("You are engulfed in flames!", Color.ORANGE)
+				GameManager.log_message("You are engulfed in flames!", ThemeColors.COMBAT_CRIT)
 		"COLD":
 			target.apply_status("slow", 3 + randi_range(1, 3))
 			if target is Player:
-				GameManager.log_message("You feel a terrible chill!", Color.CYAN)
+				GameManager.log_message("You feel a terrible chill!", ThemeColors.MSG_INFO)
 		"BLIND":
 			target.apply_status("blind", 3 + randi_range(1, 3))
 		"CONFUSE":
@@ -562,7 +562,7 @@ func _resolve_attack_effect(target: Entity, effect: String) -> void:
 				var player: Player = target as Player
 				player.strength -= 1
 				player._recalculate_stats()
-				GameManager.log_message("You feel your strength drain away!", Color.RED)
+				GameManager.log_message("You feel your strength drain away!", ThemeColors.MSG_ERROR)
 		"DARK":
 			target.apply_status("darkened", 3 + randi_range(1, 3))
 		_:
@@ -585,9 +585,9 @@ func die(killer: Entity = null) -> void:
 		killer.kills_by_name[entity_name] = killer.kills_by_name.get(entity_name, 0) + 1
 
 		if was_silent:
-			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, experience_value], Color.GREEN)
+			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, experience_value], ThemeColors.ABILITY_LEARNED)
 		else:
-			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, experience_value], Color.GREEN)
+			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, experience_value], ThemeColors.ABILITY_LEARNED)
 
 		# Fade (Stealth ability): +10 stealth for 3 turns after kill
 		if killer.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_FADE):
@@ -703,7 +703,7 @@ func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:
 
 func _spell_shriek() -> bool:
 	# Raise floor alertness and wake nearby monsters
-	GameManager.log_message("The %s shrieks!" % entity_name, Color.ORANGE)
+	GameManager.log_message("The %s shrieks!" % entity_name, ThemeColors.COMBAT_CRIT)
 	if GameManager.current_level:
 		GameManager.current_level.add_floor_noise(20)
 		# Wake nearby sleeping monsters
@@ -718,7 +718,7 @@ func _spell_shriek() -> bool:
 
 func _spell_darkness(cast_target: Entity) -> bool:
 	# Apply DARKENED status to player
-	GameManager.log_message("The %s conjures darkness!" % entity_name, Color.DARK_GRAY)
+	GameManager.log_message("The %s conjures darkness!" % entity_name, ThemeColors.TEXT_MUTED)
 	cast_target.apply_status("darkened", 5 + randi_range(1, 5))
 	return true
 
@@ -733,10 +733,10 @@ func _spell_slow(cast_target: Entity) -> bool:
 	var spell_roll: int = randi_range(1, 20) + perception
 
 	if save_roll >= spell_roll:
-		GameManager.log_message("The %s tries to slow you, but you resist!" % entity_name, Color.GREEN)
+		GameManager.log_message("The %s tries to slow you, but you resist!" % entity_name, ThemeColors.ABILITY_LEARNED)
 		return true  # Spell attempted but resisted, still costs action
 
-	GameManager.log_message("The %s slows you!" % entity_name, Color.RED)
+	GameManager.log_message("The %s slows you!" % entity_name, ThemeColors.MSG_ERROR)
 	cast_target.apply_status("slow", 3 + randi_range(1, 3))
 	return true
 
@@ -747,7 +747,7 @@ func _spell_breath(cast_target: Entity, element: String, distance: int) -> bool:
 	dmg = maxi(dmg, 1)
 
 	var element_name: String = element.capitalize()
-	GameManager.log_message("The %s breathes %s! (%d damage)" % [entity_name, element_name, dmg], Color.ORANGE)
+	GameManager.log_message("The %s breathes %s! (%d damage)" % [entity_name, element_name, dmg], ThemeColors.COMBAT_CRIT)
 	cast_target.take_damage(dmg, element, self)
 
 	# Target may have died from the damage
@@ -777,7 +777,7 @@ func _spell_ranged_attack(cast_target: Entity, distance: int, tier: int) -> bool
 
 	if attack_score < evasion_score:
 		var projectile_name: String = "arrow" if tier <= 2 else "boulder"
-		GameManager.log_message("The %s's %s misses you." % [entity_name, projectile_name], Color.GRAY)
+		GameManager.log_message("The %s's %s misses you." % [entity_name, projectile_name], ThemeColors.MSG_SYSTEM)
 		return true
 
 	# Damage scales with tier
@@ -785,6 +785,6 @@ func _spell_ranged_attack(cast_target: Entity, distance: int, tier: int) -> bool
 	var dmg: int = DataManager.roll_dice(dmg_dice) + melee_bonus / 2
 
 	var proj_name: String = "arrow" if tier == 1 else ("arrow" if tier == 2 else "boulder")
-	GameManager.log_message("The %s hits you with a %s! (%d damage)" % [entity_name, proj_name, dmg], Color.RED)
+	GameManager.log_message("The %s hits you with a %s! (%d damage)" % [entity_name, proj_name, dmg], ThemeColors.MSG_ERROR)
 	cast_target.take_damage(dmg, "physical", self)
 	return true

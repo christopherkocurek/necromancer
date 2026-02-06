@@ -27,7 +27,7 @@ func open(player_ref: Player, level_ref: Level, range_limit: int = 20) -> void:
 	level = level_ref
 	max_range = range_limit
 	target_cursor = player.grid_position
-	visible = true
+	PanelTransition.open_panel(self)
 
 	# Auto-target nearest visible monster
 	_auto_target_nearest()
@@ -38,9 +38,9 @@ func open(player_ref: Player, level_ref: Level, range_limit: int = 20) -> void:
 	grab_focus()
 
 func close() -> void:
-	visible = false
 	if cursor_sprite and cursor_sprite.get_parent():
 		cursor_sprite.get_parent().remove_child(cursor_sprite)
+	PanelTransition.close_panel(self)
 
 func _setup_cursor() -> void:
 	# Create red targeting cursor (different from yellow look cursor)

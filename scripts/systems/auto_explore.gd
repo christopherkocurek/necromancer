@@ -52,7 +52,7 @@ func start_explore() -> bool:
 		return false
 
 	exploration_started.emit()
-	GameManager.log_message("Auto-exploring... (press any key to stop)", Color.GRAY)
+	GameManager.log_message("Auto-exploring... (press any key to stop)", ThemeColors.MSG_SYSTEM)
 	return true
 
 func stop_explore(reason: String = "Manual stop") -> void:
@@ -63,7 +63,7 @@ func stop_explore(reason: String = "Manual stop") -> void:
 	stop_reason = reason
 	path.clear()
 	exploration_stopped.emit(reason)
-	GameManager.log_message("Exploration stopped: %s" % reason, Color.YELLOW)
+	GameManager.log_message("Exploration stopped: %s" % reason, ThemeColors.MSG_WARNING)
 
 func get_next_step() -> Vector2i:
 	# Returns the next position to move to, or Vector2i(-1, -1) if no valid step

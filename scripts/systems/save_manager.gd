@@ -73,7 +73,7 @@ func save_game(slot: int, player: Player, level: Level, game_mode: GameMode = Ga
 	# Update metadata cache
 	save_metadata[slot] = _extract_metadata(save_data)
 
-	GameManager.log_message("Game saved to slot %d." % slot, Color.GREEN)
+	GameManager.log_message("Game saved to slot %d." % slot, ThemeColors.ABILITY_LEARNED)
 	save_completed.emit(slot, true)
 	return true
 
@@ -112,7 +112,7 @@ func load_game(slot: int) -> Dictionary:
 		load_completed.emit(slot, false)
 		return {}
 
-	GameManager.log_message("Game loaded from slot %d." % slot, Color.GREEN)
+	GameManager.log_message("Game loaded from slot %d." % slot, ThemeColors.ABILITY_LEARNED)
 	load_completed.emit(slot, true)
 	return save_data
 
@@ -137,7 +137,7 @@ func delete_save_on_death(slot: int) -> void:
 		var meta: Dictionary = save_metadata.get(slot, {})
 		if meta.get("game_mode", GameMode.PERMADEATH) == GameMode.PERMADEATH:
 			delete_save(slot)
-			GameManager.log_message("Permadeath: Save file deleted.", Color.ORANGE_RED)
+			GameManager.log_message("Permadeath: Save file deleted.", ThemeColors.MSG_ERROR)
 
 ## Check if a slot has a save
 func has_save(slot: int) -> bool:

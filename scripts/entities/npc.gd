@@ -88,10 +88,10 @@ func _give_item(item_name: String) -> void:
 	var quest_item := _create_quest_item(item_name)
 	if quest_item:
 		if player.pick_up_item(quest_item):
-			GameManager.log_message("You receive: %s" % item_name, Color.GOLD)
+			GameManager.log_message("You receive: %s" % item_name, ThemeColors.PRIMARY)
 			item_given.emit(self, item_name)
 		else:
-			GameManager.log_message("Your pack is full! %s falls to the ground." % item_name, Color.RED)
+			GameManager.log_message("Your pack is full! %s falls to the ground." % item_name, ThemeColors.MSG_ERROR)
 
 func _create_quest_item(item_name: String) -> DataManager.ItemData:
 	"""Create a quest item. Override in subclasses for special items."""

@@ -1,0 +1,5753 @@
+{
+  "version": "1.0",
+  "created_at": "2026-02-05T03:10:16.993807",
+  "grid_size": 32,
+  "tile_size": 64,
+  "total_sprites": 682,
+  "categories": {
+    "monsters": [
+      {
+        "id": 11,
+        "name": "Mirkwood Spider",
+        "display_char": "M",
+        "color": "u",
+        "depth": 1,
+        "layer": 1,
+        "description": "A dog-sized spider with bristled legs and dripping fangs. Its eyes glitter with feral hunger."
+      },
+      {
+        "id": 12,
+        "name": "Giant Rat",
+        "display_char": "r",
+        "color": "u",
+        "depth": 1,
+        "layer": 1,
+        "description": "A bloated rat the size of a cat, its fur matted and eyes gleaming with disease."
+      },
+      {
+        "id": 13,
+        "name": "Black Squirrel",
+        "display_char": "r",
+        "color": "D",
+        "depth": 1,
+        "layer": 1,
+        "description": "Mirkwood's corruption has twisted even the squirrels. This one chatters malevolently, alerting others to your presence."
+      },
+      {
+        "id": 14,
+        "name": "Crebain",
+        "display_char": "b",
+        "color": "D",
+        "depth": 1,
+        "layer": 1,
+        "description": "Dark crows bred as spies by the servants of Sauron. If one escapes, others will know you are here."
+      },
+      {
+        "id": 15,
+        "name": "Tanglethorn",
+        "display_char": "&",
+        "color": "g",
+        "depth": 1,
+        "layer": 1,
+        "description": "Thorned vines corrupted by Dol Guldur's shadow. Their poison causes flesh to blacken and rot."
+      },
+      {
+        "id": 16,
+        "name": "Giant Bat",
+        "display_char": "b",
+        "color": "s",
+        "depth": 2,
+        "layer": 1,
+        "description": "A bat the size of a dog, flitting erratically through the dark canopy. Its screech can wake the forest."
+      },
+      {
+        "id": 17,
+        "name": "Web Spinner",
+        "display_char": "M",
+        "color": "W",
+        "depth": 2,
+        "layer": 1,
+        "description": "A pale spider that constantly trails silk behind it, spinning traps for the unwary."
+      },
+      {
+        "id": 18,
+        "name": "Orc Scout",
+        "display_char": "o",
+        "color": "D",
+        "depth": 2,
+        "layer": 1,
+        "description": "A small, quick orc sent to patrol the forest edges. He carries a crude blade and horn to signal intruders."
+      },
+      {
+        "id": 19,
+        "name": "Swamp Adder",
+        "display_char": "s",
+        "color": "g",
+        "depth": 2,
+        "layer": 1,
+        "description": "A venomous snake that lurks in the muck beneath Mirkwood. Its bite brings swift death."
+      },
+      {
+        "id": 20,
+        "name": "Great Spider",
+        "display_char": "M",
+        "color": "D",
+        "depth": 3,
+        "layer": 1,
+        "description": "One of the greater spawn of Shelob's brood, this massive spider could wrap a man in silk in moments."
+      },
+      {
+        "id": 21,
+        "name": "Warg Pup",
+        "display_char": "C",
+        "color": "u",
+        "depth": 3,
+        "layer": 1,
+        "description": "A young warg, not yet fully grown but already vicious. Where there are pups, the pack is near."
+      },
+      {
+        "id": 22,
+        "name": "Broodmother",
+        "display_char": "M",
+        "color": "G",
+        "depth": 3,
+        "layer": 1,
+        "description": "A bloated horror, her abdomen swollen with countless eggs. She is slow but deadly, and her children swarm to protect her."
+      },
+      {
+        "id": 31,
+        "name": "Orc Slave",
+        "display_char": "o",
+        "color": "s",
+        "depth": 3,
+        "layer": 1,
+        "description": "A wretched orc, worked nearly to death in the pits. He is more afraid of his masters than of you."
+      },
+      {
+        "id": 32,
+        "name": "Orc Soldier",
+        "display_char": "o",
+        "color": "W",
+        "depth": 4,
+        "layer": 2,
+        "description": "An orc of Dol Guldur in black leather armor. He carries a notched scimitar and shield."
+      },
+      {
+        "id": 33,
+        "name": "Orc Crossbowman",
+        "display_char": "o",
+        "color": "U",
+        "depth": 4,
+        "layer": 2,
+        "description": "An orc with a heavy crossbow. Its bolts strike with cruel force."
+      },
+      {
+        "id": 34,
+        "name": "Warg",
+        "display_char": "C",
+        "color": "s",
+        "depth": 5,
+        "layer": 2,
+        "description": "A great wolf with baleful eyes full of cunning. The orcs use them as mounts and hunters."
+      },
+      {
+        "id": 35,
+        "name": "Orc Thrallmaster",
+        "display_char": "o",
+        "color": "r",
+        "depth": 5,
+        "layer": 2,
+        "description": "A cruel orc who commands the slave pits. His whip cracks constantly."
+      },
+      {
+        "id": 36,
+        "name": "Orc Captain",
+        "display_char": "o",
+        "color": "r",
+        "depth": 5,
+        "layer": 2,
+        "description": "An orc officer in better armor than most. Others follow his orders without question."
+      },
+      {
+        "id": 37,
+        "name": "Warg Rider",
+        "display_char": "o",
+        "color": "D",
+        "depth": 5,
+        "layer": 2,
+        "description": "An orc mounted on a great warg, faster and more dangerous than either alone."
+      },
+      {
+        "id": 38,
+        "name": "Hill Troll",
+        "display_char": "T",
+        "color": "W",
+        "depth": 6,
+        "layer": 2,
+        "description": "A massive brute from the mountains, pressed into service at Dol Guldur. Sunlight would turn it to stone."
+      },
+      {
+        "id": 39,
+        "name": "Gashnak, Warg-lord",
+        "display_char": "C",
+        "color": "W",
+        "depth": 6,
+        "layer": 2,
+        "description": "The largest and most cunning of the wargs in Dol Guldur. He commands the pack with savage intelligence."
+      },
+      {
+        "id": 40,
+        "name": "Orc Warchief",
+        "display_char": "o",
+        "color": "R",
+        "depth": 6,
+        "layer": 2,
+        "description": "The commander of Dol Guldur's orc forces. Scarred and brutal, he has held this post for decades through sheer viciousness."
+      },
+      {
+        "id": 51,
+        "name": "Dark Acolyte",
+        "display_char": "@",
+        "color": "v",
+        "depth": 6,
+        "layer": 2,
+        "description": "A human who has pledged service to the Necromancer. He wears dark robes and mutters foul incantations."
+      },
+      {
+        "id": 52,
+        "name": "Ghoul",
+        "display_char": "z",
+        "color": "s",
+        "depth": 7,
+        "layer": 3,
+        "description": "Once a prisoner in these halls, now a mindless eater of flesh. Its touch can freeze your limbs with supernatural cold."
+      },
+      {
+        "id": 53,
+        "name": "Mirk-troll",
+        "display_char": "T",
+        "color": "D",
+        "depth": 7,
+        "layer": 3,
+        "description": "A troll bred in Dol Guldur's darkness, resistant to sunlight. Its weapons drip with poison."
+      },
+      {
+        "id": 54,
+        "name": "Easterling Warrior",
+        "display_char": "@",
+        "color": "U",
+        "depth": 7,
+        "layer": 3,
+        "description": "A warrior from the East who serves Sauron willingly. He fights with discipline and without mercy."
+      },
+      {
+        "id": 55,
+        "name": "Dark Sorcerer",
+        "display_char": "@",
+        "color": "D",
+        "depth": 8,
+        "layer": 3,
+        "description": "A sorcerer learning the black arts under the Necromancer's tutelage. He commands fear and shadow."
+      },
+      {
+        "id": 56,
+        "name": "Tortured Wretch",
+        "display_char": "@",
+        "color": "s",
+        "depth": 7,
+        "layer": 3,
+        "description": "A prisoner driven utterly mad by torment. It attacks anything that moves, even those who might save it."
+      },
+      {
+        "id": 57,
+        "name": "Easterling Champion",
+        "display_char": "@",
+        "color": "o",
+        "depth": 8,
+        "layer": 3,
+        "description": "An elite warrior from the East, seasoned in many battles. He serves as a bodyguard to the sorcerers."
+      },
+      {
+        "id": 58,
+        "name": "Ghast",
+        "display_char": "z",
+        "color": "G",
+        "depth": 8,
+        "layer": 3,
+        "description": "A ghoul that has fed well and grown strong. The stench of death surrounds it."
+      },
+      {
+        "id": 59,
+        "name": "Karvag the Torturer",
+        "display_char": "T",
+        "color": "r",
+        "depth": 9,
+        "layer": 3,
+        "description": "The master torturer of Dol Guldur. This massive troll takes pleasure in breaking minds and bodies."
+      },
+      {
+        "id": 60,
+        "name": "Master Sorcerer",
+        "display_char": "@",
+        "color": "v1",
+        "depth": 9,
+        "layer": 3,
+        "description": "The chief sorcerer of the Torture Halls, second only to the Black N\u00famen\u00f3reans in dark knowledge. His eyes burn with malevolent power."
+      },
+      {
+        "id": 71,
+        "name": "Skeleton",
+        "display_char": "z",
+        "color": "w",
+        "depth": 9,
+        "layer": 3,
+        "description": "Animated bones held together by dark magic. It rattles toward you with empty eye sockets."
+      },
+      {
+        "id": 72,
+        "name": "Skeleton Warrior",
+        "display_char": "z",
+        "color": "W",
+        "depth": 10,
+        "layer": 4,
+        "description": "A skeleton clad in rusted armor, wielding a notched blade. In death it still knows how to fight."
+      },
+      {
+        "id": 73,
+        "name": "Zombie",
+        "display_char": "z",
+        "color": "u",
+        "depth": 9,
+        "layer": 3,
+        "description": "A shambling corpse that refuses to stay dead. It is slow but relentless."
+      },
+      {
+        "id": 74,
+        "name": "Wight",
+        "display_char": "W",
+        "color": "U",
+        "depth": 10,
+        "layer": 4,
+        "description": "A spirit bound to its corpse, filled with hatred for the living. Its touch drains life itself."
+      },
+      {
+        "id": 75,
+        "name": "Corpse-candle",
+        "display_char": "w",
+        "color": "y",
+        "depth": 10,
+        "layer": 4,
+        "description": "A flickering light that lures the unwary deeper into the crypts. Those who follow it are never seen again."
+      },
+      {
+        "id": 76,
+        "name": "Necromancer Adept",
+        "display_char": "@",
+        "color": "D1",
+        "depth": 11,
+        "layer": 4,
+        "description": "A sorcerer who has learned the art of raising the dead. Corpses stir in his presence."
+      },
+      {
+        "id": 77,
+        "name": "Barrow-wight",
+        "display_char": "W",
+        "color": "W",
+        "depth": 11,
+        "layer": 4,
+        "description": "An ancient evil spirit inhabiting a corpse of great power. Cold radiates from it, and its eyes burn with malice."
+      },
+      {
+        "id": 78,
+        "name": "Bone Golem",
+        "display_char": "z",
+        "color": "s",
+        "depth": 11,
+        "layer": 4,
+        "description": "A towering construct of fused bones, animated by necromantic power. It feels no pain."
+      },
+      {
+        "id": 79,
+        "name": "Grishn\u00e1kh, Crypt Lord",
+        "display_char": "W",
+        "color": "v",
+        "depth": 12,
+        "layer": 4,
+        "description": "The lord of the Necropolis, a wight of terrible power. He commands the endless dead of Dol Guldur."
+      },
+      {
+        "id": 91,
+        "name": "Phantom",
+        "display_char": "w",
+        "color": "s",
+        "depth": 12,
+        "layer": 4,
+        "description": "A faded presence that flickers at the edge of vision. Its touch fills the mind with nameless dread."
+      },
+      {
+        "id": 92,
+        "name": "Shadow",
+        "display_char": "W",
+        "color": "d",
+        "depth": 13,
+        "layer": 5,
+        "description": "A patch of darkness that moves with purpose. Where it touches, strength fades."
+      },
+      {
+        "id": 93,
+        "name": "Whispering Shade",
+        "display_char": "w",
+        "color": "D",
+        "depth": 13,
+        "layer": 5,
+        "description": "A flickering darkness that spreads through the halls. Faint voices whisper terrible secrets."
+      },
+      {
+        "id": 94,
+        "name": "Wraith",
+        "display_char": "W",
+        "color": "s",
+        "depth": 14,
+        "layer": 5,
+        "description": "A mantled shape of void, once perhaps man or elf. It exists only to serve its dark master."
+      },
+      {
+        "id": 95,
+        "name": "Fell Spirit",
+        "display_char": "w",
+        "color": "v",
+        "depth": 14,
+        "layer": 5,
+        "description": "A spirit of pure malevolence, unbound by physical form. It can pass through walls as easily as air."
+      },
+      {
+        "id": 96,
+        "name": "Spectre",
+        "display_char": "w",
+        "color": "w",
+        "depth": 14,
+        "layer": 5,
+        "description": "An insubstantial figure, barely visible. Its touch brings the cold of the grave."
+      },
+      {
+        "id": 97,
+        "name": "Vampire Thrall",
+        "display_char": "v",
+        "color": "s",
+        "depth": 13,
+        "layer": 5,
+        "description": "A lesser vampire, created by one of the greater lords. It hungers eternally for blood."
+      },
+      {
+        "id": 98,
+        "name": "The Wailing Horror",
+        "display_char": "H",
+        "color": "W",
+        "depth": 15,
+        "layer": 5,
+        "description": "A horror from beyond the circles of the world, summoned and bound by Sauron's power. Its wail freezes the blood."
+      },
+      {
+        "id": 99,
+        "name": "\u00davatha the Horseman",
+        "display_char": "W",
+        "color": "D1",
+        "depth": 15,
+        "layer": 5,
+        "description": "One of the Nine, a Ringwraith bound to Sauron's will. In life he was a lord of the East. In death he serves at Dol Guldur."
+      },
+      {
+        "id": 111,
+        "name": "Black N\u00famen\u00f3rean",
+        "display_char": "@",
+        "color": "D1",
+        "depth": 15,
+        "layer": 5,
+        "description": "A descendant of the corrupted N\u00famen\u00f3reans who served Sauron in the Second Age. He is both warrior and sorcerer."
+      },
+      {
+        "id": 112,
+        "name": "Olog-hai",
+        "display_char": "T",
+        "color": "s",
+        "depth": 16,
+        "layer": 6,
+        "description": "A battle-troll bred by Sauron to fight in sunlight. Unlike lesser trolls, it does not fear the day. Its crushing blows can shatter armor."
+      },
+      {
+        "id": 113,
+        "name": "Vampire",
+        "display_char": "v",
+        "color": "W",
+        "depth": 16,
+        "layer": 6,
+        "description": "A nightmarish bat-like form, the size of a man. Its bite drains both strength and vitality."
+      },
+      {
+        "id": 114,
+        "name": "Greater Wraith",
+        "display_char": "W",
+        "color": "v",
+        "depth": 17,
+        "layer": 6,
+        "description": "A wraith of great power, perhaps once a king or lord. Its presence darkens the very air."
+      },
+      {
+        "id": 115,
+        "name": "Vampire Lord",
+        "display_char": "v",
+        "color": "v1",
+        "depth": 17,
+        "layer": 6,
+        "description": "An ancient vampire of terrible power. Its gaze alone can freeze the heart."
+      },
+      {
+        "id": 116,
+        "name": "Shadow Lord",
+        "display_char": "W",
+        "color": "D",
+        "depth": 17,
+        "layer": 6,
+        "description": "A lord among shadows, it extinguishes light sources merely by approaching. Where it passes, all is dark."
+      },
+      {
+        "id": 117,
+        "name": "Maia Thrall",
+        "display_char": "R",
+        "color": "v",
+        "depth": 18,
+        "layer": 6,
+        "description": "A lesser Maia spirit, corrupted and enslaved by Sauron. It burns with stolen fire."
+      },
+      {
+        "id": 118,
+        "name": "Kham\u00fbl, Shadow of the East",
+        "display_char": "W",
+        "color": "r",
+        "depth": 18,
+        "layer": 6,
+        "description": "The second-in-command of the Nazg\u00fbl, called the Shadow of the East. He rules Dol Guldur in Sauron's name. In life he was an Easterling king of great power. His Morgul-blade brings wounds that never heal."
+      },
+      {
+        "id": 131,
+        "name": "Elite Olog-hai",
+        "display_char": "T",
+        "color": "D",
+        "depth": 18,
+        "layer": 6,
+        "description": "The finest of Sauron's battle-trolls, clad in black iron and wielding massive weapons."
+      },
+      {
+        "id": 132,
+        "name": "Greater Shadow",
+        "display_char": "W",
+        "color": "d",
+        "depth": 19,
+        "layer": 7,
+        "description": "A shadow of immense power, drawn from the void itself. It devours all it touches."
+      },
+      {
+        "id": 133,
+        "name": "Void Wraith",
+        "display_char": "W",
+        "color": "v1",
+        "depth": 19,
+        "layer": 7,
+        "description": "A wraith from beyond the circles of the world, summoned to guard Sauron's innermost chambers."
+      },
+      {
+        "id": 134,
+        "name": "Thr\u00e1in's Shade",
+        "display_char": "@",
+        "color": "D",
+        "depth": 20,
+        "layer": 7,
+        "description": "The broken shade of Thr\u00e1in II, last King of Durin's Folk. He clutches something in his withered hands, babbling of keys and mountains and fire."
+      },
+      {
+        "id": 135,
+        "name": "Sauron, the Necromancer",
+        "display_char": "@",
+        "color": "r1",
+        "depth": 20,
+        "layer": 7,
+        "description": "The Lord of the Rings, the Necromancer of Dol Guldur, the Enemy. In this age he takes the form of a tall figure cloaked in shadow, a single burning eye wreathed in flame upon his brow. He is Morgoth's greatest servant, and he cannot be slain by mortal hands. Your only hope is to take what you came for and flee."
+      },
+      {
+        "id": 301,
+        "name": "Gandalf the Grey",
+        "display_char": "@",
+        "color": "s",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 302,
+        "name": "Thranduil, Elvenking",
+        "display_char": "@",
+        "color": "G",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 303,
+        "name": "Galadriel, Lady of Light",
+        "display_char": "@",
+        "color": "w",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 304,
+        "name": "Elrond Half-elven",
+        "display_char": "@",
+        "color": "b",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 305,
+        "name": "Thorin Oakenshield",
+        "display_char": "@",
+        "color": "B",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 306,
+        "name": "Beorn the Skinchanger",
+        "display_char": "@",
+        "color": "u",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 307,
+        "name": "Radagast the Brown",
+        "display_char": "@",
+        "color": "U",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 308,
+        "name": "Eagle of the Misty Mountains",
+        "display_char": "b",
+        "color": "y",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 309,
+        "name": "Great Elk of Mirkwood",
+        "display_char": "q",
+        "color": "U",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      },
+      {
+        "id": 310,
+        "name": "Ent of Fangorn",
+        "display_char": "T",
+        "color": "g",
+        "depth": 30,
+        "layer": 7,
+        "description": ""
+      }
+    ],
+    "terrain": [
+      {
+        "id": 0,
+        "name": "<darkness>",
+        "display_char": " ",
+        "color": "w",
+        "variant": "light",
+        "sprite_id": "terrain_0_light"
+      },
+      {
+        "id": 0,
+        "name": "<darkness>",
+        "display_char": " ",
+        "color": "w",
+        "variant": "dark",
+        "sprite_id": "terrain_0_dark"
+      },
+      {
+        "id": 1,
+        "name": "open floor",
+        "display_char": ".",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_1_light"
+      },
+      {
+        "id": 1,
+        "name": "open floor",
+        "display_char": ".",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_1_dark"
+      },
+      {
+        "id": 2,
+        "name": "bottomless pit",
+        "display_char": "%",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_2_light"
+      },
+      {
+        "id": 2,
+        "name": "bottomless pit",
+        "display_char": "%",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_2_dark"
+      },
+      {
+        "id": 3,
+        "name": "protective rune",
+        "display_char": ";",
+        "color": "G1",
+        "variant": "light",
+        "sprite_id": "terrain_3_light"
+      },
+      {
+        "id": 3,
+        "name": "protective rune",
+        "display_char": ";",
+        "color": "G1",
+        "variant": "dark",
+        "sprite_id": "terrain_3_dark"
+      },
+      {
+        "id": 4,
+        "name": "open door",
+        "display_char": "'",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_4_light"
+      },
+      {
+        "id": 4,
+        "name": "open door",
+        "display_char": "'",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_4_dark"
+      },
+      {
+        "id": 5,
+        "name": "shattered door",
+        "display_char": "'",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_5_light"
+      },
+      {
+        "id": 5,
+        "name": "shattered door",
+        "display_char": "'",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_5_dark"
+      },
+      {
+        "id": 6,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "G",
+        "variant": "light",
+        "sprite_id": "terrain_6_light"
+      },
+      {
+        "id": 6,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "G",
+        "variant": "dark",
+        "sprite_id": "terrain_6_dark"
+      },
+      {
+        "id": 7,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "B",
+        "variant": "light",
+        "sprite_id": "terrain_7_light"
+      },
+      {
+        "id": 7,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "B",
+        "variant": "dark",
+        "sprite_id": "terrain_7_dark"
+      },
+      {
+        "id": 8,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_8_light"
+      },
+      {
+        "id": 8,
+        "name": "warded door",
+        "display_char": "+",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_8_dark"
+      },
+      {
+        "id": 9,
+        "name": "fading daylight",
+        "display_char": ".",
+        "color": "y",
+        "variant": "light",
+        "sprite_id": "terrain_9_light"
+      },
+      {
+        "id": 9,
+        "name": "fading daylight",
+        "display_char": ".",
+        "color": "y",
+        "variant": "dark",
+        "sprite_id": "terrain_9_dark"
+      },
+      {
+        "id": 10,
+        "name": "open floor",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_10_light"
+      },
+      {
+        "id": 10,
+        "name": "open floor",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_10_dark"
+      },
+      {
+        "id": 11,
+        "name": "wall",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_11_light"
+      },
+      {
+        "id": 11,
+        "name": "wall",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_11_dark"
+      },
+      {
+        "id": 12,
+        "name": "dark pool",
+        "display_char": "~",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_12_light"
+      },
+      {
+        "id": 12,
+        "name": "dark pool",
+        "display_char": "~",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_12_dark"
+      },
+      {
+        "id": 13,
+        "name": "morgul runes",
+        "display_char": "*",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_13_light"
+      },
+      {
+        "id": 13,
+        "name": "morgul runes",
+        "display_char": "*",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_13_dark"
+      },
+      {
+        "id": 14,
+        "name": "shadow brazier",
+        "display_char": "0",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_14_light"
+      },
+      {
+        "id": 14,
+        "name": "shadow brazier",
+        "display_char": "0",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_14_dark"
+      },
+      {
+        "id": 15,
+        "name": "torture rack",
+        "display_char": "&",
+        "color": "r",
+        "variant": "light",
+        "sprite_id": "terrain_15_light"
+      },
+      {
+        "id": 15,
+        "name": "torture rack",
+        "display_char": "&",
+        "color": "r",
+        "variant": "dark",
+        "sprite_id": "terrain_15_dark"
+      },
+      {
+        "id": 16,
+        "name": "weakened floor",
+        "display_char": "^",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_16_light"
+      },
+      {
+        "id": 16,
+        "name": "weakened floor",
+        "display_char": "^",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_16_dark"
+      },
+      {
+        "id": 17,
+        "name": "jagged pit",
+        "display_char": "^",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_17_light"
+      },
+      {
+        "id": 17,
+        "name": "jagged pit",
+        "display_char": "^",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_17_dark"
+      },
+      {
+        "id": 18,
+        "name": "poisoned spike pit",
+        "display_char": "^",
+        "color": "W",
+        "variant": "light",
+        "sprite_id": "terrain_18_light"
+      },
+      {
+        "id": 18,
+        "name": "poisoned spike pit",
+        "display_char": "^",
+        "color": "W",
+        "variant": "dark",
+        "sprite_id": "terrain_18_dark"
+      },
+      {
+        "id": 19,
+        "name": "poison needle trap",
+        "display_char": "^",
+        "color": "v1",
+        "variant": "light",
+        "sprite_id": "terrain_19_light"
+      },
+      {
+        "id": 19,
+        "name": "poison needle trap",
+        "display_char": "^",
+        "color": "v1",
+        "variant": "dark",
+        "sprite_id": "terrain_19_dark"
+      },
+      {
+        "id": 20,
+        "name": "noxious fumes",
+        "display_char": "^",
+        "color": "G1",
+        "variant": "light",
+        "sprite_id": "terrain_20_light"
+      },
+      {
+        "id": 20,
+        "name": "noxious fumes",
+        "display_char": "^",
+        "color": "G1",
+        "variant": "dark",
+        "sprite_id": "terrain_20_dark"
+      },
+      {
+        "id": 21,
+        "name": "mind fog",
+        "display_char": "^",
+        "color": "B1",
+        "variant": "light",
+        "sprite_id": "terrain_21_light"
+      },
+      {
+        "id": 21,
+        "name": "mind fog",
+        "display_char": "^",
+        "color": "B1",
+        "variant": "dark",
+        "sprite_id": "terrain_21_dark"
+      },
+      {
+        "id": 22,
+        "name": "orc alarm",
+        "display_char": "^",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_22_light"
+      },
+      {
+        "id": 22,
+        "name": "orc alarm",
+        "display_char": "^",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_22_dark"
+      },
+      {
+        "id": 23,
+        "name": "blinding glyph",
+        "display_char": "^",
+        "color": "y",
+        "variant": "light",
+        "sprite_id": "terrain_23_light"
+      },
+      {
+        "id": 23,
+        "name": "blinding glyph",
+        "display_char": "^",
+        "color": "y",
+        "variant": "dark",
+        "sprite_id": "terrain_23_dark"
+      },
+      {
+        "id": 24,
+        "name": "rusted caltrops",
+        "display_char": "^",
+        "color": "w",
+        "variant": "light",
+        "sprite_id": "terrain_24_light"
+      },
+      {
+        "id": 24,
+        "name": "rusted caltrops",
+        "display_char": "^",
+        "color": "w",
+        "variant": "dark",
+        "sprite_id": "terrain_24_dark"
+      },
+      {
+        "id": 25,
+        "name": "bat roost",
+        "display_char": "^",
+        "color": "D1",
+        "variant": "light",
+        "sprite_id": "terrain_25_light"
+      },
+      {
+        "id": 25,
+        "name": "bat roost",
+        "display_char": "^",
+        "color": "D1",
+        "variant": "dark",
+        "sprite_id": "terrain_25_dark"
+      },
+      {
+        "id": 26,
+        "name": "thick web",
+        "display_char": "^",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_26_light"
+      },
+      {
+        "id": 26,
+        "name": "thick web",
+        "display_char": "^",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_26_dark"
+      },
+      {
+        "id": 27,
+        "name": "falling stones",
+        "display_char": "^",
+        "color": "r",
+        "variant": "light",
+        "sprite_id": "terrain_27_light"
+      },
+      {
+        "id": 27,
+        "name": "falling stones",
+        "display_char": "^",
+        "color": "r",
+        "variant": "dark",
+        "sprite_id": "terrain_27_dark"
+      },
+      {
+        "id": 28,
+        "name": "pool of filth",
+        "display_char": "^",
+        "color": "u",
+        "variant": "light",
+        "sprite_id": "terrain_28_light"
+      },
+      {
+        "id": 28,
+        "name": "pool of filth",
+        "display_char": "^",
+        "color": "u",
+        "variant": "dark",
+        "sprite_id": "terrain_28_dark"
+      },
+      {
+        "id": 29,
+        "name": "prison bars",
+        "display_char": "#",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_29_light"
+      },
+      {
+        "id": 29,
+        "name": "prison bars",
+        "display_char": "#",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_29_dark"
+      },
+      {
+        "id": 30,
+        "name": "chains",
+        "display_char": "\\",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_30_light"
+      },
+      {
+        "id": 30,
+        "name": "chains",
+        "display_char": "\\",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_30_dark"
+      },
+      {
+        "id": 31,
+        "name": "bloodstain",
+        "display_char": ".",
+        "color": "r",
+        "variant": "light",
+        "sprite_id": "terrain_31_light"
+      },
+      {
+        "id": 31,
+        "name": "bloodstain",
+        "display_char": ".",
+        "color": "r",
+        "variant": "dark",
+        "sprite_id": "terrain_31_dark"
+      },
+      {
+        "id": 32,
+        "name": "iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_32_light"
+      },
+      {
+        "id": 32,
+        "name": "iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_32_dark"
+      },
+      {
+        "id": 33,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_33_light"
+      },
+      {
+        "id": 33,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_33_dark"
+      },
+      {
+        "id": 34,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_34_light"
+      },
+      {
+        "id": 34,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_34_dark"
+      },
+      {
+        "id": 35,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_35_light"
+      },
+      {
+        "id": 35,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_35_dark"
+      },
+      {
+        "id": 36,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_36_light"
+      },
+      {
+        "id": 36,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_36_dark"
+      },
+      {
+        "id": 37,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_37_light"
+      },
+      {
+        "id": 37,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_37_dark"
+      },
+      {
+        "id": 38,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_38_light"
+      },
+      {
+        "id": 38,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_38_dark"
+      },
+      {
+        "id": 39,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "light",
+        "sprite_id": "terrain_39_light"
+      },
+      {
+        "id": 39,
+        "name": "locked iron door",
+        "display_char": "+",
+        "color": "U",
+        "variant": "dark",
+        "sprite_id": "terrain_39_dark"
+      },
+      {
+        "id": 40,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_40_light"
+      },
+      {
+        "id": 40,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_40_dark"
+      },
+      {
+        "id": 41,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_41_light"
+      },
+      {
+        "id": 41,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_41_dark"
+      },
+      {
+        "id": 42,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_42_light"
+      },
+      {
+        "id": 42,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_42_dark"
+      },
+      {
+        "id": 43,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_43_light"
+      },
+      {
+        "id": 43,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_43_dark"
+      },
+      {
+        "id": 44,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_44_light"
+      },
+      {
+        "id": 44,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_44_dark"
+      },
+      {
+        "id": 45,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_45_light"
+      },
+      {
+        "id": 45,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_45_dark"
+      },
+      {
+        "id": 46,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_46_light"
+      },
+      {
+        "id": 46,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_46_dark"
+      },
+      {
+        "id": 47,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "light",
+        "sprite_id": "terrain_47_light"
+      },
+      {
+        "id": 47,
+        "name": "jammed door",
+        "display_char": "+",
+        "color": "U1",
+        "variant": "dark",
+        "sprite_id": "terrain_47_dark"
+      },
+      {
+        "id": 48,
+        "name": "hidden passage",
+        "display_char": "#",
+        "color": "W1",
+        "variant": "light",
+        "sprite_id": "terrain_48_light"
+      },
+      {
+        "id": 48,
+        "name": "hidden passage",
+        "display_char": "#",
+        "color": "W1",
+        "variant": "dark",
+        "sprite_id": "terrain_48_dark"
+      },
+      {
+        "id": 49,
+        "name": "fallen masonry",
+        "display_char": "",
+        "color": "",
+        "variant": "light",
+        "sprite_id": "terrain_49_light"
+      },
+      {
+        "id": 49,
+        "name": "fallen masonry",
+        "display_char": "",
+        "color": "",
+        "variant": "dark",
+        "sprite_id": "terrain_49_dark"
+      },
+      {
+        "id": 50,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_50_light"
+      },
+      {
+        "id": 50,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_50_dark"
+      },
+      {
+        "id": 51,
+        "name": "quartz vein",
+        "display_char": "%",
+        "color": "w",
+        "variant": "light",
+        "sprite_id": "terrain_51_light"
+      },
+      {
+        "id": 51,
+        "name": "quartz vein",
+        "display_char": "%",
+        "color": "w",
+        "variant": "dark",
+        "sprite_id": "terrain_51_dark"
+      },
+      {
+        "id": 52,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_52_light"
+      },
+      {
+        "id": 52,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_52_dark"
+      },
+      {
+        "id": 53,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_53_light"
+      },
+      {
+        "id": 53,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_53_dark"
+      },
+      {
+        "id": 54,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_54_light"
+      },
+      {
+        "id": 54,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_54_dark"
+      },
+      {
+        "id": 55,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_55_light"
+      },
+      {
+        "id": 55,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_55_dark"
+      },
+      {
+        "id": 56,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_56_light"
+      },
+      {
+        "id": 56,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_56_dark"
+      },
+      {
+        "id": 57,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_57_light"
+      },
+      {
+        "id": 57,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_57_dark"
+      },
+      {
+        "id": 58,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_58_light"
+      },
+      {
+        "id": 58,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_58_dark"
+      },
+      {
+        "id": 59,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_59_light"
+      },
+      {
+        "id": 59,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_59_dark"
+      },
+      {
+        "id": 60,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_60_light"
+      },
+      {
+        "id": 60,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_60_dark"
+      },
+      {
+        "id": 61,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_61_light"
+      },
+      {
+        "id": 61,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_61_dark"
+      },
+      {
+        "id": 62,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_62_light"
+      },
+      {
+        "id": 62,
+        "name": "unused",
+        "display_char": "1",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_62_dark"
+      },
+      {
+        "id": 63,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_63_light"
+      },
+      {
+        "id": 63,
+        "name": "dark stone wall",
+        "display_char": "#",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_63_dark"
+      },
+      {
+        "id": 64,
+        "name": "orc forge (exhausted)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_64_light"
+      },
+      {
+        "id": 64,
+        "name": "orc forge (exhausted)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_64_dark"
+      },
+      {
+        "id": 65,
+        "name": "orc forge (1 use remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_65_light"
+      },
+      {
+        "id": 65,
+        "name": "orc forge (1 use remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_65_dark"
+      },
+      {
+        "id": 66,
+        "name": "orc forge (2 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_66_light"
+      },
+      {
+        "id": 66,
+        "name": "orc forge (2 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_66_dark"
+      },
+      {
+        "id": 67,
+        "name": "orc forge (3 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_67_light"
+      },
+      {
+        "id": 67,
+        "name": "orc forge (3 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_67_dark"
+      },
+      {
+        "id": 68,
+        "name": "orc forge (4 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_68_light"
+      },
+      {
+        "id": 68,
+        "name": "orc forge (4 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_68_dark"
+      },
+      {
+        "id": 69,
+        "name": "orc forge (5 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "light",
+        "sprite_id": "terrain_69_light"
+      },
+      {
+        "id": 69,
+        "name": "orc forge (5 uses remaining)",
+        "display_char": "0",
+        "color": "s",
+        "variant": "dark",
+        "sprite_id": "terrain_69_dark"
+      },
+      {
+        "id": 70,
+        "name": "shadow forge (exhausted)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_70_light"
+      },
+      {
+        "id": 70,
+        "name": "shadow forge (exhausted)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_70_dark"
+      },
+      {
+        "id": 71,
+        "name": "shadow forge (1 use remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_71_light"
+      },
+      {
+        "id": 71,
+        "name": "shadow forge (1 use remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_71_dark"
+      },
+      {
+        "id": 72,
+        "name": "shadow forge (2 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_72_light"
+      },
+      {
+        "id": 72,
+        "name": "shadow forge (2 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_72_dark"
+      },
+      {
+        "id": 73,
+        "name": "shadow forge (3 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_73_light"
+      },
+      {
+        "id": 73,
+        "name": "shadow forge (3 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_73_dark"
+      },
+      {
+        "id": 74,
+        "name": "shadow forge (4 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_74_light"
+      },
+      {
+        "id": 74,
+        "name": "shadow forge (4 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_74_dark"
+      },
+      {
+        "id": 75,
+        "name": "shadow forge (5 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_75_light"
+      },
+      {
+        "id": 75,
+        "name": "shadow forge (5 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_75_dark"
+      },
+      {
+        "id": 76,
+        "name": "forge 'Angdur' (exhausted)",
+        "display_char": "0",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_76_light"
+      },
+      {
+        "id": 76,
+        "name": "forge 'Angdur' (exhausted)",
+        "display_char": "0",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_76_dark"
+      },
+      {
+        "id": 77,
+        "name": "forge 'Angdur' (1 use remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_77_light"
+      },
+      {
+        "id": 77,
+        "name": "forge 'Angdur' (1 use remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_77_dark"
+      },
+      {
+        "id": 78,
+        "name": "forge 'Angdur' (2 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_78_light"
+      },
+      {
+        "id": 78,
+        "name": "forge 'Angdur' (2 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_78_dark"
+      },
+      {
+        "id": 79,
+        "name": "forge 'Angdur' (3 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "light",
+        "sprite_id": "terrain_79_light"
+      },
+      {
+        "id": 79,
+        "name": "forge 'Angdur' (3 uses remaining)",
+        "display_char": "0",
+        "color": "v",
+        "variant": "dark",
+        "sprite_id": "terrain_79_dark"
+      },
+      {
+        "id": 80,
+        "name": "crumbling stairs up",
+        "display_char": "<",
+        "color": "W",
+        "variant": "light",
+        "sprite_id": "terrain_80_light"
+      },
+      {
+        "id": 80,
+        "name": "crumbling stairs up",
+        "display_char": "<",
+        "color": "W",
+        "variant": "dark",
+        "sprite_id": "terrain_80_dark"
+      },
+      {
+        "id": 81,
+        "name": "dark stairs down",
+        "display_char": ">",
+        "color": "W",
+        "variant": "light",
+        "sprite_id": "terrain_81_light"
+      },
+      {
+        "id": 81,
+        "name": "dark stairs down",
+        "display_char": ">",
+        "color": "W",
+        "variant": "dark",
+        "sprite_id": "terrain_81_dark"
+      },
+      {
+        "id": 82,
+        "name": "narrow shaft up",
+        "display_char": "<",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_82_light"
+      },
+      {
+        "id": 82,
+        "name": "narrow shaft up",
+        "display_char": "<",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_82_dark"
+      },
+      {
+        "id": 83,
+        "name": "narrow shaft down",
+        "display_char": ">",
+        "color": "D",
+        "variant": "light",
+        "sprite_id": "terrain_83_light"
+      },
+      {
+        "id": 83,
+        "name": "narrow shaft down",
+        "display_char": ">",
+        "color": "D",
+        "variant": "dark",
+        "sprite_id": "terrain_83_dark"
+      },
+      {
+        "id": 84,
+        "name": "poison stream",
+        "display_char": "~",
+        "color": "G",
+        "variant": "light",
+        "sprite_id": "terrain_84_light"
+      },
+      {
+        "id": 84,
+        "name": "poison stream",
+        "display_char": "~",
+        "color": "G",
+        "variant": "dark",
+        "sprite_id": "terrain_84_dark"
+      },
+      {
+        "id": 85,
+        "name": "tangled roots",
+        "display_char": "#",
+        "color": "u",
+        "variant": "light",
+        "sprite_id": "terrain_85_light"
+      },
+      {
+        "id": 85,
+        "name": "tangled roots",
+        "display_char": "#",
+        "color": "u",
+        "variant": "dark",
+        "sprite_id": "terrain_85_dark"
+      },
+      {
+        "id": 86,
+        "name": "vine floor",
+        "display_char": ".",
+        "color": "g",
+        "variant": "light",
+        "sprite_id": "terrain_86_light"
+      },
+      {
+        "id": 86,
+        "name": "vine floor",
+        "display_char": ".",
+        "color": "g",
+        "variant": "dark",
+        "sprite_id": "terrain_86_dark"
+      },
+      {
+        "id": 87,
+        "name": "forest floor",
+        "display_char": ".",
+        "color": "u",
+        "variant": "light",
+        "sprite_id": "terrain_87_light"
+      },
+      {
+        "id": 87,
+        "name": "forest floor",
+        "display_char": ".",
+        "color": "u",
+        "variant": "dark",
+        "sprite_id": "terrain_87_dark"
+      }
+    ],
+    "items": [
+      {
+        "id": 0,
+        "name": "<pile>",
+        "display_char": "&",
+        "color": "w",
+        "item_type": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 1,
+        "name": "Serpentine Ring",
+        "display_char": "=",
+        "color": "g1",
+        "item_type": "ring",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 2,
+        "name": "Ring",
+        "display_char": "=",
+        "color": "D",
+        "item_type": "ring",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 3,
+        "name": "Amulet",
+        "display_char": "\"",
+        "color": "D",
+        "item_type": "amulet",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 4,
+        "name": "Pearl",
+        "display_char": "\"",
+        "color": "w",
+        "item_type": "amulet",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 5,
+        "name": "Jewel",
+        "display_char": "\"",
+        "color": "g",
+        "item_type": "amulet",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 6,
+        "name": "Necklace",
+        "display_char": "\"",
+        "color": "y",
+        "item_type": "amulet",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 7,
+        "name": "Ring",
+        "display_char": "=",
+        "color": "D",
+        "item_type": "ring",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 10,
+        "name": "Ring",
+        "display_char": "=",
+        "color": "W",
+        "item_type": "ring",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 11,
+        "name": "Amulet",
+        "display_char": "\"",
+        "color": "W",
+        "item_type": "amulet",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 19,
+        "name": "Mighty Hammer",
+        "display_char": "\\",
+        "color": "D",
+        "item_type": "blunt_weapon",
+        "depth": 20,
+        "description": ""
+      },
+      {
+        "id": 20,
+        "name": "Massive Iron Crown",
+        "display_char": "]",
+        "color": "D",
+        "item_type": "crown",
+        "depth": 20,
+        "description": ""
+      },
+      {
+        "id": 21,
+        "name": "Elven Light",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "light_source",
+        "depth": 3,
+        "description": "A small crystal that glows with inner light. The elves craft these as gifts. You can equip it as a light source with a radius of 1 square. It will shine forever."
+      },
+      {
+        "id": 22,
+        "name": "Wanderer's Robe",
+        "display_char": "(",
+        "color": "b",
+        "item_type": "soft_armor",
+        "depth": 1,
+        "description": "A simple robe worn by travelers. It offers little protection but doesn't hinder movement."
+      },
+      {
+        "id": 23,
+        "name": "Ranger Leathers",
+        "display_char": "(",
+        "color": "U",
+        "item_type": "soft_armor",
+        "depth": 1,
+        "description": "Supple leather armor favored by the Rangers of the North. Quiet and flexible."
+      },
+      {
+        "id": 26,
+        "name": "Scout's Armor",
+        "display_char": "(",
+        "color": "U1",
+        "item_type": "soft_armor",
+        "depth": 2,
+        "description": "Leather armor reinforced with metal studs. Favored by scouts and skirmishers."
+      },
+      {
+        "id": 27,
+        "name": "Shadow-steel Armor",
+        "display_char": "(",
+        "color": "D",
+        "item_type": "soft_armor",
+        "depth": 17,
+        "description": "Armor forged of a strange black metal, supple as leather but strong as mail. Its origins are dark."
+      },
+      {
+        "id": 30,
+        "name": "Gondor Corslet",
+        "display_char": "[",
+        "color": "W",
+        "item_type": "hard_armor",
+        "depth": 5,
+        "description": "A mail shirt of Gondorian make, covering from shoulder to waist."
+      },
+      {
+        "id": 31,
+        "name": "Dwarven Hauberk",
+        "display_char": "[",
+        "color": "s1",
+        "item_type": "hard_armor",
+        "depth": 7,
+        "description": "A long mail shirt of dwarven craft, protecting from neck to knee."
+      },
+      {
+        "id": 38,
+        "name": "Mithril Corslet",
+        "display_char": "[",
+        "color": "B",
+        "item_type": "hard_armor",
+        "depth": 7,
+        "description": "A shirt of armour formed from linked rings."
+      },
+      {
+        "id": 40,
+        "name": "Orc Skeleton",
+        "display_char": "~",
+        "color": "w",
+        "item_type": "skeleton",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 41,
+        "name": "Human Skeleton",
+        "display_char": "~",
+        "color": "w",
+        "item_type": "skeleton",
+        "depth": 8,
+        "description": ""
+      },
+      {
+        "id": 42,
+        "name": "Elf Skeleton",
+        "display_char": "~",
+        "color": "w",
+        "item_type": "skeleton",
+        "depth": 10,
+        "description": ""
+      },
+      {
+        "id": 43,
+        "name": "Buckler",
+        "display_char": ")",
+        "color": "s",
+        "item_type": "shield",
+        "depth": 3,
+        "description": "A small round shield, easy to maneuver but offering limited coverage."
+      },
+      {
+        "id": 44,
+        "name": "Tower Shield",
+        "display_char": ")",
+        "color": "W",
+        "item_type": "shield",
+        "depth": 6,
+        "description": "A tall shield that covers from shoulder to knee. Favored by the Tower Guard."
+      },
+      {
+        "id": 46,
+        "name": "Mithril Shield",
+        "display_char": ")",
+        "color": "B",
+        "item_type": "shield",
+        "depth": 8,
+        "description": ""
+      },
+      {
+        "id": 56,
+        "name": "Ranger's Knife",
+        "display_char": "|",
+        "color": "w",
+        "item_type": "sword",
+        "depth": 1,
+        "description": "A keen blade favored by the D\u00fanedain. Light enough to throw, sharp enough to kill."
+      },
+      {
+        "id": 57,
+        "name": "Orc-blade",
+        "display_char": "|",
+        "color": "s",
+        "item_type": "sword",
+        "depth": 2,
+        "description": "A crude scimitar forged in the shadow of Dol Guldur. The edge is notched but hungry."
+      },
+      {
+        "id": 60,
+        "name": "Woodland Blade",
+        "display_char": "|",
+        "color": "w",
+        "item_type": "sword",
+        "depth": 1,
+        "description": "A short blade of elven make, favored by the wood-elves for its balance."
+      },
+      {
+        "id": 64,
+        "name": "Longsword",
+        "display_char": "|",
+        "color": "W",
+        "item_type": "sword",
+        "depth": 4,
+        "description": ""
+      },
+      {
+        "id": 67,
+        "name": "Rohirrim Blade",
+        "display_char": "|",
+        "color": "W",
+        "item_type": "sword",
+        "depth": 6,
+        "description": "A long sword in the style of the Riddermark. It can be wielded with one or two hands."
+      },
+      {
+        "id": 68,
+        "name": "N\u00famen\u00f3rean Blade",
+        "display_char": "|",
+        "color": "W",
+        "item_type": "sword",
+        "depth": 4,
+        "description": "A greatsword of ancient design, forged in the style of Westernesse. It requires two hands to wield."
+      },
+      {
+        "id": 69,
+        "name": "Mithril Sword",
+        "display_char": "|",
+        "color": "B",
+        "item_type": "sword",
+        "depth": 5,
+        "description": "A longsword forged of true-silver. Light as a feather, hard as dragon-scale."
+      },
+      {
+        "id": 70,
+        "name": "Mithril Great-blade",
+        "display_char": "|",
+        "color": "B",
+        "item_type": "sword",
+        "depth": 6,
+        "description": "A massive two-handed sword of mithril. Despite its size, it is remarkably light."
+      },
+      {
+        "id": 71,
+        "name": "Hunting Spear",
+        "display_char": "/",
+        "color": "U",
+        "item_type": "polearm",
+        "depth": 1,
+        "description": "A simple spear used for hunting game. It serves well enough against darker prey."
+      },
+      {
+        "id": 72,
+        "name": "Tower Guard Spear",
+        "display_char": "/",
+        "color": "u",
+        "item_type": "polearm",
+        "depth": 4,
+        "description": "A tall spear of Gondorian make, used by the Tower Guard in formal ceremonies and battle."
+      },
+      {
+        "id": 74,
+        "name": "Morgul Glaive",
+        "display_char": "/",
+        "color": "s",
+        "item_type": "polearm",
+        "depth": 8,
+        "description": "A wicked polearm touched by shadow. The blade seems to drink the light."
+      },
+      {
+        "id": 76,
+        "name": "Woodsman's Axe",
+        "display_char": "/",
+        "color": "s",
+        "item_type": "polearm",
+        "depth": 2,
+        "description": "A small axe meant for chopping wood, but deadly when thrown."
+      },
+      {
+        "id": 77,
+        "name": "Dwarven War-axe",
+        "display_char": "/",
+        "color": "s",
+        "item_type": "polearm",
+        "depth": 4,
+        "description": "A heavy axe of dwarven craft. The runes on its head are worn but still sharp."
+      },
+      {
+        "id": 81,
+        "name": "Erebor Great-axe",
+        "display_char": "/",
+        "color": "s",
+        "item_type": "polearm",
+        "depth": 8,
+        "description": "A massive axe forged in the halls of Erebor. It requires both hands to wield."
+      },
+      {
+        "id": 86,
+        "name": "Oak Staff",
+        "display_char": "\\",
+        "color": "U",
+        "item_type": "blunt_weapon",
+        "depth": 1,
+        "description": "A sturdy staff of aged oak. Simple but effective."
+      },
+      {
+        "id": 89,
+        "name": "Dwarven Hammer",
+        "display_char": "\\",
+        "color": "D1",
+        "item_type": "blunt_weapon",
+        "depth": 6,
+        "description": "A heavy hammer of dwarven make. Good for cracking skulls and ore alike."
+      },
+      {
+        "id": 96,
+        "name": "Miner's Spade",
+        "display_char": "\\",
+        "color": "s",
+        "item_type": "misc",
+        "depth": 5,
+        "description": "A sturdy digging tool. It can also bash skulls in a pinch."
+      },
+      {
+        "id": 98,
+        "name": "Dwarf Mattock",
+        "display_char": "\\",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 10,
+        "description": "A heavy pick used by dwarven miners. Excellent for breaking through rock and armor."
+      },
+      {
+        "id": 100,
+        "name": "Iron Helm",
+        "display_char": "]",
+        "color": "s1",
+        "item_type": "misc",
+        "depth": 3,
+        "description": "A simple iron helm. It protects the head at the cost of peripheral vision."
+      },
+      {
+        "id": 101,
+        "name": "Tower Helm",
+        "display_char": "]",
+        "color": "W",
+        "item_type": "misc",
+        "depth": 5,
+        "description": "A tall helm in the style of the Tower Guard. It bears a small silver star."
+      },
+      {
+        "id": 102,
+        "name": "Dwarf Mask",
+        "display_char": "]",
+        "color": "s",
+        "item_type": "misc",
+        "depth": 10,
+        "description": "A full faced helm, wrought in a fearsome visage."
+      },
+      {
+        "id": 103,
+        "name": "Mithril Helm",
+        "display_char": "]",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 7,
+        "description": ""
+      },
+      {
+        "id": 104,
+        "name": "Crown",
+        "display_char": "]",
+        "color": "y",
+        "item_type": "crown",
+        "depth": 7,
+        "description": ""
+      },
+      {
+        "id": 106,
+        "name": "Traveler's Cloak",
+        "display_char": "(",
+        "color": "g",
+        "item_type": "cloak",
+        "depth": 2,
+        "description": "A weathered cloak that keeps off rain and wind. It helps you blend into shadows."
+      },
+      {
+        "id": 107,
+        "name": "Shadow Cloak",
+        "display_char": "(",
+        "color": "D",
+        "item_type": "cloak",
+        "depth": 12,
+        "description": ""
+      },
+      {
+        "id": 108,
+        "name": "Wolf-Hame",
+        "display_char": "(",
+        "color": "W",
+        "item_type": "cloak",
+        "depth": 20,
+        "description": ""
+      },
+      {
+        "id": 109,
+        "name": "Bat-Fell",
+        "display_char": "(",
+        "color": "D1",
+        "item_type": "cloak",
+        "depth": 23,
+        "description": ""
+      },
+      {
+        "id": 110,
+        "name": "Silvan Bow",
+        "display_char": "}",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 1,
+        "description": "A light bow of wood-elf make. Quick to draw and accurate."
+      },
+      {
+        "id": 111,
+        "name": "Longbow",
+        "display_char": "}",
+        "color": "U",
+        "item_type": "misc",
+        "depth": 6,
+        "description": ""
+      },
+      {
+        "id": 112,
+        "name": "Dragon-horn Bow",
+        "display_char": "}",
+        "color": "U1",
+        "item_type": "misc",
+        "depth": 15,
+        "description": ""
+      },
+      {
+        "id": 116,
+        "name": "Arrow",
+        "display_char": "-",
+        "color": "U",
+        "item_type": "misc",
+        "depth": 1,
+        "description": ""
+      },
+      {
+        "id": 122,
+        "name": "Traveler's Boots",
+        "display_char": "]",
+        "color": "U",
+        "item_type": "misc",
+        "depth": 1,
+        "description": "Sturdy boots for long roads. They've seen many leagues."
+      },
+      {
+        "id": 123,
+        "name": "Iron Greaves",
+        "display_char": "]",
+        "color": "s",
+        "item_type": "misc",
+        "depth": 4,
+        "description": "Metal plates that protect the lower legs. Heavy but effective."
+      },
+      {
+        "id": 124,
+        "name": "Pair of Mithril Greaves",
+        "display_char": "]",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 6,
+        "description": ""
+      },
+      {
+        "id": 125,
+        "name": "Leather Gloves",
+        "display_char": "]",
+        "color": "U",
+        "item_type": "misc",
+        "depth": 1,
+        "description": "Simple gloves of tanned leather. They protect the hands without hindering dexterity."
+      },
+      {
+        "id": 126,
+        "name": "Iron Gauntlets",
+        "display_char": "]",
+        "color": "W",
+        "item_type": "misc",
+        "depth": 3,
+        "description": "Heavy metal gloves that protect the hands in combat."
+      },
+      {
+        "id": 127,
+        "name": "Set of Mithril Gauntlets",
+        "display_char": "]",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 5,
+        "description": ""
+      },
+      {
+        "id": 128,
+        "name": "Wooden Torch",
+        "display_char": "~",
+        "color": "u",
+        "item_type": "light_source",
+        "depth": 1,
+        "description": "You can equip it as a light source with a radius of 1 square. It may also be used to fuel another wooden torch, up to a maximum of 3,000 turns of light."
+      },
+      {
+        "id": 129,
+        "name": "Brass Lantern",
+        "display_char": "~",
+        "color": "U",
+        "item_type": "light_source",
+        "depth": 5,
+        "description": "You can equip it as a light source with a radius of 2 squares. It may also be used to fuel another lantern, up to a maximum of 7,000 turns of light."
+      },
+      {
+        "id": 130,
+        "name": "Jewel-lamp",
+        "display_char": "~",
+        "color": "B",
+        "item_type": "light_source",
+        "depth": 12,
+        "description": "A crystal lamp that shines with captured starlight. It never dims or goes out. You can equip it as a light source with a radius of 4 squares. It will shine forever."
+      },
+      {
+        "id": 131,
+        "name": "Star-glass",
+        "display_char": "*",
+        "color": "w",
+        "item_type": "light_source",
+        "depth": 25,
+        "description": "A crystal phial filled with the light of Earendil's star, blessed by the Lady of Lothl\u00f3rien. You can equip it as a light source with a radius of 7 squares. It will shine forever."
+      },
+      {
+        "id": 132,
+        "name": "Last Chances",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 7,
+        "description": ""
+      },
+      {
+        "id": 133,
+        "name": "Constitution",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 8,
+        "description": ""
+      },
+      {
+        "id": 134,
+        "name": "Grace",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 10,
+        "description": ""
+      },
+      {
+        "id": 135,
+        "name": "Regeneration",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 12,
+        "description": ""
+      },
+      {
+        "id": 136,
+        "name": "Preservation",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 14,
+        "description": ""
+      },
+      {
+        "id": 137,
+        "name": "the Blessed Realm",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 16,
+        "description": ""
+      },
+      {
+        "id": 138,
+        "name": "Haunted Dreams",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 9,
+        "description": ""
+      },
+      {
+        "id": 139,
+        "name": "the Vigilant Eye",
+        "display_char": "\"",
+        "color": "d",
+        "item_type": "amulet",
+        "depth": 4,
+        "description": ""
+      },
+      {
+        "id": 150,
+        "name": "Secrets",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 15,
+        "description": ""
+      },
+      {
+        "id": 151,
+        "name": "Ered Luin",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 8,
+        "description": ""
+      },
+      {
+        "id": 152,
+        "name": "Evasion",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 8,
+        "description": "It helps you avoid your enemies' blows."
+      },
+      {
+        "id": 153,
+        "name": "Protection",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 7,
+        "description": "It provides protection from damage."
+      },
+      {
+        "id": 154,
+        "name": "Strength",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 9,
+        "description": ""
+      },
+      {
+        "id": 155,
+        "name": "Dexterity",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 10,
+        "description": ""
+      },
+      {
+        "id": 156,
+        "name": "Frost",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 9,
+        "description": ""
+      },
+      {
+        "id": 157,
+        "name": "Warmth",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 10,
+        "description": ""
+      },
+      {
+        "id": 158,
+        "name": "Accuracy",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 12,
+        "description": "It helps you hit your opponents."
+      },
+      {
+        "id": 159,
+        "name": "Free Action",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 12,
+        "description": ""
+      },
+      {
+        "id": 160,
+        "name": "Cowardice",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 7,
+        "description": ""
+      },
+      {
+        "id": 161,
+        "name": "the Shadow's Vanguard",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 6,
+        "description": ""
+      },
+      {
+        "id": 162,
+        "name": "Venom's End",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 6,
+        "description": ""
+      },
+      {
+        "id": 171,
+        "name": "the Laiquendi",
+        "display_char": "=",
+        "color": "d",
+        "item_type": "ring",
+        "depth": 8,
+        "description": ""
+      },
+      {
+        "id": 191,
+        "name": "Imprisonment",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 6,
+        "description": "It may shut and lock all doors in line of sight."
+      },
+      {
+        "id": 192,
+        "name": "Freedom",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 9,
+        "description": "It reveals doors and traps in line of sight and may open or destroy them."
+      },
+      {
+        "id": 193,
+        "name": "Light",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 2,
+        "description": "It lights up an area with a radius of 7 squares, plus the entire room if you are currently in one.  This stuns any light-sensitive creatures within the area of effect."
+      },
+      {
+        "id": 195,
+        "name": "Sanctity",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 6,
+        "description": "It removes curses from the items in your possession."
+      },
+      {
+        "id": 196,
+        "name": "Understanding",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 10,
+        "description": "It identifies an item. (This may be aborted without using up a charge.)"
+      },
+      {
+        "id": 197,
+        "name": "Revelations",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 13,
+        "description": "It reveals your surroundings."
+      },
+      {
+        "id": 198,
+        "name": "Treasures",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 13,
+        "description": "It shows you the whereabouts of all items on the level."
+      },
+      {
+        "id": 199,
+        "name": "Foes",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 13,
+        "description": "It shows you the whereabouts of all monsters on the level."
+      },
+      {
+        "id": 200,
+        "name": "Slumber",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 11,
+        "description": "It causes a great weariness in all monsters in line of sight."
+      },
+      {
+        "id": 201,
+        "name": "Majesty",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 9,
+        "description": "It causes fear in all monsters in line of sight."
+      },
+      {
+        "id": 202,
+        "name": "Self Knowledge",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 7,
+        "description": "It lets you know all of your abilities."
+      },
+      {
+        "id": 203,
+        "name": "Warding",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 11,
+        "description": "It can be used to create glyphs of warding, which your opponents have difficulty crossing."
+      },
+      {
+        "id": 204,
+        "name": "Dismay",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 13,
+        "description": "It confuses all monsters in line of sight."
+      },
+      {
+        "id": 206,
+        "name": "Recharging",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 11,
+        "description": "It allows you to partially recharge another staff."
+      },
+      {
+        "id": 210,
+        "name": "Summoning",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 7,
+        "description": "It summons monsters to the stairs on the current level."
+      },
+      {
+        "id": 211,
+        "name": "Shadows",
+        "display_char": "_",
+        "color": "d",
+        "item_type": "staff",
+        "depth": 9,
+        "description": "It darkens an area with a radius of 7 squares, plus the entire room if you are currently in one."
+      },
+      {
+        "id": 220,
+        "name": "Wand of Frost",
+        "display_char": "-",
+        "color": "w",
+        "item_type": "wand",
+        "depth": 6,
+        "description": "It fires a bolt of frost that deals 2d4 cold damage and may slow its target."
+      },
+      {
+        "id": 221,
+        "name": "Wand of Fire",
+        "display_char": "-",
+        "color": "r",
+        "item_type": "wand",
+        "depth": 7,
+        "description": "It fires a bolt of fire that deals 2d5 fire damage."
+      },
+      {
+        "id": 222,
+        "name": "Wand of Slowing",
+        "display_char": "-",
+        "color": "B",
+        "item_type": "wand",
+        "depth": 5,
+        "description": "It fires a ray that slows its target for several turns. Excellent for stealth builds."
+      },
+      {
+        "id": 223,
+        "name": "Wand of Light",
+        "display_char": "-",
+        "color": "y",
+        "item_type": "wand",
+        "depth": 4,
+        "description": "It fires a beam of light that deals 1d6 damage to light-sensitive creatures and illuminates the area."
+      },
+      {
+        "id": 224,
+        "name": "Wand of Fear",
+        "display_char": "-",
+        "color": "s",
+        "item_type": "wand",
+        "depth": 8,
+        "description": "It fires a wave of terror that causes its target to flee. Requires a Will save to resist."
+      },
+      {
+        "id": 225,
+        "name": "Wand of Sleep",
+        "display_char": "-",
+        "color": "v",
+        "item_type": "wand",
+        "depth": 9,
+        "description": "It fires a ray of slumber that puts its target to sleep. Requires a Will save to resist. Excellent for stealth builds."
+      },
+      {
+        "id": 240,
+        "name": "Terror",
+        "display_char": "?",
+        "color": "d",
+        "item_type": "scroll",
+        "depth": 7,
+        "description": "Its sound brings terror to your enemies."
+      },
+      {
+        "id": 241,
+        "name": "Thunder",
+        "display_char": "?",
+        "color": "d",
+        "item_type": "scroll",
+        "depth": 10,
+        "description": "Its sound stuns your enemies."
+      },
+      {
+        "id": 242,
+        "name": "Force",
+        "display_char": "?",
+        "color": "d",
+        "item_type": "scroll",
+        "depth": 12,
+        "description": "Its sound blows your enemies back."
+      },
+      {
+        "id": 243,
+        "name": "Blasting",
+        "display_char": "?",
+        "color": "d",
+        "item_type": "scroll",
+        "depth": 13,
+        "description": "Its sound can shatter stone. In addition to the compass directions, brave souls can aim it up (<) or down (>)."
+      },
+      {
+        "id": 250,
+        "name": "Challenge",
+        "display_char": "?",
+        "color": "d",
+        "item_type": "scroll",
+        "depth": 7,
+        "description": "It rings out a challenge to your foes, filling you with battle-fury (+1 Str/Con, -1 Dex/Gra) for 20 turns. Alerts nearby enemies but grants the courage to face them."
+      },
+      {
+        "id": 251,
+        "name": "Flute of the Fairy",
+        "display_char": "?",
+        "color": "s",
+        "item_type": "scroll",
+        "depth": 10,
+        "description": "A delicate silver flute. Its haunting melody conjures concealing mists in a radius around you, blocking line of sight for those within. Much quieter than horns."
+      },
+      {
+        "id": 313,
+        "name": "Miruvor",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 11,
+        "description": "It cures stunning, confusion, hallucination, poison, blindness, cuts, and fear. It restores half your health, and all your voice."
+      },
+      {
+        "id": 315,
+        "name": "Orcish Liquor",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 3,
+        "description": "It banishes all fear, cures a quarter of your health, and stuns you (for 2d4 turns)."
+      },
+      {
+        "id": 316,
+        "name": "Esgalduin",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 4,
+        "description": "It grants a bonus of +10 to perception for 20d4 turns, and restores a quarter of your voice."
+      },
+      {
+        "id": 317,
+        "name": "Clarity",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 6,
+        "description": "It cures stunning, confusion, and hallucination; and ends your rage."
+      },
+      {
+        "id": 318,
+        "name": "Cordial of the Wise",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 9,
+        "description": "A soothing draught favored by healers and loremasters. It heals all cuts and restores half your health."
+      },
+      {
+        "id": 319,
+        "name": "Voice",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 13,
+        "description": "It renews your voice."
+      },
+      {
+        "id": 320,
+        "name": "True Sight",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 5,
+        "description": "It restores your sight and enables you to resist blindness, resist hallucination, and see invisible creatures for 10d4 turns."
+      },
+      {
+        "id": 321,
+        "name": "Antidote",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 2,
+        "description": "It cures any current poisoning."
+      },
+      {
+        "id": 322,
+        "name": "Quickness",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 5,
+        "description": "It makes you move more quickly (+1 to speed) for 10d4 turns."
+      },
+      {
+        "id": 323,
+        "name": "Elemental Resistance",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 12,
+        "description": "It grants you temporary resistance to fire and cold for 20d4 turns."
+      },
+      {
+        "id": 324,
+        "name": "Shadows",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 8,
+        "description": "A dark liquid that cloaks you in shadow. It grants temporary invisibility and dims your light for 15d4 turns."
+      },
+      {
+        "id": 327,
+        "name": "Draught of Might",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 6,
+        "description": "A potent brew that fills the limbs with strength. It grants a bonus of +3 to strength for 20d4 turns, restoring strength in the process."
+      },
+      {
+        "id": 328,
+        "name": "Nimble-wine",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 7,
+        "description": "An Elvish cordial that quickens the hands and feet. It grants a bonus of +3 to dexterity for 20d4 turns, restoring dexterity in the process."
+      },
+      {
+        "id": 329,
+        "name": "Hardy-brew",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 8,
+        "description": "A thick dwarven tonic that fortifies the body. It grants a bonus of +3 to constitution for 20d4 turns, restoring constitution in the process."
+      },
+      {
+        "id": 330,
+        "name": "Starlight Elixir",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 9,
+        "description": "A shimmering draught that heightens awareness of the unseen. It grants a bonus of +3 to grace for 20d4 turns, restoring grace in the process."
+      },
+      {
+        "id": 343,
+        "name": "Slowness",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 2,
+        "description": "It slows you down (-1 to speed) for 10d4 turns."
+      },
+      {
+        "id": 344,
+        "name": "Poison",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 3,
+        "description": "It causes 5d4 points of poison."
+      },
+      {
+        "id": 345,
+        "name": "Blindness",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 4,
+        "description": "It induces blindness for 10d4 turns."
+      },
+      {
+        "id": 346,
+        "name": "Confusion",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 6,
+        "description": "It induces confusion for 5d4 turns."
+      },
+      {
+        "id": 348,
+        "name": "Awkwardness",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 9,
+        "description": "It reduces your dexterity by one point."
+      },
+      {
+        "id": 350,
+        "name": "Disconnection",
+        "display_char": "!",
+        "color": "d",
+        "item_type": "potion",
+        "depth": 11,
+        "description": "It reduces your grace by one point."
+      },
+      {
+        "id": 372,
+        "name": "Small wooden chest",
+        "display_char": "~",
+        "color": "D1",
+        "item_type": "misc",
+        "depth": 5,
+        "description": ""
+      },
+      {
+        "id": 373,
+        "name": "Small steel chest",
+        "display_char": "~",
+        "color": "s",
+        "item_type": "misc",
+        "depth": 12,
+        "description": ""
+      },
+      {
+        "id": 374,
+        "name": "Small jewelled chest",
+        "display_char": "~",
+        "color": "v1",
+        "item_type": "misc",
+        "depth": 19,
+        "description": ""
+      },
+      {
+        "id": 375,
+        "name": "Large wooden chest",
+        "display_char": "~",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 10,
+        "description": ""
+      },
+      {
+        "id": 376,
+        "name": "Large steel chest",
+        "display_char": "~",
+        "color": "W",
+        "item_type": "misc",
+        "depth": 17,
+        "description": ""
+      },
+      {
+        "id": 377,
+        "name": "Large jewelled chest",
+        "display_char": "~",
+        "color": "v",
+        "item_type": "misc",
+        "depth": 24,
+        "description": ""
+      },
+      {
+        "id": 378,
+        "name": "Finely wrapped present",
+        "display_char": "~",
+        "color": "r",
+        "item_type": "misc",
+        "depth": 25,
+        "description": ""
+      },
+      {
+        "id": 380,
+        "name": "Orc-rage Mushroom",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 3,
+        "description": "A dark fungus favored by orc berserkers. It sends you into a dark rage (+1 Str/Con, -1 Dex/Gra, special melee attack, resistance to fear) for 10d4 turns. Provides nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 381,
+        "name": "Waymeal",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 5,
+        "description": "A compact traveler's herb that staves off hunger. It provides nourishment for about 2000 turns under normal conditions."
+      },
+      {
+        "id": 382,
+        "name": "Terror",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 3,
+        "description": "It induces fear that lasts for 10d4 turns and a burst of speed that lasts 5d4 turns. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 383,
+        "name": "Healer's Herb",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 7,
+        "description": "A medicinal herb known to healers of the West. It cures all cuts and heals half of your health. Provides nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 384,
+        "name": "Restoration",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 5,
+        "description": "It restores all of your statistics by up to 3 points each. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 385,
+        "name": "Emptiness",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 4,
+        "description": "It makes you more hungry (by 1,000 turns under normal conditions)."
+      },
+      {
+        "id": 386,
+        "name": "Visions",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 8,
+        "description": "It causes you to hallucinate for 80d4 turns, but cures blindness in the process. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 387,
+        "name": "Entrancement",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 8,
+        "description": "It induces a trance that lasts for 10d4 turns. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 388,
+        "name": "Weakness",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 8,
+        "description": "It reduces your strength by one point. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 389,
+        "name": "Sickness",
+        "display_char": ",",
+        "color": "d",
+        "item_type": "food",
+        "depth": 8,
+        "description": "It reduces your constitution by one point. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 390,
+        "name": "Athelas",
+        "display_char": ",",
+        "color": "G",
+        "item_type": "food",
+        "depth": 12,
+        "description": "The kingsfoil, a powerful healing herb known to the D\u00fanedain. It cures poison, fear, confusion, and hallucination, and restores a quarter of your health. It is especially potent against the shadow-sickness of Dol Guldur. Herbs provide nourishment for about 250 turns under normal conditions."
+      },
+      {
+        "id": 399,
+        "name": "Piece of Travel Bread",
+        "display_char": ",",
+        "color": "s",
+        "item_type": "food",
+        "depth": 7,
+        "description": "Simple travel rations, filling but unremarkable. It provides nourishment for about 1,500 turns under normal conditions."
+      },
+      {
+        "id": 400,
+        "name": "Strip of Dried Meat",
+        "display_char": ",",
+        "color": "u",
+        "item_type": "food",
+        "depth": 10,
+        "description": "It provides nourishment for about 2,000 turns under normal conditions."
+      },
+      {
+        "id": 401,
+        "name": "Fragment of Lembas",
+        "display_char": ",",
+        "color": "y",
+        "item_type": "food",
+        "depth": 7,
+        "description": "It restores a point of grace if it has been drained.  It provides nourishment for about 3,000 turns under normal conditions."
+      },
+      {
+        "id": 402,
+        "name": "Flask of oil",
+        "display_char": "!",
+        "color": "y1",
+        "item_type": "misc",
+        "depth": 7,
+        "description": "It can be used to fuel a brass lantern with 3,000 turns of light, up to a maximum of 7,000 turns of light."
+      },
+      {
+        "id": 403,
+        "name": "Cake of Cram",
+        "display_char": ",",
+        "color": "W",
+        "item_type": "food",
+        "depth": 5,
+        "description": "Dense waybread from Dale. Filling but bland. It provides nourishment for about 2,000 turns under normal conditions."
+      },
+      {
+        "id": 404,
+        "name": "Pipe-weed",
+        "display_char": ",",
+        "color": "g",
+        "item_type": "food",
+        "depth": 3,
+        "description": "Fine Longbottom Leaf, the best pipe-weed in the Southfarthing. A few puffs steady the nerves, curing fear and granting +3 Grace for 30 turns. Creates a tell-tale wisp of smoke. Provides nourishment for about 250 turns."
+      },
+      {
+        "id": 410,
+        "name": "Piece of Mithril",
+        "display_char": "~",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 15,
+        "description": "Small shining pieces of true silver. They can be used at a forge to create mithril items."
+      },
+      {
+        "id": 411,
+        "name": "Mallorn Torch",
+        "display_char": "~",
+        "color": "U",
+        "item_type": "light_source",
+        "depth": 1,
+        "description": "The wood of the mallorn burns bright but briefly. You can equip it as a light source with a radius of 3 squares. It may also be used to fuel another wooden torch, up to a maximum of 100 turns of light."
+      },
+      {
+        "id": 412,
+        "name": "Concentrated Healer's Herb",
+        "display_char": ",",
+        "color": "G",
+        "item_type": "food",
+        "depth": 99,
+        "description": "A potent concentrate of healing herbs. It cures all cuts and heals three-quarters of your health. Created by combining two Healer's Herbs with Alchemy. Provides nourishment for about 250 turns."
+      },
+      {
+        "id": 413,
+        "name": "Potent Athelas",
+        "display_char": ",",
+        "color": "G",
+        "item_type": "food",
+        "depth": 99,
+        "description": "A powerful preparation of kingsfoil. It cures poison, fear, confusion, and hallucination, heals half your health, and cures all shadow-sickness. Created by combining two Athelas with Alchemy. Provides nourishment for about 250 turns."
+      },
+      {
+        "id": 414,
+        "name": "Concentrated Waymeal",
+        "display_char": ",",
+        "color": "G",
+        "item_type": "food",
+        "depth": 99,
+        "description": "A dense concentrate of traveler's herbs. Created by combining two Waymeals with Alchemy. It provides nourishment for about 4,000 turns under normal conditions."
+      },
+      {
+        "id": 415,
+        "name": "Potent Orc-rage Mushroom",
+        "display_char": ",",
+        "color": "v",
+        "item_type": "food",
+        "depth": 99,
+        "description": "A highly concentrated fungal preparation. It sends you into a powerful rage (+2 Str/Con, -2 Dex/Gra, special melee attack, resistance to fear) for 15d4 turns. Created by combining two Orc-rage Mushrooms with Alchemy. Provides nourishment for about 250 turns."
+      },
+      {
+        "id": 420,
+        "name": "Rusted Helm",
+        "display_char": "]",
+        "color": "s1",
+        "item_type": "misc",
+        "depth": 1,
+        "description": "An old helm covered in rust. It offers some protection, but not much."
+      },
+      {
+        "id": 421,
+        "name": "Worn Boots",
+        "display_char": "]",
+        "color": "U",
+        "item_type": "misc",
+        "depth": 1,
+        "description": "Old boots that have seen better days. They still keep out the worst of the mud."
+      },
+      {
+        "id": 422,
+        "name": "Shattered Shield",
+        "display_char": ")",
+        "color": "s",
+        "item_type": "shield",
+        "depth": 1,
+        "description": "The remains of a once-sturdy shield. It might deflect a blow or two."
+      },
+      {
+        "id": 451,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Welcome to The Necromancer. The game is set within the fortress of Dol Guldur. You have journeyed through the dark forest of Mirkwood to reach the Necromancer's stronghold, and at great cost have found your way in. You plan to descend into the depths to find Thrain's ring and the key to Erebor, so that the dwarves might reclaim their homeland.  As with many other Roguelike games, graphics are represented by text: you are represented by the @, the + is a door, the ~ is a note, the blocks are walls. Try moving around with the keypad or arrow keys to reach the note. (You may need to press Numlock if your keypad doesn't work)."
+      },
+      {
+        "id": 452,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "To proceed, you will need to go through that door. To open a door, just try to move into it. Some doors are locked, in which case you will need to try multiple times in order to pick the lock. Alternatively, you could try bashing down the door by holding down Control while you move into it (or press (/) before moving). Some doors are stuck, in which case bashing them down is the only way past.  (Note: if you have vi keys enabled, Control behaves differently - use the / key instead.)"
+      },
+      {
+        "id": 453,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "There are many different types of objects, which are represented by punctuation symbols. For example the | is a sword and the ( is a piece of armour. To pick them up, walk onto them and press (,). The comma key interacts with your current square. Since there is an object there, it picks it up. To drop an object, press (d)."
+      },
+      {
+        "id": 454,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Once you have got the items, they will be in your inventory. Your inventory is displayed in a window to the right of the main map. If you cannot see this window, you can also view inventory by pressing (i)."
+      },
+      {
+        "id": 455,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Now that you can view your inventory, try equipping your sword and armour. To do this, press (u) to use an item, followed by the inventory letter of the item you wish to use. When you have equipped both sword and armour, they will disappear from your inventory and appear in your equipment list (in a window to the right). You can also press (e) to view equipment."
+      },
+      {
+        "id": 456,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "You are now ready to try some combat. Creatures in Sil are usually represented by letters of the alphabet. In the next room lies the least fearsome enemy in the game: the tanglethorn. It cannot move, so simply walk up to it and move into it to attack. However, remember that in Sil death is final. If things start going badly, you can always retreat."
+      },
+      {
+        "id": 457,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "To find out everything else you need to know about combat, you should read the appropriate pages in the manual that comes with the game. This is not essential for your first few games, but will help you explore the rich tactical combat system in Sil."
+      },
+      {
+        "id": 458,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "There is no obvious way out of this room, but there might be a secret door somewhere. Pressing (z) or (5) waits a single turn and also increases your natural searching ability. Try walking around the wall of the room and searching for a secret door. You can also rest until healed by holding Shift while pressing (z) or (5). This might be useful after that fight."
+      },
+      {
+        "id": 459,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "The } here is a bow, and the - is a set of arrows. Pick them up using (,), then wield them both using (u). You can now fire arrows using (f). Try this in the next room."
+      },
+      {
+        "id": 460,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "If you want to move a long distance, hold down Shift while you move (or press (.) before moving). This moves you continuously until something happens which needs your attention. It can even run around corners in corridors. Try it."
+      },
+      {
+        "id": 461,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Corridors and some rooms like this one are not lit, forcing you to rely on your torch or lantern for light. Darkness and light is a major theme in Sil."
+      },
+      {
+        "id": 462,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "You have found a shortsword. Note that it is listed as a Shortsword (+0, 1d7) [+1]. The numbers given in round brackets are attack values and those in square brackets are evasion. This shortsword gives no bonus to hit, does a single seven sided die of damage, and gives a +1 bonus to evasion. In contrast, your curved sword has -1 to accuracy and does two five sided dice of damage, and the same bonus to evasion.  This shortsword is also marked {special}. This means that it bears some unknown enchantment. You will have to discover what that is. For now try wielding it (u)."
+      },
+      {
+        "id": 463,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Here is a set of Gauntlets (-1) [+0, 1d1]. This means that they give a penalty of -1 to your accuracy, they have no bonus to evasion and they absorb 1 point of damage (a one sided die worth...). In contrast, your Leather Armour [-1, 1d4] has a -1 penalty to evasion and absorbs one four sided die of damage. As you can see, armour and weapons in Sil come with trade-offs between attack (chance of hitting; damage), and defence (chance of evading hits; damage reduction). Which pieces of equipment are best will depend on the circumstances."
+      },
+      {
+        "id": 464,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "If you were wielding the shortsword, you would have noticed it glow brightly in the presence of the orc, indicating to the perceptive player that it bears an enchantment against orcs. This means that it does an extra die of damage against orcs, making its 1d7 into 2d7: a large bonus."
+      },
+      {
+        "id": 465,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "The halls of Dol Guldur are littered with many traps. Near here is a caltrop trap which temporarily slows you. Like most traps, it can be disarmed by holding down Control while attempting to move into it (or pressing (/) before moving). This also has a chance of triggering the trap. Since it is not too dangerous, try to disarm it until you succeed.  (Note: if you have vi keys enabled, Control behaves differently - use the / key instead.)"
+      },
+      {
+        "id": 466,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Your character has four main statistics: Strength, Dexterity, Constitution, and Grace. These are represented at the left of the screen. The numbers can be positive or negative, with zero representing the average for the humans of this age."
+      },
+      {
+        "id": 467,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Your Strength mainly affects the damage you deal. You can get an extra side on each damage die for each point of Strength. Your strength is 2, so you do 2d7 damage with the curved sword instead of 2d5. You only do 1d8 damage with the shortsword though, as you can get at most 1 extra side for each lb the weapon weighs. Your abilities with your current weapon/bow/armour are listed on the left of the screen too. Try switching weapons to see what happens."
+      },
+      {
+        "id": 468,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Your Constitution increases your maximum health. Unlike many other games, in Sil it is the only thing that affects maximum Health. To survive the more challenging opponents, you will need to get better at avoiding their attacks or absorbing the damage with armour."
+      },
+      {
+        "id": 469,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "As well as your Statistics, you have 8 skills open to you. Your Dexterity affects the first four of these: Melee, Archery, Evasion, and Stealth."
+      },
+      {
+        "id": 470,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "As well as your Statistics, you have 8 skills open to you. Your Grace affects the last four of these: Perception, Will, Smithing, and Lore. It also increases your 'Voice' which is a measure of how long you can maintain your concentration."
+      },
+      {
+        "id": 471,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "To have a look at your character sheet, press (Escape) to bring up the main menu then choose the second option. This will show all of your Skills and much more. To exit just press (Escape) (which exits any menu or screen). An alternative way to look at your character sheet is to press the @ key."
+      },
+      {
+        "id": 472,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "In Sil, your character gains experience from encountering enemies, killing enemies, identifying items, and reaching new depths in the dungeon. You can use the experience you have earned to increase your Skills via the character sheet, but don't do so right now."
+      },
+      {
+        "id": 473,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Sometimes you won't know what a character on the screen represents. To find out, press (l), which allows you to look at objects."
+      },
+      {
+        "id": 474,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Sometimes you will have identified an item, but still won't know exactly what it does. You can find out more by pressing (x) to examine it."
+      },
+      {
+        "id": 475,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Sometimes you will forget which key does what, or need a new command. You can see a list of all the key commands by pressing (?)."
+      },
+      {
+        "id": 476,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "You now know more than enough to start playing Sil and can probably pick up most things as you go along, with occasional references to the manual if you want to know exactly how things work. If you'd like to continue with the tutorial, just take the door to the north. If you'd like to start a proper game, then go through the passage to the east. If you want to skip this part of the tutorial next time, there is a secret door to the south between the first room and this room."
+      },
+      {
+        "id": 477,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "To use the staircase, type (,) when standing on it."
+      },
+      {
+        "id": 478,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Enemies have three levels of alertness. They can be asleep, unwary, or alert. When they are asleep they don't move, and their Evasion score is set to [-5]. When they are unwary, they move around oblivious to you and their Evasion is halved.  Remaining unnoticed can be a great advantage. You can try to avoid all enemies, avoid only those you cannot handle, or kill them in their sleep. It is even possible to play the game without any combat if you are very careful."
+      },
+      {
+        "id": 479,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Your chance to remain unseen is primarily affected by your Stealth skill. Enemies get a penalty to notice you based on how far away they are, with closed doors counting as five squares.  If you are within sight of an unwary enemy, it receives a bonus to notice you, and this effect is increased for each floor square around you. It thus pays to remain out of sight and behind closed doors, or (if you must be in sight), to hide near the walls and corners of rooms. Finally, there is a penalty for making loud noises, such as being involved in combat."
+      },
+      {
+        "id": 480,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "If it is critical to avoid attracting attention, you get a bonus for staying still, or for moving slowly (Stealth mode). To switch this on or off, press (S). Using Stealth mode and sticking to the walls, see if you can evade these Orc soldiers. If not, don't despair -- stealth is not always easy."
+      },
+      {
+        "id": 481,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "It looks like there has been a cave-in here. To get through you will need to move diagonally. This is easy with a keypad, but harder on a laptop. To move diagonally, use the 1 3 7 9 keys at the top of the keyboard. This can be a little tricky to learn, but it is often convenient and sometimes essential. If you are very familiar with the hjkl movement keys, there is an option to use them instead in the options menu (find it from the main menu)."
+      },
+      {
+        "id": 482,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "The corridor ahead is completely blocked, but there is a shovel here. If you are carrying a shovel, you can use Control (or (/)) to tunnel through the rubble. Deeper down you might find mattocks which can dig through quartz veins, and even some ways to dig through granite. It is strongly recommended that you carry some means of digging when you venture down into the depths, or you could become trapped."
+      },
+      {
+        "id": 483,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Some characters learn words of power and ancient lore, which can have great effect upon you, your enemies, or even your environment. Your character knows abilities that aid healing and provide light. Behind this door you will find use for them. Press (s) to begin or end using your lore abilities."
+      },
+      {
+        "id": 484,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Some characters master Smithing and create enchanted items. To do so requires you to find a forge and when standing in it, to press (,). Your character knows how to make magical jewellery. Find the forge through this door and create a Ring of Frost. This will help protect you from enemies that have fiery attacks."
+      },
+      {
+        "id": 485,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "When you have learnt about Lore and Smithing, go through this door."
+      },
+      {
+        "id": 486,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "Each of the eight skills has a set of special Abilities tied to it. Words of power and ancient knowledge are Abilities for the Lore skill. Jewellery is an Ability for the Smithing skill."
+      },
+      {
+        "id": 487,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "To look through the available Abilities, press (Tab). You will see that each one has a required number of points in that Skill and possibly some pre-requisite Abilities. Typically the first ability in a skill costs 500 experience, then 1000, 1500 etc. You will have to find the right balance between spending experience on Skill points and on abilities. Now might be a good time to spend any experience you have on Skills or Abilities."
+      },
+      {
+        "id": 488,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "That's it. You now know enough to really get started. If you need to know any more, then have a look through the manual. Through here lies your final challenge, and one that will almost certainly mean your demise. See if you can make it past the challenge and reach the staircase, using it by pressing (,)."
+      },
+      {
+        "id": 489,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "39."
+      },
+      {
+        "id": 490,
+        "name": "Note",
+        "display_char": "~",
+        "color": "W1",
+        "item_type": "misc",
+        "depth": 0,
+        "description": "40."
+      },
+      {
+        "id": 491,
+        "name": "Broken Glowing Weapon",
+        "display_char": "|",
+        "color": "B",
+        "item_type": "sword",
+        "depth": 3,
+        "description": "A shattered weapon that still glimmers with faint enchantment. A skilled smith with the Reforge ability might salvage the magic within to create a new enchanted weapon."
+      },
+      {
+        "id": 492,
+        "name": "Shattered Elven Mail",
+        "display_char": "[",
+        "color": "B",
+        "item_type": "hard_armor",
+        "depth": 4,
+        "description": "Fragments of elven armor that still glow with faint enchantment. Perhaps it can be reforged."
+      },
+      {
+        "id": 493,
+        "name": "Broken Strange Weapon",
+        "display_char": "|",
+        "color": "v",
+        "item_type": "sword",
+        "depth": 8,
+        "description": "A weapon-fragment that seems to shift when you're not looking. It hums with power that transcends normal enchantment. A master smith might forge it into something legendary."
+      },
+      {
+        "id": 494,
+        "name": "Twisted Shadow-plate",
+        "display_char": "[",
+        "color": "v",
+        "item_type": "hard_armor",
+        "depth": 10,
+        "description": "Shards of dark armor from some fell creature. The metal seems to shift in the light."
+      },
+      {
+        "id": 495,
+        "name": "Broken Strange Jewelry",
+        "display_char": "=",
+        "color": "v",
+        "item_type": "ring",
+        "depth": 12,
+        "description": "A cracked ring or amulet that whispers at the edge of hearing. Great power sleeps within, waiting to be reawakened."
+      },
+      {
+        "id": 500,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 6,
+        "description": "A wisp of pale blue light hovers before you. Within it, you sense a fragment of tortured memory. \"Halls of stone... my father's throne... gone...\" The voice of Thr\u00e1in II, lost dwarf-king."
+      },
+      {
+        "id": 501,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 7,
+        "description": "A ghostly memory-wisp pulses sadly. \"The key... I hid the key... where did I hide it?\" Thr\u00e1in's confusion echoes through the ages."
+      },
+      {
+        "id": 502,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 9,
+        "description": "This memory burns with old pain. \"Ambushed... Azanulbizar survivors... so few of us left...\" The capture of a dwarf prince, long ago."
+      },
+      {
+        "id": 503,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 11,
+        "description": "Rage and grief swirl within this memory. \"The Ring! He took my Ring! Durin's heirloom!\" Sauron's theft of the last Dwarven Ring."
+      },
+      {
+        "id": 504,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 12,
+        "description": "Screams echo within this dark memory. \"Questions... always questions... I told him nothing!\" Thr\u00e1in's defiance under torture."
+      },
+      {
+        "id": 505,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 14,
+        "description": "Pride blazes in this memory despite the darkness. \"My name is Thr\u00e1in! Son of Thr\u00f3r! I am NOT broken!\" A dwarf's stubborn courage."
+      },
+      {
+        "id": 506,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 16,
+        "description": "Longing fills this memory. \"My son... does Thorin still live? The line continues?\" A father's hope in the darkness."
+      },
+      {
+        "id": 507,
+        "name": "Thr\u00e1in's Memory",
+        "display_char": "*",
+        "color": "B",
+        "item_type": "misc",
+        "depth": 19,
+        "description": "A final spark of hope. \"Someone comes... I sense it... dwarf-friend... rescue?\" Thr\u00e1in's last hope, perhaps for you."
+      },
+      {
+        "id": 510,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 4,
+        "description": "A shard of crystallized darkness, cold as void. Where Sauron's power concentrates, shadow itself takes solid form."
+      },
+      {
+        "id": 511,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 8,
+        "description": "This fragment of solid shadow seems to drink in light. You can feel malice radiating from within."
+      },
+      {
+        "id": 512,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 12,
+        "description": "A night-black crystal that hurts to look upon. The Necromancer's power has pooled here, becoming tangible."
+      },
+      {
+        "id": 513,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 15,
+        "description": "Shadow made solid. This fragment pulses with a heartbeat that is not your own. Sauron's essence crystallized."
+      },
+      {
+        "id": 514,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 18,
+        "description": "A piece of perfect darkness. Looking into it, you see visions of fire and ruin. Sauron's memories, perhaps."
+      },
+      {
+        "id": 515,
+        "name": "Shadow Fragment",
+        "display_char": "*",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 20,
+        "description": "They call this \"Sauron's Tear\" - a drop of pure shadow shed when the Necromancer first bound himself to this place."
+      },
+      {
+        "id": 520,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 2,
+        "description": "Scratched into the stone: \"Beware the watchers - they see in darkness.\" A captive's warning, left for those who follow."
+      },
+      {
+        "id": 521,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 4,
+        "description": "Tengwar script, elegant despite the crude scratching: \"We are forgotten.\" An Elvish lament from long ago."
+      },
+      {
+        "id": 522,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 7,
+        "description": "Tally marks scratched deep into the stone. Hundreds of them. Someone counted the days of their imprisonment here."
+      },
+      {
+        "id": 523,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 10,
+        "description": "A rough map fragment scratched into the wall, showing what might be an escape route. Hard to read now."
+      },
+      {
+        "id": 524,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 13,
+        "description": "Black Speech characters burned into the stone. Reading them hurts your eyes, but grants dark knowledge. A curse."
+      },
+      {
+        "id": 525,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 16,
+        "description": "A single word in Black Speech: Sauron's name. Seeing it written sends a chill down your spine."
+      },
+      {
+        "id": 526,
+        "name": "Ancient Glyph",
+        "display_char": ";",
+        "color": "y",
+        "item_type": "misc",
+        "depth": 19,
+        "description": "\"Tell my family I died fighting.\" A final message, never delivered. You are the first to read it in centuries."
+      },
+      {
+        "id": 530,
+        "name": "Palant\u00edr Shard",
+        "display_char": "*",
+        "color": "v",
+        "item_type": "misc",
+        "depth": 3,
+        "description": "A fragment of the great seeing-stone of Amon S\u00fbl, shattered when Arvedui drowned. Glimpses of Forochel's ice flicker within."
+      },
+      {
+        "id": 531,
+        "name": "Palant\u00edr Shard",
+        "display_char": "*",
+        "color": "v",
+        "item_type": "misc",
+        "depth": 9,
+        "description": "This shard shows visions of endless plains - the East, where Sauron's influence spreads. Rh\u00fbn under shadow."
+      },
+      {
+        "id": 532,
+        "name": "Palant\u00edr Shard",
+        "display_char": "*",
+        "color": "v",
+        "item_type": "misc",
+        "depth": 15,
+        "description": "Fire and ash swirl within this fragment. Mordor revealed - the land where Sauron's true power lies waiting."
+      },
+      {
+        "id": 533,
+        "name": "Palant\u00edr Shard",
+        "display_char": "*",
+        "color": "v",
+        "item_type": "misc",
+        "depth": 20,
+        "description": "Light, pure and silver, gleams within. For an instant you see the Undying Lands - a glimpse of Valinor's shore."
+      },
+      {
+        "id": 540,
+        "name": "Mithril Brooch",
+        "display_char": "$",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 4,
+        "description": "A brooch bearing the sigil of Erebor - the mountain and seven stars. Part of the dragon's hoard, stolen to furnish Dol Guldur."
+      },
+      {
+        "id": 541,
+        "name": "Thr\u00f3r's Coin",
+        "display_char": "$",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 7,
+        "description": "A gold coin bearing King Thr\u00f3r's face. Currency from a kingdom that fell to dragonfire. Tribute extracted by Sauron's servants."
+      },
+      {
+        "id": 542,
+        "name": "Dragon-Touched Gem",
+        "display_char": "$",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 10,
+        "description": "A gem that still radiates faint heat - it lay against Smaug's belly for a century. Warm even in Dol Guldur's cold."
+      },
+      {
+        "id": 543,
+        "name": "Dwarven Chronicle Page",
+        "display_char": "$",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 13,
+        "description": "A page torn from an Erebor chronicle, recording the days before the fall. History stolen along with gold."
+      },
+      {
+        "id": 544,
+        "name": "Durin's Day Fragment",
+        "display_char": "$",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 16,
+        "description": "A piece of the throne-room calendar showing Durin's Day. The secret door could only open then. Now forgotten."
+      },
+      {
+        "id": 550,
+        "name": "Prisoner's Account",
+        "display_char": "~",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 3,
+        "description": "\"Day 47. The screaming stopped. I don't know if that's better or worse. The guards speak of someone called the Necromancer. They fear him almost as much as we do.\" The scratched words of a forgotten captive."
+      },
+      {
+        "id": 551,
+        "name": "Prisoner's Account",
+        "display_char": "~",
+        "color": "u",
+        "item_type": "misc",
+        "depth": 5,
+        "description": "\"They took Aldor today. He came back wrong. His eyes... empty. He serves them now. The shadow takes everything eventually.\" The last entry is smeared with something dark."
+      },
+      {
+        "id": 552,
+        "name": "Orc Report",
+        "display_char": "~",
+        "color": "R",
+        "item_type": "misc",
+        "depth": 7,
+        "description": "\"Prisoners ready for questioning. One dwarf still resists - the old one with the beard-rings. Master says he knows about mountain. We break him soon.\" Crude orkish script, decades old."
+      },
+      {
+        "id": 553,
+        "name": "Orc Report",
+        "display_char": "~",
+        "color": "R",
+        "item_type": "misc",
+        "depth": 9,
+        "description": "\"Patrols increased. Master senses something. Grey Wanderer spotted near forest edge again. All guards to stations.\" The orcs' fear of Gandalf is palpable even in writing."
+      },
+      {
+        "id": 554,
+        "name": "Historical Fragment",
+        "display_char": "~",
+        "color": "W",
+        "item_type": "misc",
+        "depth": 11,
+        "description": "\"...and so the fortress of Dol Guldur was built upon the hill of Amon Lanc, where once the Silvan Elves held court. The shadow came slowly, driving them north...\" An elvish chronicle, half-burned."
+      },
+      {
+        "id": 555,
+        "name": "Historical Fragment",
+        "display_char": "~",
+        "color": "W",
+        "item_type": "misc",
+        "depth": 13,
+        "description": "\"The White Council debated long. Was it truly Sauron returned? Saruman urged caution. Gandalf pushed for assault. In the end, nothing was done.\" A wizard's notes, abandoned here."
+      },
+      {
+        "id": 556,
+        "name": "Necromancer Sighting",
+        "display_char": "~",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 15,
+        "description": "\"I saw him today. Not a man - a shadow that wears the shape of one. Where he walks, torches dim. Where he looks, courage dies. I understand now why the elves fled.\" Written in a trembling hand."
+      },
+      {
+        "id": 557,
+        "name": "Necromancer Sighting",
+        "display_char": "~",
+        "color": "D",
+        "item_type": "misc",
+        "depth": 17,
+        "description": "\"He spoke to me. Or rather, spoke through me - I felt his voice in my skull. 'WHERE IS THE RING?' Over and over. Even now I hear it echoing. He searches for something precious.\" A final testament."
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 1,
+        "name": "of Barahir",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A ring shaped into twinned serpents with eyes of emerald meeting beneath a crown of flowers. It has passed through the line of Isildur to the D\u00fanedain chieftains. It is a symbol of the ancient alliance between Elves and Men."
+      },
+      {
+        "id": 2,
+        "name": "'Vilya's Shard'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "A fragment broken from the Ring of Air, mightiest of the Three. Even this shard retains some of Vilya's power to preserve and heal. It can cure even a Morgul-wound, but crumbles to dust when used thus."
+      },
+      {
+        "id": 3,
+        "name": "of the Woodland Realm",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A pendant of silver and green stone, worn by the counselors of King Thranduil. It carries the memory of ancient songs and fills the wearer with courage against the shadow."
+      },
+      {
+        "id": 4,
+        "name": "'Nimrodel's Tear'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A perfect pearl said to have been wept by Nimrodel herself when she was lost in the mountains. It gleams with the light of Lothl\u00f3rien and soothes the heart of those who bear it."
+      },
+      {
+        "id": 5,
+        "name": "'Evenstar'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "A silver pendant set with a white stone that glimmers like starlight on water. It was crafted in Rivendell and brings hope to those who carry it in dark places."
+      },
+      {
+        "id": 6,
+        "name": "of Girion",
+        "display_char": "",
+        "color": "",
+        "depth": 16,
+        "description": "Five hundred emeralds green as grass, set in a necklace of silver and gold. This treasure of Dale was lost when Smaug came, and has somehow found its way to Dol Guldur's hoards."
+      },
+      {
+        "id": 7,
+        "name": "of the Nazg\u00fbl",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "One of the Nine Rings given to mortal men, doomed to die. It grants power over shadows but slowly devours the wearer's soul. To wear it long is to become a wraith yourself."
+      },
+      {
+        "id": 8,
+        "name": "of Gondor",
+        "display_char": "]",
+        "color": "w",
+        "depth": 14,
+        "description": "The winged crown of the Kings of Gondor, lost when E\u00e4rnur rode to Minas Morgul and was never seen again. How it came to Dol Guldur is a mystery wrapped in darkness."
+      },
+      {
+        "id": 9,
+        "name": "of the Witch-King",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "An iron crown of cruel design, worn by the Lord of the Nazg\u00fbl himself. It radiates malice and fills those nearby with dread. Great power it offers, but at terrible cost."
+      },
+      {
+        "id": 10,
+        "name": "of the Dwarrowdelf",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A crown of mithril and gold, set with diamonds that gleam like stars. It was worn by the Kings of Khazad-d\u00fbm before the coming of Durin's Bane, and carries still the majesty of that realm."
+      },
+      {
+        "id": 20,
+        "name": "of Radagast",
+        "display_char": "",
+        "color": "",
+        "depth": 4,
+        "description": "A brown robe of rough weave, worn by Radagast the Brown, wizard of Rhosgobel. It offers protection against the venoms and poisons of the creatures he tends."
+      },
+      {
+        "id": 21,
+        "name": "of Galadriel",
+        "display_char": "(",
+        "color": "w",
+        "depth": 6,
+        "description": "A robe of white cloth that seems to glow with inner light. It was woven in Lothl\u00f3rien and carries the blessing of the Lady of the Golden Wood."
+      },
+      {
+        "id": 22,
+        "name": "of Rivendell",
+        "display_char": "",
+        "color": "",
+        "depth": 18,
+        "description": "A grey-green garment of elven make, light as a feather yet warm as fur. Those who wear it move with the swiftness of the Eldar."
+      },
+      {
+        "id": 24,
+        "name": "of the Ranger",
+        "display_char": "",
+        "color": "",
+        "depth": 3,
+        "description": "Well-worn leather armor of the Rangers of the North. It has seen many miles and many battles against the servants of the Enemy."
+      },
+      {
+        "id": 25,
+        "name": "of Halbarad",
+        "display_char": "",
+        "color": "",
+        "depth": 6,
+        "description": "Armor worn by Halbarad, kinsman to Aragorn and standard-bearer of the Grey Company. He fell in battle, but his armor survived to fight on."
+      },
+      {
+        "id": 26,
+        "name": "'Woodman's Leather'",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "Armor of the Woodmen who dwell in western Mirkwood. Those who wear it learn to fight as they do, using the forest itself as a weapon."
+      },
+      {
+        "id": 28,
+        "name": "of Bard",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "Armor that will one day be worn by Bard the Bowman when he slays Smaug the Golden. For now, it waits in darkness for its destined bearer."
+      },
+      {
+        "id": 29,
+        "name": "of the Beornings",
+        "display_char": "",
+        "color": "",
+        "depth": 4,
+        "description": "Rough armor of the skin-changers who dwell between Mirkwood and the Misty Mountains. It grants the wearer something of their fierce determination."
+      },
+      {
+        "id": 32,
+        "name": "of E\u00f6l",
+        "display_char": "",
+        "color": "",
+        "depth": 15,
+        "description": "Black armor of galvorn, forged by the Dark Elf E\u00f6l in ages past. It has passed through many hands since then, none of them clean."
+      },
+      {
+        "id": 34,
+        "name": "of Thranduil",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "Armor of the Elvenking of the Woodland Realm, wrought of silver steel and set with green gems. It has turned many a spider's fang and orc's blade."
+      },
+      {
+        "id": 35,
+        "name": "of D\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 13,
+        "description": "Armor of D\u00e1in Ironfoot, Lord of the Iron Hills. It was forged in the deeps of his mountain halls and tempered against dragonfire."
+      },
+      {
+        "id": 36,
+        "name": "'Mithril Shirt'",
+        "display_char": "",
+        "color": "",
+        "depth": 13,
+        "description": "A corslet of mithril rings, light as a feather and hard as dragon-scales. Such shirts are beyond price, for the art of their making is all but lost."
+      },
+      {
+        "id": 37,
+        "name": "of the Tower Guard",
+        "display_char": "",
+        "color": "",
+        "depth": 13,
+        "description": "Black mail and silver helm, the armor of the Guards of the Citadel of Minas Tirith. Those who wear it stand firm against any foe."
+      },
+      {
+        "id": 39,
+        "name": "of Celeborn",
+        "display_char": "",
+        "color": "",
+        "depth": 5,
+        "description": "Armor of the Lord of Lothl\u00f3rien, wrought of silver rings that gleam with the light of Telperion. It grants strength to stand against many foes."
+      },
+      {
+        "id": 40,
+        "name": "of Elendil",
+        "display_char": "",
+        "color": "",
+        "depth": 11,
+        "description": "The armor of Elendil the Tall, who fell before the gates of Barad-d\u00fbr. It has been kept in Rivendell against the day when his heir would need it."
+      },
+      {
+        "id": 41,
+        "name": "'Starlight'",
+        "display_char": "",
+        "color": "",
+        "depth": 16,
+        "description": "A coat of mithril rings that shimmers like starlight on water. It was made in Lothl\u00f3rien and carries the blessing of Elbereth herself."
+      },
+      {
+        "id": 42,
+        "name": "of the Mark",
+        "display_char": "",
+        "color": "",
+        "depth": 6,
+        "description": "A shield bearing the white horse of Rohan on a green field. Those who carry it ride to battle with courage undimmed by darkness."
+      },
+      {
+        "id": 43,
+        "name": "of Glorfindel",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "The shield of Glorfindel, who returned from the Halls of Mandos and now dwells in Rivendell. He is ever ready to ride against the servants of Sauron."
+      },
+      {
+        "id": 44,
+        "name": "of the D\u00fanedain",
+        "display_char": "",
+        "color": "",
+        "depth": 3,
+        "description": "A shield of the Rangers, marked with the star of the North Kingdom. Many enchantments are woven into its worn surface."
+      },
+      {
+        "id": 45,
+        "name": "of Dale",
+        "display_char": ")",
+        "color": "r",
+        "depth": 8,
+        "description": "A shield of Dale, forged to withstand dragonfire. It bears the raven standard of that city."
+      },
+      {
+        "id": 46,
+        "name": "of Gil-galad",
+        "display_char": ")",
+        "color": "b1",
+        "depth": 13,
+        "description": "A shining blue shield, borne by the last High King of the Noldor in Middle-earth. He fell before Barad-d\u00fbr, but his shield survived."
+      },
+      {
+        "id": 47,
+        "name": "of the White Tower",
+        "display_char": ")",
+        "color": "w",
+        "depth": 18,
+        "description": "A shield of mithril bearing the device of the White Tree. It shines with a light that heartens the faithful and dismays the enemy."
+      },
+      {
+        "id": 48,
+        "name": "of Dol Amroth",
+        "display_char": ")",
+        "color": "b",
+        "depth": 10,
+        "description": "A shield bearing the silver swan of Dol Amroth. The Princes of that city have elven blood, and their arms carry enchantments of endurance."
+      },
+      {
+        "id": 52,
+        "name": "'Morgul-blade'",
+        "display_char": "",
+        "color": "",
+        "depth": 7,
+        "description": "A fell blade of the Nazg\u00fbl, cold to the touch. Those wounded by it sicken and fade, becoming wraiths themselves. To wield it is to invite darkness into your soul."
+      },
+      {
+        "id": 53,
+        "name": "'Sting'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": "An Elven blade that glows blue when orcs are near. It will one day be found by a hobbit in a troll's cave, but for now it lies in Sauron's hoard."
+      },
+      {
+        "id": 54,
+        "name": "'Narsil Shard'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "A shard of Narsil, the sword that was broken. Even this fragment of the blade that cut the Ring from Sauron's hand burns with light hateful to the servants of darkness."
+      },
+      {
+        "id": 55,
+        "name": "of Harad",
+        "display_char": "",
+        "color": "",
+        "depth": 4,
+        "description": "A curved blade of the Haradrim, who serve the Dark Lord. Its edge is keen but its purpose is cruel, turned always against the Free Peoples."
+      },
+      {
+        "id": 56,
+        "name": "of the Corsairs",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A blade of the Corsairs of Umbar, enemies of Gondor. It has drunk deeply of blood and hungers for more."
+      },
+      {
+        "id": 58,
+        "name": "of Haldir",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "The blade of Haldir, Marchwarden of Lothl\u00f3rien. He guards the borders of the Golden Wood against all servants of the Enemy."
+      },
+      {
+        "id": 59,
+        "name": "'Westernesse'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A blade of Westernesse, forged in the days when the D\u00fanedain were mighty. Such blades are deadly to the servants of Sauron, especially the undead."
+      },
+      {
+        "id": 60,
+        "name": "of the Grey Company",
+        "display_char": "",
+        "color": "",
+        "depth": 9,
+        "description": "A blade carried by the Rangers who ride with Aragorn. It is swift in defense and deadly in counterattack."
+      },
+      {
+        "id": 64,
+        "name": "'Orcrist'",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "The mate to Glamdring, called \"Goblin-cleaver\" by the orcs who fear it. It will one day rest on Thorin's tomb, but for now Sauron hoards it jealously."
+      },
+      {
+        "id": 65,
+        "name": "'Glamdring'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "Forged for Turgon, King of Gondolin, this bright blade is called \"Foe-hammer\" by the orcs. It glows blue when enemies are near."
+      },
+      {
+        "id": 66,
+        "name": "'Narsil'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "The sword of Elendil, forged by Telchar of Nogrod. It cut the Ring from Sauron's hand before it was broken. The shards are kept in Rivendell, but this is the blade whole, from an earlier time."
+      },
+      {
+        "id": 67,
+        "name": "of Isildur",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A blade that belonged to Isildur, who cut the Ring from Sauron's hand but was betrayed by it. It carries both his strength and his doom."
+      },
+      {
+        "id": 71,
+        "name": "of Gondor",
+        "display_char": "|",
+        "color": "w",
+        "depth": 15,
+        "description": "A blade of the soldiers of Gondor, bearing the device of the White Tree. It has defended the West against Sauron's servants for generations."
+      },
+      {
+        "id": 72,
+        "name": "'G\u00fathwin\u00eb'",
+        "display_char": "|",
+        "color": "g",
+        "depth": 11,
+        "description": "A blade of Rohan, its name meaning \"Battle-friend.\" It will one day be wielded by \u00c9omer, but now it waits for its destined bearer."
+      },
+      {
+        "id": 74,
+        "name": "'Herugrim'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "The sword of the Kings of Rohan, its name meaning \"Fierce-sword.\" It has been long unused, but its edge remains sharp and its purpose true."
+      },
+      {
+        "id": 75,
+        "name": "of the Witch-Realm",
+        "display_char": "",
+        "color": "",
+        "depth": 17,
+        "description": "A black blade from Angmar, the Witch-king's realm. It was forged to slay the living, but its bearer is haunted by the spirits of those it has slain."
+      },
+      {
+        "id": 76,
+        "name": "'Flame of the West'",
+        "display_char": "|",
+        "color": "r",
+        "depth": 15,
+        "description": "A blade wreathed in undying fire, forged long ago to fight the cold servants of the Enemy. Its light is a beacon of hope, but its heat consumes the weak."
+      },
+      {
+        "id": 80,
+        "name": "'Ringil'",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The blade of Fingolfin that wounded Morgoth seven times. It gleams like ice and burns with cold. Such a weapon in Sauron's hoard is a great prize indeed."
+      },
+      {
+        "id": 81,
+        "name": "'Aiglos'",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The legendary weapon of Gil-galad, called \"Snow-point\" for the cold light that plays along its edge. None could stand before it at the Battle of Dagorlad."
+      },
+      {
+        "id": 83,
+        "name": "of the Eldar",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A blade of the High Elves, wrought in days when their power was greater. Its light is hateful to all servants of the Shadow."
+      },
+      {
+        "id": 85,
+        "name": "'Aeglos'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "The mighty spear of Gil-galad, famed as \"Snow-point\" in the songs of Elves. Orcs and trolls feared its icy gleam at the Last Alliance."
+      },
+      {
+        "id": 86,
+        "name": "of the Eorlingas",
+        "display_char": "/",
+        "color": "g",
+        "depth": 8,
+        "description": "A cavalry spear of Rohan, made for the charge. The Riders of the Mark are famed throughout Middle-earth for their mounted warfare."
+      },
+      {
+        "id": 87,
+        "name": "of the Galadhrim",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "A spear of Lothl\u00f3rien, wrought of silver steel. It gleams with pale light and strikes true against the enemies of the Golden Wood."
+      },
+      {
+        "id": 89,
+        "name": "of Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A great spear forged by the smiths of Erebor, made to pierce dragon-scale. It awaits the day when the Mountain will be reclaimed."
+      },
+      {
+        "id": 90,
+        "name": "of Morgul",
+        "display_char": "/",
+        "color": "v",
+        "depth": 15,
+        "description": "A spear of Minas Morgul, cold and cruel. Its point is touched with the sorcery of the Nazg\u00fbl, and wounds from it fester with dark magic."
+      },
+      {
+        "id": 92,
+        "name": "of the Beornings",
+        "display_char": "",
+        "color": "",
+        "depth": 6,
+        "description": "An axe of the skin-changers, heavy and keen. It has split many an orc-helm and wolf-skull in defense of their lands."
+      },
+      {
+        "id": 93,
+        "name": "of the Iron Hills",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A battle axe of the Iron Hills dwarves, forged for war against orcs and trolls. Its weight is terrible and its edge never dulls."
+      },
+      {
+        "id": 94,
+        "name": "of Azanulbizar",
+        "display_char": "",
+        "color": "",
+        "depth": 15,
+        "description": "An axe that saw service at the Battle of Azanulbizar, where the dwarves avenged Thr\u00f3r's death. It is stained with orc-blood that will never wash clean."
+      },
+      {
+        "id": 95,
+        "name": "of Durin's Folk",
+        "display_char": "",
+        "color": "",
+        "depth": 18,
+        "description": "A mighty axe of Durin's Folk, forged in Khazad-d\u00fbm before its fall. It carries the strength and stubborn courage of the dwarves."
+      },
+      {
+        "id": 96,
+        "name": "'Baruk Khaz\u00e2d'",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "\"Axes of the Dwarves!\" This great axe bears the battle-cry of Durin's Folk etched into its blade. It hungers for vengeance against the servants of darkness."
+      },
+      {
+        "id": 99,
+        "name": "of Gondor",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A glaive of the soldiers of Gondor, its blade etched with the White Tree. It has defended the realm for many generations."
+      },
+      {
+        "id": 100,
+        "name": "of the Woodland Realm",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A glaive of Thranduil's warriors, made for fighting the great spiders of Mirkwood. Its long reach helps keep the venomous creatures at bay."
+      },
+      {
+        "id": 101,
+        "name": "'Spider-bane'",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A glaive forged specifically to fight the spawn of Ungoliant. Its edge is coated with an oil that burns spider-flesh and grants resistance to their venom."
+      },
+      {
+        "id": 104,
+        "name": "of Gandalf",
+        "display_char": "",
+        "color": "",
+        "depth": 2,
+        "description": "A plain wooden staff, but one that carries great power. It is the staff of Gandalf the Grey, and has seen him through many perils."
+      },
+      {
+        "id": 107,
+        "name": "of the Longbeards",
+        "display_char": "",
+        "color": "",
+        "depth": 11,
+        "description": "A war hammer of Durin's Folk, made for both smithing and battle. Its head rings like a bell when it strikes and its blows shatter stone."
+      },
+      {
+        "id": 108,
+        "name": "of Nogrod",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A hammer forged in Nogrod before its destruction. It carries the skill and malice of those dwarves who slew Thingol and stole the Silmaril."
+      },
+      {
+        "id": 114,
+        "name": "of Khazad-d\u00fbm",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A mighty mattock of the Dwarrowdelf, made for delving in the deeps. It can break through any stone and was used to mine the mithril that made Khazad-d\u00fbm rich."
+      },
+      {
+        "id": 117,
+        "name": "of Elrond",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A helm of the Lord of Rivendell, wrought of mithril and set with a single white gem. It grants wisdom and healing to its wearer."
+      },
+      {
+        "id": 118,
+        "name": "of the D\u00fanedain",
+        "display_char": "",
+        "color": "",
+        "depth": 15,
+        "description": "A helm of the Rangers of the North, made to watch and listen in the wild. Those who wear it become aware of danger before it strikes."
+      },
+      {
+        "id": 119,
+        "name": "of the Oathbreaker",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A helm worn by one of the Dead who dwell beneath Dunharrow. Those who broke their oath to Isildur cannot rest until they fulfill it."
+      },
+      {
+        "id": 120,
+        "name": "of the Dragonslayer",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A helm made for those who hunt dragons. It grants courage to face dragonfire and strength to wield the weapons needed to pierce dragon-scale."
+      },
+      {
+        "id": 121,
+        "name": "of Angmar",
+        "display_char": "]",
+        "color": "D",
+        "depth": 20,
+        "description": "A black helm from Angmar, the Witch-king's realm. It grants sight in darkness but darkens the soul of those who wear it."
+      },
+      {
+        "id": 122,
+        "name": "of Thr\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 16,
+        "description": "A mask of Thr\u00e1in, father of Thorin Oakenshield. He wore it when he attempted to retake Moria and when he was captured by Sauron's servants."
+      },
+      {
+        "id": 123,
+        "name": "of Rivendell",
+        "display_char": "]",
+        "color": "w",
+        "depth": 16,
+        "description": "A beautiful helm of mithril, wrought in Rivendell. It carries enchantments of endurance and protection against the powers of darkness."
+      },
+      {
+        "id": 131,
+        "name": "of Lothl\u00f3rien",
+        "display_char": "(",
+        "color": "g",
+        "depth": 13,
+        "description": "A cloak of the Galadhrim, woven on the looms of Lothl\u00f3rien. It shifts and changes color to match its surroundings, hiding the wearer from unfriendly eyes."
+      },
+      {
+        "id": 132,
+        "name": "of Elrond",
+        "display_char": "(",
+        "color": "b",
+        "depth": 20,
+        "description": "A cloak of the Lord of Rivendell, deep blue in color and lined with silver thread. It offers protection against both fire and cold."
+      },
+      {
+        "id": 134,
+        "name": "'Ranger's Cloak'",
+        "display_char": "",
+        "color": "",
+        "depth": 13,
+        "description": "A weathered cloak of the Rangers of the North. It blends with shadow and stone, helping its wearer pass unseen through the wild."
+      },
+      {
+        "id": 137,
+        "name": "of the Werewolf",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The skin of a great werewolf, servant of Sauron. If you wear it, you may pass as one of the enemy's beasts, but the darkness may seep into your soul."
+      },
+      {
+        "id": 138,
+        "name": "of the Vampire",
+        "display_char": "",
+        "color": "",
+        "depth": 23,
+        "description": "The wings of a vampire of Dol Guldur. Might they let you pass as a messenger of the Necromancer? But beware: such deceptions carry their own price."
+      },
+      {
+        "id": 142,
+        "name": "of Lothl\u00f3rien",
+        "display_char": "",
+        "color": "",
+        "depth": 7,
+        "description": "A bow of the Galadhrim, made of golden mallorn-wood. It grants its wielder the keen sight of the elves and the ability to strike from concealment."
+      },
+      {
+        "id": 143,
+        "name": "'Death's Whisper'",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A black bow of unknown origin. Its arrows fly silently and seek out the weak points in armor with uncanny accuracy."
+      },
+      {
+        "id": 145,
+        "name": "of the Galadhrim",
+        "display_char": "}",
+        "color": "g",
+        "depth": 14,
+        "description": "A great bow of Lothl\u00f3rien, strung with elven-hair that gleams gold in starlight. Its arrows fly true against the enemies of the Golden Wood."
+      },
+      {
+        "id": 146,
+        "name": "of the Mark",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A bow of Rohan, made for shooting from horseback. The Rohirrim are famed for their mounted archery, and this bow is a fine example of their craft."
+      },
+      {
+        "id": 148,
+        "name": "of Dale",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A great bow made from the horn of a dragon slain long ago. It grants courage against dragonfire and strikes especially deadly against the great worms."
+      },
+      {
+        "id": 150,
+        "name": "'Black Arrow'",
+        "display_char": "-",
+        "color": "D",
+        "depth": 7,
+        "description": "A black-feathered arrow of Dale, passed down through generations. It is said that one such arrow will slay the dragon Smaug, if aimed at the one bare patch in his jeweled armor."
+      },
+      {
+        "id": 154,
+        "name": "of Elrond",
+        "display_char": "",
+        "color": "",
+        "depth": 15,
+        "description": "Boots of the Lord of Rivendell, made for walking long roads. They grant swiftness and sure-footedness to their wearer."
+      },
+      {
+        "id": 155,
+        "name": "of the Ranger",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "Boots of the Rangers of the North, made for tracking and stalking in the wild. They leave little trace and help their wearer move in silence."
+      },
+      {
+        "id": 156,
+        "name": "of the Burglar",
+        "display_char": "",
+        "color": "",
+        "depth": 5,
+        "description": "Soft boots of leather, perfect for sneaking. They make no sound and help their wearer disappear when danger threatens."
+      },
+      {
+        "id": 158,
+        "name": "of Gondor",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "Greaves of the soldiers of Gondor, made to stand firm against the charges of the Enemy. They grant sure footing and steady nerves."
+      },
+      {
+        "id": 159,
+        "name": "of the Helcarax\u00eb",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "Greaves that survived the crossing of the Grinding Ice. They grant endurance against cold and hardship, sustaining their wearer through any trial."
+      },
+      {
+        "id": 161,
+        "name": "of the Archer",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "Gloves of the archers of Lothl\u00f3rien, made for the great bows of the Galadhrim. They grant steady aim and skill in the making of arrows."
+      },
+      {
+        "id": 162,
+        "name": "of the Smith",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "Gloves of a master smith, made to handle hot metal and delicate work alike. They grant skill in all manner of crafting."
+      },
+      {
+        "id": 163,
+        "name": "of the Healer",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "Gloves of the healers of Rivendell, supple and clean. They grant gentle skill in the tending of wounds and the curing of poisons."
+      },
+      {
+        "id": 165,
+        "name": "of the Iron Hills",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "Heavy gauntlets of the Iron Hills dwarves, made for war. Their weight adds force to every blow, driving enemies back."
+      },
+      {
+        "id": 166,
+        "name": "of the Mark",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "Gauntlets of Rohan, fur-lined against the cold winds of the plains. They grant warmth and courage in battle."
+      },
+      {
+        "id": 167,
+        "name": "'Silverhand'",
+        "display_char": "",
+        "color": "",
+        "depth": 15,
+        "description": "Gauntlets of mithril, light as silk and strong as steel. They grant nimble fingers for delicate work and sure grip for battle."
+      },
+      {
+        "id": 170,
+        "name": "'Galadriel's Phial'",
+        "display_char": "*",
+        "color": "w",
+        "depth": 4,
+        "description": "A crystal phial filled with the light of E\u00e4rendil's star, caught in the waters of Galadriel's fountain. It shines in the darkest places and is a bane to all creatures of shadow. \"May it be a light to you in dark places, when all other lights go out.\""
+      },
+      {
+        "id": 175,
+        "name": "of Thr\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The last of the Seven Rings of the Dwarf-lords. It grants piercing sight into the deep places of the world, but its whispers never cease. The bearer's spirit is slowly consumed. You must escape with this ring to fulfill your quest."
+      },
+      {
+        "id": 176,
+        "name": "of Thr\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The last of the Seven Rings, now stained by Sauron's malice. It grants piercing sight into the deep places, but its whispers never cease. The bearer's spirit is slowly consumed, and you sense that its master is aware of your theft."
+      },
+      {
+        "id": 177,
+        "name": "of Thr\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The last of the Seven Rings, burning with inner fire as Sauron's will seeks to reclaim it. It grants piercing sight into the deep places, but its whispers never cease, draining your spirit. The ring grows hot, and you feel his Eye searching through the darkness."
+      },
+      {
+        "id": 178,
+        "name": "of Thr\u00e1in",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "The last of the Seven Rings of the Dwarf-lords. Its whispers reveal the secrets of the deep places, but slowly consume the bearer's spirit."
+      },
+      {
+        "id": 179,
+        "name": "to Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "This ancient dwarven key was crafted by Thr\u00e1in's father Thr\u00f3r, and opens the secret door to the Lonely Mountain. Gandalf sought this key for decades, and now you have found it in the deepest pit of Dol Guldur. With this and the Map, Erebor can be reclaimed."
+      },
+      {
+        "id": 180,
+        "name": "of Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "Thr\u00f3r's Map, showing the secret entrance to the Lonely Mountain. Moon-letters on this ancient parchment reveal the words: \"Stand by the grey stone when the thrush knocks, and the setting sun with the last light of Durin's Day will shine upon the key-hole.\" With this Map and the Key, the path to Erebor is clear."
+      },
+      {
+        "id": 182,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 183,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 184,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 185,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 186,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 187,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 188,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 189,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 190,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 191,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 192,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 193,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 194,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 195,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 196,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 197,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 198,
+        "name": "'Ultimate'",
+        "display_char": "",
+        "color": "",
+        "depth": 0,
+        "description": ""
+      },
+      {
+        "id": 199,
+        "name": "of the Noldor",
+        "display_char": "~",
+        "color": "B",
+        "depth": 12,
+        "description": "A lamp of the High Elves, wrought in the style of Feanor's folk though made in later days. It shines with a steady light that never fades and reveals hidden things."
+      },
+      {
+        "id": 200,
+        "name": "'Palant\u00edr'",
+        "display_char": "*",
+        "color": "D",
+        "depth": 20,
+        "description": "One of the Seven Seeing-stones of Numenor. Sauron has corrupted this one to his purposes. To look into it is to risk drawing the Eye upon yourself, yet the knowledge it offers is beyond price."
+      },
+      {
+        "id": 201,
+        "name": "of Mordor",
+        "display_char": "~",
+        "color": "r",
+        "depth": 8,
+        "description": "A torch of Mordor-make that burns with a sullen red flame and never goes out. Its light draws the attention of servants of the Enemy."
+      },
+      {
+        "id": 202,
+        "name": "'Elendilmir'",
+        "display_char": "*",
+        "color": "w",
+        "depth": 16,
+        "description": "The Star of Elendil, a white gem bound upon the brow of the Kings of Arnor. It shines with a clear light that gives courage to the faithful and dismays the servants of darkness."
+      },
+      {
+        "id": 203,
+        "name": "of Mordor",
+        "display_char": "(",
+        "color": "D",
+        "depth": 14,
+        "description": "A cloak woven from shadow itself in the pits of Mordor. It hides the wearer from sight but feeds on their life force, and the darkness seeps into their soul."
+      },
+      {
+        "id": 204,
+        "name": "'Mantle of Stars'",
+        "display_char": "(",
+        "color": "B",
+        "depth": 18,
+        "description": "A cloak of deepest blue sewn with gems that gleam like stars. It is the finest work of the weavers of Lothl\u00f3rien, and those who wear it walk with the grace of the Eldar."
+      },
+      {
+        "id": 205,
+        "name": "of Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A corslet of dwarf-mail from Erebor, forged before Smaug came. It turns aside flame and grants the wearer something of dwarven endurance."
+      },
+      {
+        "id": 206,
+        "name": "of Durin",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "A helm of the line of Durin, wrought in Khazad-dum in days of glory. It grants the stubborn courage of the dwarves and protects against fear."
+      },
+      {
+        "id": 207,
+        "name": "'Crown of the Smith'",
+        "display_char": "]",
+        "color": "y",
+        "depth": 20,
+        "description": "A crown forged by a master smith, set with gems of their own cutting. It is the mark of one who has achieved true mastery of the forge."
+      },
+      {
+        "id": 208,
+        "name": "of Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "Heavy gauntlets of Erebor-make, forged for smithing and war alike. They grant strength to the wearer and protect against fire."
+      },
+      {
+        "id": 209,
+        "name": "of Shadow",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "Gloves of black silk that seem to drink in light. They grant stealth and the ability to see hidden things, but at a cost to the wearer's vitality."
+      },
+      {
+        "id": 210,
+        "name": "of Lothl\u00f3rien",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "Boots of elven make from the Golden Wood. They are light as leaves and make no sound upon stone or twig. Those who wear them move with elven grace."
+      },
+      {
+        "id": 211,
+        "name": "'Hadhafang'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "An Elven blade of Rivendell, its name meaning \"Throng-cleaver.\" It has been wielded by the lords of that house against many foes."
+      },
+      {
+        "id": 212,
+        "name": "'Noldorin Knife'",
+        "display_char": "",
+        "color": "",
+        "depth": 8,
+        "description": "A knife of the High Elves, its edge never dulls and its blade reveals things hidden from mortal sight. It gleams with pale light."
+      },
+      {
+        "id": 213,
+        "name": "of Erebor",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A battle axe forged in Erebor before the dragon came. It is heavy and keen, and grants strength to cleave through orcish armor."
+      },
+      {
+        "id": 214,
+        "name": "'Hammer of the Longbeards'",
+        "display_char": "",
+        "color": "",
+        "depth": 18,
+        "description": "A mighty hammer of Durin's Folk, made for both the forge and the battlefield. Its weight is terrible and its blows shatter stone and bone alike."
+      },
+      {
+        "id": 215,
+        "name": "of Mirkwood",
+        "display_char": "",
+        "color": "",
+        "depth": 10,
+        "description": "A bow of the Wood-elves of Mirkwood, made for hunting the great spiders. Its arrows fly true in the shadows beneath the trees."
+      },
+      {
+        "id": 216,
+        "name": "'Black Bow of Mordor'",
+        "display_char": "}",
+        "color": "D",
+        "depth": 12,
+        "description": "A great bow of Mordor-make, black as night and terribly accurate. It draws the attention of the Enemy's servants but strikes with deadly force."
+      },
+      {
+        "id": 217,
+        "name": "'Bow of the Last Alliance'",
+        "display_char": "}",
+        "color": "w",
+        "depth": 18,
+        "description": "A great bow that saw service at the Battle of Dagorlad, where Elves and Men stood together against Sauron. It gleams with remembered glory."
+      },
+      {
+        "id": 218,
+        "name": "of the Noldor",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A ring of the High Elves, wrought with great skill but not with the arts of Power. It grants clarity of sight and steadiness of spirit."
+      },
+      {
+        "id": 219,
+        "name": "'Ring of Mastery'",
+        "display_char": "",
+        "color": "",
+        "depth": 20,
+        "description": "A ring forged by a master of the craft, set with four gems representing the cardinal virtues. It grants balance and strength in all things."
+      },
+      {
+        "id": 220,
+        "name": "of the Istari",
+        "display_char": "",
+        "color": "",
+        "depth": 14,
+        "description": "An amulet of the Wizards, a focus for their power. It sharpens the mind and strengthens the will against the deceits of the Enemy."
+      },
+      {
+        "id": 221,
+        "name": "'Black Necklace'",
+        "display_char": "",
+        "color": "",
+        "depth": 12,
+        "description": "A necklace of black iron forged in Minas Morgul. It grants fell strength and drinks the life of those you strike, but it slowly devours its wearer."
+      },
+      {
+        "id": 222,
+        "name": "'Star of the North'",
+        "display_char": "",
+        "color": "",
+        "depth": 18,
+        "description": "A jewel of the D\u00fanedain, a lesser echo of the Elendilmir. It shines with cold clear light and gives courage against the terrors of darkness."
+      }
+    ],
+    "players": [
+      {
+        "id": 0,
+        "race_id": 0,
+        "house_id": 0,
+        "race_name": "Elf",
+        "house_name": "Of Lothlorien",
+        "name": "Elf Lorien"
+      },
+      {
+        "id": 1,
+        "race_id": 0,
+        "house_id": 1,
+        "race_name": "Elf",
+        "house_name": "Of Rivendell",
+        "name": "Elf Imladris"
+      },
+      {
+        "id": 2,
+        "race_id": 0,
+        "house_id": 2,
+        "race_name": "Elf",
+        "house_name": "Of Greenwood",
+        "name": "Elf Silvan"
+      },
+      {
+        "id": 3,
+        "race_id": 1,
+        "house_id": 3,
+        "race_name": "Man",
+        "house_name": "Dunedain",
+        "name": "Man Ranger"
+      },
+      {
+        "id": 4,
+        "race_id": 1,
+        "house_id": 4,
+        "race_name": "Man",
+        "house_name": "Of Rohan",
+        "name": "Man Rohirrim"
+      },
+      {
+        "id": 5,
+        "race_id": 1,
+        "house_id": 5,
+        "race_name": "Man",
+        "house_name": "Of Gondor",
+        "name": "Man Gondorian"
+      },
+      {
+        "id": 6,
+        "race_id": 2,
+        "house_id": 6,
+        "race_name": "Dwarf",
+        "house_name": "Of Khazad-dum",
+        "name": "Dwarf Moria"
+      },
+      {
+        "id": 7,
+        "race_id": 2,
+        "house_id": 7,
+        "race_name": "Dwarf",
+        "house_name": "Of Erebor",
+        "name": "Dwarf Erebor"
+      },
+      {
+        "id": 8,
+        "race_id": 2,
+        "house_id": 8,
+        "race_name": "Dwarf",
+        "house_name": "Of the Iron Hills",
+        "name": "Dwarf Iron Hills"
+      },
+      {
+        "id": 9,
+        "race_id": 3,
+        "house_id": 0,
+        "race_name": "Istari",
+        "house_name": "Of Lothlorien",
+        "name": "Istari Lorien"
+      },
+      {
+        "id": 10,
+        "race_id": 3,
+        "house_id": 1,
+        "race_name": "Istari",
+        "house_name": "Of Rivendell",
+        "name": "Istari Imladris"
+      },
+      {
+        "id": 11,
+        "race_id": 3,
+        "house_id": 2,
+        "race_name": "Istari",
+        "house_name": "Of Greenwood",
+        "name": "Istari Silvan"
+      }
+    ],
+    "effects": [
+      {
+        "id": 0,
+        "name": "poisoned",
+        "description": "Poisoned status overlay"
+      },
+      {
+        "id": 1,
+        "name": "blind",
+        "description": "Blinded status overlay"
+      },
+      {
+        "id": 2,
+        "name": "confused",
+        "description": "Confused status overlay"
+      },
+      {
+        "id": 3,
+        "name": "afraid",
+        "description": "Afraid status overlay"
+      },
+      {
+        "id": 4,
+        "name": "slowed",
+        "description": "Slowed status overlay"
+      },
+      {
+        "id": 5,
+        "name": "hasted",
+        "description": "Hasted status overlay"
+      },
+      {
+        "id": 6,
+        "name": "entranced",
+        "description": "Entranced/held status overlay"
+      },
+      {
+        "id": 7,
+        "name": "bleeding",
+        "description": "Bleeding/wounded status overlay"
+      },
+      {
+        "id": 8,
+        "name": "hallucinating",
+        "description": "Hallucinating status overlay"
+      },
+      {
+        "id": 9,
+        "name": "rage",
+        "description": "Rage/berserk status overlay"
+      },
+      {
+        "id": 10,
+        "name": "hunger",
+        "description": "Hungry status overlay"
+      },
+      {
+        "id": 11,
+        "name": "blessed",
+        "description": "Blessed status overlay"
+      },
+      {
+        "id": 12,
+        "name": "protected",
+        "description": "Protection aura overlay"
+      },
+      {
+        "id": 13,
+        "name": "invisible",
+        "description": "Invisible/translucent overlay"
+      },
+      {
+        "id": 14,
+        "name": "see_invisible",
+        "description": "See invisible status"
+      },
+      {
+        "id": 15,
+        "name": "free_action",
+        "description": "Free action status"
+      },
+      {
+        "id": 16,
+        "name": "light",
+        "description": "Light radius glow"
+      },
+      {
+        "id": 17,
+        "name": "darkness",
+        "description": "Darkness aura"
+      },
+      {
+        "id": 18,
+        "name": "regenerating",
+        "description": "Regeneration effect"
+      },
+      {
+        "id": 19,
+        "name": "singing",
+        "description": "Singing/song effect"
+      }
+    ]
+  },
+  "category_counts": {
+    "monsters": 73,
+    "terrain": 176,
+    "items": 254,
+    "artifacts": 147,
+    "players": 12,
+    "effects": 20
+  },
+  "generation_status": {}
+}

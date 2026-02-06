@@ -129,7 +129,7 @@ func on_dialogue_complete() -> void:
 	if quest_system:
 		quest_system.on_thrain_dialogue_complete()
 
-	GameManager.log_message("Thrain fades into shadow, his spirit finally at peace.", Color.LIGHT_BLUE)
+	GameManager.log_message("Thrain fades into shadow, his spirit finally at peace.", ThemeColors.SECONDARY)
 
 	# Optional: Thrain could fade away or become a corpse
 	# For now, he remains but won't speak again

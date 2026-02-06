@@ -13,6 +13,11 @@ signal generation_complete(width: int, height: int)
 var terrain: Array[int] = []  # Flat array, index = y * width + x
 var explored: Array[bool] = []
 var tile_visibility: Array[bool] = []
+var room_lit: Array[bool] = []       # True if tile is in a lit room (CAVE_GLOW equivalent)
+var room_id: Array[int] = []         # Which room each tile belongs to (-1 = none/corridor)
+var rooms: Array[Rect2i] = []        # Room rectangles from generation
+var tile_in_fov: Array[bool] = []    # Geometric line of sight (FOV only, before lighting)
+var tile_lit: Array[bool] = []       # Has light (player torch + room glow)
 
 # Entities
 var entities: Array[Entity] = []
@@ -80,6 +85,14 @@ func _initialize_arrays() -> void:
 	explored.fill(false)
 	tile_visibility.resize(size)
 	tile_visibility.fill(false)
+	room_lit.resize(size)
+	room_lit.fill(false)
+	room_id.resize(size)
+	room_id.fill(-1)
+	tile_in_fov.resize(size)
+	tile_in_fov.fill(false)
+	tile_lit.resize(size)
+	tile_lit.fill(false)
 
 func _apply_layer_tint_shader() -> void:
 	if terrain_layer:
@@ -107,10 +120,9 @@ func update_layer_tint() -> void:
 func get_fov_radius() -> int:
 	return LayerConfig.get_fov_radius(depth)
 
-## Get effective FOV radius considering player's light source
-func get_effective_fov_radius(player_light: int) -> int:
-	var layer_max: int = get_fov_radius()
-	return mini(player_light, layer_max)
+## Get effective FOV radius - always returns geometric max; lighting handled separately
+func get_effective_fov_radius(_player_light: int) -> int:
+	return get_fov_radius()
 
 # ============================================================================
 # TERRAIN ACCESS
@@ -161,7 +173,7 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 		return _lava_damage(entity, pos)
 
 	if tile == Tile.WATER and entity is Player:
-		GameManager.log_message("You wade through shallow water.", Color.LIGHT_BLUE)
+		GameManager.log_message("You wade through shallow water.", ThemeColors.SECONDARY)
 
 	return false
 
@@ -175,7 +187,7 @@ func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
 	# Roll to avoid — trap stays active if avoided
 	if randi_range(1, 100) <= avoid_chance:
 		if entity == GameManager.player:
-			GameManager.log_message("You notice a trap and step carefully over it.", Color.YELLOW)
+			GameManager.log_message("You notice a trap and step carefully over it.", ThemeColors.MSG_WARNING)
 		return true
 
 	# Mark trap as triggered only after failing to avoid
@@ -198,47 +210,47 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 		TrapType.BASIC:
 			var dmg: int = randi_range(1, 4) + depth / 3
 			entity.take_damage(dmg, "physical", null)
-			GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], Color.RED)
+			GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 
 		TrapType.PIT:
 			var dmg: int = randi_range(2, 8)  # 2d4
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("stunned", 1)
-			GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], Color.RED)
+			GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], ThemeColors.MSG_ERROR)
 
 		TrapType.DART:
 			var dmg: int = randi_range(1, 6)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("poisoned", 5 + randi_range(1, 5))
-			GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], Color.RED)
+			GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 
 		TrapType.GAS:
 			entity.apply_status("confused", 3 + randi_range(0, 2))
-			GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), Color.PURPLE)
+			GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), ThemeColors.STATUS_CONFUSED)
 
 		TrapType.ALARM:
 			add_floor_noise(15)
-			GameManager.log_message("An alarm sounds! The dungeon stirs...", Color.ORANGE)
+			GameManager.log_message("An alarm sounds! The dungeon stirs...", ThemeColors.COMBAT_CRIT)
 
 		TrapType.TELEPORT:
 			var new_pos: Vector2i = find_random_floor()
 			if new_pos != Vector2i(-1, -1) and entity.has_method("teleport_to"):
 				entity.teleport_to(new_pos)
-				GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], Color.CYAN)
+				GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_INFO)
 
 		TrapType.FLASH:
 			entity.apply_status("blind", 3 + randi_range(0, 2))
-			GameManager.log_message("A blinding flash of light!", Color.YELLOW)
+			GameManager.log_message("A blinding flash of light!", ThemeColors.MSG_WARNING)
 
 		TrapType.CALTROPS:
 			var dmg: int = randi_range(1, 4)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("slow", 3)
-			GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], Color.RED)
+			GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], ThemeColors.MSG_ERROR)
 
 		TrapType.WEB:
 			entity.apply_status("slow", 5)
-			GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], Color.YELLOW)
+			GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_WARNING)
 
 func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 	if not is_instance_valid(entity):
@@ -247,7 +259,7 @@ func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 	entity.take_damage(dmg, "fire", null)
 	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 	var verb: String = "burn" if entity == GameManager.player else "burns"
-	GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], Color.ORANGE)
+	GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], ThemeColors.COMBAT_CRIT)
 	return true
 
 func is_transparent(pos: Vector2i) -> bool:
@@ -277,6 +289,26 @@ func set_tile_visible(pos: Vector2i, value: bool) -> void:
 		tile_visibility[pos.y * width + pos.x] = value
 		if value:
 			set_explored(pos, true)
+
+func is_room_lit(pos: Vector2i) -> bool:
+	if not is_in_bounds(pos): return false
+	return room_lit[pos.y * width + pos.x]
+
+func get_room_id(pos: Vector2i) -> int:
+	if not is_in_bounds(pos): return -1
+	return room_id[pos.y * width + pos.x]
+
+func set_room_lit_by_rect(rect: Rect2i, lit: bool) -> void:
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			if is_in_bounds(Vector2i(x, y)):
+				room_lit[y * width + x] = lit
+
+func set_room_id_by_rect(rect: Rect2i, id: int) -> void:
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			if is_in_bounds(Vector2i(x, y)):
+				room_id[y * width + x] = id
 
 # ============================================================================
 # ENTITY MANAGEMENT
@@ -386,10 +418,12 @@ func rebuild_tilemap() -> void:
 # ============================================================================
 
 func update_fov(center: Vector2i, radius: int) -> void:
-	# Clear visibility
+	# Clear visibility and FOV arrays
 	tile_visibility.fill(false)
+	tile_in_fov.fill(false)
+	tile_lit.fill(false)
 
-	# Simple raycasting FOV
+	# Geometric raycasting FOV - writes to tile_in_fov only
 	for angle in range(360):
 		var rad := deg_to_rad(angle)
 		var dx := cos(rad)
@@ -398,13 +432,14 @@ func update_fov(center: Vector2i, radius: int) -> void:
 		var x := float(center.x) + 0.5
 		var y := float(center.y) + 0.5
 
-		for _step in range(radius):
+		for _step in range(radius + 1):  # +1: range(8) only reaches 7 tiles
 			var check_pos := Vector2i(int(x), int(y))
 
 			if not is_in_bounds(check_pos):
 				break
 
-			set_tile_visible(check_pos, true)
+			var idx: int = check_pos.y * width + check_pos.x
+			tile_in_fov[idx] = true
 
 			if not is_transparent(check_pos):
 				break
@@ -412,32 +447,70 @@ func update_fov(center: Vector2i, radius: int) -> void:
 			x += dx
 			y += dy
 
+## Apply lighting pass: combines player torch radius with room glow
+func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
+	var arr_size: int = width * height
+
+	# Step 1: Find which lit rooms are visible in FOV
+	var lit_rooms_seen: Dictionary = {}
+	for i in range(arr_size):
+		if tile_in_fov[i] and room_lit[i]:
+			var rid: int = room_id[i]
+			if rid >= 0:
+				lit_rooms_seen[rid] = true
+
+	# Step 2: Single pass - determine lighting and final visibility
+	for i in range(arr_size):
+		if not tile_in_fov[i]:
+			continue
+
+		var tx: int = i % width
+		var ty: int = i / width
+		var dist: int = maxi(absi(tx - center.x), absi(ty - center.y))
+
+		# Lit by player torch?
+		var is_lit: bool = dist <= player_light_radius
+		# Lit by room glow?
+		if not is_lit:
+			var rid: int = room_id[i]
+			if rid >= 0 and lit_rooms_seen.has(rid):
+				is_lit = true
+
+		tile_lit[i] = is_lit
+		if is_lit:
+			tile_visibility[i] = true
+			explored[i] = true
+		else:
+			# In FOV but dark: mark explored (remembered) but not visible
+			explored[i] = true
+
 func update_entity_visibility() -> void:
 	for entity in entities:
 		if is_instance_valid(entity) and entity is Monster:
 			entity.visible = is_tile_visible(entity.grid_position)
 
-## Refresh tilemap after FOV update: lit tiles use light atlas, explored use dark, unexplored hidden
+## Refresh tilemap after FOV update: lit tiles use light atlas, explored use dark, unexplored = darkness tile
 func apply_fov_to_tilemap() -> void:
 	if not terrain_layer:
 		return
 	for y in range(height):
 		for x in range(width):
 			var pos := Vector2i(x, y)
-			var tile: int = get_tile(pos)
+			var idx: int = y * width + x
+			var tile: int = terrain[idx]
 			if tile == Tile.VOID:
 				terrain_layer.erase_cell(pos)
 				continue
-			if is_tile_visible(pos):
+			if tile_visibility[idx]:
 				# Currently visible — lit variant
 				var atlas_coords := _get_atlas_coords_for_tile(tile, true)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
-			elif is_explored(pos):
+			elif explored[idx]:
 				# Explored but not visible — dark/remembered variant
 				var atlas_coords := _get_atlas_coords_for_tile(tile, false)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
 			else:
-				# Unexplored — hide completely
+				# Unexplored: erase cell so black background shows through
 				terrain_layer.erase_cell(pos)
 
 func has_los_to(from: Vector2i, to: Vector2i) -> bool:

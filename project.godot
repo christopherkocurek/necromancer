@@ -23,16 +23,20 @@ GameManager="*res://scripts/core/game_manager.gd"
 EventBus="*res://scripts/core/event_bus.gd"
 DataManager="*res://scripts/core/data_manager.gd"
 TileMapper="*res://scripts/core/tile_mapper.gd"
+ThemeColors="*res://scripts/core/theme_colors.gd"
+AccessibilityManager="*res://scripts/systems/accessibility_manager.gd"
+PanelTransition="*res://scripts/ui/panel_transition.gd"
+TooltipManager="*res://scripts/ui/tooltip_manager.gd"
+TutorialManager="*res://scripts/ui/tutorial_manager.gd"
+HelpOverlay="*res://scripts/ui/help_overlay.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/resizable=true
 window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [input]
 
@@ -179,6 +183,17 @@ search={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":83,"key_label":0,"unicode":83,"location":0,"echo":false,"script":null)
 ]
 }
+help_overlay={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":47,"key_label":0,"unicode":63,"location":0,"echo":false,"script":null)
+]
+}
+minimap={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":77,"key_label":0,"unicode":109,"location":0,"echo":false,"script":null)
+]
+}
+
 [layer_names]
 
 2d_render/layer_1="terrain"
@@ -189,4 +204,5 @@ search={
 
 [rendering]
 
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 textures/canvas_textures/default_texture_filter=0

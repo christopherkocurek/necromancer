@@ -45,17 +45,16 @@ func _ready() -> void:
 
 func open(player_ref: Player) -> void:
 	player = player_ref
-	visible = true
+	PanelTransition.open_panel(self)
 	_refresh_inventory()
 	_refresh_equipment()
 	grab_focus()
 
 func close() -> void:
-	visible = false
 	selected_item = null
 	selected_slot_index = -1
 	selected_equipment_slot = -1
-	closed.emit()
+	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _setup_inventory_grid() -> void:
 	inventory_grid.columns = GRID_COLS
@@ -69,9 +68,9 @@ func _setup_inventory_grid() -> void:
 		slot.gui_input.connect(_on_slot_gui_input.bind(i))
 
 		# Style empty slot
-		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.2, 0.2, 0.2)))
-		slot.add_theme_stylebox_override("hover", _create_slot_style(Color(0.3, 0.3, 0.3)))
-		slot.add_theme_stylebox_override("pressed", _create_slot_style(Color(0.3, 0.4, 0.5)))
+		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+		slot.add_theme_stylebox_override("hover", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_HOVER))
+		slot.add_theme_stylebox_override("pressed", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
 
 		inventory_grid.add_child(slot)
 		inventory_slots.append(slot)
@@ -128,8 +127,8 @@ func _setup_equipment_slots() -> void:
 				slot.tooltip_text = slot_names[slot_id]
 				slot.pressed.connect(_on_equipment_slot_pressed.bind(slot_id))
 
-				slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.15, 0.2, 0.15)))
-				slot.add_theme_stylebox_override("hover", _create_slot_style(Color(0.25, 0.3, 0.25)))
+				slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
+				slot.add_theme_stylebox_override("hover", _create_slot_style(ThemeColors.SLOT_EQUIP_HOVER))
 
 				equipment_container.add_child(slot)
 				equipment_slots[slot_id] = slot
@@ -235,12 +234,12 @@ func _highlight_equipment_slot(slot_id: int) -> void:
 	# Reset all equipment slot styles
 	for id in equipment_slots:
 		var slot: Button = equipment_slots[id]
-		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.15, 0.2, 0.15)))
+		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
 
 	# Highlight selected slot
 	if slot_id >= 0 and equipment_slots.has(slot_id):
 		var slot: Button = equipment_slots[slot_id]
-		slot.add_theme_stylebox_override("normal", _create_slot_style(Color(0.3, 0.4, 0.5)))
+		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_SELECTED))
 
 func _try_unequip_slot(slot_id: int) -> void:
 	var slot_key: String = _get_slot_key(slot_id)
@@ -249,11 +248,11 @@ func _try_unequip_slot(slot_id: int) -> void:
 
 	var equipped_item = player.equipment.get(slot_key)
 	if equipped_item == null:
-		GameManager.log_message("Nothing equipped in that slot.", Color.GRAY)
+		GameManager.log_message("Nothing equipped in that slot.", ThemeColors.MSG_SYSTEM)
 		return
 
 	if player.unequip_slot(slot_key):
-		GameManager.log_message("Unequipped %s." % _get_item_name(equipped_item), Color.WHITE)
+		GameManager.log_message("Unequipped %s." % _get_item_name(equipped_item), ThemeColors.TEXT_PRIMARY)
 		item_unequipped.emit(equipped_item, slot_key)
 		selected_equipment_slot = -1
 		_refresh_inventory()
@@ -261,7 +260,7 @@ func _try_unequip_slot(slot_id: int) -> void:
 		_update_item_info(null)
 		_highlight_equipment_slot(-1)
 	else:
-		GameManager.log_message("Cannot unequip - inventory full.", Color.YELLOW)
+		GameManager.log_message("Cannot unequip - inventory full.", ThemeColors.MSG_WARNING)
 
 func _on_slot_gui_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton:
@@ -423,7 +422,7 @@ func _create_slot_style(color: Color) -> StyleBoxFlat:
 	style.border_width_right = 2
 	style.border_width_top = 2
 	style.border_width_bottom = 2
-	style.border_color = Color(0.4, 0.4, 0.4)
+	style.border_color = ThemeColors.BORDER_DEFAULT
 	style.corner_radius_top_left = 4
 	style.corner_radius_top_right = 4
 	style.corner_radius_bottom_left = 4

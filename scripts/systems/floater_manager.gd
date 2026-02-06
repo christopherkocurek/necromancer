@@ -11,6 +11,7 @@ func _ready() -> void:
 	EventBus.attack_missed.connect(_on_attack_missed)
 	EventBus.attack_blocked.connect(_on_attack_blocked)
 	EventBus.status_applied.connect(_on_status_applied)
+	EventBus.critical_hit.connect(_on_critical_hit)
 
 func set_container(container: Node2D) -> void:
 	floater_container = container
@@ -24,12 +25,8 @@ func _on_entity_damaged(entity: Node, damage: int, damage_type: String, _source:
 	var pos := _get_entity_position(entity)
 	var color := DamageFloater.get_color_for_type(damage_type)
 
-	# Larger text for bigger hits
-	var size := 16
-	if damage >= 20:
-		size = 24
-	elif damage >= 10:
-		size = 20
+	# Scale text size with damage
+	var size: int = 16 + clampi(damage / 5, 0, 8)
 
 	DamageFloater.create_at(floater_container, pos, str(damage), color, size)
 
@@ -52,15 +49,23 @@ func _on_attack_blocked(_attacker: Node, defender: Node, damage_blocked: int) ->
 		return
 
 	var pos := _get_entity_position(defender)
-	DamageFloater.create_at(floater_container, pos, "BLOCK " + str(damage_blocked), Color(0.8, 0.8, 0.2), 14)
+	DamageFloater.create_at(floater_container, pos, "BLOCK " + str(damage_blocked), ThemeColors.DMG_BLOCK, 14)
 
 func _on_status_applied(entity: Node, status_name: String, _duration: int) -> void:
 	if not floater_container or not entity:
 		return
 
 	var pos := _get_entity_position(entity)
-	var color := Color(0.9, 0.7, 0.2)  # Gold for status effects
+	var color := ThemeColors.PRIMARY  # Gold for status effects
 	DamageFloater.create_at(floater_container, pos + Vector2(0, -20), status_name, color, 12)
+
+func _on_critical_hit(_attacker: Node, target: Node, damage: int) -> void:
+	if not floater_container or not target:
+		return
+
+	var pos := _get_entity_position(target)
+	var size: int = 20 + clampi(damage / 5, 0, 8)
+	DamageFloater.create_at(floater_container, pos + Vector2(0, -16), str(damage) + "!", ThemeColors.DMG_CRIT, size)
 
 func _get_entity_position(entity: Node) -> Vector2:
 	if entity.has_method("get_world_position"):

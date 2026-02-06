@@ -107,9 +107,11 @@ func _handle_player_input() -> void:
 
 func _after_player_action() -> void:
 	if current_level:
-		# Use layer-based FOV radius
-		var fov_radius := current_level.get_effective_fov_radius(player.get_light_radius())
+		# Update FOV: geometry → lighting → entity visibility → tilemap
+		var fov_radius: int = current_level.get_fov_radius()
+		var light_radius: int = player.get_light_radius()
 		current_level.update_fov(player.grid_position, fov_radius)
+		current_level.apply_lighting(player.grid_position, light_radius)
 		current_level.update_entity_visibility()
 		current_level.apply_fov_to_tilemap()
 
@@ -128,7 +130,7 @@ func _check_ambient_message() -> void:
 	# Occasionally show atmospheric messages based on current layer
 	var ambient_msg := LayerConfig.get_ambient_message(GameManager.current_depth)
 	if not ambient_msg.is_empty():
-		GameManager.log_message(ambient_msg, Color.DARK_GRAY)
+		GameManager.log_message(ambient_msg, ThemeColors.TEXT_MUTED)
 
 func _process_game_tick() -> void:
 	# Grant energy to all entities based on their speed
@@ -225,7 +227,7 @@ func _on_entity_moved(entity: Entity, from: Vector2i, to: Vector2i) -> void:
 	var was_adjacent: bool = absi(from.x - player.grid_position.x) <= 1 and absi(from.y - player.grid_position.y) <= 1
 	var now_adjacent: bool = absi(to.x - player.grid_position.x) <= 1 and absi(to.y - player.grid_position.y) <= 1
 	if now_adjacent and not was_adjacent and is_instance_valid(entity) and entity.is_alive:
-		GameManager.log_message("Zone of control!", Color.YELLOW)
+		GameManager.log_message("Zone of control!", ThemeColors.MSG_WARNING)
 		# Defer to avoid re-entrant combat during monster's turn
 		call_deferred("_execute_zone_of_control", entity)
 
@@ -250,7 +252,7 @@ func _on_attack_missed(attacker: Node, defender: Node) -> void:
 	if player.ripostes_this_turn >= 1:
 		return
 	player.ripostes_this_turn += 1
-	GameManager.log_message("Riposte!", Color.YELLOW)
+	GameManager.log_message("Riposte!", ThemeColors.MSG_WARNING)
 	# Defer to avoid re-entrant combat during monster's attack
 	call_deferred("_execute_riposte", attacker)
 

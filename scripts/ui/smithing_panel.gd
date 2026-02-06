@@ -45,17 +45,16 @@ func _ready() -> void:
 func open(player_ref: Player, level_ref: Level) -> void:
 	player = player_ref
 	level = level_ref
-	visible = true
+	PanelTransition.open_panel(self)
 
 	_refresh_ui()
 	grab_focus()
 
 func close() -> void:
-	visible = false
 	selected_item = null
 	selected_material = null
 	selected_recipe = null
-	closed.emit()
+	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _refresh_ui() -> void:
 	if not player:

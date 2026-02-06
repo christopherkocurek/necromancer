@@ -6,6 +6,7 @@ extends Node
 signal entity_damaged(entity: Node, damage: int, damage_type: String, source: Node)
 signal entity_healed(entity: Node, amount: int, source: Node)
 signal entity_died(entity: Node, killer: Node)
+signal critical_hit(attacker: Node, target: Node, damage: int)
 signal attack_missed(attacker: Node, defender: Node)
 signal attack_blocked(attacker: Node, defender: Node, damage_blocked: int)
 

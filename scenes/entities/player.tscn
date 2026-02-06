@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c7yxj8d1kp4lm"]
+[gd_scene load_steps=3 format=3 uid="uid://c7yxj8d1kp4lm"]
 
 [ext_resource type="Script" path="res://scripts/entities/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/systems/game_camera.gd" id="2_camera"]
 
 [node name="Player" type="Node2D"]
 script = ExtResource("1_player")
@@ -11,3 +12,4 @@ position = Vector2(32, 32)
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(32, 32)
 zoom = Vector2(1, 1)
+script = ExtResource("2_camera")

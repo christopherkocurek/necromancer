@@ -32,14 +32,13 @@ func _ready() -> void:
 
 func open(player_ref: Player) -> void:
 	player = player_ref
-	visible = true
+	PanelTransition.open_panel(self)
 	_refresh_all_tabs()
 	_update_xp_display()
 	grab_focus()
 
 func close() -> void:
-	visible = false
-	closed.emit()
+	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _setup_tabs() -> void:
 	# Create a tab for each skill
@@ -83,7 +82,7 @@ func _refresh_skill_tab(skill_idx: int) -> void:
 	var header := Label.new()
 	header.text = "%s (Level %d)" % [SKILL_NAMES[skill_idx], player_skill_level]
 	header.add_theme_font_size_override("font_size", 16)
-	header.add_theme_color_override("font_color", Color.GOLD)
+	header.add_theme_color_override("font_color", ThemeColors.ABILITY_HEADER)
 	vbox.add_child(header)
 
 	var sep := HSeparator.new()
@@ -92,7 +91,7 @@ func _refresh_skill_tab(skill_idx: int) -> void:
 	if abilities.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "No abilities in this skill tree."
-		empty_label.add_theme_color_override("font_color", Color.GRAY)
+		empty_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
 		vbox.add_child(empty_label)
 		return
 
@@ -121,13 +120,13 @@ func _refresh_skill_tab(skill_idx: int) -> void:
 
 		# Color based on status
 		if has_ability:
-			btn.add_theme_color_override("font_color", Color.GREEN)
+			btn.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
 		elif can_learn:
-			btn.add_theme_color_override("font_color", Color.WHITE)
+			btn.add_theme_color_override("font_color", ThemeColors.ABILITY_AVAILABLE)
 		elif not meets_reqs:
-			btn.add_theme_color_override("font_color", Color.DIM_GRAY)
+			btn.add_theme_color_override("font_color", ThemeColors.ABILITY_LOCKED)
 		else:
-			btn.add_theme_color_override("font_color", Color.INDIAN_RED)
+			btn.add_theme_color_override("font_color", ThemeColors.ABILITY_BLOCKED)
 
 		btn.pressed.connect(_on_ability_selected.bind(ability))
 		vbox.add_child(btn)
@@ -199,7 +198,7 @@ func _on_buy_pressed() -> void:
 	# Register in the gameplay ability array system so has_ability() works
 	player.learn_ability(selected_ability.skill_type, selected_ability.ability_num)
 
-	GameManager.log_message("You have learned %s!" % selected_ability.name, Color.GOLD)
+	GameManager.log_message("You have learned %s!" % selected_ability.name, ThemeColors.PRIMARY)
 	ability_purchased.emit(selected_ability.name)
 
 	_refresh_all_tabs()

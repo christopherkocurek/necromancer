@@ -25,7 +25,7 @@ func open(player_ref: Player, level_ref: Level) -> void:
 	player = player_ref
 	level = level_ref
 	look_cursor = player.grid_position
-	visible = true
+	PanelTransition.open_panel(self)
 
 	# Create yellow selection box cursor
 	_setup_cursor()
@@ -34,10 +34,9 @@ func open(player_ref: Player, level_ref: Level) -> void:
 	grab_focus()
 
 func close() -> void:
-	visible = false
 	if cursor_sprite and cursor_sprite.get_parent():
 		cursor_sprite.get_parent().remove_child(cursor_sprite)
-	closed.emit()
+	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _setup_cursor() -> void:
 	# Create a simple colored square as cursor

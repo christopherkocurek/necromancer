@@ -34,13 +34,12 @@ func _ready() -> void:
 
 func open(player_ref: Player) -> void:
 	player = player_ref
-	visible = true
+	PanelTransition.open_panel(self)
 	_refresh_display()
 	grab_focus()
 
 func close() -> void:
-	visible = false
-	closed.emit()
+	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _setup_skills() -> void:
 	for skill_name in SKILL_NAMES:
@@ -111,21 +110,21 @@ func _refresh_display() -> void:
 
 		if current_level >= 20:
 			row_data.cost_label.text = "MAX"
-			row_data.cost_label.add_theme_color_override("font_color", Color.GOLD)
+			row_data.cost_label.add_theme_color_override("font_color", ThemeColors.PRIMARY)
 			row_data.buy_btn.disabled = true
 		else:
 			row_data.cost_label.text = "%d XP" % cost
 			if can_afford:
-				row_data.cost_label.add_theme_color_override("font_color", Color.GREEN)
+				row_data.cost_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
 			else:
-				row_data.cost_label.add_theme_color_override("font_color", Color.RED)
+				row_data.cost_label.add_theme_color_override("font_color", ThemeColors.MSG_ERROR)
 			row_data.buy_btn.disabled = not can_afford
 
 		# Color level based on value
 		if current_level >= 10:
-			row_data.level_label.add_theme_color_override("font_color", Color.GOLD)
+			row_data.level_label.add_theme_color_override("font_color", ThemeColors.PRIMARY)
 		elif current_level >= 5:
-			row_data.level_label.add_theme_color_override("font_color", Color.GREEN)
+			row_data.level_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
 		else:
 			row_data.level_label.remove_theme_color_override("font_color")
 

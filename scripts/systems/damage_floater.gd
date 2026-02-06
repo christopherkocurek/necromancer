@@ -66,26 +66,16 @@ static func create_at(parent: Node, world_position: Vector2, text: String, color
 	parent.add_child(floater)
 	return floater
 
-# Preset colors for different damage types
-const COLOR_PHYSICAL := Color(1.0, 0.3, 0.3)  # Red
-const COLOR_FIRE := Color(1.0, 0.5, 0.0)      # Orange
-const COLOR_COLD := Color(0.3, 0.7, 1.0)      # Light blue
-const COLOR_POISON := Color(0.3, 1.0, 0.3)    # Green
-const COLOR_DARK := Color(0.6, 0.3, 0.8)      # Purple
-const COLOR_HEAL := Color(0.3, 1.0, 0.5)      # Bright green
-const COLOR_MANA := Color(0.3, 0.5, 1.0)      # Blue
-const COLOR_MISS := Color(0.7, 0.7, 0.7)      # Gray
-const COLOR_CRIT := Color(1.0, 1.0, 0.0)      # Yellow
+# Preset colors for different damage types (delegates to ThemeColors)
+const COLOR_PHYSICAL := ThemeColors.DMG_PHYSICAL
+const COLOR_FIRE := ThemeColors.DMG_FIRE
+const COLOR_COLD := ThemeColors.DMG_COLD
+const COLOR_POISON := ThemeColors.DMG_POISON
+const COLOR_DARK := ThemeColors.DMG_DARK
+const COLOR_HEAL := ThemeColors.DMG_HEAL
+const COLOR_MANA := ThemeColors.DMG_MANA
+const COLOR_MISS := ThemeColors.DMG_MISS
+const COLOR_CRIT := ThemeColors.DMG_CRIT
 
 static func get_color_for_type(damage_type: String) -> Color:
-	match damage_type:
-		"physical", "HURT": return COLOR_PHYSICAL
-		"fire", "FIRE": return COLOR_FIRE
-		"cold", "COLD": return COLOR_COLD
-		"poison", "POISON": return COLOR_POISON
-		"dark", "DARK": return COLOR_DARK
-		"heal": return COLOR_HEAL
-		"mana": return COLOR_MANA
-		"miss": return COLOR_MISS
-		"critical": return COLOR_CRIT
-		_: return Color.WHITE
+	return ThemeColors.get_damage_color(damage_type)

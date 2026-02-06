@@ -180,7 +180,7 @@ func get_ability_type(ability_id: int) -> AbilityType:
 func activate_ability(ability_id: int, target: Variant = null) -> bool:
 	var check: Dictionary = can_use_ability(ability_id)
 	if not check.can_use:
-		GameManager.log_message(check.reason, Color.RED)
+		GameManager.log_message(check.reason, ThemeColors.MSG_ERROR)
 		ability_failed.emit(ability_id, check.reason)
 		return false
 
@@ -216,7 +216,7 @@ func _execute_ability(ability_id: int, target: Variant) -> bool:
 		LoreAbility.WORD_OF_MASTERY:
 			return _word_of_mastery(target)
 		_:
-			GameManager.log_message("Ability not implemented.", Color.GRAY)
+			GameManager.log_message("Ability not implemented.", ThemeColors.MSG_SYSTEM)
 			return false
 
 # ============================================================================
@@ -234,7 +234,7 @@ func _word_of_command() -> bool:
 	var affected: int = 0
 	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, radius)
 
-	GameManager.log_message("You speak a word of terrible power!", Color.CYAN)
+	GameManager.log_message("You speak a word of terrible power!", ThemeColors.MSG_INFO)
 
 	for entity in entities:
 		if entity == player or not is_instance_valid(entity):
@@ -254,12 +254,12 @@ func _word_of_command() -> bool:
 			monster.apply_status(Constants.EFFECT_AFRAID, 3 + (lore_skill / 3))
 			monster.current_morale -= 30
 			affected += 1
-			GameManager.log_message("The %s cowers in fear!" % monster.entity_name, Color.YELLOW)
+			GameManager.log_message("The %s cowers in fear!" % monster.entity_name, ThemeColors.MSG_WARNING)
 		else:
-			GameManager.log_message("The %s resists your word." % monster.entity_name, Color.GRAY)
+			GameManager.log_message("The %s resists your word." % monster.entity_name, ThemeColors.MSG_SYSTEM)
 
 	if affected == 0:
-		GameManager.log_message("No enemies were affected.", Color.GRAY)
+		GameManager.log_message("No enemies were affected.", ThemeColors.MSG_SYSTEM)
 
 	start_cooldown(LoreAbility.WORD_OF_COMMAND, 10)
 	return true
@@ -267,11 +267,11 @@ func _word_of_command() -> bool:
 ## Lore of Battle (141): Provoke target (-evasion, +damage)
 func _lore_of_battle(target: Variant) -> bool:
 	if not player or not target:
-		GameManager.log_message("Select a target for Lore of Battle.", Color.YELLOW)
+		GameManager.log_message("Select a target for Lore of Battle.", ThemeColors.MSG_WARNING)
 		return false
 
 	if not target is Monster:
-		GameManager.log_message("Invalid target.", Color.RED)
+		GameManager.log_message("Invalid target.", ThemeColors.MSG_ERROR)
 		return false
 
 	var monster: Monster = target
@@ -287,10 +287,10 @@ func _lore_of_battle(target: Variant) -> bool:
 		# Implemented as a status effect
 		monster.apply_status(&"provoked", 3 + (lore_skill / 4))
 		monster.evasion_bonus -= 2  # Direct penalty
-		GameManager.log_message("You provoke the %s into reckless attacks!" % monster.entity_name, Color.CYAN)
+		GameManager.log_message("You provoke the %s into reckless attacks!" % monster.entity_name, ThemeColors.MSG_INFO)
 		return true
 	else:
-		GameManager.log_message("The %s ignores your taunts." % monster.entity_name, Color.GRAY)
+		GameManager.log_message("The %s ignores your taunts." % monster.entity_name, ThemeColors.MSG_SYSTEM)
 		return false
 
 ## Word of Opening (143): Unlock doors, reveal traps in radius
@@ -303,7 +303,7 @@ func _word_of_opening() -> bool:
 	var radius: int = 3 + (lore_skill / 3)
 	var opened: int = 0
 
-	GameManager.log_message("You speak words of unbinding!", Color.CYAN)
+	GameManager.log_message("You speak words of unbinding!", ThemeColors.MSG_INFO)
 
 	# Find and open all closed doors in radius
 	for dy in range(-radius, radius + 1):
@@ -328,9 +328,9 @@ func _word_of_opening() -> bool:
 	# TODO: Reveal traps when trap system is implemented
 
 	if opened > 0:
-		GameManager.log_message("The way is opened! (%d barriers cleared)" % opened, Color.GREEN)
+		GameManager.log_message("The way is opened! (%d barriers cleared)" % opened, ThemeColors.ABILITY_LEARNED)
 	else:
-		GameManager.log_message("There is nothing to open nearby.", Color.GRAY)
+		GameManager.log_message("There is nothing to open nearby.", ThemeColors.MSG_SYSTEM)
 
 	start_cooldown(LoreAbility.WORD_OF_OPENING, 8)
 	return true
@@ -347,7 +347,7 @@ func _lore_of_silence() -> bool:
 	var affected: int = 0
 	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, radius)
 
-	GameManager.log_message("A blanket of silence falls around you.", Color.CYAN)
+	GameManager.log_message("A blanket of silence falls around you.", ThemeColors.MSG_INFO)
 
 	for entity in entities:
 		if entity == player or not is_instance_valid(entity):
@@ -362,7 +362,7 @@ func _lore_of_silence() -> bool:
 		affected += 1
 
 	if affected > 0:
-		GameManager.log_message("Enemies struggle to perceive you.", Color.GREEN)
+		GameManager.log_message("Enemies struggle to perceive you.", ThemeColors.ABILITY_LEARNED)
 
 	start_cooldown(LoreAbility.LORE_OF_SILENCE, 12)
 	return true
@@ -377,7 +377,7 @@ func _word_of_shutting() -> bool:
 	var radius: int = 2 + (lore_skill / 4)
 	var shut: int = 0
 
-	GameManager.log_message("You speak words of warding!", Color.CYAN)
+	GameManager.log_message("You speak words of warding!", ThemeColors.MSG_INFO)
 
 	# Find and seal all open doors in radius
 	for dy in range(-radius, radius + 1):
@@ -399,9 +399,9 @@ func _word_of_shutting() -> bool:
 				shut += 1
 
 	if shut > 0:
-		GameManager.log_message("Doors seal shut with arcane power! (%d sealed)" % shut, Color.GREEN)
+		GameManager.log_message("Doors seal shut with arcane power! (%d sealed)" % shut, ThemeColors.ABILITY_LEARNED)
 	else:
-		GameManager.log_message("There are no doors to seal nearby.", Color.GRAY)
+		GameManager.log_message("There are no doors to seal nearby.", ThemeColors.MSG_SYSTEM)
 
 	start_cooldown(LoreAbility.WORD_OF_SHUTTING, 15)
 	return true
@@ -409,11 +409,11 @@ func _word_of_shutting() -> bool:
 ## Lore of Sleep (150): Put target to sleep (Will check)
 func _lore_of_sleep(target: Variant) -> bool:
 	if not player or not target:
-		GameManager.log_message("Select a target for Lore of Sleep.", Color.YELLOW)
+		GameManager.log_message("Select a target for Lore of Sleep.", ThemeColors.MSG_WARNING)
 		return false
 
 	if not target is Monster:
-		GameManager.log_message("Invalid target.", Color.RED)
+		GameManager.log_message("Invalid target.", ThemeColors.MSG_ERROR)
 		return false
 
 	var monster: Monster = target
@@ -421,7 +421,7 @@ func _lore_of_sleep(target: Variant) -> bool:
 
 	# Check if monster can be put to sleep
 	if monster.monster_data and monster.monster_data.has_flag("NO_SLEEP"):
-		GameManager.log_message("The %s cannot be put to sleep." % monster.entity_name, Color.RED)
+		GameManager.log_message("The %s cannot be put to sleep." % monster.entity_name, ThemeColors.MSG_ERROR)
 		return false
 
 	# Will save
@@ -434,21 +434,21 @@ func _lore_of_sleep(target: Variant) -> bool:
 		monster.is_sleeping = true
 		monster.alertness = Constants.ALERTNESS_MIN
 		monster.ai_state = Monster.AIState.IDLE
-		GameManager.log_message("The %s falls into a deep slumber!" % monster.entity_name, Color.CYAN)
+		GameManager.log_message("The %s falls into a deep slumber!" % monster.entity_name, ThemeColors.MSG_INFO)
 		start_cooldown(LoreAbility.LORE_OF_SLEEP, 8)
 		return true
 	else:
-		GameManager.log_message("The %s resists your lullaby." % monster.entity_name, Color.GRAY)
+		GameManager.log_message("The %s resists your lullaby." % monster.entity_name, ThemeColors.MSG_SYSTEM)
 		return false
 
 ## Word of Mastery (151): Paralyze target
 func _word_of_mastery(target: Variant) -> bool:
 	if not player or not target:
-		GameManager.log_message("Select a target for Word of Mastery.", Color.YELLOW)
+		GameManager.log_message("Select a target for Word of Mastery.", ThemeColors.MSG_WARNING)
 		return false
 
 	if not target is Monster:
-		GameManager.log_message("Invalid target.", Color.RED)
+		GameManager.log_message("Invalid target.", ThemeColors.MSG_ERROR)
 		return false
 
 	var monster: Monster = target
@@ -463,11 +463,11 @@ func _word_of_mastery(target: Variant) -> bool:
 		# Paralyze (heavy stun)
 		var duration: int = 2 + (lore_skill / 5)
 		monster.apply_status(Constants.EFFECT_STUNNED, Constants.STUN_THRESHOLD_KNOCKOUT + 10)
-		GameManager.log_message("The %s is frozen by your command!" % monster.entity_name, Color.CYAN)
+		GameManager.log_message("The %s is frozen by your command!" % monster.entity_name, ThemeColors.MSG_INFO)
 		start_cooldown(LoreAbility.WORD_OF_MASTERY, 20)
 		return true
 	else:
-		GameManager.log_message("The %s shakes off your command!" % monster.entity_name, Color.GRAY)
+		GameManager.log_message("The %s shakes off your command!" % monster.entity_name, ThemeColors.MSG_SYSTEM)
 		return false
 
 # ============================================================================
@@ -477,7 +477,7 @@ func _word_of_mastery(target: Variant) -> bool:
 ## Herbcraft (145): Double healing from potions - called when using healing items
 func apply_herbcraft_bonus(base_heal: int) -> int:
 	if has_ability(LoreAbility.HERBCRAFT):
-		GameManager.log_message("Your knowledge of herbs enhances the healing!", Color.GREEN)
+		GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 		return base_heal * 2
 	return base_heal
 
@@ -493,7 +493,7 @@ func check_deadly_lore(target: Monster) -> bool:
 	var threshold: int = lore_skill * 2
 
 	if target.current_health <= threshold:
-		GameManager.log_message("Your deadly knowledge finds a vital point!", Color.RED)
+		GameManager.log_message("Your deadly knowledge finds a vital point!", ThemeColors.MSG_ERROR)
 		target.die(player)
 		return true
 	return false
@@ -526,7 +526,7 @@ func apply_grace_bonus() -> void:
 		if not player.has_meta("grace_ability_applied"):
 			player.grace += 1
 			player.set_meta("grace_ability_applied", true)
-			GameManager.log_message("Your grace increases from ancient wisdom.", Color.GREEN)
+			GameManager.log_message("Your grace increases from ancient wisdom.", ThemeColors.ABILITY_LEARNED)
 
 # ============================================================================
 # HELPER FUNCTIONS

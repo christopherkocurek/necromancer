@@ -1,0 +1,46 @@
+Necromancer Tileset - Extraction Log
+==================================================
+Generated: 2026-02-05T03:10:16.997721
+
+CATEGORY BREAKDOWN
+------------------------------
+Monsters:             73
+Terrain (w/vars):    176
+Items:               254
+Artifacts:           147
+Player sprites:       12
+Status effects:       20
+------------------------------
+TOTAL:               682
+
+MONSTER LAYERS
+------------------------------
+Layer 1 - Forest Breach (1-3): 13
+Layer 2 - Orc Warrens (3-6): 10
+Layer 3 - Torture Halls (6-9): 11
+Layer 4 - Necropolis (9-12): 8
+Layer 5 - Wraith Domain (12-15): 9
+Layer 6 - Inner Sanctum (15-18): 8
+Layer 7 - Pits of Despair (18-20): 14
+
+ITEM TYPES
+------------------------------
+: 1
+amulet: 13
+blunt_weapon: 3
+cloak: 4
+crown: 2
+food: 20
+hard_armor: 5
+light_source: 6
+misc: 105
+polearm: 6
+potion: 21
+ring: 19
+scroll: 6
+shield: 4
+skeleton: 3
+soft_armor: 4
+staff: 16
+sword: 10
+wand: 6
