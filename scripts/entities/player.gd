@@ -560,7 +560,15 @@ func _any_adjacent_alert_enemy() -> bool:
 
 func _recalculate_stats() -> void:
 	# Base stats (no levels in Sil-Q)
-	max_health = 10 + constitution * 2
+	# Sil-Q formula: 20 * 1.2^Con (compounding 20% per Con point)
+	var hp_base: int = 2000  # 20 * 100 for integer math
+	if constitution >= 0:
+		for i in range(constitution):
+			hp_base = hp_base * 12 / 10
+	else:
+		for i in range(-constitution):
+			hp_base = hp_base * 10 / 12
+	max_health = hp_base / 100
 
 	# Combat bonuses from skills and stats
 	melee_bonus = skills["melee"] + (strength / 2)
