@@ -1,0 +1,65 @@
+# File: trait.txt
+#
+# Hero trait definitions for THE NECROMANCER
+# Each character selects one trait during creation.
+#
+# Format:
+# N: ID : Name
+# E: effect_id (used in code for trait logic)
+# D: description (displayed to player)
+#
+# Traits provide a unique passive or triggered ability that
+# defines the hero's archetype and playstyle.
+
+V:1.5.0
+
+N:0:Defiance
+E:defiance
+D:You fight harder against stronger foes. Gain +1 to attack
+D: and damage against enemies whose native depth exceeds
+D: the current floor by 3 or more.
+
+N:1:Ambush Mastery
+E:ambush_mastery
+D:Your first attack against an unaware enemy deals an extra
+D: damage die. Stacks with Assassination and Opening Strike.
+
+N:2:Light of the Eldar
+E:light_of_eldar
+D:Your light radius is increased by 1. Undead within your
+D: light radius suffer -2 to attack and evasion.
+
+N:3:Last Stand
+E:last_stand
+D:When below 25% health, you gain +3 to attack, damage,
+D: and evasion. Your defiance burns brightest at the end.
+
+N:4:Fortune's Favor
+E:fortunes_favor
+D:Once per floor, when you would fail a saving throw or
+D: resistance check, you may reroll it. Luck favors the bold.
+
+N:5:Undying Resolve
+E:undying_resolve
+D:Once per game, when reduced to 0 HP, you are restored to
+D: 50% health instead of dying. A light in the darkness.
+
+N:6:Rallying Cry
+E:rallying_cry
+D:When you kill an enemy, all visible enemies must make a
+D: Will save or lose 20 morale. Your victories inspire dread.
+
+N:7:Song of Banishment
+E:song_of_banishment
+D:You begin the game with the Song of Banishment Lore ability
+D: regardless of your Lore skill level.
+
+N:8:Forge Intuition
+E:forge_intuition
+D:Items you pick up are automatically identified. Your
+D: innate understanding of craftsmanship reveals their nature.
+
+N:9:Shadow Step
+E:shadow_step
+D:Once per floor, you can teleport to any visible unaware
+D: enemy's position, appearing adjacent to them. Costs 50 energy.

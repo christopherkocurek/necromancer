@@ -180,6 +180,9 @@ func _serialize_player(player: Player) -> Dictionary:
 		"entity_name": player.entity_name,
 		"race_name": player.race_name,
 		"house_name": player.house_name,
+		"trait_name": player.trait_name,
+		"trait_effect_id": player.trait_effect_id,
+		"trait_undying_used": player._trait_undying_used,
 		# Position
 		"grid_position": {"x": player.grid_position.x, "y": player.grid_position.y},
 		# Core stats
@@ -342,6 +345,9 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	player.entity_name = data.get("entity_name", "Adventurer")
 	player.race_name = data.get("race_name", "Man")
 	player.house_name = data.get("house_name", "")
+	player.trait_name = data.get("trait_name", "")
+	player.trait_effect_id = data.get("trait_effect_id", "")
+	player._trait_undying_used = data.get("trait_undying_used", false)
 
 	# Position
 	var pos: Dictionary = data.get("grid_position", {"x": 0, "y": 0})

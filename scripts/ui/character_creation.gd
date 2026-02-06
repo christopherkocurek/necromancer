@@ -1,18 +1,19 @@
 extends Control
 class_name CharacterCreation
-## Character creation flow: Race -> House -> Stats -> Name -> Start Game
+## Character creation flow: Race -> House -> Trait -> Stats -> Name -> Start Game
 ## Enhanced with stage transitions, progress indicator, stat bars, and name file loading.
 
 signal creation_complete(character_data: Dictionary)
 signal creation_cancelled
 
-enum Stage { RACE, HOUSE, STATS, NAME, CONFIRM }
+enum Stage { RACE, HOUSE, TRAIT, STATS, NAME, CONFIRM }
 
 var current_stage: Stage = Stage.RACE
 
 # Character build state
 var selected_race: String = ""
 var selected_house: String = ""
+var selected_trait: String = ""
 var base_stats: Dictionary = {"str": 0, "dex": 0, "con": 0, "gra": 0}
 var character_name: String = ""
 
@@ -135,6 +136,8 @@ func _populate_stage(stage: Stage) -> void:
 			_show_race_selection()
 		Stage.HOUSE:
 			_show_house_selection()
+		Stage.TRAIT:
+			_show_trait_selection()
 		Stage.STATS:
 			_show_stat_allocation()
 		Stage.NAME:
@@ -291,6 +294,51 @@ func _update_house_info() -> void:
 	info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
 		selected_house, stats_text, affinity_text, house.description
 	]
+
+# ============================================================================
+# TRAIT SELECTION
+# ============================================================================
+
+func _show_trait_selection() -> void:
+	stage_label.text = "Choose Your Trait"
+
+	var all_traits: Array = DataManager.get_all_traits()
+	if all_traits.is_empty():
+		info_label.text = "No traits available."
+		return
+
+	# Create a scrollable list of traits
+	for trait_data in all_traits:
+		var btn := Button.new()
+		btn.text = trait_data.name
+		btn.toggle_mode = true
+		btn.button_group = _get_or_create_button_group("trait")
+		btn.pressed.connect(_on_trait_selected.bind(trait_data.name))
+
+		if selected_trait == trait_data.name:
+			btn.button_pressed = true
+
+		content_container.add_child(btn)
+
+	_update_trait_info()
+
+func _on_trait_selected(trait_name: String) -> void:
+	selected_trait = trait_name
+	_update_trait_info()
+	_update_navigation()
+
+func _update_trait_info() -> void:
+	if selected_trait.is_empty():
+		info_label.text = "Select a trait to define your hero's identity."
+		return
+
+	var trait_data: DataManager.TraitData = DataManager.get_trait_by_name(selected_trait)
+	if not trait_data:
+		return
+
+	var gold := ThemeColors.PRIMARY.to_html(false)
+	info_label.bbcode_enabled = true
+	info_label.text = "[b]%s[/b]\n\n%s" % [trait_data.name, trait_data.description]
 
 # ============================================================================
 # STAT ALLOCATION
@@ -553,9 +601,10 @@ func _get_character_summary() -> String:
 
 	var display_name: String = character_name if not character_name.is_empty() else "(unnamed)"
 	var house_suffix: String = house.alternate_name if house and not house.alternate_name.is_empty() else selected_house
+	var trait_text: String = selected_trait if not selected_trait.is_empty() else "(none)"
 
-	return "%s of %s\n%s %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
-		display_name, house_suffix, selected_race, selected_house,
+	return "%s of %s\n%s %s\nTrait: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
+		display_name, house_suffix, selected_race, selected_house, trait_text,
 		final_str, final_dex, final_con, final_gra, Player.STARTING_XP
 	]
 
@@ -596,6 +645,9 @@ func _update_navigation() -> void:
 		Stage.HOUSE:
 			next_button.text = "Next"
 			next_button.disabled = selected_house.is_empty()
+		Stage.TRAIT:
+			next_button.text = "Next"
+			next_button.disabled = selected_trait.is_empty()
 		Stage.STATS:
 			next_button.text = "Next"
 			next_button.disabled = false
@@ -622,6 +674,7 @@ func _finish_creation() -> void:
 	var character_data := {
 		"race": selected_race,
 		"house": selected_house,
+		"trait": selected_trait,
 		"base_stats": base_stats.duplicate(),
 		"name": character_name
 	}

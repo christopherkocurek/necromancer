@@ -232,6 +232,8 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 		player.entity_name = character_data.get("name", "Necromancer")
 		player.race_name = character_data.get("race", "Man")
 		player.house_name = character_data.get("house", "")
+		player.trait_name = character_data.get("trait", "")
+		player._apply_trait()
 
 		# Apply base stat allocation
 		var base_stats: Dictionary = character_data.get("base_stats", {})

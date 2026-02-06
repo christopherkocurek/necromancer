@@ -9,6 +9,13 @@ signal player_died(cause: String, killer_name: String)
 # Character creation
 @export var race_name: String = "Man"
 @export var house_name: String = ""
+@export var trait_name: String = ""
+var trait_effect_id: String = ""  # Code-facing ID from trait data (e.g. "defiance")
+
+# Trait state tracking
+var _trait_fortune_used: bool = false   # Fortune's Favor: once per floor
+var _trait_undying_used: bool = false    # Undying Resolve: once per run
+var _trait_shadow_step_used: bool = false # Shadow Step: once per floor
 
 # XP System (Sil-Q style - XP is currency for skills, no levels)
 const STARTING_XP: int = 5000
@@ -123,6 +130,7 @@ func _ready() -> void:
 	_init_ability_arrays()
 	_apply_racial_modifiers()
 	_setup_player_sprite()
+	EventBus.level_entered.connect(_on_level_entered)
 
 func _init_ability_arrays() -> void:
 	# Initialize ability tracking arrays (S_MAX x ABILITIES_MAX)
@@ -157,6 +165,9 @@ func reset_turn_state() -> void:
 	knocked_back = false
 	noise_this_turn = 0
 	was_attacked_this_turn = false
+
+func _on_level_entered(_depth: int) -> void:
+	reset_per_floor_traits()
 	attacked_this_turn = false
 	_vengeance_active = false
 	# Tick Fade bonus
@@ -209,6 +220,117 @@ func _apply_racial_modifiers() -> void:
 
 	# Recalculate derived stats
 	_recalculate_stats()
+
+# ============================================================================
+# HERO TRAIT SYSTEM
+# ============================================================================
+
+func _apply_trait() -> void:
+	if trait_name.is_empty():
+		return
+
+	var trait_data: DataManager.TraitData = DataManager.get_trait_by_name(trait_name)
+	if not trait_data:
+		return
+
+	trait_effect_id = trait_data.effect_id
+
+	# Trait-specific initialization
+	match trait_effect_id:
+		"song_of_banishment":
+			# Grant Song of Banishment ability regardless of Lore level
+			if innate_ability.size() > Constants.Skill.S_LOR:
+				if innate_ability[Constants.Skill.S_LOR].size() > Constants.LoreAbility.LOR_SONG_OF_BANISHMENT:
+					innate_ability[Constants.Skill.S_LOR][Constants.LoreAbility.LOR_SONG_OF_BANISHMENT] = true
+					active_ability[Constants.Skill.S_LOR][Constants.LoreAbility.LOR_SONG_OF_BANISHMENT] = true
+					have_ability[Constants.Skill.S_LOR][Constants.LoreAbility.LOR_SONG_OF_BANISHMENT] = true
+			GameManager.log_message("You know the Song of Banishment!", ThemeColors.ABILITY_LEARNED)
+
+	GameManager.log_message("Trait: %s" % trait_name, ThemeColors.PRIMARY)
+
+func reset_per_floor_traits() -> void:
+	## Called when entering a new floor to reset per-floor trait abilities.
+	_trait_fortune_used = false
+	_trait_shadow_step_used = false
+
+## Defiance: +1 attack/damage vs enemies whose native depth > current_depth + 3
+func get_defiance_bonus(monster: Entity) -> int:
+	if trait_effect_id != "defiance":
+		return 0
+	if not monster is Monster:
+		return 0
+	var m: Monster = monster
+	if not m.monster_data:
+		return 0
+	var current_depth: int = GameManager.current_depth if GameManager else 1
+	if m.monster_data.depth >= current_depth + 3:
+		return 1
+	return 0
+
+## Ambush Mastery: extra damage die vs unaware enemies
+func get_ambush_mastery_bonus(target: Entity) -> int:
+	if trait_effect_id != "ambush_mastery":
+		return 0
+	if not target is Monster:
+		return 0
+	var m: Monster = target
+	if m.is_sleeping or m.alertness < Constants.ALERTNESS_ALERT:
+		return 1  # +1 damage die
+	return 0
+
+## Light of the Eldar: +1 light radius (checked in FOV), undead -2 attack/evasion in light
+func has_light_of_eldar() -> bool:
+	return trait_effect_id == "light_of_eldar"
+
+## Last Stand: +3 attack/damage/evasion when below 25% HP
+func get_last_stand_bonus() -> int:
+	if trait_effect_id != "last_stand":
+		return 0
+	if current_health <= max_health / 4:
+		return 3
+	return 0
+
+## Fortune's Favor: reroll a failed check (returns true if reroll available)
+func try_fortune_favor() -> bool:
+	if trait_effect_id != "fortunes_favor":
+		return false
+	if _trait_fortune_used:
+		return false
+	_trait_fortune_used = true
+	GameManager.log_message("Fortune smiles upon you!", ThemeColors.PRIMARY)
+	return true
+
+## Undying Resolve: survive lethal damage once per run at 50% HP
+func try_undying_resolve() -> bool:
+	if trait_effect_id != "undying_resolve":
+		return false
+	if _trait_undying_used:
+		return false
+	_trait_undying_used = true
+	current_health = max_health / 2
+	GameManager.log_message("Your undying resolve keeps you standing!", ThemeColors.PRIMARY)
+	return true
+
+## Rallying Cry: on kill, visible enemies must save or lose 20 morale
+func trigger_rallying_cry() -> void:
+	if trait_effect_id != "rallying_cry":
+		return
+	if not GameManager.current_level:
+		return
+	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(grid_position, Constants.MAX_SIGHT)
+	for entity in entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		var monster: Monster = entity
+		var monster_will: int = monster.monster_data.will if monster.monster_data else 5
+		var player_roll: int = randi_range(1, 20) + get_skill("will")
+		var monster_roll: int = randi_range(1, 20) + monster_will
+		if player_roll > monster_roll:
+			monster.current_morale -= 20
+
+## Forge Intuition: auto-identify items on pickup
+func has_forge_intuition() -> bool:
+	return trait_effect_id == "forge_intuition"
 
 func _recalculate_stats() -> void:
 	# Base stats (no levels in Sil-Q)
@@ -1275,6 +1397,13 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	# Vengeance: track that we were hit for +2 attack next turn
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_VENGEANCE):
 		_vengeance_active = true
+
+	# Undying Resolve trait: survive lethal damage once per run at 50% HP
+	if current_health > 0 and current_health - amount <= 0:
+		if try_undying_resolve():
+			EventBus.entity_damaged.emit(self, amount, damage_type, source)
+			_flash_damage()
+			return
 
 	# Defy Death: chance to survive lethal hit at 1 HP (Will*3% chance)
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_DEFY_DEATH):

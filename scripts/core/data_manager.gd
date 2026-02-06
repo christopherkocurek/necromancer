@@ -9,6 +9,7 @@ var artifacts: Dictionary = {} # name -> ArtifactData
 var abilities: Dictionary = {} # name -> AbilityData
 var races: Dictionary = {}     # name -> RaceData
 var houses: Dictionary = {}    # name -> HouseData
+var traits: Dictionary = {}    # name -> TraitData
 var terrain: Dictionary = {}   # char -> TerrainData
 var vaults: Array[VaultData] = []
 
@@ -27,6 +28,7 @@ func load_all_data() -> void:
 	load_abilities()
 	load_races()
 	load_houses()
+	load_traits()
 	load_vaults()
 	_validate_data()
 
@@ -588,6 +590,65 @@ func load_houses() -> void:
 		houses[current_house.name] = current_house
 
 # ============================================================================
+# TRAIT PARSING
+# ============================================================================
+
+func load_traits() -> void:
+	var file := FileAccess.open(DATA_PATH + "trait.txt", FileAccess.READ)
+	if not file:
+		push_warning("No trait.txt found - traits disabled")
+		return
+
+	var current_trait: TraitData = null
+
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
+			continue
+
+		var parts := line.split(":")
+		if parts.size() < 2:
+			continue
+
+		var key := parts[0]
+		var value := ":".join(parts.slice(1))
+
+		match key:
+			"N":
+				if current_trait and current_trait.name != "":
+					traits[current_trait.name] = current_trait
+				current_trait = TraitData.new()
+				var n_parts := value.split(":")
+				if n_parts.size() >= 1:
+					current_trait.index = int(n_parts[0])
+				if n_parts.size() >= 2:
+					current_trait.name = n_parts[1]
+			"E":
+				if current_trait:
+					current_trait.effect_id = value.strip_edges()
+			"D":
+				if current_trait:
+					if current_trait.description.is_empty():
+						current_trait.description = value
+					else:
+						current_trait.description += " " + value
+
+	if current_trait and current_trait.name != "":
+		traits[current_trait.name] = current_trait
+
+func get_all_traits() -> Array:
+	return traits.values()
+
+func get_trait_by_name(trait_name: String) -> TraitData:
+	return traits.get(trait_name, null)
+
+func get_trait_by_index(index: int) -> TraitData:
+	for t in traits.values():
+		if t.index == index:
+			return t
+	return null
+
+# ============================================================================
 # TERRAIN PARSING
 # ============================================================================
 
@@ -769,8 +830,8 @@ func _validate_data() -> void:
 	print("Loaded %d monsters, %d items, %d artifacts, %d abilities" % [
 		monsters.size(), items.size(), artifacts.size(), abilities.size()
 	])
-	print("Loaded %d races, %d houses, %d vaults" % [
-		races.size(), houses.size(), vaults.size()
+	print("Loaded %d races, %d houses, %d traits, %d vaults" % [
+		races.size(), houses.size(), traits.size(), vaults.size()
 	])
 
 	# Spot-check critical content
@@ -1041,6 +1102,12 @@ class HouseData:
 	var short_name: String = ""
 	# F: line - skill affinities (MEL_AFFINITY, ARC_AFFINITY, etc.)
 	var affinities: Array[String] = []
+	var description: String = ""
+
+class TraitData:
+	var index: int = 0
+	var name: String = ""
+	var effect_id: String = ""  # Code-facing identifier (e.g. "defiance")
 	var description: String = ""
 
 class TerrainData:
