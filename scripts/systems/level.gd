@@ -480,14 +480,14 @@ func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
 		if is_lit:
 			tile_visibility[i] = true
 			explored[i] = true
-		else:
-			# In FOV but dark: mark explored (remembered) but not visible
-			explored[i] = true
 
 func update_entity_visibility() -> void:
 	for entity in entities:
 		if is_instance_valid(entity) and entity is Monster:
 			entity.visible = is_tile_visible(entity.grid_position)
+	for item in items:
+		if is_instance_valid(item):
+			item.visible = is_tile_visible(item.grid_position)
 
 ## Refresh tilemap after FOV update: lit tiles use light atlas, explored use dark, unexplored = darkness tile
 func apply_fov_to_tilemap() -> void:

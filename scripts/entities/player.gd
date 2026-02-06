@@ -65,7 +65,7 @@ var skills: Dictionary = {
 
 # Necromancer-specific
 var lore_known: Dictionary = {}  # monster_type -> Array of lore abilities
-var voice_charges: int = 0  # For song/voice abilities
+var voice_charges: int = 10  # For song/voice abilities (starts full)
 var max_voice: int = 10
 
 # Equipment slots

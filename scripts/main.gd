@@ -32,9 +32,15 @@ var transition_overlay: ColorRect = null
 # Quest system (using Node type to avoid load order issues)
 var quest_system: Node = null
 
+# Voice ability menu
+var voice_menu: PopupMenu = null
+var _voice_menu_abilities: Array[Dictionary] = []  # Cached list from ability_system
+var _pending_voice_ability_id: int = -1  # Ability waiting for target selection
+
 # Systems (Phase 8C) - using Node/RefCounted to avoid load order issues
 var auto_explore: RefCounted = null  # AutoExplore
 var monster_memory: RefCounted = null
+var ability_system: AbilitySystem = null
 
 const LEVEL_SCENE := preload("res://scenes/levels/level.tscn")
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
@@ -121,6 +127,8 @@ func _setup_ui_panels() -> void:
 	# Initialize Phase 8C systems (using preloaded scripts)
 	auto_explore = AutoExploreScript.new()
 	monster_memory = MonsterMemoryScript.new()
+	ability_system = AbilitySystem.new()
+	add_child(ability_system)
 
 	# Create quest system using preloaded script
 	quest_system = QuestSystemScript.new()
@@ -132,6 +140,12 @@ func _setup_ui_panels() -> void:
 	transition_overlay.anchors_preset = Control.PRESET_FULL_RECT
 	transition_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_layer.add_child(transition_overlay)
+
+	# Voice ability quick-select menu (V key)
+	voice_menu = PopupMenu.new()
+	voice_menu.name = "VoiceMenu"
+	voice_menu.id_pressed.connect(_on_voice_menu_selected)
+	ui_layer.add_child(voice_menu)
 
 	# Connect NPC interaction event
 	EventBus.npc_interacted.connect(_on_npc_interacted)
@@ -174,6 +188,7 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	# Set up systems
 	turn_system.set_level(current_level)
 	turn_system.set_player(player)
+	ability_system.set_player(player)
 	floater_manager.set_container(current_level.get_node("Effects"))
 
 	# Initial FOV update: geometry → lighting → entity visibility → tilemap
@@ -467,6 +482,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
+	# Voice ability menu (V key)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_V and not event.shift_pressed and not event.echo:
+		_open_voice_menu()
+		get_viewport().set_input_as_handled()
+		return
+
 	# Minimap toggle (M key)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_M and not event.shift_pressed:
 		hud.toggle_minimap()
@@ -499,7 +520,8 @@ func _is_ui_open() -> bool:
 		   (dialogue_panel and dialogue_panel.visible) or \
 		   (smithing_panel and smithing_panel.visible) or \
 		   (bestiary_panel and bestiary_panel.visible) or \
-		   (settings_panel and settings_panel.visible)
+		   (settings_panel and settings_panel.visible) or \
+		   (voice_menu and voice_menu.visible)
 
 func _toggle_inventory() -> void:
 	if inventory_panel.visible:
@@ -591,8 +613,23 @@ func _open_targeting() -> void:
 func _on_target_selected(target_pos: Vector2i) -> void:
 	GameManager.is_player_turn = true
 	if not player or not player.is_alive:
+		_pending_voice_ability_id = -1
 		return
-	# Fire arrow at target
+
+	# Voice ability targeting
+	if _pending_voice_ability_id >= 0:
+		var ability_id: int = _pending_voice_ability_id
+		_pending_voice_ability_id = -1
+		var target_entity: Entity = current_level.get_entity_at(target_pos)
+		if target_entity and is_instance_valid(target_entity) and target_entity is Monster and target_entity.is_alive:
+			if ability_system:
+				ability_system.activate_ability(ability_id, target_entity)
+				player.consume_energy()
+		else:
+			GameManager.log_message("No valid target there.", ThemeColors.MSG_SYSTEM)
+		return
+
+	# Archery targeting
 	var target_entity: Entity = current_level.get_entity_at(target_pos)
 	if target_entity and is_instance_valid(target_entity) and target_entity.is_alive:
 		var dist: int = max(abs(target_pos.x - player.grid_position.x),
@@ -605,7 +642,64 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 		GameManager.log_message("Nothing to hit there.", ThemeColors.MSG_SYSTEM)
 
 func _on_target_cancelled() -> void:
+	_pending_voice_ability_id = -1
 	GameManager.is_player_turn = true
+
+# ============================================================================
+# VOICE ABILITY MENU (V key)
+# ============================================================================
+
+func _open_voice_menu() -> void:
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return
+
+	if not ability_system:
+		GameManager.log_message("No lore abilities available.", ThemeColors.MSG_SYSTEM)
+		return
+
+	_voice_menu_abilities = ability_system.get_learned_active_abilities()
+	if _voice_menu_abilities.is_empty():
+		GameManager.log_message("You have no active voice abilities.", ThemeColors.MSG_SYSTEM)
+		return
+
+	# Build popup menu
+	voice_menu.clear()
+	for i in range(_voice_menu_abilities.size()):
+		var ab: Dictionary = _voice_menu_abilities[i]
+		var label: String = ab.name
+		if ab.cost > 0:
+			label += " (%d voice)" % ab.cost
+		if not ab.can_use:
+			label += " [%s]" % ab.reason
+		voice_menu.add_item(label, i)
+		voice_menu.set_item_disabled(i, not ab.can_use)
+
+	# Show centered on screen
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	voice_menu.popup_centered()
+	GameManager.is_player_turn = false
+
+func _on_voice_menu_selected(index: int) -> void:
+	GameManager.is_player_turn = true
+	if index < 0 or index >= _voice_menu_abilities.size():
+		return
+
+	var ab: Dictionary = _voice_menu_abilities[index]
+	if not ab.can_use:
+		return
+
+	if ab.needs_target:
+		# Open targeting mode for this ability
+		_pending_voice_ability_id = ab.id
+		GameManager.log_message("Select a target for %s..." % ab.name, ThemeColors.MSG_INFO)
+		target_panel.open(player, current_level)
+		GameManager.is_player_turn = false
+	else:
+		# Activate immediately (no target needed)
+		if ability_system:
+			var success: bool = ability_system.activate_ability(ab.id)
+			if success:
+				player.consume_energy()
 
 # ============================================================================
 # SETTINGS PANEL

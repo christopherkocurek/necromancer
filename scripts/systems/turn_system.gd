@@ -160,6 +160,13 @@ func _process_game_tick() -> void:
 	if player and player.is_alive:
 		player.tick_status_effects()
 		player.reset_turn_state()
+		# HP regeneration: 1 HP every (20 - Con) turns, minimum every 5 turns
+		var regen_interval: int = maxi(5, 20 - player.constitution)
+		if current_round % regen_interval == 0 and player.current_health < player.max_health:
+			player.current_health = mini(player.current_health + 1, player.max_health)
+		# Voice regeneration: 1 charge every 3 turns
+		if current_round % 3 == 0 and player.voice_charges < player.max_voice:
+			player.voice_charges += 1
 
 	for monster in current_level.get_monsters():
 		if monster.is_alive:

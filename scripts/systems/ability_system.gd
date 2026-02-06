@@ -652,3 +652,37 @@ func get_lore_abilities() -> Array[int]:
 		LoreAbility.GRACE,
 		LoreAbility.SONG_OF_BANISHMENT,
 	]
+
+## Get learned ACTIVE lore abilities the player can invoke via the voice menu
+func get_learned_active_abilities() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var active_ids: Array[int] = [
+		LoreAbility.WORD_OF_COMMAND,
+		LoreAbility.LORE_OF_BATTLE,
+		LoreAbility.WORD_OF_OPENING,
+		LoreAbility.LORE_OF_SILENCE,
+		LoreAbility.WORD_OF_SHUTTING,
+		LoreAbility.LORE_OF_SLEEP,
+		LoreAbility.WORD_OF_MASTERY,
+		LoreAbility.SONG_OF_BANISHMENT,
+	]
+	for id in active_ids:
+		if has_ability(id):
+			var check: Dictionary = can_use_ability(id)
+			result.append({
+				"id": id,
+				"name": _get_ability_name(id),
+				"cost": get_effective_voice_cost(id),
+				"can_use": check.can_use,
+				"reason": check.reason,
+				"needs_target": _ability_needs_target(id),
+			})
+	return result
+
+## Whether an ability requires a monster target
+func _ability_needs_target(ability_id: int) -> bool:
+	match ability_id:
+		LoreAbility.LORE_OF_BATTLE, LoreAbility.LORE_OF_SLEEP, LoreAbility.WORD_OF_MASTERY:
+			return true
+		_:
+			return false

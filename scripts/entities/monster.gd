@@ -74,7 +74,7 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 		alertness = Constants.ALERTNESS_MIN  # Deep sleep
 		is_sleeping = true
 	else:
-		alertness = Constants.ALERTNESS_ALERT  # Start alert by default
+		alertness = Constants.ALERTNESS_UNWARY  # Start unwary — must detect player first
 
 	# Parse protection dice (e.g., "1d4" -> dice=1, sides=4)
 	if not data.protection_dice.is_empty():
@@ -251,7 +251,7 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 
 		var difficulty_roll: int = randi_range(1, 10) + player.get_stealth_score()
 		# Distance reduces stealth effectiveness (closer = easier to spot)
-		difficulty_roll -= maxi(0, 6 - distance)  # Penalty at close range
+		difficulty_roll += maxi(0, 6 - distance)  # Bonus at long range (closer = easier to spot)
 
 		var result: int = perception_roll - difficulty_roll
 		if result > 0:

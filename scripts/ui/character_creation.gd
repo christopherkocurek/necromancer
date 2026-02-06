@@ -307,7 +307,17 @@ func _show_trait_selection() -> void:
 		info_label.text = "No traits available."
 		return
 
-	# Create a scrollable list of traits
+	# Wrap trait buttons in a scroll container so the list doesn't overflow
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 320)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_container.add_child(scroll)
+
+	var trait_list := VBoxContainer.new()
+	trait_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(trait_list)
+
 	for trait_data in all_traits:
 		var btn := Button.new()
 		btn.text = trait_data.name
@@ -318,7 +328,7 @@ func _show_trait_selection() -> void:
 		if selected_trait == trait_data.name:
 			btn.button_pressed = true
 
-		content_container.add_child(btn)
+		trait_list.add_child(btn)
 
 	_update_trait_info()
 
