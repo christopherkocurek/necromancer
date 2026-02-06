@@ -102,7 +102,7 @@ func _refresh_display() -> void:
 	for skill_name in SKILL_NAMES:
 		var row_data: Dictionary = skill_rows[skill_name]
 		var current_level: int = player.skills.get(skill_name, 0)
-		var cost: int = player.get_skill_cost(current_level)
+		var cost: int = player.get_skill_cost(current_level, 1, skill_name)
 		var can_afford: bool = player.can_afford_skill(skill_name)
 
 		row_data.level_label.text = str(current_level)

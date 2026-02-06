@@ -272,6 +272,9 @@ const RF4_BR_DARK: int = 0x00000080
 const RF4_SHRIEK: int = 0x00010000
 const RF4_DARKNESS: int = 0x00020000
 const RF4_SLOW: int = 0x00080000
+const RF4_HOLD: int = 0x00100000
+const RF4_SCARE: int = 0x00200000
+const RF4_CONF: int = 0x00400000
 
 # ============================================================================
 # FLAG NAME TO BIT MAPPING
@@ -334,6 +337,9 @@ const FLAG_MAP: Dictionary = {
 	"SHRIEK": [4, RF4_SHRIEK],
 	"DARKNESS": [4, RF4_DARKNESS],
 	"SLOW": [4, RF4_SLOW],
+	"HOLD": [4, RF4_HOLD],
+	"SCARE": [4, RF4_SCARE],
+	"CONF": [4, RF4_CONF],
 }
 
 # ============================================================================

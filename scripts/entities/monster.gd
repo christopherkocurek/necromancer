@@ -573,9 +573,40 @@ func _resolve_attack_effect(target: Entity, effect: String) -> void:
 		"LOSE_STR":
 			if target is Player:
 				var player: Player = target as Player
-				player.strength -= 1
+				player.strength = maxi(0, player.strength - 1)
 				player._recalculate_stats()
 				GameManager.log_message("You feel your strength drain away!", ThemeColors.MSG_ERROR)
+		"LOSE_CON":
+			if target is Player:
+				var player: Player = target as Player
+				player.constitution = maxi(0, player.constitution - 1)
+				player._recalculate_stats()
+				player.health = mini(player.health, player.max_health)
+				GameManager.log_message("You feel your vitality drain away!", ThemeColors.MSG_ERROR)
+		"LOSE_GRA":
+			if target is Player:
+				var player: Player = target as Player
+				player.grace = maxi(0, player.grace - 1)
+				player._recalculate_stats()
+				GameManager.log_message("You feel your spirit diminish!", ThemeColors.MSG_ERROR)
+		"LOSE_STR_CON":
+			if target is Player:
+				var player: Player = target as Player
+				player.strength = maxi(0, player.strength - 1)
+				player.constitution = maxi(0, player.constitution - 1)
+				player._recalculate_stats()
+				player.health = mini(player.health, player.max_health)
+				GameManager.log_message("You feel your body weaken!", ThemeColors.MSG_ERROR)
+		"LOSE_ALL":
+			if target is Player:
+				var player: Player = target as Player
+				player.strength = maxi(0, player.strength - 1)
+				player.dexterity = maxi(0, player.dexterity - 1)
+				player.constitution = maxi(0, player.constitution - 1)
+				player.grace = maxi(0, player.grace - 1)
+				player._recalculate_stats()
+				player.health = mini(player.health, player.max_health)
+				GameManager.log_message("You feel your very essence drain away!", ThemeColors.MSG_ERROR)
 		"DARK":
 			target.apply_status("darkened", 3 + randi_range(1, 3))
 		_:
@@ -685,6 +716,12 @@ func _get_available_spells() -> Array[String]:
 		spells.append("ARROW2")
 	if monster_data.has_flag("BOULDER"):
 		spells.append("BOULDER")
+	if monster_data.has_flag("HOLD"):
+		spells.append("HOLD")
+	if monster_data.has_flag("SCARE"):
+		spells.append("SCARE")
+	if monster_data.has_flag("CONF"):
+		spells.append("CONF")
 	return spells
 
 func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:
@@ -712,6 +749,12 @@ func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:
 			return _spell_ranged_attack(cast_target, distance, 2)
 		"BOULDER":
 			return _spell_ranged_attack(cast_target, distance, 3)
+		"HOLD":
+			return _spell_hold(cast_target)
+		"SCARE":
+			return _spell_scare(cast_target)
+		"CONF":
+			return _spell_conf(cast_target)
 	return false
 
 func _spell_shriek() -> bool:
@@ -751,6 +794,60 @@ func _spell_slow(cast_target: Entity) -> bool:
 
 	GameManager.log_message("The %s slows you!" % entity_name, ThemeColors.MSG_ERROR)
 	cast_target.apply_status("slow", 3 + randi_range(1, 3))
+	return true
+
+func _spell_hold(cast_target: Entity) -> bool:
+	# Will save: d20 + Will vs d20 + monster perception
+	var save_roll: int = 0
+	if cast_target is Player:
+		var p: Player = cast_target as Player
+		save_roll = randi_range(1, 20) + p.get_skill("will")
+	else:
+		save_roll = randi_range(1, 20)
+	var spell_roll: int = randi_range(1, 20) + perception
+
+	if save_roll >= spell_roll:
+		GameManager.log_message("The %s tries to hold you, but you resist!" % entity_name, ThemeColors.ABILITY_LEARNED)
+		return true
+
+	GameManager.log_message("The %s paralyzes you!" % entity_name, ThemeColors.MSG_ERROR)
+	cast_target.apply_status("entranced", 2 + randi_range(1, 3))
+	return true
+
+func _spell_scare(cast_target: Entity) -> bool:
+	# Will save: d20 + Will vs d20 + monster perception
+	var save_roll: int = 0
+	if cast_target is Player:
+		var p: Player = cast_target as Player
+		save_roll = randi_range(1, 20) + p.get_skill("will")
+	else:
+		save_roll = randi_range(1, 20)
+	var spell_roll: int = randi_range(1, 20) + perception
+
+	if save_roll >= spell_roll:
+		GameManager.log_message("The %s tries to frighten you, but you resist!" % entity_name, ThemeColors.ABILITY_LEARNED)
+		return true
+
+	GameManager.log_message("The %s fills you with dread!" % entity_name, ThemeColors.MSG_ERROR)
+	cast_target.apply_status("afraid", 3 + randi_range(1, 4))
+	return true
+
+func _spell_conf(cast_target: Entity) -> bool:
+	# Will save: d20 + Will vs d20 + monster perception
+	var save_roll: int = 0
+	if cast_target is Player:
+		var p: Player = cast_target as Player
+		save_roll = randi_range(1, 20) + p.get_skill("will")
+	else:
+		save_roll = randi_range(1, 20)
+	var spell_roll: int = randi_range(1, 20) + perception
+
+	if save_roll >= spell_roll:
+		GameManager.log_message("The %s tries to confuse you, but you resist!" % entity_name, ThemeColors.ABILITY_LEARNED)
+		return true
+
+	GameManager.log_message("The %s bewilders your mind!" % entity_name, ThemeColors.MSG_ERROR)
+	cast_target.apply_status("confused", 3 + randi_range(1, 4))
 	return true
 
 func _spell_breath(cast_target: Entity, element: String, distance: int) -> bool:

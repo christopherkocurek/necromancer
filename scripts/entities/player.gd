@@ -444,12 +444,34 @@ func gain_experience(amount: int, source: String = "misc") -> void:
 
 	GameManager.log_message("Gained %d XP (%s)" % [boosted, source], ThemeColors.MSG_XP)
 
-func get_skill_cost(current_level: int, points_to_buy: int = 1) -> int:
+## Affinity flag name -> skill name mapping
+const AFFINITY_MAP: Dictionary = {
+	"MEL_AFFINITY": "melee",
+	"ARC_AFFINITY": "archery",
+	"EVN_AFFINITY": "evasion",
+	"STL_AFFINITY": "stealth",
+	"PER_AFFINITY": "perception",
+	"WIL_AFFINITY": "will",
+	"SMT_AFFINITY": "smithing",
+	"LOR_AFFINITY": "lore",
+}
+
+func has_affinity(skill_name: String) -> bool:
+	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
+	if not house_data:
+		return false
+	for affinity_flag in house_data.affinities:
+		if AFFINITY_MAP.get(affinity_flag, "") == skill_name:
+			return true
+	return false
+
+func get_skill_cost(current_level: int, points_to_buy: int = 1, skill_name: String = "") -> int:
 	# Cost for nth skill point = 100 × n
-	# Total cost to go from current to (current + points) = sum of 100×(current+1) to 100×(current+points)
+	# Affinity discount: -100 per point (Sil-Q standard)
+	var discount: int = 100 if not skill_name.is_empty() and has_affinity(skill_name) else 0
 	var cost: int = 0
 	for i in range(points_to_buy):
-		cost += 100 * (current_level + i + 1)
+		cost += maxi(0, 100 * (current_level + i + 1) - discount)
 	return cost
 
 func can_afford_skill(skill_name: String) -> bool:
@@ -458,7 +480,7 @@ func can_afford_skill(skill_name: String) -> bool:
 	var current: int = skills[skill_name]
 	if current >= 20:  # Max skill level
 		return false
-	return xp_available >= get_skill_cost(current)
+	return xp_available >= get_skill_cost(current, 1, skill_name)
 
 func get_total_skill_points() -> int:
 	var total: int = 0
@@ -480,7 +502,7 @@ func invest_skill(skill_name: String) -> bool:
 		GameManager.log_message("%s is already at maximum!" % skill_name.capitalize(), ThemeColors.MSG_ERROR)
 		return false
 
-	var cost: int = get_skill_cost(current)
+	var cost: int = get_skill_cost(current, 1, skill_name)
 	if xp_available < cost:
 		GameManager.log_message("Need %d XP to raise %s (have %d)" % [cost, skill_name, xp_available], ThemeColors.MSG_ERROR)
 		return false
