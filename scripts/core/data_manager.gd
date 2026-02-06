@@ -844,7 +844,7 @@ func _validate_data() -> void:
 			warnings.append("Missing key monster: " + monster_name)
 
 	# Check for races
-	var expected_races := ["Noldor", "Sindar", "Man", "Dwarf"]
+	var expected_races := ["Elf", "Man", "Dwarf", "Hobbit"]
 	for race_name in expected_races:
 		if not races.has(race_name):
 			warnings.append("Missing race: " + race_name)

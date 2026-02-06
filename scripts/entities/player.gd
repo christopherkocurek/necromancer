@@ -17,6 +17,9 @@ var _trait_fortune_used: bool = false   # Fortune's Favor: once per floor
 var _trait_undying_used: bool = false    # Undying Resolve: once per run
 var _trait_shadow_step_used: bool = false # Shadow Step: once per floor
 
+# Racial state tracking
+var _hobbit_luck_used: bool = false  # HOBBIT_LUCK: once per floor reroll
+
 # XP System (Sil-Q style - XP is currency for skills, no levels)
 const STARTING_XP: int = 5000
 const XP_MULTIPLIER: float = 1.3  # 130% boost from base Sil-Q
@@ -249,9 +252,10 @@ func _apply_trait() -> void:
 	GameManager.log_message("Trait: %s" % trait_name, ThemeColors.PRIMARY)
 
 func reset_per_floor_traits() -> void:
-	## Called when entering a new floor to reset per-floor trait abilities.
+	## Called when entering a new floor to reset per-floor trait/racial abilities.
 	_trait_fortune_used = false
 	_trait_shadow_step_used = false
+	_hobbit_luck_used = false
 
 ## Defiance: +1 attack/damage vs enemies whose native depth > current_depth + 3
 func get_defiance_bonus(monster: Entity) -> int:
@@ -805,15 +809,14 @@ func _try_follow_through(dead_pos: Vector2i) -> void:
 func _get_attack_damage_dice() -> String:
 	return get_weapon_damage_dice()
 
-## Ranged damage from equipped bow + arrows
+## Ranged damage from equipped bow/sling
 func _get_ranged_damage_dice() -> String:
-	var bow = equipment.get("weapon")  # Bow goes in weapon slot for archery
-	# Actually check the bow slot
-	bow = equipment.get("off_hand")
-	if bow != null and "tval" in bow and bow.tval == 19:  # TV_BOW
-		if "damage_dice" in bow and bow.damage_dice != "":
-			return bow.damage_dice
-	return "1d5"  # Default arrow damage
+	var ranged_weapon = equipment.get("off_hand")
+	if ranged_weapon != null and "tval" in ranged_weapon:
+		if ranged_weapon.tval == 19 or ranged_weapon.tval == 18:  # TV_BOW or TV_SLING
+			if "damage_dice" in ranged_weapon and ranged_weapon.damage_dice != "":
+				return ranged_weapon.damage_dice
+	return "1d5"  # Default projectile damage
 
 ## Count monsters adjacent to player (for Crowd Fighting penalty)
 func _count_adjacent_monsters() -> int:
@@ -841,44 +844,134 @@ func _get_heavy_armor_penalty() -> int:
 			penalty += armor.weight / 50
 	return penalty
 
-## Bow weight for crit/STR calculations
+## Ranged weapon weight for crit/STR calculations
 func _get_bow_weight() -> int:
-	var bow = equipment.get("off_hand")
-	if bow != null and "weight" in bow:
-		return bow.weight
+	var ranged_weapon = equipment.get("off_hand")
+	if ranged_weapon != null and "weight" in ranged_weapon:
+		return ranged_weapon.weight
 	return 30
 
-## Check if player can fire (has bow + arrows)
+## Override ranged attack to use archery skill instead of melee
+func ranged_attack(target: Entity, distance: int) -> void:
+	# Archery-based attack: archery skill + DEX/2 + proficiency
+	var att: int = skills["archery"] + (dexterity / 2)
+	# Weapon proficiency bonus (BOW_PROFICIENCY or SLING_PROFICIENCY)
+	att += _get_ranged_proficiency_bonus()
+	# Distance penalty: -1 per tile beyond 1
+	att -= maxi(0, distance - 1)
+
+	# Ranged evasion is halved
+	var evn: int = target.get_total_evasion(self) / 2
+
+	var attack_score: int = randi_range(1, 20) + att
+	var evasion_score: int = randi_range(1, 20) + evn
+
+	var hit_result: int = attack_score - evasion_score
+
+	if hit_result < 0:
+		EventBus.attack_missed.emit(self, target)
+		GameManager.log_message("Your shot misses %s (%d vs %d)" % [
+			target.entity_name, attack_score, evasion_score
+		], ThemeColors.COMBAT_MISS)
+		return
+
+	# Damage from projectile
+	var dmg_dice: String = _get_ranged_damage_dice()
+	var damage: int = DataManager.roll_dice(dmg_dice)
+
+	# STR bonus (capped by weapon weight)
+	var bow_weight: int = _get_bow_weight()
+	var str_bonus: int = strength / 2
+	var weight_cap: int = bow_weight / 10
+	damage += mini(str_bonus, weight_cap)
+
+	# Critical hit
+	var crit_threshold: int = _get_crit_threshold()
+	var crit_dice: int = (hit_result * 10 + 4) / (crit_threshold + bow_weight)
+	crit_dice = _apply_crit_resistance(target, crit_dice)
+
+	var crit_damage: int = 0
+	for i in range(crit_dice):
+		crit_damage += DataManager.roll_dice(dmg_dice)
+	damage += crit_damage
+
+	if crit_dice > 0:
+		GameManager.log_message("You CRIT %s! (%d vs %d, +%d dice = %d dmg)" % [
+			target.entity_name, attack_score, evasion_score, crit_dice, damage
+		], ThemeColors.COMBAT_CRIT)
+	else:
+		GameManager.log_message("You hit %s with a shot (%d vs %d = %d dmg)" % [
+			target.entity_name, attack_score, evasion_score, damage
+		], ThemeColors.COMBAT_HIT)
+
+	target.take_damage(damage, "physical", self)
+
+## Get proficiency bonus for equipped ranged weapon
+func _get_ranged_proficiency_bonus() -> int:
+	var ranged_weapon = equipment.get("off_hand")
+	if ranged_weapon == null or not "tval" in ranged_weapon:
+		return 0
+	var race_data: DataManager.RaceData = DataManager.get_race(race_name)
+	if not race_data:
+		return 0
+	match ranged_weapon.tval:
+		19:  # TV_BOW
+			if "BOW_PROFICIENCY" in race_data.flags:
+				return 1
+		18:  # TV_SLING
+			if "SLING_PROFICIENCY" in race_data.flags:
+				return 1
+	# ARC_PENALTY flag (Dwarves): -1 to all ranged
+	if "ARC_PENALTY" in race_data.flags:
+		return -1
+	return 0
+
+## Check if player can fire (has bow+arrows or sling+stones)
 func can_fire_ranged() -> bool:
-	var bow = equipment.get("off_hand")
-	if bow == null or not "tval" in bow or bow.tval != 19:
+	var ranged_weapon = equipment.get("off_hand")
+	if ranged_weapon == null or not "tval" in ranged_weapon:
 		return false
-	# Check quiver for arrows
+	var weapon_tval: int = ranged_weapon.tval
+	var ammo_tval: int = -1
+	if weapon_tval == 19:  # TV_BOW
+		ammo_tval = 17  # TV_ARROW
+	elif weapon_tval == 18:  # TV_SLING
+		ammo_tval = 16  # TV_SLING_STONE
+	else:
+		return false
+	# Check quiver for ammo
 	var quiver = equipment.get("quiver") if equipment.has("quiver") else null
-	# Also check inventory for arrows
-	if quiver != null and "tval" in quiver and quiver.tval == 17:
+	if quiver != null and "tval" in quiver and quiver.tval == ammo_tval:
 		return true
+	# Check inventory for ammo
 	for item in inventory:
-		if item != null and "tval" in item and item.tval == 17:
+		if item != null and "tval" in item and item.tval == ammo_tval:
 			return true
 	return false
 
-## Consume one arrow from quiver/inventory. Returns true if arrow was available.
+## Consume one ammo (arrow/stone) from quiver/inventory. Returns true if available.
 func consume_arrow() -> bool:
+	# Determine ammo type from equipped ranged weapon
+	var ranged_weapon = equipment.get("off_hand")
+	var ammo_tval: int = 17  # Default to arrows
+	var empty_msg: String = "Your quiver is empty!"
+	if ranged_weapon != null and "tval" in ranged_weapon and ranged_weapon.tval == 18:
+		ammo_tval = 16  # Sling stones
+		empty_msg = "You have no more stones!"
 	# Check quiver first
 	if equipment.has("quiver"):
 		var quiver = equipment.get("quiver")
-		if quiver != null and "tval" in quiver and quiver.tval == 17:
+		if quiver != null and "tval" in quiver and quiver.tval == ammo_tval:
 			if "pval" in quiver:
 				quiver.pval -= 1
 				if quiver.pval <= 0:
 					equipment["quiver"] = null
-					GameManager.log_message("Your quiver is empty!", ThemeColors.MSG_WARNING)
+					GameManager.log_message(empty_msg, ThemeColors.MSG_WARNING)
 				return true
-	# Check inventory arrows
+	# Check inventory
 	for i in range(inventory.size()):
 		var item = inventory[i]
-		if item != null and "tval" in item and item.tval == 17:
+		if item != null and "tval" in item and item.tval == ammo_tval:
 			if "pval" in item:
 				item.pval -= 1
 				if item.pval <= 0:
@@ -935,6 +1028,13 @@ func _count_adjacent_allies_to(target: Entity) -> int:
 	return count
 
 ## Weapon proficiency: +1 if race has the proficiency flag for equipped weapon tval
+## Check if player's race has a specific racial flag
+func has_racial_flag(flag_name: String) -> bool:
+	var race_data: DataManager.RaceData = DataManager.get_race(race_name)
+	if not race_data:
+		return false
+	return flag_name in race_data.flags
+
 func _get_weapon_proficiency_bonus() -> int:
 	var weapon = equipment.get("weapon")
 	if weapon == null or not "tval" in weapon:
@@ -948,12 +1048,24 @@ func _get_weapon_proficiency_bonus() -> int:
 	match weapon_tval:
 		23:  # TV_SWORD
 			required_flag = "SWORD_PROFICIENCY"
-		20:  # TV_DIGGING (axes)
+		22:  # TV_POLEARM (axes)
 			required_flag = "AXE_PROFICIENCY"
 		19:  # TV_BOW
 			required_flag = "BOW_PROFICIENCY"
+		18:  # TV_SLING
+			required_flag = "SLING_PROFICIENCY"
 	if required_flag != "" and required_flag in race_data.flags:
 		return 1
+	# SMALL_STATURE: -2 melee with non-proficiency weapons (not unarmed)
+	if has_racial_flag("SMALL_STATURE") and weapon_tval in [21, 22, 23]:
+		# Check if they DON'T have proficiency for this weapon
+		var prof_flag: String = ""
+		match weapon_tval:
+			23: prof_flag = "SWORD_PROFICIENCY"
+			22: prof_flag = "AXE_PROFICIENCY"
+			21: prof_flag = "HAMMER_PROFICIENCY"
+		if prof_flag == "" or prof_flag not in race_data.flags:
+			return -2
 	return 0
 
 ## Check if player is charging (moved straight toward target last action)
@@ -995,6 +1107,9 @@ func get_stealth_score() -> int:
 	# Stealth mode bonus
 	if stealth_mode:
 		score += Constants.STEALTH_MODE_BONUS
+	# SMALL_STATURE: +2 stealth (enemies overlook small folk)
+	if has_racial_flag("SMALL_STATURE"):
+		score += 2
 	# Disguise: +Stealth/3 bonus to stealth
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
 		score += get_skill("stealth") / 3
@@ -1395,6 +1510,11 @@ func _interact_with_npc(npc: Entity) -> void:
 func apply_status(status_name: String, duration: int, data: Variant = null) -> void:
 	var reduced_dur: int = duration
 
+	# DWARVEN_RESILIENCE: halve fear, confusion, and entranced durations
+	if has_racial_flag("DWARVEN_RESILIENCE"):
+		if status_name == "afraid" or status_name == "confused" or status_name == "entranced":
+			reduced_dur = maxi(1, duration / 2)
+
 	# Indomitable (Will): halve stun and slow durations
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_INDOMITABLE):
 		if status_name == "stunned" or status_name == "slow":
@@ -1419,6 +1539,16 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	# Vengeance: track that we were hit for +2 attack next turn
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_VENGEANCE):
 		_vengeance_active = true
+
+	# HOBBIT_LUCK: reroll lethal damage once per floor (halves incoming damage)
+	if current_health > 0 and current_health - amount <= 0:
+		if has_racial_flag("HOBBIT_LUCK") and not _hobbit_luck_used:
+			_hobbit_luck_used = true
+			# Reroll: halve the damage (fortune favors hobbits)
+			var new_amount: int = maxi(1, amount / 2)
+			if current_health - new_amount > 0:
+				GameManager.log_message("Fortune favors you! The blow glances off!", ThemeColors.PRIMARY)
+				amount = new_amount
 
 	# Undying Resolve trait: survive lethal damage once per run at 50% HP
 	if current_health > 0 and current_health - amount <= 0:

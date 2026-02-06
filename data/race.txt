@@ -100,7 +100,7 @@ I:16:40:250
 H:54:2
 W:155:10
 C:6|7|8
-F:AXE_PROFICIENCY | ARC_PENALTY
+F:AXE_PROFICIENCY | ARC_PENALTY | DWARVEN_RESILIENCE
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:35:5:5    # , Pieces of Dark Bread (5)
 E:21:8:1:1     # \ War Hammer (1)
@@ -137,5 +137,30 @@ D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This
 D: form is for playtesting only - the Necromancer himself
 D: trembles before their might.
+
+# - Hobbit:
+#   - The Halflings of the Shire
+#   - Stat modifiers -2 +2 +0 +2 (Total: +2)
+#   - Sling proficiency = a bonus of 1 to archery when wielding slings
+#   - Small stature = +2 stealth, -2 att from large monsters, -2 non-proficiency melee
+#   - Hobbit luck = reroll lethal d20 once per floor
+
+N:4:Hobbit
+S:-2:2:0:2
+I:5:30:120
+H:42:3
+W:70:6
+C:9|10|11
+F:SMALL_STATURE | HOBBIT_LUCK | SLING_PROFICIENCY
+E:39:0:3:3     # ~ Wooden Torches (3)
+E:80:38:5:5    # , Seed Cakes (5)
+E:23:1:1:1     # | Dagger (1)
+E:18:1:1:1     # } Sling (1)
+E:16:1:10:10   # - Sling Stones (10)
+D:Hobbits are a small, quiet folk who love peace, good food,
+D: and comfortable homes. Yet when pressed, they show a
+D: remarkable resilience. Their small stature makes them
+D: hard to hit and easy to overlook, and fortune seems to
+D: favor them in their darkest moments.
 
 

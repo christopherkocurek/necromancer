@@ -568,7 +568,7 @@ func _open_targeting() -> void:
 	if not player or not player.is_alive:
 		return
 	if not player.can_fire_ranged():
-		GameManager.log_message("You need a bow and arrows to fire.", ThemeColors.MSG_SYSTEM)
+		GameManager.log_message("You need a ranged weapon and ammo to fire.", ThemeColors.MSG_SYSTEM)
 		return
 	# Close other panels
 	if look_panel and look_panel.visible:

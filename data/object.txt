@@ -667,6 +667,37 @@ P:0:0d0:0:0d0
 A:2/1:6/1:11/1:17/1
 
 
+##### Slings #####
+
+N:118:& Sling~
+G:}:u
+I:18:1:0
+W:1:0:5:20
+P:0:1d5:0:0d0
+A:1/1:8/1
+D:A simple leather sling. In the hands of a skilled Hobbit, even stones become deadly.
+
+
+N:119:& Fine Leather Sling~
+G:}:U
+I:18:2:0
+W:7:0:8:80
+P:0:2d3:0:0d0
+A:7/3:14/2
+D:A well-crafted sling of supple leather. Its pouch holds stones firmly for accurate throws.
+
+
+##### Sling Stones #####
+
+N:120:& Sling Stone~
+G:-:s
+I:16:1:0
+W:1:0:1:1
+P:0:0d0:0:0d0
+A:2/1:6/1:11/1:17/1
+D:A smooth, round stone sized for slinging.
+
+
 ##### Boots #####
 
 N:122:& Traveler's Boots~

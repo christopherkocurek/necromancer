@@ -138,4 +138,39 @@ D: battle against orcs and other foes. Their warriors are
 D: among the fiercest of all dwarven-kind, and their axes
 D: have drunk deep of orc-blood.
 
+# === Hobbit Houses (for race 4) ===
+
+N:9:Of the Shire
+A:the Shire
+B:Hobbit
+F:WIL_AFFINITY
+S:0:0:1:0
+D:The Shire-hobbits are the most numerous of their kind,
+D: dwelling in the peaceful lands between the Brandywine
+D: and the Far Downs. They are stubborn, resistant to
+D: corruption, and possess an inner strength that belies
+D: their small stature.
+
+N:10:Of the Gamgees
+A:the Gamgees
+B:Gamgee
+F:SMT_AFFINITY
+S:1:0:0:0
+D:The Gamgees are humble gardeners and craftspeople of
+D: Hobbiton. What they lack in adventurous spirit they
+D: make up for in practical skill and loyalty. Samwise
+D: Gamgee proved that a stout heart and willing hands
+D: are worth more than all the swords in Gondor.
+
+N:11:Of the Tooks
+A:the Tooks
+B:Took
+F:STL_AFFINITY
+S:0:1:0:0
+D:The Tooks are the most adventurous of hobbit families,
+D: rumored to have fairy blood. They are quick, cunning,
+D: and possessed of an unhobbity desire to see what lies
+D: beyond the next hill. Many have gone on adventures
+D: and returned with remarkable tales.
+
 

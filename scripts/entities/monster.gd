@@ -447,6 +447,14 @@ func _flee_behavior() -> void:
 # PATHFINDING HELPERS
 # ============================================================================
 
+## Check if this monster is a large creature (trolls, dragons, raukos, serpents, wargs)
+func _is_large_monster() -> bool:
+	if not monster_data:
+		return false
+	return monster_data.has_flag("TROLL") or monster_data.has_flag("DRAGON") or \
+		monster_data.has_flag("RAUKO") or monster_data.has_flag("SERPENT") or \
+		monster_data.has_flag("WOLF")
+
 func _grid_distance(a: Vector2i, b: Vector2i) -> int:
 	# Chebyshev distance (8-directional)
 	return max(abs(a.x - b.x), abs(a.y - b.y))
@@ -507,6 +515,12 @@ func get_total_attack(target: Entity) -> int:
 
 	# Overwhelming/Flanking: +1 per adjacent ally
 	att += _count_nearby_allies(1)
+
+	# SMALL_STATURE: large monsters get -2 attack vs small races (Hobbits)
+	if is_instance_valid(target) and target is Player:
+		var p: Player = target as Player
+		if p.has_racial_flag("SMALL_STATURE") and _is_large_monster():
+			att -= 2
 
 	# Blind: halve attack
 	if status_fx and status_fx.is_blind():
