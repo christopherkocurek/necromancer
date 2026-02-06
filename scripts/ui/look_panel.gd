@@ -21,6 +21,16 @@ func _ready() -> void:
 	cursor_sprite.z_index = 100
 	# We'll set texture in open()
 
+	# Apply Diablo theme to look panel
+	if has_node("Panel"):
+		var p: Control = $Panel
+		var style: StyleBox
+		if ThemeColors.has_textures():
+			style = ThemeColors.create_textured_panel("panel_iron", 8.0)
+		else:
+			style = ThemeColors.create_panel_stylebox(ThemeColors.IRON_DARK, ThemeColors.IRON_HIGHLIGHT, 2, 4)
+		p.add_theme_stylebox_override("panel", style)
+
 func open(player_ref: Player, level_ref: Level) -> void:
 	player = player_ref
 	level = level_ref
@@ -31,6 +41,7 @@ func open(player_ref: Player, level_ref: Level) -> void:
 	_setup_cursor()
 	_update_cursor_position()
 	_update_info()
+	ThemeColors.apply_rich_body_font(info_label)
 	grab_focus()
 
 func close() -> void:

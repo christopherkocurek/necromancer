@@ -15,7 +15,11 @@ func _ready() -> void:
 func _setup_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(PRESET_FULL_RECT)
-	var style := ThemeColors.create_panel_stylebox(ThemeColors.BG_DARK, ThemeColors.BORDER_DEFAULT, 2, 8)
+	var style: StyleBox
+	if ThemeColors.has_textures():
+		style = ThemeColors.create_textured_panel("panel_iron", 8.0)
+	else:
+		style = ThemeColors.create_panel_stylebox(ThemeColors.IRON_DARK, ThemeColors.IRON_HIGHLIGHT, 2, 4)
 	panel.add_theme_stylebox_override("panel", style)
 	add_child(panel)
 
@@ -29,8 +33,7 @@ func _setup_ui() -> void:
 	left_panel.size_flags_stretch_ratio = 0.4
 	var title := Label.new()
 	title.text = "Bestiary"
-	title.add_theme_color_override("font_color", ThemeColors.PRIMARY)
-	title.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_heading_font(title, ThemeColors.FONT_SIZE_H2)
 	left_panel.add_child(title)
 	_monster_list = ItemList.new()
 	_monster_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -47,6 +50,7 @@ func _setup_ui() -> void:
 	_detail_label.bbcode_enabled = true
 	_detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detail_label.add_theme_color_override("default_color", ThemeColors.TEXT_PRIMARY)
+	ThemeColors.apply_rich_body_font(_detail_label)
 	right_panel.add_child(_detail_label)
 	hbox.add_child(right_panel)
 
@@ -54,6 +58,7 @@ func _setup_ui() -> void:
 	var close_btn := Button.new()
 	close_btn.text = "Close [Esc]"
 	close_btn.pressed.connect(close)
+	ThemeColors.apply_button_theme(close_btn)
 	left_panel.add_child(close_btn)
 
 func open(memory: RefCounted) -> void:

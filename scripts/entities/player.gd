@@ -65,8 +65,9 @@ var skills: Dictionary = {
 
 # Necromancer-specific
 var lore_known: Dictionary = {}  # monster_type -> Array of lore abilities
-var voice_charges: int = 10  # For song/voice abilities (starts full)
-var max_voice: int = 10
+var voice_charges: int = 20  # For song/voice abilities (starts full)
+var max_voice: int = 20
+var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
 # Equipment slots
 var equipment: Dictionary = {
@@ -325,15 +326,18 @@ func learn_ability(skill: int, ability: int) -> void:
 	have_ability[skill][ability] = true
 
 func _setup_player_sprite() -> void:
-	# Map race to sprite index (R:0-3 in PRF)
+	# Map race to player sprite index (matches player_coords in tile_mapper.gd)
+	# Elf=0, Man=1, Dwarf=2, Istari=3, Hobbit=4
 	var race_to_sprite: Dictionary[String, int] = {
 		"Noldor": 0,
-		"Sindar": 1,
-		"Man": 2,
-		"Dwarf": 3,
+		"Sindar": 0,
+		"Man": 1,
+		"Dwarf": 2,
+		"Istari": 3,
+		"Hobbit": 4,
 	}
-	var race_sprite_id: int = race_to_sprite.get(race_name, 2)  # Default to Man
-	set_sprite_from_monster_id(race_sprite_id)
+	var race_sprite_id: int = race_to_sprite.get(race_name, 1)  # Default to Man
+	set_sprite_from_player_id(race_sprite_id)
 
 func _apply_racial_modifiers() -> void:
 	var race_data: DataManager.RaceData = DataManager.get_race(race_name)
@@ -569,6 +573,22 @@ func _recalculate_stats() -> void:
 		for i in range(-constitution):
 			hp_base = hp_base * 10 / 12
 	max_health = hp_base / 100
+
+	# Sil-Q formula: max_voice = 20 * 1.2^Grace (compounding 20% per Grace point)
+	var voice_base: int = 2000  # 20 * 100 for integer math
+	if grace >= 0:
+		for i in range(grace):
+			voice_base = voice_base * 12 / 10
+	else:
+		for i in range(-grace):
+			voice_base = voice_base * 10 / 12
+	var old_max: int = max_voice
+	max_voice = voice_base / 100
+	voice_charges = mini(voice_charges, max_voice)
+	# If max increased, don't auto-fill — regen handles it
+	# If first calc (old was default 20), start full
+	if old_max == 20 and max_voice != 20:
+		voice_charges = max_voice
 
 	# Combat bonuses from skills and stats
 	melee_bonus = skills["melee"] + (strength / 2)

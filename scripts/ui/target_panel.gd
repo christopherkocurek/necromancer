@@ -22,6 +22,17 @@ func _ready() -> void:
 	cursor_sprite.name = "TargetCursor"
 	cursor_sprite.z_index = 100
 
+	if has_node("Panel"):
+		var p: Control = $Panel
+		var style: StyleBox
+		if ThemeColors.has_textures():
+			style = ThemeColors.create_textured_panel("panel_iron", 8.0)
+		else:
+			style = ThemeColors.create_panel_stylebox(ThemeColors.IRON_DARK, ThemeColors.IRON_HIGHLIGHT, 2, 4)
+		p.add_theme_stylebox_override("panel", style)
+	if info_label:
+		ThemeColors.apply_rich_body_font(info_label)
+
 func open(player_ref: Player, level_ref: Level, range_limit: int = 20) -> void:
 	player = player_ref
 	level = level_ref

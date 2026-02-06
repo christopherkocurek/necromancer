@@ -153,6 +153,17 @@ Herbs consumed: %d""" % [
 
 [S] Save Victory Dump"""
 
+	# Apply Diablo-themed fonts
+	ThemeColors.apply_heading_font(title_label, ThemeColors.FONT_SIZE_TITLE)
+	ThemeColors.apply_heading_font(subtitle_label, ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_body_font(story_label, ThemeColors.FONT_SIZE_LARGE)
+	ThemeColors.apply_body_font(character_info, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(combat_stats, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(journey_stats, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(achievements_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_heading_font(score_label, ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_body_font(options_label, ThemeColors.FONT_SIZE_BODY)
+
 	# Hide all elements initially
 	title_label.modulate.a = 0.0
 	subtitle_label.modulate.a = 0.0

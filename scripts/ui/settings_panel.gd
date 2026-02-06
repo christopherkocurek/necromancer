@@ -10,6 +10,7 @@ func _ready() -> void:
 	visible = false
 	_setup_tabs()
 	close_button.pressed.connect(close)
+	ThemeColors.apply_button_theme(close_button)
 
 func open() -> void:
 	visible = true
@@ -62,6 +63,7 @@ func _setup_tabs() -> void:
 		var name_label := Label.new()
 		name_label.text = action.capitalize().replace("_", " ")
 		name_label.custom_minimum_size.x = 200
+		ThemeColors.apply_body_font(name_label)
 		row.add_child(name_label)
 		var events := InputMap.action_get_events(action)
 		var key_label := Label.new()
@@ -75,6 +77,7 @@ func _setup_tabs() -> void:
 		var rebind_btn := Button.new()
 		rebind_btn.text = "Rebind"
 		rebind_btn.pressed.connect(_start_rebind.bind(action, key_label))
+		ThemeColors.apply_button_theme(rebind_btn)
 		row.add_child(rebind_btn)
 		vbox.add_child(row)
 	scroll.add_child(vbox)
@@ -124,6 +127,7 @@ func _add_toggle(parent: VBoxContainer, label_text: String, initial: bool, callb
 	var label := Label.new()
 	label.text = label_text
 	label.custom_minimum_size.x = 300
+	ThemeColors.apply_body_font(label)
 	row.add_child(label)
 	var toggle := CheckButton.new()
 	toggle.button_pressed = initial
@@ -136,6 +140,7 @@ func _add_slider(parent: VBoxContainer, label_text: String, min_val: float, max_
 	var label := Label.new()
 	label.text = label_text
 	label.custom_minimum_size.x = 300
+	ThemeColors.apply_body_font(label)
 	row.add_child(label)
 	var slider := HSlider.new()
 	slider.min_value = min_val
@@ -147,6 +152,7 @@ func _add_slider(parent: VBoxContainer, label_text: String, min_val: float, max_
 	row.add_child(slider)
 	var value_label := Label.new()
 	value_label.text = "%.2f" % initial
+	ThemeColors.apply_body_font(value_label, ThemeColors.FONT_SIZE_HINT)
 	slider.value_changed.connect(func(v: float) -> void: value_label.text = "%.2f" % v)
 	row.add_child(value_label)
 	parent.add_child(row)
@@ -156,6 +162,7 @@ func _add_dropdown(parent: VBoxContainer, label_text: String, options: Array, ca
 	var label := Label.new()
 	label.text = label_text
 	label.custom_minimum_size.x = 300
+	ThemeColors.apply_body_font(label)
 	row.add_child(label)
 	var dropdown := OptionButton.new()
 	for opt in options:

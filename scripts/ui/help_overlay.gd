@@ -18,21 +18,26 @@ func _setup_ui() -> void:
 	add_child(bg)
 
 	_panel = PanelContainer.new()
-	var style := ThemeColors.create_panel_stylebox(ThemeColors.BG_DARK, ThemeColors.PRIMARY_DIM, 2, 8)
+	var style: StyleBox
+	if ThemeColors.has_textures():
+		style = ThemeColors.create_textured_panel("panel_stone", 8.0)
+	else:
+		style = ThemeColors.create_panel_stylebox(ThemeColors.STONE_DARK, ThemeColors.GOLD_DIM, 2, 4)
 	_panel.add_theme_stylebox_override("panel", style)
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.custom_minimum_size = Vector2(800, 600)
-	_panel.position = Vector2(-400, -300)
+	_panel.custom_minimum_size = Vector2(1120, 840)
+	_panel.position = Vector2(-560, -420)
 	_panel.name = "HelpPanel"
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(780, 580)
+	scroll.custom_minimum_size = Vector2(1100, 820)
 
 	var content := RichTextLabel.new()
 	content.bbcode_enabled = true
 	content.fit_content = true
-	content.custom_minimum_size = Vector2(760, 0)
+	content.custom_minimum_size = Vector2(1060, 0)
 	content.add_theme_color_override("default_color", ThemeColors.TEXT_PRIMARY)
+	ThemeColors.apply_rich_body_font(content, ThemeColors.FONT_SIZE_BODY)
 
 	var gold := ThemeColors.PRIMARY.to_html(false)
 	var muted := ThemeColors.TEXT_MUTED.to_html(false)

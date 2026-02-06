@@ -16,16 +16,22 @@ func _setup_tooltip() -> void:
 	_tooltip_panel = PanelContainer.new()
 	_tooltip_panel.visible = false
 	_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := ThemeColors.create_panel_stylebox(ThemeColors.BG_RAISED, ThemeColors.BORDER_DEFAULT, 1, 6)
+	var style: StyleBox
+	if ThemeColors.has_textures():
+		style = ThemeColors.create_textured_panel("panel_parchment", 6.0)
+	else:
+		style = ThemeColors.create_panel_stylebox(ThemeColors.PARCHMENT_BG, ThemeColors.PARCHMENT_EDGE, 1, 6)
 	_tooltip_panel.add_theme_stylebox_override("panel", style)
 
 	_tooltip_label = RichTextLabel.new()
 	_tooltip_label.bbcode_enabled = true
 	_tooltip_label.fit_content = true
-	_tooltip_label.custom_minimum_size = Vector2(200, 0)
+	_tooltip_label.custom_minimum_size = Vector2(280, 0)
 	_tooltip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tooltip_label.add_theme_color_override("default_color", ThemeColors.TEXT_PRIMARY)
+	_tooltip_label.add_theme_color_override("default_color", ThemeColors.PARCHMENT_TEXT)
 	_tooltip_label.add_theme_font_size_override("normal_font_size", ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_rich_body_font(_tooltip_label)
+	_tooltip_label.add_theme_color_override("default_color", ThemeColors.PARCHMENT_TEXT)
 	_tooltip_panel.add_child(_tooltip_label)
 	add_child(_tooltip_panel)
 

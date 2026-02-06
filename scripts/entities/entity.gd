@@ -103,6 +103,10 @@ func set_sprite_from_monster_id(monster_id: int) -> void:
 		_update_sprite_region()
 	# If sprite doesn't exist yet, _update_sprite_region will be called in _setup_sprite
 
+func set_sprite_from_player_id(race_id: int) -> void:
+	var atlas_coords := TileMapper.get_player_coords(race_id)
+	set_sprite_from_atlas_coords(atlas_coords)
+
 func set_sprite_from_atlas_coords(atlas_coords: Vector2i) -> void:
 	_pending_atlas_coords = atlas_coords
 	if sprite:

@@ -1,25 +1,28 @@
 extends CanvasLayer
 class_name HUD
-## Heads-up display with redesigned top bar, bottom message log, minimap,
-## stealth meter, and status pill badges.
+## Diablo-inspired bottom action bar HUD with health/voice orbs,
+## floating message log, minimap, stealth meter, and status pills.
 
-# --- Top Bar nodes (built in code) ---
-var top_panel: PanelContainer
-var health_bar: ProgressBar
-var health_label: Label
-var xp_label: Label
-var voice_bar: ProgressBar
+# --- Action Bar (bottom) ---
+var action_bar: PanelContainer
+var health_orb: TextureRect          # Shader-driven liquid orb
+var health_orb_frame: TextureRect    # Metal rim overlay
+var health_label: Label              # "34/34" centered on orb
+var voice_orb: TextureRect
+var voice_orb_frame: TextureRect
 var voice_label: Label
-var prot_label: Label
+var xp_bar: ProgressBar
+var xp_label: Label
 var depth_label: Label
 var turn_label: Label
+var prot_label: Label
 var stealth_label: Label
 var status_container: HBoxContainer
+var stats_container: HBoxContainer   # Center column stats
 
-# --- Bottom Bar nodes ---
-var bottom_panel: PanelContainer
+# --- Floating Message Log ---
+var message_panel: PanelContainer
 var message_log: RichTextLabel
-var equip_container: HBoxContainer
 var filter_container: HBoxContainer
 var _bottom_expanded: bool = false
 
@@ -31,158 +34,277 @@ var stealth_meter: ColorRect = null
 
 # --- Message system ---
 const MAX_MESSAGES := 200
-var messages: Array[Dictionary] = []  # {text, color, category}
+var messages: Array[Dictionary] = []
 var _active_filter: String = "all"
 var _turn_count: int = 0
 
-# Dangerous statuses that pulse in the HUD
 const DANGER_STATUSES := ["poisoned", "burning", "stunned", "confused"]
-
-# Equipment quick-view slot order
 const EQUIP_SLOTS := ["weapon", "off_hand", "armor", "head", "light", "amulet"]
+
+# Layout constants
+const ACTION_BAR_HEIGHT := 140
+const ORB_SIZE := 90
+const ORB_FRAME_SIZE := 100
+const MESSAGE_LOG_HEIGHT := 140
+const MESSAGE_LOG_EXPANDED := 360
+
+# Health/voice orb materials
+var _health_material: ShaderMaterial = null
+var _voice_material: ShaderMaterial = null
 
 func _ready() -> void:
 	layer = 10
-	_build_top_bar()
-	_build_bottom_bar()
+	_build_action_bar()
+	_build_floating_message_log()
 	_build_minimap()
 	_build_stealth_meter()
 	_connect_signals()
 
 # ============================================================================
-# BUILD UI
+# BUILD: BOTTOM ACTION BAR
 # ============================================================================
 
-func _build_top_bar() -> void:
-	top_panel = PanelContainer.new()
-	top_panel.name = "TopPanel"
-	top_panel.add_theme_stylebox_override("panel", ThemeColors.create_panel_stylebox(
-		Color(ThemeColors.BG_DARK.r, ThemeColors.BG_DARK.g, ThemeColors.BG_DARK.b, 0.85),
-		ThemeColors.BORDER_DEFAULT, 1, 0
-	))
-	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_panel.offset_bottom = 36
-	add_child(top_panel)
+func _build_action_bar() -> void:
+	action_bar = PanelContainer.new()
+	action_bar.name = "ActionBar"
 
+	# Use textured background if available, otherwise iron flat
+	if ThemeColors.has_textures():
+		action_bar.add_theme_stylebox_override("panel", ThemeColors.create_textured_panel("panel_iron", 4.0))
+	else:
+		var bar_style := ThemeColors.create_panel_stylebox(
+			Color(ThemeColors.IRON_DARK.r, ThemeColors.IRON_DARK.g, ThemeColors.IRON_DARK.b, 0.95),
+			ThemeColors.IRON_HIGHLIGHT, 2, 0
+		)
+		bar_style.border_width_bottom = 0
+		bar_style.border_width_left = 0
+		bar_style.border_width_right = 0
+		bar_style.border_width_top = 2
+		action_bar.add_theme_stylebox_override("panel", bar_style)
+
+	action_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	action_bar.offset_top = -ACTION_BAR_HEIGHT
+	add_child(action_bar)
+
+	# Main horizontal layout: [HealthOrb] [CenterStats] [VoiceOrb]
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 12)
-	top_panel.add_child(hbox)
+	hbox.add_theme_constant_override("separation", 8)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	action_bar.add_child(hbox)
 
-	# Health icon + bar + label
-	var hp_icon := Label.new()
-	hp_icon.text = "HP"
-	hp_icon.add_theme_color_override("font_color", ThemeColors.HEALTH_HIGH)
-	hp_icon.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
-	hbox.add_child(hp_icon)
+	# --- Health Orb (left) ---
+	var health_container := _build_orb(true)
+	hbox.add_child(health_container)
 
-	health_bar = ProgressBar.new()
-	health_bar.custom_minimum_size = Vector2(140, 16)
-	health_bar.max_value = 100
-	health_bar.value = 100
-	health_bar.show_percentage = false
-	health_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hbox.add_child(health_bar)
+	# --- Center Column ---
+	var center := VBoxContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.add_theme_constant_override("separation", 2)
+	hbox.add_child(center)
 
-	health_label = Label.new()
-	health_label.text = "10/10"
-	health_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
-	health_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(health_label)
+	# Row 1: Stats (Depth, Turn, Prot, Stealth, Status pills)
+	stats_container = HBoxContainer.new()
+	stats_container.add_theme_constant_override("separation", 16)
+	stats_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(stats_container)
 
-	# Separator
-	var sep1 := VSeparator.new()
-	sep1.add_theme_constant_override("separation", 4)
-	hbox.add_child(sep1)
+	# Depth
+	depth_label = Label.new()
+	depth_label.text = "Depth 1"
+	ThemeColors.apply_body_font(depth_label, ThemeColors.FONT_SIZE_LARGE)
+	depth_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
+	stats_container.add_child(depth_label)
 
-	# XP
-	xp_label = Label.new()
-	xp_label.text = "XP: 0"
-	xp_label.add_theme_color_override("font_color", ThemeColors.MSG_XP)
-	xp_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(xp_label)
+	# Turn
+	turn_label = Label.new()
+	turn_label.text = "Turn 0"
+	ThemeColors.apply_body_font(turn_label, ThemeColors.FONT_SIZE_BODY)
+	turn_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	stats_container.add_child(turn_label)
 
-	# Voice charges (hidden when max_voice == 0)
-	var sep_voice := VSeparator.new()
-	sep_voice.name = "VoiceSep"
-	hbox.add_child(sep_voice)
-
-	var voice_icon := Label.new()
-	voice_icon.name = "VoiceIcon"
-	voice_icon.text = "Voice"
-	voice_icon.add_theme_color_override("font_color", ThemeColors.SECONDARY)
-	voice_icon.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
-	hbox.add_child(voice_icon)
-
-	voice_bar = ProgressBar.new()
-	voice_bar.name = "VoiceBar"
-	voice_bar.custom_minimum_size = Vector2(60, 12)
-	voice_bar.max_value = 10
-	voice_bar.value = 0
-	voice_bar.show_percentage = false
-	voice_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hbox.add_child(voice_bar)
-
-	voice_label = Label.new()
-	voice_label.name = "VoiceLabel"
-	voice_label.text = "0/10"
-	voice_label.add_theme_color_override("font_color", ThemeColors.SECONDARY)
-	voice_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
-	hbox.add_child(voice_label)
-
-	# Separator
-	var sep2 := VSeparator.new()
-	hbox.add_child(sep2)
-
-	# Protection dice
+	# Protection
 	prot_label = Label.new()
 	prot_label.text = ""
+	ThemeColors.apply_body_font(prot_label, ThemeColors.FONT_SIZE_BODY)
 	prot_label.add_theme_color_override("font_color", ThemeColors.SECONDARY)
-	prot_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(prot_label)
+	stats_container.add_child(prot_label)
 
-	# Depth and turn
-	depth_label = Label.new()
-	depth_label.text = "Depth:1"
-	depth_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
-	depth_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(depth_label)
-
-	turn_label = Label.new()
-	turn_label.text = "Turn:0"
-	turn_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
-	turn_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(turn_label)
-
-	# Stealth indicator
+	# Stealth
 	stealth_label = Label.new()
 	stealth_label.text = ""
-	stealth_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	hbox.add_child(stealth_label)
+	ThemeColors.apply_body_font(stealth_label, ThemeColors.FONT_SIZE_BODY)
+	stats_container.add_child(stealth_label)
 
-	# Spacer to push status icons right
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(spacer)
+	# Status pills (right side of stats row)
+	var status_spacer := Control.new()
+	status_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_container.add_child(status_spacer)
 
-	# Status icons
 	status_container = HBoxContainer.new()
 	status_container.add_theme_constant_override("separation", 4)
-	hbox.add_child(status_container)
+	stats_container.add_child(status_container)
 
-func _build_bottom_bar() -> void:
-	bottom_panel = PanelContainer.new()
-	bottom_panel.name = "BottomPanel"
-	bottom_panel.add_theme_stylebox_override("panel", ThemeColors.create_panel_stylebox(
-		Color(ThemeColors.BG_DARK.r, ThemeColors.BG_DARK.g, ThemeColors.BG_DARK.b, 0.85),
-		ThemeColors.BORDER_DEFAULT, 1, 0
-	))
-	bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_panel.offset_top = -100  # 100px collapsed height
-	add_child(bottom_panel)
+	# Row 2: Quick slots (6 equipment icons)
+	var quick_slots := HBoxContainer.new()
+	quick_slots.add_theme_constant_override("separation", 4)
+	quick_slots.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(quick_slots)
+
+	for slot_name in EQUIP_SLOTS:
+		var slot := PanelContainer.new()
+		slot.name = "Slot_%s" % slot_name
+		slot.custom_minimum_size = Vector2(45, 45)
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+				ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+			))
+		slot.tooltip_text = slot_name.capitalize().replace("_", " ")
+		quick_slots.add_child(slot)
+
+	# Row 3: XP bar (thin ornate bar across bottom)
+	var xp_row := HBoxContainer.new()
+	xp_row.add_theme_constant_override("separation", 8)
+	center.add_child(xp_row)
+
+	var xp_icon := Label.new()
+	xp_icon.text = "XP"
+	ThemeColors.apply_body_font(xp_icon, ThemeColors.FONT_SIZE_HINT)
+	xp_icon.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+	xp_row.add_child(xp_icon)
+
+	xp_bar = ProgressBar.new()
+	xp_bar.custom_minimum_size = Vector2(280, 14)
+	xp_bar.max_value = 100
+	xp_bar.value = 0
+	xp_bar.show_percentage = false
+	xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	xp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# Style the XP bar with gold tint
+	var xp_bg := StyleBoxFlat.new()
+	xp_bg.bg_color = ThemeColors.IRON_SHADOW
+	xp_bg.border_color = ThemeColors.IRON_HIGHLIGHT
+	xp_bg.border_width_left = 1
+	xp_bg.border_width_right = 1
+	xp_bg.border_width_top = 1
+	xp_bg.border_width_bottom = 1
+	xp_bg.corner_radius_top_left = 2
+	xp_bg.corner_radius_top_right = 2
+	xp_bg.corner_radius_bottom_left = 2
+	xp_bg.corner_radius_bottom_right = 2
+	xp_bar.add_theme_stylebox_override("background", xp_bg)
+	var xp_fill := StyleBoxFlat.new()
+	xp_fill.bg_color = ThemeColors.GOLD_DIM
+	xp_fill.corner_radius_top_left = 2
+	xp_fill.corner_radius_top_right = 2
+	xp_fill.corner_radius_bottom_left = 2
+	xp_fill.corner_radius_bottom_right = 2
+	xp_bar.add_theme_stylebox_override("fill", xp_fill)
+	xp_row.add_child(xp_bar)
+
+	xp_label = Label.new()
+	xp_label.text = "0"
+	ThemeColors.apply_body_font(xp_label, ThemeColors.FONT_SIZE_HINT)
+	xp_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
+	xp_row.add_child(xp_label)
+
+	# --- Voice Orb (right) ---
+	var voice_container := _build_orb(false)
+	hbox.add_child(voice_container)
+
+func _build_orb(is_health: bool) -> Control:
+	var container := CenterContainer.new()
+	container.custom_minimum_size = Vector2(ORB_FRAME_SIZE + 8, ORB_FRAME_SIZE + 8)
+
+	# Orb liquid (shader-driven ColorRect inside a mask)
+	var orb_liquid := ColorRect.new()
+	orb_liquid.custom_minimum_size = Vector2(ORB_SIZE, ORB_SIZE)
+	orb_liquid.size = Vector2(ORB_SIZE, ORB_SIZE)
+	orb_liquid.color = ThemeColors.BLOOD_DARK if is_health else ThemeColors.SPIRIT_DARK
+
+	# Apply orb shader if available
+	var mat: ShaderMaterial = ThemeColors.create_orb_material(is_health)
+	if mat:
+		orb_liquid.material = mat
+		if is_health:
+			_health_material = mat
+		else:
+			_voice_material = mat
+
+	container.add_child(orb_liquid)
+
+	if is_health:
+		health_orb = TextureRect.new()
+		health_orb.custom_minimum_size = Vector2(ORB_SIZE, ORB_SIZE)
+	else:
+		voice_orb = TextureRect.new()
+		voice_orb.custom_minimum_size = Vector2(ORB_SIZE, ORB_SIZE)
+
+	# Orb frame overlay
+	var frame := TextureRect.new()
+	frame.custom_minimum_size = Vector2(ORB_FRAME_SIZE, ORB_FRAME_SIZE)
+	var frame_tex: Texture2D = ThemeColors.get_texture("orb_frame")
+	if frame_tex:
+		frame.texture = frame_tex
+		frame.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	container.add_child(frame)
+
+	if is_health:
+		health_orb_frame = frame
+	else:
+		voice_orb_frame = frame
+
+	# Value label centered on orb
+	var value_label := Label.new()
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ThemeColors.apply_heading_font(value_label, ThemeColors.FONT_SIZE_LARGE)
+	value_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+	# Use a shadow for readability against the liquid
+	value_label.add_theme_constant_override("shadow_offset_x", 1)
+	value_label.add_theme_constant_override("shadow_offset_y", 1)
+	value_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	container.add_child(value_label)
+
+	if is_health:
+		health_label = value_label
+		health_label.text = "34"
+	else:
+		voice_label = value_label
+		voice_label.text = "10"
+
+	return container
+
+# ============================================================================
+# BUILD: FLOATING MESSAGE LOG
+# ============================================================================
+
+func _build_floating_message_log() -> void:
+	message_panel = PanelContainer.new()
+	message_panel.name = "MessageLog"
+
+	# Semi-transparent iron panel floating above action bar
+	var msg_style := ThemeColors.create_panel_stylebox(
+		Color(ThemeColors.IRON_DARK.r, ThemeColors.IRON_DARK.g, ThemeColors.IRON_DARK.b, 0.75),
+		Color(ThemeColors.IRON_HIGHLIGHT.r, ThemeColors.IRON_HIGHLIGHT.g, ThemeColors.IRON_HIGHLIGHT.b, 0.4),
+		1, 4
+	)
+	message_panel.add_theme_stylebox_override("panel", msg_style)
+
+	# Anchor above the action bar
+	message_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	message_panel.offset_top = -(ACTION_BAR_HEIGHT + MESSAGE_LOG_HEIGHT)
+	message_panel.offset_bottom = -ACTION_BAR_HEIGHT
+	# Slight side margins
+	message_panel.offset_left = 8
+	message_panel.offset_right = -8
+	add_child(message_panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
-	bottom_panel.add_child(vbox)
+	message_panel.add_child(vbox)
 
 	# Filter bar
 	filter_container = HBoxContainer.new()
@@ -194,70 +316,57 @@ func _build_bottom_bar() -> void:
 		btn.text = filter_name
 		btn.toggle_mode = true
 		btn.button_pressed = (filter_name == "All")
+		ThemeColors.apply_button_theme(btn)
 		btn.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
 		btn.pressed.connect(_on_filter_pressed.bind(filter_name.to_lower()))
 		filter_container.add_child(btn)
 
-	# Add expand hint
+	# Expand hint
 	var expand_hint := Label.new()
-	expand_hint.text = "[Tab to expand]"
+	expand_hint.text = "[Tab]"
+	ThemeColors.apply_body_font(expand_hint, ThemeColors.FONT_SIZE_HINT)
 	expand_hint.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
-	expand_hint.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
 	expand_hint.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
 	filter_container.add_child(expand_hint)
 
-	# Main content row
-	var content_hbox := HBoxContainer.new()
-	content_hbox.add_theme_constant_override("separation", 8)
-	content_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(content_hbox)
-
-	# Message log (left side, takes most space)
+	# Message log
 	message_log = RichTextLabel.new()
-	message_log.name = "MessageLog"
+	message_log.name = "MessageLogText"
 	message_log.bbcode_enabled = true
 	message_log.scroll_following = true
 	message_log.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	message_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	message_log.add_theme_color_override("default_color", ThemeColors.TEXT_PRIMARY)
-	message_log.add_theme_font_size_override("normal_font_size", ThemeColors.FONT_SIZE_BODY)
-	content_hbox.add_child(message_log)
+	ThemeColors.apply_rich_body_font(message_log, ThemeColors.FONT_SIZE_BODY)
+	vbox.add_child(message_log)
 
-	# Equipment quick-view (right side, 6 icons)
-	equip_container = HBoxContainer.new()
-	equip_container.add_theme_constant_override("separation", 2)
-	content_hbox.add_child(equip_container)
-
-	for slot_name in EQUIP_SLOTS:
-		var slot := PanelContainer.new()
-		slot.name = "Slot_%s" % slot_name
-		slot.custom_minimum_size = Vector2(32, 32)
-		slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
-			ThemeColors.SLOT_EMPTY, ThemeColors.BORDER_DEFAULT
-		))
-		slot.tooltip_text = slot_name.capitalize().replace("_", " ")
-		equip_container.add_child(slot)
+# ============================================================================
+# BUILD: MINIMAP
+# ============================================================================
 
 func _build_minimap() -> void:
 	minimap = Minimap.new()
 	minimap.name = "Minimap"
 	minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	minimap.offset_left = -168
-	minimap.offset_top = 42
+	minimap.offset_top = 8
 	minimap.offset_right = -8
-	minimap.offset_bottom = 122
+	minimap.offset_bottom = 88
 	minimap.visible = false
 	add_child(minimap)
+
+# ============================================================================
+# BUILD: STEALTH METER
+# ============================================================================
 
 func _build_stealth_meter() -> void:
 	stealth_meter = ColorRect.new()
 	stealth_meter.name = "StealthMeter"
-	stealth_meter.custom_minimum_size = Vector2(8, 100)
+	stealth_meter.custom_minimum_size = Vector2(12, 140)
 	stealth_meter.set_anchors_preset(Control.PRESET_CENTER_LEFT)
 	stealth_meter.offset_left = 4
-	stealth_meter.offset_top = -50
-	stealth_meter.offset_right = 12
-	stealth_meter.offset_bottom = 50
+	stealth_meter.offset_top = -70
+	stealth_meter.offset_right = 16
+	stealth_meter.offset_bottom = 70
 	stealth_meter.color = ThemeColors.ALERT_SAFE
 	stealth_meter.visible = false
 	add_child(stealth_meter)
@@ -279,30 +388,28 @@ func update_player_stats(player: Player) -> void:
 	if not player:
 		return
 
-	# Health
-	health_bar.max_value = player.max_health
-	health_bar.value = player.current_health
-	health_label.text = "%d/%d" % [player.current_health, player.max_health]
+	# Health orb
 	var health_pct := float(player.current_health) / float(maxi(player.max_health, 1))
-	health_bar.modulate = ThemeColors.get_health_color(health_pct)
+	health_label.text = "%d" % player.current_health
+	if _health_material:
+		_health_material.set_shader_parameter("fill_level", health_pct)
+		_health_material.set_shader_parameter("is_critical", health_pct < 0.15)
+	# Color the label based on health
+	var hp_color: Color = ThemeColors.get_health_color(health_pct)
+	health_label.add_theme_color_override("font_color", hp_color)
 
 	# XP
-	xp_label.text = "XP: %s" % _format_number(player.xp_available)
+	xp_label.text = _format_number(player.xp_available)
 
-	# Voice charges
+	# Voice orb
 	var show_voice: bool = player.max_voice > 0
-	voice_bar.visible = show_voice
+	voice_orb_frame.visible = show_voice
 	voice_label.visible = show_voice
-	var voice_icon_node := top_panel.find_child("VoiceIcon", true, false)
-	if voice_icon_node:
-		voice_icon_node.visible = show_voice
-	var voice_sep_node := top_panel.find_child("VoiceSep", true, false)
-	if voice_sep_node:
-		voice_sep_node.visible = show_voice
 	if show_voice:
-		voice_bar.max_value = player.max_voice
-		voice_bar.value = player.voice_charges
-		voice_label.text = "%d/%d" % [player.voice_charges, player.max_voice]
+		var voice_pct := float(player.voice_charges) / float(maxi(player.max_voice, 1))
+		voice_label.text = "%d" % player.voice_charges
+		if _voice_material:
+			_voice_material.set_shader_parameter("fill_level", voice_pct)
 
 	# Protection dice
 	if player.protection_dice > 0 and player.protection_sides > 0:
@@ -312,42 +419,59 @@ func update_player_stats(player: Player) -> void:
 
 	# Stealth indicator
 	if player.stealth_mode:
-		stealth_label.text = "STL"
+		stealth_label.text = "STEALTH"
 		stealth_label.add_theme_color_override("font_color", ThemeColors.MSG_STEALTH)
 	else:
 		stealth_label.text = ""
 
-	# Update stealth meter visibility
+	# Stealth meter
 	_update_stealth_meter(player)
 
 	# Equipment quick-view
 	_update_equip_icons(player)
 
 func _update_equip_icons(player: Player) -> void:
-	for i in range(EQUIP_SLOTS.size()):
-		if i >= equip_container.get_child_count():
+	# Find the quick slots container
+	var quick_slots: HBoxContainer = null
+	for child in action_bar.get_child(0).get_children():
+		if child is VBoxContainer:
+			for sub in child.get_children():
+				if sub is HBoxContainer and sub.get_child_count() == EQUIP_SLOTS.size():
+					quick_slots = sub
+					break
 			break
-		var slot: PanelContainer = equip_container.get_child(i)
+	if not quick_slots:
+		return
+
+	for i in range(EQUIP_SLOTS.size()):
+		if i >= quick_slots.get_child_count():
+			break
+		var slot: PanelContainer = quick_slots.get_child(i)
 		var slot_name: String = EQUIP_SLOTS[i]
 		var item = player.equipment.get(slot_name)
 
 		if item != null:
-			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
-				ThemeColors.SLOT_EQUIP_EMPTY, ThemeColors.BORDER_FOCUS
-			))
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("selected"))
+			else:
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+					ThemeColors.IRON_MID, ThemeColors.GOLD_DIM
+				))
 			var item_name: String = GameManager.get_item_display_name(item)
 			slot.tooltip_text = "%s: %s" % [slot_name.capitalize().replace("_", " "), item_name]
 		else:
-			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
-				ThemeColors.SLOT_EMPTY, ThemeColors.BORDER_DEFAULT
-			))
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+			else:
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+					ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+				))
 			slot.tooltip_text = "%s: empty" % slot_name.capitalize().replace("_", " ")
 
 func _update_stealth_meter(player: Player) -> void:
 	if not stealth_meter:
 		return
 
-	# Show meter when in stealth mode or when nearby monsters exist
 	var show_meter: bool = player.stealth_mode
 	if not show_meter and GameManager.current_level:
 		for entity in GameManager.current_level.entities:
@@ -360,7 +484,6 @@ func _update_stealth_meter(player: Player) -> void:
 	if not show_meter:
 		return
 
-	# Find highest nearby alertness
 	var max_alertness: int = 0
 	if GameManager.current_level:
 		for entity in GameManager.current_level.entities:
@@ -400,19 +523,24 @@ func toggle_minimap() -> void:
 
 func toggle_bottom_bar() -> void:
 	_bottom_expanded = not _bottom_expanded
-	var target_top: float = -280.0 if _bottom_expanded else -100.0
+	var target_top: float
+	var target_bottom: float
+	if _bottom_expanded:
+		target_top = -(ACTION_BAR_HEIGHT + MESSAGE_LOG_EXPANDED)
+		target_bottom = -ACTION_BAR_HEIGHT
+	else:
+		target_top = -(ACTION_BAR_HEIGHT + MESSAGE_LOG_HEIGHT)
+		target_bottom = -ACTION_BAR_HEIGHT
 	var tween := create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(bottom_panel, "offset_top", target_top, 0.2)
+	tween.tween_property(message_panel, "offset_top", target_top, 0.2)
 
 # ============================================================================
 # MESSAGES
 # ============================================================================
 
 func _on_message_logged(text: String, color: Color) -> void:
-	# Determine category from color
 	var category: String = _categorize_message(color)
-
 	messages.append({"text": text, "color": color, "category": category})
 
 	while messages.size() > MAX_MESSAGES:
@@ -421,7 +549,6 @@ func _on_message_logged(text: String, color: Color) -> void:
 	_refresh_message_display()
 
 func _categorize_message(color: Color) -> String:
-	# Categorize based on the color used (semantic mapping)
 	if color == ThemeColors.DMG_PHYSICAL or color == ThemeColors.COMBAT_HIT or \
 	   color == ThemeColors.COMBAT_CRIT or color == ThemeColors.COMBAT_MISS or \
 	   color == ThemeColors.COMBAT_BLOCK or color == ThemeColors.MSG_ERROR:
@@ -436,12 +563,9 @@ func _categorize_message(color: Color) -> String:
 func _refresh_message_display() -> void:
 	message_log.clear()
 
-	var last_turn_separator: int = -1
 	for msg in messages:
-		# Filter
 		if _active_filter != "all" and msg.category != _active_filter and msg.category != "all":
 			continue
-
 		var colored_text := "[color=#%s]%s[/color]" % [msg.color.to_html(false), msg.text]
 		message_log.append_text(colored_text + "\n")
 
@@ -449,7 +573,6 @@ func _refresh_message_display() -> void:
 
 func _on_filter_pressed(filter_name: String) -> void:
 	_active_filter = filter_name
-	# Update button states
 	for btn in filter_container.get_children():
 		if btn is Button:
 			btn.button_pressed = (btn.text.to_lower() == filter_name)
@@ -480,14 +603,12 @@ func _on_entity_healed(entity: Entity, amount: int, _source: Entity) -> void:
 		update_player_stats(entity as Player)
 
 func _on_level_entered(depth: int) -> void:
-	depth_label.text = "Depth:%d" % depth
+	depth_label.text = "Depth %d" % depth
 	_on_message_logged("You descend to depth %d." % depth, ThemeColors.MSG_INFO)
 
 func _on_round_completed(round_number: int) -> void:
-	turn_label.text = "Turn:%d" % round_number
+	turn_label.text = "Turn %d" % round_number
 	_turn_count = round_number
-
-	# Refresh minimap each turn
 	refresh_minimap()
 
 func _on_status_applied(entity: Entity, status_name: String, duration: int) -> void:
@@ -505,7 +626,6 @@ func _on_status_removed(entity: Entity, status_name: String) -> void:
 		_update_status_icons(entity as Player)
 
 func _update_status_icons(player: Player) -> void:
-	# Clear existing icons
 	for child in status_container.get_children():
 		child.queue_free()
 
@@ -517,19 +637,18 @@ func _update_status_icons(player: Player) -> void:
 		var status_name := String(effect_id)
 		var status_color := ThemeColors.get_status_color(status_name)
 
-		# Create pill-style status badge
 		var badge := PanelContainer.new()
 		badge.add_theme_stylebox_override("panel", ThemeColors.create_status_pill(status_color))
 
 		var icon := Label.new()
 		icon.text = _get_status_abbreviation(status_name)
 		icon.add_theme_color_override("font_color", status_color)
-		icon.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
+		ThemeColors.apply_body_font(icon, ThemeColors.FONT_SIZE_HINT)
+		icon.add_theme_color_override("font_color", status_color)
 		icon.tooltip_text = "%s (%d turns)" % [status_name.capitalize(), duration]
 		badge.add_child(icon)
 		status_container.add_child(badge)
 
-		# Pulse dangerous statuses
 		if status_name.to_lower() in DANGER_STATUSES:
 			_pulse_node(badge)
 

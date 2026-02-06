@@ -6,13 +6,13 @@ class_name DeathScreen
 signal new_game_requested
 signal quit_requested
 
-@onready var epitaph_label: Label = $VBoxContainer/EpitaphLabel
-@onready var character_info: Label = $VBoxContainer/HBoxContainer/LeftColumn/CharacterInfo
-@onready var combat_stats: Label = $VBoxContainer/HBoxContainer/RightColumn/CombatStats
-@onready var journey_stats: Label = $VBoxContainer/HBoxContainer/LeftColumn/JourneyStats
-@onready var achievements_label: Label = $VBoxContainer/AchievementsLabel
-@onready var options_label: Label = $VBoxContainer/OptionsLabel
-@onready var score_label: Label = $VBoxContainer/ScoreLabel
+@onready var epitaph_label: Label = $MarginContainer/VBoxContainer/EpitaphLabel
+@onready var character_info: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/LeftColumn/CharacterInfo
+@onready var combat_stats: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/RightColumn/CombatStats
+@onready var journey_stats: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/MiddleColumn/JourneyStats
+@onready var achievements_label: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/AchievementsLabel
+@onready var options_label: Label = $MarginContainer/VBoxContainer/OptionsLabel
+@onready var score_label: Label = $MarginContainer/VBoxContainer/ScoreLabel
 
 var player_data: Dictionary = {}
 var run_stats: RunStats = null
@@ -155,11 +155,23 @@ Herbs consumed: %d""" % [
 		achievements_label.text = "MOMENTS OF NOTE\n\n" + "\n".join(achievements)
 
 	# Options
-	options_label.text = """
-[N] New Game    [Q] Quit
+	options_label.text = "[N] New Game   [Q] Quit   [I] Inventory   [C] Character   [S] Save Dump"
 
-[I] View Inventory    [C] Character Sheet
-[M] Message Log       [S] Save Character Dump"""
+	# Apply Diablo-themed fonts - stat columns get larger text
+	ThemeColors.apply_body_font(character_info, ThemeColors.FONT_SIZE_H3)
+	ThemeColors.apply_body_font(combat_stats, ThemeColors.FONT_SIZE_H3)
+	ThemeColors.apply_body_font(journey_stats, ThemeColors.FONT_SIZE_H3)
+	ThemeColors.apply_body_font(achievements_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_heading_font(score_label, ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_body_font(options_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(epitaph_label)
+	epitaph_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+
+	# Apply title font
+	var title_node_prep: Label = $MarginContainer/VBoxContainer.get_child(0) if $MarginContainer/VBoxContainer.get_child_count() > 0 else null
+	if title_node_prep and title_node_prep is Label:
+		ThemeColors.apply_heading_font(title_node_prep, ThemeColors.FONT_SIZE_TITLE)
+		title_node_prep.add_theme_color_override("font_color", ThemeColors.BLOOD_BRIGHT)
 
 	# Hide all elements initially
 	epitaph_label.modulate.a = 0.0
@@ -172,7 +184,7 @@ Herbs consumed: %d""" % [
 	score_label.text = "FINAL SCORE: 0"
 	options_label.modulate.a = 0.0
 
-	var hbox: HBoxContainer = $VBoxContainer/HBoxContainer
+	var hbox: HBoxContainer = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer
 	if hbox:
 		hbox.modulate.a = 0.0
 
@@ -185,8 +197,10 @@ func _start_phased_reveal() -> void:
 	vignette_tween.tween_property(_vignette, "color:a", 0.4, 0.5)
 
 	# Phase 1 (0.8s): Title scale in
-	var title_node: Label = $VBoxContainer.get_child(0) if $VBoxContainer.get_child_count() > 0 else null
+	var title_node: Label = $MarginContainer/VBoxContainer.get_child(0) if $MarginContainer/VBoxContainer.get_child_count() > 0 else null
 	if title_node and title_node is Label:
+		ThemeColors.apply_heading_font(title_node, ThemeColors.FONT_SIZE_TITLE)
+		title_node.add_theme_color_override("font_color", ThemeColors.BLOOD_BRIGHT)
 		title_node.pivot_offset = title_node.size / 2.0
 		title_node.scale = Vector2(1.5, 1.5)
 		title_node.modulate.a = 0.0
@@ -233,7 +247,7 @@ func _on_typewriter_tick() -> void:
 		_typewriter_timer.stop()
 
 func _reveal_stats() -> void:
-	var hbox: HBoxContainer = $VBoxContainer/HBoxContainer
+	var hbox: HBoxContainer = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer
 	if hbox:
 		hbox.modulate.a = 1.0
 
@@ -272,6 +286,7 @@ func _reveal_achievements() -> void:
 
 func _animate_score() -> void:
 	score_label.modulate.a = 1.0
+	score_label.add_theme_color_override("font_color", ThemeColors.GOLD_BRIGHT)
 	var score_tween := create_tween()
 	score_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	score_tween.tween_method(func(val: float):
@@ -295,12 +310,12 @@ func _skip_to_end() -> void:
 	epitaph_label.text = _typewriter_text
 	epitaph_label.modulate.a = 1.0
 
-	var title_node: Label = $VBoxContainer.get_child(0) if $VBoxContainer.get_child_count() > 0 else null
+	var title_node: Label = $MarginContainer/VBoxContainer.get_child(0) if $MarginContainer/VBoxContainer.get_child_count() > 0 else null
 	if title_node and title_node is Label:
 		title_node.modulate.a = 1.0
 		title_node.scale = Vector2.ONE
 
-	var hbox: HBoxContainer = $VBoxContainer/HBoxContainer
+	var hbox: HBoxContainer = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer
 	if hbox:
 		hbox.modulate.a = 1.0
 

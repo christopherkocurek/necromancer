@@ -81,10 +81,19 @@ func restore_voice_charges(amount: int) -> void:
 	player.voice_charges = mini(player.voice_charges + amount, player.max_voice)
 	voice_charges_changed.emit(player.voice_charges, player.max_voice)
 
+const VOICE_REGEN_PERIOD: float = 150.0  # Sil-Q: full voice pool recovers over 150 turns
+
 func regenerate_voice() -> void:
-	# Called each turn - regenerate 1 voice charge if below max
-	if player and player.voice_charges < player.max_voice:
-		player.voice_charges += 1
+	# Sil-Q formula: full pool regenerates over 150 turns
+	# regen_per_turn = max_voice / 150, accumulated fractionally
+	if not player or player.voice_charges >= player.max_voice:
+		return
+	var regen_rate: float = float(player.max_voice) / VOICE_REGEN_PERIOD
+	player._voice_regen_accumulator += regen_rate
+	if player._voice_regen_accumulator >= 1.0:
+		var gain: int = int(player._voice_regen_accumulator)
+		player._voice_regen_accumulator -= float(gain)
+		player.voice_charges = mini(player.voice_charges + gain, player.max_voice)
 		voice_charges_changed.emit(player.voice_charges, player.max_voice)
 
 # ============================================================================
@@ -168,6 +177,10 @@ func get_voice_cost(ability_id: int) -> int:
 			return 1
 		LoreAbility.SONG_OF_BANISHMENT:
 			return 3
+		LoreAbility.DEEP_MEMORY:
+			return 2
+		LoreAbility.INNER_LIGHT:
+			return 3
 		_:
 			return 0  # Passive or no cost
 
@@ -184,7 +197,8 @@ func get_ability_type(ability_id: int) -> AbilityType:
 		LoreAbility.WORD_OF_COMMAND, LoreAbility.WORD_OF_OPENING, \
 		LoreAbility.WORD_OF_SHUTTING, LoreAbility.WORD_OF_MASTERY, \
 		LoreAbility.LORE_OF_SLEEP, LoreAbility.LORE_OF_SILENCE, \
-		LoreAbility.LORE_OF_BATTLE, LoreAbility.SONG_OF_BANISHMENT:
+		LoreAbility.LORE_OF_BATTLE, LoreAbility.SONG_OF_BANISHMENT, \
+		LoreAbility.DEEP_MEMORY, LoreAbility.INNER_LIGHT:
 			return AbilityType.ACTIVE
 		LoreAbility.DEADLY_LORE:
 			return AbilityType.TRIGGERED  # Triggers on crit
@@ -235,6 +249,10 @@ func _execute_ability(ability_id: int, target: Variant) -> bool:
 			return _word_of_mastery(target)
 		LoreAbility.SONG_OF_BANISHMENT:
 			return _song_of_banishment()
+		LoreAbility.DEEP_MEMORY:
+			return _deep_memory()
+		LoreAbility.INNER_LIGHT:
+			return _inner_light()
 		_:
 			GameManager.log_message("Ability not implemented.", ThemeColors.MSG_SYSTEM)
 			return false
@@ -281,7 +299,6 @@ func _word_of_command() -> bool:
 	if affected == 0:
 		GameManager.log_message("No enemies were affected.", ThemeColors.MSG_SYSTEM)
 
-	start_cooldown(LoreAbility.WORD_OF_COMMAND, 10)
 	return true
 
 ## Lore of Battle (141): Provoke target (-evasion, +damage)
@@ -539,6 +556,49 @@ func _song_of_banishment() -> bool:
 	start_cooldown(LoreAbility.SONG_OF_BANISHMENT, 9999)
 	return true
 
+## Deep Memory (142): Actively identify all unidentified items in inventory
+func _deep_memory() -> bool:
+	if not player:
+		return false
+	var identified: int = 0
+	for item in player.inventory:
+		if "identified" in item and not item.identified:
+			item.identified = true
+			identified += 1
+	if identified > 0:
+		GameManager.log_message("You focus your deep memory... %d item%s identified!" % [identified, "s" if identified != 1 else ""], ThemeColors.ABILITY_LEARNED)
+	else:
+		GameManager.log_message("You focus your deep memory, but all items are already identified.", ThemeColors.MSG_SYSTEM)
+	return true
+
+## Inner Light (147): Damages light-sensitive monsters in your light radius
+func _inner_light() -> bool:
+	if not player or not GameManager.current_level:
+		return false
+	var lore_skill: int = player.get_skill("lore")
+	var light_radius: int = player.light_radius if player.light_radius else 3
+	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, light_radius)
+
+	GameManager.log_message("You unleash a blinding inner radiance!", ThemeColors.MSG_INFO)
+	player.vfx_flash(ThemeColors.FLASH_CHARGE)
+
+	var affected: int = 0
+	for entity in entities:
+		if entity == player or not is_instance_valid(entity):
+			continue
+		if not entity is Monster:
+			continue
+		var monster: Monster = entity
+		if monster.monster_data and monster.monster_data.has_flag("HURT_LITE"):
+			var damage: int = randi_range(2, 4) + lore_skill / 2
+			monster.take_damage(damage, "light", player)
+			monster.vfx_flash(ThemeColors.FLASH_CHARGE)
+			affected += 1
+			GameManager.log_message("The %s recoils from the light! (%d damage)" % [monster.entity_name, damage], ThemeColors.COMBAT_HIT_COLOR)
+	if affected == 0:
+		GameManager.log_message("No light-sensitive creatures nearby.", ThemeColors.MSG_SYSTEM)
+	return true
+
 # ============================================================================
 # PASSIVE ABILITY CHECKS (called from other systems)
 # ============================================================================
@@ -659,9 +719,11 @@ func get_learned_active_abilities() -> Array[Dictionary]:
 	var active_ids: Array[int] = [
 		LoreAbility.WORD_OF_COMMAND,
 		LoreAbility.LORE_OF_BATTLE,
+		LoreAbility.DEEP_MEMORY,
 		LoreAbility.WORD_OF_OPENING,
 		LoreAbility.LORE_OF_SILENCE,
 		LoreAbility.WORD_OF_SHUTTING,
+		LoreAbility.INNER_LIGHT,
 		LoreAbility.LORE_OF_SLEEP,
 		LoreAbility.WORD_OF_MASTERY,
 		LoreAbility.SONG_OF_BANISHMENT,

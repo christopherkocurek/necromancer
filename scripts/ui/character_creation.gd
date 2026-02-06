@@ -89,7 +89,7 @@ func _setup_progress_indicator() -> void:
 
 	for i in range(Stage.size()):
 		var dot := ColorRect.new()
-		dot.custom_minimum_size = Vector2(12, 12)
+		dot.custom_minimum_size = Vector2(17, 17)
 		dot.color = ThemeColors.TEXT_DISABLED
 		_progress_container.add_child(dot)
 		_progress_dots.append(dot)
@@ -111,6 +111,12 @@ func _update_progress_dots() -> void:
 func _setup_ui() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	next_button.pressed.connect(_on_next_pressed)
+
+	# Apply Diablo-themed fonts and buttons
+	ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_rich_body_font(info_label)
+	ThemeColors.apply_button_theme(back_button)
+	ThemeColors.apply_button_theme(next_button)
 
 func _show_stage(stage: Stage, direction: int = 0) -> void:
 	if _transitioning:
@@ -201,6 +207,7 @@ func _show_race_selection() -> void:
 		if selected_race == race_name:
 			btn.button_pressed = true
 
+		ThemeColors.apply_button_theme(btn)
 		content_container.add_child(btn)
 
 	_update_race_info()
@@ -263,6 +270,7 @@ func _show_house_selection() -> void:
 		if selected_house == house_name:
 			btn.button_pressed = true
 
+		ThemeColors.apply_button_theme(btn)
 		content_container.add_child(btn)
 
 	_update_house_info()
@@ -299,6 +307,23 @@ func _update_house_info() -> void:
 # TRAIT SELECTION
 # ============================================================================
 
+## Trait archetype groupings for character creation UI
+const TRAIT_ARCHETYPES := {
+	"Warrior": ["Defiance", "Last Stand", "Undying Resolve", "Mithril Skin", "Shield Brother", "Blood of Numenor"],
+	"Rogue": ["Ambush Mastery", "Shadow Step", "Steady Aim", "Nimble Striker", "Patient Stalker", "Oath of Enmity", "Wayfarer's Instinct"],
+	"Lore": ["Light of the Eldar", "Song of Banishment", "Echoes of the Firstborn", "Whisper of the Valar", "Forge Intuition", "Fortune's Favor", "Rallying Cry"],
+}
+const ARCHETYPE_COLORS := {
+	"Warrior": Color(0.9, 0.3, 0.2),
+	"Rogue": Color(0.3, 0.8, 0.4),
+	"Lore": Color(0.4, 0.6, 1.0),
+}
+const ARCHETYPE_DESCRIPTIONS := {
+	"Warrior": "Strength, endurance, and defiance in the face of darkness.",
+	"Rogue": "Precision, stealth, and deadly opportunism.",
+	"Lore": "Ancient knowledge, voice abilities, and mystical insight.",
+}
+
 func _show_trait_selection() -> void:
 	stage_label.text = "Choose Your Trait"
 
@@ -307,28 +332,62 @@ func _show_trait_selection() -> void:
 		info_label.text = "No traits available."
 		return
 
-	# Wrap trait buttons in a scroll container so the list doesn't overflow
+	# Build name→TraitData lookup
+	var trait_lookup: Dictionary = {}
+	for td in all_traits:
+		trait_lookup[td.name] = td
+
+	# Scrollable container for the archetype columns
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 320)
+	scroll.custom_minimum_size = Vector2(0, 450)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content_container.add_child(scroll)
 
-	var trait_list := VBoxContainer.new()
-	trait_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(trait_list)
+	var columns := HBoxContainer.new()
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_theme_constant_override("separation", 16)
+	scroll.add_child(columns)
 
-	for trait_data in all_traits:
-		var btn := Button.new()
-		btn.text = trait_data.name
-		btn.toggle_mode = true
-		btn.button_group = _get_or_create_button_group("trait")
-		btn.pressed.connect(_on_trait_selected.bind(trait_data.name))
+	for archetype in TRAIT_ARCHETYPES:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 6)
+		columns.add_child(col)
 
-		if selected_trait == trait_data.name:
-			btn.button_pressed = true
+		# Archetype header
+		var header := Label.new()
+		header.text = archetype.to_upper()
+		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		header.add_theme_color_override("font_color", ARCHETYPE_COLORS[archetype])
+		ThemeColors.apply_heading_font(header, ThemeColors.FONT_SIZE_LARGE)
+		col.add_child(header)
 
-		trait_list.add_child(btn)
+		# Archetype subtitle
+		var subtitle := Label.new()
+		subtitle.text = ARCHETYPE_DESCRIPTIONS[archetype]
+		subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		subtitle.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		ThemeColors.apply_body_font(subtitle, ThemeColors.FONT_SIZE_HINT)
+		col.add_child(subtitle)
+
+		var sep := HSeparator.new()
+		col.add_child(sep)
+
+		# Trait buttons
+		for trait_name in TRAIT_ARCHETYPES[archetype]:
+			if trait_name not in trait_lookup:
+				continue
+			var btn := Button.new()
+			btn.text = trait_name
+			btn.toggle_mode = true
+			btn.button_group = _get_or_create_button_group("trait")
+			btn.pressed.connect(_on_trait_selected.bind(trait_name))
+			if selected_trait == trait_name:
+				btn.button_pressed = true
+			ThemeColors.apply_button_theme(btn)
+			col.add_child(btn)
 
 	_update_trait_info()
 
@@ -376,38 +435,42 @@ func _show_stat_allocation() -> void:
 
 		var label := Label.new()
 		label.text = stat_name.to_upper()
-		label.custom_minimum_size.x = 50
+		label.custom_minimum_size.x = 70
 		label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+		ThemeColors.apply_body_font(label, ThemeColors.FONT_SIZE_LARGE)
 		row.add_child(label)
 
 		var minus_btn := Button.new()
 		minus_btn.text = "-"
-		minus_btn.custom_minimum_size = Vector2(32, 32)
+		minus_btn.custom_minimum_size = Vector2(45, 45)
 		minus_btn.pressed.connect(_on_stat_decrease.bind(stat_name))
+		ThemeColors.apply_button_theme(minus_btn)
 		row.add_child(minus_btn)
 		stat_buttons[stat_name + "_minus"] = minus_btn
 
 		var value_label := Label.new()
-		value_label.custom_minimum_size.x = 40
+		value_label.custom_minimum_size.x = 56
 		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ThemeColors.apply_body_font(value_label)
 		row.add_child(value_label)
 		stat_labels[stat_name] = value_label
 
 		var plus_btn := Button.new()
 		plus_btn.text = "+"
-		plus_btn.custom_minimum_size = Vector2(32, 32)
+		plus_btn.custom_minimum_size = Vector2(45, 45)
 		plus_btn.pressed.connect(_on_stat_increase.bind(stat_name))
+		ThemeColors.apply_button_theme(plus_btn)
 		row.add_child(plus_btn)
 		stat_buttons[stat_name + "_plus"] = plus_btn
 
 		# Stat bar visualization
 		var bar_bg := ColorRect.new()
-		bar_bg.custom_minimum_size = Vector2(200, 12)
-		bar_bg.color = ThemeColors.BG_DARKEST
+		bar_bg.custom_minimum_size = Vector2(280, 17)
+		bar_bg.color = ThemeColors.IRON_SHADOW
 		row.add_child(bar_bg)
 
 		var bar_fill := ColorRect.new()
-		bar_fill.custom_minimum_size = Vector2(0, 12)
+		bar_fill.custom_minimum_size = Vector2(0, 17)
 		bar_fill.color = STAT_COLORS.get(stat_name, ThemeColors.PRIMARY)
 		bar_bg.add_child(bar_fill)
 		bar_fill.position = Vector2.ZERO
@@ -417,7 +480,7 @@ func _show_stat_allocation() -> void:
 		var mod_label := Label.new()
 		mod_label.text = "(R%+d H%+d)" % [race_mods[stat_name], house_mods[stat_name]]
 		mod_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
-		mod_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
+		ThemeColors.apply_body_font(mod_label, ThemeColors.FONT_SIZE_HINT)
 		row.add_child(mod_label)
 
 		content_container.add_child(row)
@@ -541,7 +604,7 @@ func _show_name_entry() -> void:
 	if _tileset_texture:
 		var preview_container := CenterContainer.new()
 		_preview_rect = TextureRect.new()
-		_preview_rect.custom_minimum_size = Vector2(128, 128)
+		_preview_rect.custom_minimum_size = Vector2(180, 180)
 		_preview_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		_preview_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_update_character_preview()
@@ -552,13 +615,16 @@ func _show_name_entry() -> void:
 	name_edit.placeholder_text = "Enter name..."
 	name_edit.text = character_name
 	name_edit.text_changed.connect(_on_name_changed)
-	name_edit.custom_minimum_size.x = 300
+	name_edit.custom_minimum_size.x = 420
+	name_edit.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+	name_edit.add_theme_color_override("caret_color", ThemeColors.GOLD_WARM)
 	content_container.add_child(name_edit)
 
 	# Random name button
 	var random_btn := Button.new()
 	random_btn.text = "Random Name"
 	random_btn.pressed.connect(_on_random_name)
+	ThemeColors.apply_button_theme(random_btn)
 	content_container.add_child(random_btn)
 
 	info_label.text = _get_character_summary()
@@ -629,7 +695,7 @@ func _show_confirmation() -> void:
 	if _tileset_texture:
 		var preview_container := CenterContainer.new()
 		_preview_rect = TextureRect.new()
-		_preview_rect.custom_minimum_size = Vector2(128, 128)
+		_preview_rect.custom_minimum_size = Vector2(180, 180)
 		_preview_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		_preview_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_update_character_preview()

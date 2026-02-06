@@ -30,6 +30,7 @@ var skill_rows: Dictionary = {}
 
 func _ready() -> void:
 	_setup_skills()
+	ThemeColors.apply_rich_body_font(info_label)
 	visible = false
 
 func open(player_ref: Player) -> void:
@@ -50,18 +51,21 @@ func _setup_skills() -> void:
 		var name_label := Label.new()
 		name_label.text = skill_name.capitalize()
 		name_label.custom_minimum_size.x = 100
+		ThemeColors.apply_body_font(name_label, ThemeColors.FONT_SIZE_LARGE)
 		row.add_child(name_label)
 
 		# Current level
 		var level_label := Label.new()
 		level_label.custom_minimum_size.x = 40
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ThemeColors.apply_body_font(level_label)
 		row.add_child(level_label)
 
 		# Cost display
 		var cost_label := Label.new()
 		cost_label.custom_minimum_size.x = 80
 		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		ThemeColors.apply_body_font(cost_label)
 		row.add_child(cost_label)
 
 		# Buy button
@@ -69,6 +73,7 @@ func _setup_skills() -> void:
 		buy_btn.text = "+"
 		buy_btn.custom_minimum_size = Vector2(40, 30)
 		buy_btn.pressed.connect(_on_skill_buy_pressed.bind(skill_name))
+		ThemeColors.apply_button_theme(buy_btn)
 		row.add_child(buy_btn)
 
 		# Progress bar
@@ -76,6 +81,18 @@ func _setup_skills() -> void:
 		progress.custom_minimum_size = Vector2(100, 20)
 		progress.max_value = 20
 		progress.show_percentage = false
+		# Style progress bar: iron background, skill-colored fill
+		var bg_style := StyleBoxFlat.new()
+		bg_style.bg_color = ThemeColors.IRON_DARK
+		bg_style.border_color = ThemeColors.IRON_HIGHLIGHT
+		bg_style.border_width_left = 1
+		bg_style.border_width_right = 1
+		bg_style.border_width_top = 1
+		bg_style.border_width_bottom = 1
+		progress.add_theme_stylebox_override("background", bg_style)
+		var fill_style := StyleBoxFlat.new()
+		fill_style.bg_color = ThemeColors.get_skill_color(skill_name)
+		progress.add_theme_stylebox_override("fill", fill_style)
 		row.add_child(progress)
 
 		skills_container.add_child(row)

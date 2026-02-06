@@ -27,6 +27,9 @@ var selected_ability: DataManager.AbilityData = null
 
 func _ready() -> void:
 	_setup_tabs()
+	ThemeColors.apply_button_theme(close_button)
+	ThemeColors.apply_button_theme(buy_button)
+	ThemeColors.apply_rich_body_font(info_panel)
 	close_button.pressed.connect(close)
 	visible = false
 
@@ -81,8 +84,7 @@ func _refresh_skill_tab(skill_idx: int) -> void:
 	# Add header showing current skill level
 	var header := Label.new()
 	header.text = "%s (Level %d)" % [SKILL_NAMES[skill_idx], player_skill_level]
-	header.add_theme_font_size_override("font_size", 16)
-	header.add_theme_color_override("font_color", ThemeColors.ABILITY_HEADER)
+	ThemeColors.apply_heading_font(header, ThemeColors.FONT_SIZE_H3)
 	vbox.add_child(header)
 
 	var sep := HSeparator.new()
@@ -128,6 +130,7 @@ func _refresh_skill_tab(skill_idx: int) -> void:
 		else:
 			btn.add_theme_color_override("font_color", ThemeColors.ABILITY_BLOCKED)
 
+		ThemeColors.apply_button_theme(btn)
 		btn.pressed.connect(_on_ability_selected.bind(ability))
 		vbox.add_child(btn)
 
@@ -206,6 +209,7 @@ func _on_buy_pressed() -> void:
 	_update_info_panel()
 
 func _update_xp_display() -> void:
+	ThemeColors.apply_heading_font(xp_label, ThemeColors.FONT_SIZE_LARGE)
 	if player:
 		xp_label.text = "Available XP: %d" % player.xp_available
 	else:

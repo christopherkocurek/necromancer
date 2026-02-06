@@ -42,6 +42,13 @@ func _ready() -> void:
 	smithing_system.item_enhanced.connect(_on_item_enhanced)
 	smithing_system.smithing_failed.connect(_on_smithing_failed)
 
+	# Style smithing panel with iron theme
+	ThemeColors.apply_heading_font(title_label, ThemeColors.FONT_SIZE_H2)
+	ThemeColors.apply_body_font(success_label)
+	ThemeColors.apply_rich_body_font(info_label)
+	ThemeColors.apply_button_theme(forge_button)
+	ThemeColors.apply_button_theme(close_button)
+
 func open(player_ref: Player, level_ref: Level) -> void:
 	player = player_ref
 	level = level_ref

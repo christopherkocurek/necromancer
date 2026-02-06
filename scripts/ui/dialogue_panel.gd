@@ -20,6 +20,23 @@ func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
+	# Style the dialogue panel with parchment theme
+	if panel:
+		var style: StyleBox
+		if ThemeColors.has_textures():
+			style = ThemeColors.create_textured_panel("panel_parchment", 12.0)
+		else:
+			style = ThemeColors.create_panel_stylebox(ThemeColors.PARCHMENT_BG, ThemeColors.PARCHMENT_EDGE, 2, 6)
+		panel.add_theme_stylebox_override("panel", style)
+	if speaker_label:
+		ThemeColors.apply_heading_font(speaker_label, ThemeColors.FONT_SIZE_H3)
+	if dialogue_text:
+		ThemeColors.apply_rich_body_font(dialogue_text, ThemeColors.FONT_SIZE_LARGE)
+		dialogue_text.add_theme_color_override("default_color", ThemeColors.PARCHMENT_TEXT)
+	if prompt_label:
+		ThemeColors.apply_body_font(prompt_label, ThemeColors.FONT_SIZE_HINT)
+		prompt_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+
 func _input(event: InputEvent) -> void:
 	if not is_active or not visible:
 		return

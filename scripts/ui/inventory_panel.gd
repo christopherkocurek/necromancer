@@ -106,8 +106,7 @@ func _setup_sort_filter_bar() -> void:
 
 	_sort_label = Label.new()
 	_sort_label.text = "Sort: Default"
-	_sort_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
-	_sort_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(_sort_label, ThemeColors.FONT_SIZE_BODY)
 	bar.add_child(_sort_label)
 
 	var spacer := Control.new()
@@ -116,8 +115,7 @@ func _setup_sort_filter_bar() -> void:
 
 	_filter_label = Label.new()
 	_filter_label.text = "Filter: All"
-	_filter_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
-	_filter_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(_filter_label, ThemeColors.FONT_SIZE_BODY)
 	bar.add_child(_filter_label)
 
 	# Insert bar before the grid
@@ -140,9 +138,14 @@ func _setup_inventory_grid() -> void:
 		slot.pressed.connect(_on_inventory_slot_pressed.bind(i))
 		slot.gui_input.connect(_on_slot_gui_input.bind(i))
 
-		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
-		slot.add_theme_stylebox_override("hover", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_HOVER))
-		slot.add_theme_stylebox_override("pressed", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+			slot.add_theme_stylebox_override("hover", ThemeColors.create_textured_slot("hover"))
+			slot.add_theme_stylebox_override("pressed", ThemeColors.create_textured_slot("selected"))
+		else:
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+			slot.add_theme_stylebox_override("hover", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_HOVER))
+			slot.add_theme_stylebox_override("pressed", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
 
 		inventory_grid.add_child(slot)
 		inventory_slots.append(slot)
@@ -188,8 +191,12 @@ func _setup_equipment_slots() -> void:
 				slot.tooltip_text = slot_names[slot_id]
 				slot.pressed.connect(_on_equipment_slot_pressed.bind(slot_id))
 
-				slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
-				slot.add_theme_stylebox_override("hover", _create_slot_style(ThemeColors.SLOT_EQUIP_HOVER))
+				if ThemeColors.has_textures():
+					slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+					slot.add_theme_stylebox_override("hover", ThemeColors.create_textured_slot("hover"))
+				else:
+					slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
+					slot.add_theme_stylebox_override("hover", _create_slot_style(ThemeColors.SLOT_EQUIP_HOVER))
 
 				equipment_container.add_child(slot)
 				equipment_slots[slot_id] = slot
@@ -293,7 +300,10 @@ func _refresh_inventory() -> void:
 			slot.icon = null
 			slot.text = ""
 			slot.tooltip_text = "Empty"
-			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+			else:
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
 
 	_update_weight_display()
 	_update_focus_ring()
@@ -301,9 +311,12 @@ func _refresh_inventory() -> void:
 func _apply_rarity_border(slot: Button, item: Variant) -> void:
 	var rarity_color: Color = ThemeColors.get_rarity_color(item)
 	if rarity_color == ThemeColors.RARITY_NORMAL:
-		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
 	else:
-		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY, rarity_color))
+		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.IRON_SHADOW, rarity_color))
 
 func _refresh_equipment() -> void:
 	if not player:
@@ -350,23 +363,35 @@ func _update_focus_ring() -> void:
 		if i < _sorted_items.size():
 			_apply_rarity_border(slot, _sorted_items[i])
 		else:
-			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+			else:
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
 
 	for id in equipment_slots:
 		var slot: Button = equipment_slots[id]
-		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
 
 	# Apply gold focus ring to current focused slot
 	if _focus_mode == 0:
 		if _focus_index >= 0 and _focus_index < inventory_slots.size():
 			var slot: Button = inventory_slots[_focus_index]
-			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("selected"))
+			else:
+				slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
 	else:
 		if _equip_focus_index >= 0 and _equip_focus_index < _equip_slot_order.size():
 			var slot_id: int = _equip_slot_order[_equip_focus_index]
 			if equipment_slots.has(slot_id):
 				var slot: Button = equipment_slots[slot_id]
-				slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.BORDER_FOCUS))
+				if ThemeColors.has_textures():
+					slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("selected"))
+				else:
+					slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.BORDER_FOCUS))
 
 func _move_focus(dx: int, dy: int) -> void:
 	if _focus_mode == 0:
@@ -486,11 +511,17 @@ func _on_equipment_slot_pressed(slot_id: int) -> void:
 func _highlight_equipment_slot(slot_id: int) -> void:
 	for id in equipment_slots:
 		var slot: Button = equipment_slots[id]
-		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
 
 	if slot_id >= 0 and equipment_slots.has(slot_id):
 		var slot: Button = equipment_slots[slot_id]
-		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_SELECTED))
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_textured_slot("selected"))
+		else:
+			slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_SELECTED))
 
 func _try_unequip_slot(slot_id: int) -> void:
 	var slot_key: String = _get_slot_key(slot_id)
@@ -574,6 +605,7 @@ func _on_drop_cancelled() -> void:
 # ============================================================================
 
 func _update_item_info(item: Variant) -> void:
+	ThemeColors.apply_rich_body_font(item_info)
 	if item == null:
 		item_info.text = "Select an item to see details."
 		return
@@ -603,6 +635,8 @@ func _update_item_info(item: Variant) -> void:
 func _update_weight_display() -> void:
 	if not player:
 		return
+
+	ThemeColors.apply_body_font(weight_label)
 
 	var total_weight: float = 0.0
 	for item in player.inventory:
@@ -693,12 +727,12 @@ func _get_inventory_button_group() -> ButtonGroup:
 
 func _create_slot_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = color
+	style.bg_color = ThemeColors.IRON_SHADOW
 	style.border_width_left = 2
 	style.border_width_right = 2
 	style.border_width_top = 2
 	style.border_width_bottom = 2
-	style.border_color = ThemeColors.BORDER_DEFAULT
+	style.border_color = ThemeColors.IRON_HIGHLIGHT
 	style.corner_radius_top_left = 4
 	style.corner_radius_top_right = 4
 	style.corner_radius_bottom_left = 4
