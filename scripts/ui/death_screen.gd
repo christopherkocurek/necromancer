@@ -364,13 +364,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _show_inventory() -> void:
-	GameManager.log_message("Inventory view not yet implemented.", Color.GRAY)
+	GameManager.log_message("Inventory view not yet implemented.", ThemeColors.MSG_SYSTEM)
 
 func _show_character() -> void:
-	GameManager.log_message("Character sheet not yet implemented.", Color.GRAY)
+	GameManager.log_message("Character sheet not yet implemented.", ThemeColors.MSG_SYSTEM)
 
 func _show_messages() -> void:
-	GameManager.log_message("Message log not yet implemented.", Color.GRAY)
+	GameManager.log_message("Message log not yet implemented.", ThemeColors.MSG_SYSTEM)
 
 func _save_dump() -> void:
 	var dump: String = _generate_character_dump()
@@ -384,9 +384,9 @@ func _save_dump() -> void:
 	if file:
 		file.store_string(dump)
 		file.close()
-		GameManager.log_message("Character dump saved to: %s" % path, Color.GREEN)
+		GameManager.log_message("Character dump saved to: %s" % path, ThemeColors.ABILITY_LEARNED)
 	else:
-		GameManager.log_message("Failed to save character dump.", Color.RED)
+		GameManager.log_message("Failed to save character dump.", ThemeColors.MSG_ERROR)
 
 func _generate_character_dump() -> String:
 	var dump: String = """

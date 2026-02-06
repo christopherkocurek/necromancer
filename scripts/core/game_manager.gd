@@ -97,7 +97,7 @@ func cycle_zoom_reverse() -> void:
 func get_current_zoom() -> float:
 	return ZOOM_LEVELS[current_zoom_index]
 
-func log_message(text: String, color: Color = Color.WHITE) -> void:
+func log_message(text: String, color: Color = ThemeColors.TEXT_PRIMARY) -> void:
 	EventBus.message_logged.emit(text, color)
 
 # ============================================================================
@@ -141,7 +141,7 @@ func identify_item(item: Variant) -> void:
 	if "tval" in item and "sval" in item:
 		var key: String = "%d:%d" % [item.tval, item.sval]
 		identified_types[key] = true
-	log_message("You identify: %s" % _get_real_name(item), Color.CYAN)
+	log_message("You identify: %s" % _get_real_name(item), ThemeColors.MSG_INFO)
 
 ## Get the display name for an item (respects identification)
 func get_item_display_name(item: Variant) -> String:

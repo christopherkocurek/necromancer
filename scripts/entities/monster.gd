@@ -40,9 +40,22 @@ var is_brave: bool = false  # Won't flee unless critical
 var is_pack_leader: bool = false
 var pack_id: int = -1  # For escort/pack morale bonuses
 
+var health_bar: EntityHealthBar = null
+
 func _ready() -> void:
 	super._ready()
 	home_position = grid_position
+	_setup_health_bar()
+
+func _setup_health_bar() -> void:
+	health_bar = EntityHealthBar.new()
+	health_bar.setup(self)
+	health_bar.visible = false
+	add_child(health_bar)
+
+func update_health_bar(knowledge_tier: int) -> void:
+	if health_bar:
+		health_bar.update_display(knowledge_tier)
 
 func initialize_from_data(data: DataManager.MonsterData) -> void:
 	if not data:

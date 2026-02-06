@@ -21,7 +21,7 @@ func apply_effect(effect_id: StringName, duration: int, show_message: bool = tru
 	# Check resistance
 	if owner and _check_resistance(effect_id):
 		if show_message:
-			GameManager.log_message("%s resists!" % owner.entity_name, Color.GRAY)
+			GameManager.log_message("%s resists!" % owner.entity_name, ThemeColors.MSG_SYSTEM)
 		return false
 
 	# Get effect metadata
@@ -51,7 +51,7 @@ func apply_effect(effect_id: StringName, duration: int, show_message: bool = tru
 		if is_new:
 			var msg: String = EffectDefinitions.get_onset_message(effect_id, new_dur)
 			if not msg.is_empty():
-				GameManager.log_message(msg, Color.RED)
+				GameManager.log_message(msg, ThemeColors.MSG_ERROR)
 
 	# Special handling for knockout blindness
 	if effect_id == Constants.EFFECT_STUNNED and new_dur > Constants.STUN_THRESHOLD_KNOCKOUT:
@@ -75,7 +75,7 @@ func remove_effect(effect_id: StringName, show_message: bool = true) -> void:
 	if show_message and owner:
 		var msg: String = EffectDefinitions.get_recovery_message(effect_id, old_dur)
 		if not msg.is_empty():
-			GameManager.log_message(msg, Color.GREEN)
+			GameManager.log_message(msg, ThemeColors.ABILITY_LEARNED)
 
 	if owner:
 		EventBus.status_removed.emit(owner, effect_id)

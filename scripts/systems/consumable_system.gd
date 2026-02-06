@@ -56,7 +56,7 @@ static func quaff_potion(player: Player, item: Variant) -> bool:
 			GameManager.log_message("The poison is neutralized.", ThemeColors.HEALTH_HIGH)
 		9:  # Quickness - haste
 			player.apply_status("fast", 10 + randi_range(1, 10))
-			GameManager.log_message("You feel yourself speed up!", ThemeColors.STATUS_HASTE)
+			GameManager.log_message("You feel yourself speed up!", ThemeColors.STATUS_FAST)
 		10:  # Elemental Resistance - temporary resist
 			player.apply_status("resist_elements", 15 + randi_range(1, 10))
 			GameManager.log_message("You feel protected from the elements.", ThemeColors.SECONDARY)

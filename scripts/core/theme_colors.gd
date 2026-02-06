@@ -69,6 +69,7 @@ const STATUS_BURNING := Color("#F97316")     # Orange-red
 const STATUS_RAGE := Color("#DC2626")        # Red
 const STATUS_DARKENED := Color("#3B82F6")    # Blue
 const STATUS_IMAGE := Color("#C084FC")       # Medium purple
+const STATUS_BUFF := Color("#FB923C")        # Orange (positive stat buffs)
 
 # ============================================================================
 # MESSAGES

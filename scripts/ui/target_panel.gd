@@ -163,13 +163,13 @@ func _gui_input(event: InputEvent) -> void:
 func _confirm_target() -> void:
 	# Verify LOS
 	if not level.has_los_to(player.grid_position, target_cursor):
-		GameManager.log_message("No line of sight to target!", Color.RED)
+		GameManager.log_message("No line of sight to target!", ThemeColors.MSG_ERROR)
 		return
 
 	var dist: int = max(abs(target_cursor.x - player.grid_position.x),
 					   abs(target_cursor.y - player.grid_position.y))
 	if dist > max_range:
-		GameManager.log_message("Target is out of range!", Color.RED)
+		GameManager.log_message("Target is out of range!", ThemeColors.MSG_ERROR)
 		return
 
 	close()

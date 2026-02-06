@@ -115,6 +115,7 @@ var stealth_mode: bool = false       # Toggle with ';' key
 var noise_this_turn: int = 0         # Accumulated noise from actions
 var was_attacked_this_turn: bool = false  # For combat noise
 var attacked_this_turn: bool = false     # For combat noise
+var _skip_input_this_frame: bool = false  # Set by main.gd when stealth toggled via direct keycode
 
 func _ready() -> void:
 	super._ready()
@@ -959,6 +960,9 @@ func has_light() -> bool:
 # ============================================================================
 
 func handle_input() -> bool:
+	if _skip_input_this_frame:
+		_skip_input_this_frame = false
+		return false
 	if not GameManager.is_player_turn:
 		return false
 

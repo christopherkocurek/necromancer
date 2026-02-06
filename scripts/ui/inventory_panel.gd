@@ -1,6 +1,7 @@
 extends Control
 class_name InventoryPanel
 ## Inventory management UI with 4x6 item grid and equipment paper doll.
+## Keyboard navigation, sort/filter, rarity borders, confirm dialog for drops.
 
 signal item_selected(item_data: Variant)
 signal item_equipped(item_data: Variant, slot: int)
@@ -13,10 +14,32 @@ const GRID_ROWS: int = 6
 const SLOT_SIZE: Vector2 = Vector2(64, 64)
 const TILE_SIZE: int = 64
 
+# Sort modes
+enum SortMode { DEFAULT, TYPE, WEIGHT, NAME }
+const SORT_LABELS: Array[String] = ["Default", "Type", "Weight", "Name"]
+
+# Filter modes
+enum FilterMode { ALL, WEAPONS, ARMOR, CONSUMABLES }
+const FILTER_LABELS: Array[String] = ["All", "Weapons", "Armor", "Consumables"]
+
 var player: Player
 var selected_item: Variant = null
 var selected_slot_index: int = -1
-var selected_equipment_slot: int = -1  # Track selected equipment slot
+var selected_equipment_slot: int = -1
+
+# Keyboard navigation
+var _focus_mode: int = 0  # 0 = inventory grid, 1 = equipment
+var _focus_index: int = 0  # Current focused slot in inventory grid
+var _equip_focus_index: int = 0  # Current focused slot in equipment
+
+# Sort/filter state
+var _sort_mode: SortMode = SortMode.DEFAULT
+var _filter_mode: FilterMode = FilterMode.ALL
+var _sorted_items: Array = []  # Filtered + sorted view of player inventory
+
+# Confirm dialog
+var _confirm_dialog: ConfirmDialog = null
+var _pending_drop_item: Variant = null
 
 # Shared tileset texture for item sprites
 static var _tileset_texture: Texture2D = null
@@ -28,26 +51,39 @@ static var _magenta_shader: ShaderMaterial = null
 @onready var item_info: RichTextLabel = $HSplitContainer/InventorySection/ItemInfo
 @onready var weight_label: Label = $HSplitContainer/InventorySection/WeightLabel
 
+# Sort/filter labels
+var _sort_label: Label = null
+var _filter_label: Label = null
+
 # Equipment slot buttons (mapped by Constants.EquipSlot)
 var equipment_slots: Dictionary = {}
 var inventory_slots: Array[Button] = []
 
+# Ordered list of equipment slot IDs for keyboard nav
+var _equip_slot_order: Array[int] = []
+
 func _ready() -> void:
-	# Load shared resources
 	if not _tileset_texture:
 		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
 	if not _magenta_shader:
 		_magenta_shader = load("res://assets/shaders/magenta_transparent.tres")
 
+	_setup_sort_filter_bar()
 	_setup_inventory_grid()
 	_setup_equipment_slots()
+	_setup_confirm_dialog()
 	visible = false
 
 func open(player_ref: Player) -> void:
 	player = player_ref
+	_focus_mode = 0
+	_focus_index = 0
+	_sort_mode = SortMode.DEFAULT
+	_filter_mode = FilterMode.ALL
 	PanelTransition.open_panel(self)
 	_refresh_inventory()
 	_refresh_equipment()
+	_update_focus_ring()
 	grab_focus()
 
 func close() -> void:
@@ -55,6 +91,43 @@ func close() -> void:
 	selected_slot_index = -1
 	selected_equipment_slot = -1
 	PanelTransition.close_panel(self, func(): closed.emit())
+
+func _setup_sort_filter_bar() -> void:
+	# Find or create a bar above the inventory grid
+	var inv_section: Control = null
+	if has_node("HSplitContainer/InventorySection"):
+		inv_section = $HSplitContainer/InventorySection
+
+	if not inv_section:
+		return
+
+	var bar := HBoxContainer.new()
+	bar.name = "SortFilterBar"
+
+	_sort_label = Label.new()
+	_sort_label.text = "Sort: Default"
+	_sort_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
+	_sort_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
+	bar.add_child(_sort_label)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = SIZE_EXPAND_FILL
+	bar.add_child(spacer)
+
+	_filter_label = Label.new()
+	_filter_label.text = "Filter: All"
+	_filter_label.add_theme_color_override("font_color", ThemeColors.TEXT_SECONDARY)
+	_filter_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
+	bar.add_child(_filter_label)
+
+	# Insert bar before the grid
+	var grid_idx: int = 0
+	for i in range(inv_section.get_child_count()):
+		if inv_section.get_child(i) == inventory_grid:
+			grid_idx = i
+			break
+	inv_section.add_child(bar)
+	inv_section.move_child(bar, grid_idx)
 
 func _setup_inventory_grid() -> void:
 	inventory_grid.columns = GRID_COLS
@@ -67,7 +140,6 @@ func _setup_inventory_grid() -> void:
 		slot.pressed.connect(_on_inventory_slot_pressed.bind(i))
 		slot.gui_input.connect(_on_slot_gui_input.bind(i))
 
-		# Style empty slot
 		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
 		slot.add_theme_stylebox_override("hover", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_HOVER))
 		slot.add_theme_stylebox_override("pressed", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
@@ -76,15 +148,6 @@ func _setup_inventory_grid() -> void:
 		inventory_slots.append(slot)
 
 func _setup_equipment_slots() -> void:
-	# Create equipment slot buttons arranged as paper doll in a 3-column grid
-	# Layout (read left-to-right, top-to-bottom):
-	# Row 0: [empty] [HEAD]    [empty]
-	# Row 1: [NECK]  [BODY]    [CLOAK]
-	# Row 2: [WEAPON][empty]   [OFF_HAND]
-	# Row 3: [HANDS] [empty]   [BOW]
-	# Row 4: [RING_L][FEET]    [RING_R]
-	# Row 5: [LIGHT] [empty]   [QUIVER]
-
 	var slot_names: Dictionary = {
 		Constants.EquipSlot.HEAD: "Head",
 		Constants.EquipSlot.NECK: "Neck",
@@ -101,23 +164,21 @@ func _setup_equipment_slots() -> void:
 		Constants.EquipSlot.QUIVER: "Quiver",
 	}
 
-	# Grid layout: each row is [left, center, right]
-	# Use -1 for empty spacer cells
 	var grid_layout: Array = [
-		[-1, Constants.EquipSlot.HEAD, -1],                           # Row 0
-		[Constants.EquipSlot.NECK, Constants.EquipSlot.BODY, Constants.EquipSlot.CLOAK],  # Row 1
-		[Constants.EquipSlot.WEAPON, -1, Constants.EquipSlot.OFF_HAND],  # Row 2
-		[Constants.EquipSlot.HANDS, -1, Constants.EquipSlot.BOW],        # Row 3
-		[Constants.EquipSlot.RING_L, Constants.EquipSlot.FEET, Constants.EquipSlot.RING_R],  # Row 4
-		[Constants.EquipSlot.LIGHT, -1, Constants.EquipSlot.QUIVER],     # Row 5
+		[-1, Constants.EquipSlot.HEAD, -1],
+		[Constants.EquipSlot.NECK, Constants.EquipSlot.BODY, Constants.EquipSlot.CLOAK],
+		[Constants.EquipSlot.WEAPON, -1, Constants.EquipSlot.OFF_HAND],
+		[Constants.EquipSlot.HANDS, -1, Constants.EquipSlot.BOW],
+		[Constants.EquipSlot.RING_L, Constants.EquipSlot.FEET, Constants.EquipSlot.RING_R],
+		[Constants.EquipSlot.LIGHT, -1, Constants.EquipSlot.QUIVER],
 	]
 
 	equipment_container.columns = 3
+	_equip_slot_order.clear()
 
 	for row in grid_layout:
 		for slot_id in row:
 			if slot_id == -1:
-				# Add empty spacer control
 				var spacer := Control.new()
 				spacer.custom_minimum_size = SLOT_SIZE
 				equipment_container.add_child(spacer)
@@ -132,30 +193,122 @@ func _setup_equipment_slots() -> void:
 
 				equipment_container.add_child(slot)
 				equipment_slots[slot_id] = slot
+				_equip_slot_order.append(slot_id)
+
+func _setup_confirm_dialog() -> void:
+	_confirm_dialog = ConfirmDialog.new()
+	_confirm_dialog.confirmed.connect(_on_drop_confirmed)
+	_confirm_dialog.cancelled.connect(_on_drop_cancelled)
+	add_child(_confirm_dialog)
+
+# ============================================================================
+# SORT / FILTER
+# ============================================================================
+
+func _cycle_sort() -> void:
+	_sort_mode = (_sort_mode + 1) % SortMode.size() as SortMode
+	_sort_label.text = "Sort: %s" % SORT_LABELS[_sort_mode]
+	_refresh_inventory()
+
+func _cycle_filter() -> void:
+	_filter_mode = (_filter_mode + 1) % FilterMode.size() as FilterMode
+	_filter_label.text = "Filter: %s" % FILTER_LABELS[_filter_mode]
+	_refresh_inventory()
+
+func _build_sorted_items() -> void:
+	if not player:
+		_sorted_items.clear()
+		return
+
+	# Start with all items
+	var items: Array = []
+	for item in player.inventory:
+		items.append(item)
+
+	# Apply filter
+	if _filter_mode != FilterMode.ALL:
+		var filtered: Array = []
+		for item in items:
+			if _passes_filter(item):
+				filtered.append(item)
+		items = filtered
+
+	# Apply sort
+	match _sort_mode:
+		SortMode.TYPE:
+			items.sort_custom(func(a, b):
+				var ta: int = a.tval if "tval" in a else 0
+				var tb: int = b.tval if "tval" in b else 0
+				return ta < tb
+			)
+		SortMode.WEIGHT:
+			items.sort_custom(func(a, b):
+				var wa: float = a.weight if "weight" in a else 0.0
+				var wb: float = b.weight if "weight" in b else 0.0
+				return wa < wb
+			)
+		SortMode.NAME:
+			items.sort_custom(func(a, b):
+				return _get_item_name(a).naturalnocasecmp_to(_get_item_name(b)) < 0
+			)
+
+	_sorted_items = items
+
+func _passes_filter(item: Variant) -> bool:
+	if item == null:
+		return false
+	var tval: int = item.tval if "tval" in item else 0
+	match _filter_mode:
+		FilterMode.WEAPONS:
+			# Swords, axes, polearms, bows, arrows
+			return tval >= 20 and tval <= 24
+		FilterMode.ARMOR:
+			# Armor, shields, helms, gloves, boots, cloaks
+			return tval >= 30 and tval <= 37
+		FilterMode.CONSUMABLES:
+			# Potions, herbs, scrolls, staves, horns
+			return tval >= 70
+	return true
+
+# ============================================================================
+# REFRESH
+# ============================================================================
 
 func _refresh_inventory() -> void:
 	if not player:
 		return
 
+	_build_sorted_items()
+
 	for i in range(inventory_slots.size()):
 		var slot: Button = inventory_slots[i]
-		if i < player.inventory.size():
-			var item = player.inventory[i]
+		if i < _sorted_items.size():
+			var item = _sorted_items[i]
 			slot.icon = _get_item_icon(item)
-			slot.text = ""  # Clear text, use icon instead
+			slot.text = ""
 			slot.tooltip_text = _get_item_name(item)
+			# Apply rarity border color
+			_apply_rarity_border(slot, item)
 		else:
 			slot.icon = null
 			slot.text = ""
 			slot.tooltip_text = "Empty"
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
 
 	_update_weight_display()
+	_update_focus_ring()
+
+func _apply_rarity_border(slot: Button, item: Variant) -> void:
+	var rarity_color: Color = ThemeColors.get_rarity_color(item)
+	if rarity_color == ThemeColors.RARITY_NORMAL:
+		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+	else:
+		slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY, rarity_color))
 
 func _refresh_equipment() -> void:
 	if not player:
 		return
 
-	# Map player equipment dict keys to slot IDs
 	var slot_key_map: Dictionary = {
 		"weapon": Constants.EquipSlot.WEAPON,
 		"off_hand": Constants.EquipSlot.OFF_HAND,
@@ -180,43 +333,137 @@ func _refresh_equipment() -> void:
 
 		if item != null:
 			slot.icon = _get_item_icon(item)
-			slot.text = ""  # Clear text, use icon instead
+			slot.text = ""
 			slot.tooltip_text = _get_item_name(item)
 		else:
 			slot.icon = null
 			slot.text = ""
 
-func _on_inventory_slot_pressed(index: int) -> void:
-	# Clear equipment selection when clicking inventory
-	selected_equipment_slot = -1
+# ============================================================================
+# KEYBOARD NAVIGATION
+# ============================================================================
 
-	if not player or index >= player.inventory.size():
+func _update_focus_ring() -> void:
+	# Clear all focus indicators
+	for i in range(inventory_slots.size()):
+		var slot: Button = inventory_slots[i]
+		if i < _sorted_items.size():
+			_apply_rarity_border(slot, _sorted_items[i])
+		else:
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_EMPTY))
+
+	for id in equipment_slots:
+		var slot: Button = equipment_slots[id]
+		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
+
+	# Apply gold focus ring to current focused slot
+	if _focus_mode == 0:
+		if _focus_index >= 0 and _focus_index < inventory_slots.size():
+			var slot: Button = inventory_slots[_focus_index]
+			slot.add_theme_stylebox_override("normal", ThemeColors.create_slot_stylebox(ThemeColors.SLOT_SELECTED, ThemeColors.BORDER_FOCUS))
+	else:
+		if _equip_focus_index >= 0 and _equip_focus_index < _equip_slot_order.size():
+			var slot_id: int = _equip_slot_order[_equip_focus_index]
+			if equipment_slots.has(slot_id):
+				var slot: Button = equipment_slots[slot_id]
+				slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.BORDER_FOCUS))
+
+func _move_focus(dx: int, dy: int) -> void:
+	if _focus_mode == 0:
+		# Inventory grid navigation
+		var col: int = _focus_index % GRID_COLS
+		var row: int = _focus_index / GRID_COLS
+		col = clampi(col + dx, 0, GRID_COLS - 1)
+		row = clampi(row + dy, 0, GRID_ROWS - 1)
+		_focus_index = row * GRID_COLS + col
+	else:
+		# Equipment grid navigation (navigate through ordered slots)
+		var new_idx: int = clampi(_equip_focus_index + dx + dy, 0, _equip_slot_order.size() - 1)
+		_equip_focus_index = new_idx
+
+	_update_focus_ring()
+	# Auto-select focused item for info display
+	_select_focused_item()
+
+func _select_focused_item() -> void:
+	if _focus_mode == 0:
+		if _focus_index < _sorted_items.size():
+			selected_item = _sorted_items[_focus_index]
+			selected_slot_index = _focus_index
+			_update_item_info(selected_item)
+		else:
+			selected_item = null
+			selected_slot_index = -1
+			_update_item_info(null)
+		selected_equipment_slot = -1
+	else:
+		selected_item = null
+		selected_slot_index = -1
+		if _equip_focus_index < _equip_slot_order.size():
+			var slot_id: int = _equip_slot_order[_equip_focus_index]
+			var slot_key: String = _get_slot_key(slot_id)
+			if not slot_key.is_empty():
+				var equipped_item = player.equipment.get(slot_key) if player else null
+				if equipped_item != null:
+					selected_equipment_slot = slot_id
+					_update_item_info(equipped_item)
+					return
+		selected_equipment_slot = -1
+		_update_item_info(null)
+
+func _toggle_focus_mode() -> void:
+	_focus_mode = 1 - _focus_mode
+	_update_focus_ring()
+	_select_focused_item()
+
+func _activate_focused() -> void:
+	if _focus_mode == 0:
+		# In inventory: quick-equip
+		if selected_item != null:
+			var item_slot: int = _get_item_slot(selected_item)
+			if item_slot >= 0:
+				_try_equip_item(selected_item, item_slot)
+	else:
+		# In equipment: unequip
+		if selected_equipment_slot >= 0:
+			_try_unequip_slot(selected_equipment_slot)
+
+# ============================================================================
+# SLOT CALLBACKS
+# ============================================================================
+
+func _on_inventory_slot_pressed(index: int) -> void:
+	selected_equipment_slot = -1
+	_focus_mode = 0
+	_focus_index = index
+
+	if not player or index >= _sorted_items.size():
 		selected_item = null
 		selected_slot_index = -1
 		_update_item_info(null)
+		_update_focus_ring()
 		return
 
-	selected_item = player.inventory[index]
+	selected_item = _sorted_items[index]
 	selected_slot_index = index
 	_update_item_info(selected_item)
+	_update_focus_ring()
 	item_selected.emit(selected_item)
 
 func _on_equipment_slot_pressed(slot_id: int) -> void:
 	if not player:
 		return
 
-	# If we have a selected inventory item, try to equip it
 	if selected_item != null:
 		var item_slot: int = _get_item_slot(selected_item)
 		if item_slot == slot_id or (slot_id == Constants.EquipSlot.RING_R and item_slot == Constants.EquipSlot.RING_L):
 			_try_equip_item(selected_item, slot_id)
 		return
 
-	# Clear inventory selection when clicking equipment
 	selected_item = null
 	selected_slot_index = -1
+	_focus_mode = 1
 
-	# Select this equipment slot
 	var slot_key: String = _get_slot_key(slot_id)
 	if slot_key.is_empty():
 		return
@@ -225,18 +472,22 @@ func _on_equipment_slot_pressed(slot_id: int) -> void:
 	if equipped_item != null:
 		selected_equipment_slot = slot_id
 		_update_item_info(equipped_item)
-		_highlight_equipment_slot(slot_id)
+		# Update equip focus index
+		for i in range(_equip_slot_order.size()):
+			if _equip_slot_order[i] == slot_id:
+				_equip_focus_index = i
+				break
 	else:
 		selected_equipment_slot = -1
 		_update_item_info(null)
 
+	_update_focus_ring()
+
 func _highlight_equipment_slot(slot_id: int) -> void:
-	# Reset all equipment slot styles
 	for id in equipment_slots:
 		var slot: Button = equipment_slots[id]
 		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_EQUIP_EMPTY))
 
-	# Highlight selected slot
 	if slot_id >= 0 and equipment_slots.has(slot_id):
 		var slot: Button = equipment_slots[slot_id]
 		slot.add_theme_stylebox_override("normal", _create_slot_style(ThemeColors.SLOT_SELECTED))
@@ -258,17 +509,22 @@ func _try_unequip_slot(slot_id: int) -> void:
 		_refresh_inventory()
 		_refresh_equipment()
 		_update_item_info(null)
-		_highlight_equipment_slot(-1)
 	else:
 		GameManager.log_message("Cannot unequip - inventory full.", ThemeColors.MSG_WARNING)
 
 func _on_slot_gui_input(event: InputEvent, index: int) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			# Right-click context menu or quick action
-			if index < player.inventory.size():
-				var item = player.inventory[index]
+			if index < _sorted_items.size():
+				var item = _sorted_items[index]
 				_show_item_context_menu(item, index)
+		# Double-click quick-equip
+		if event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+			if index < _sorted_items.size():
+				var item = _sorted_items[index]
+				var item_slot: int = _get_item_slot(item)
+				if item_slot >= 0:
+					_try_equip_item(item, item_slot)
 
 func _try_equip_item(item: Variant, slot_id: int) -> void:
 	var slot_key: String = _get_slot_key(slot_id)
@@ -283,17 +539,39 @@ func _try_equip_item(item: Variant, slot_id: int) -> void:
 		item_equipped.emit(item, slot_id)
 
 func _show_item_context_menu(item: Variant, index: int) -> void:
-	# Simple action for now - try to equip or drop
 	var item_slot: int = _get_item_slot(item)
 	if item_slot >= 0:
-		# Equippable item - try to equip
 		var slot_key: String = _get_slot_key(item_slot)
 		if not slot_key.is_empty() and player.equip_item(item, slot_key):
 			_refresh_inventory()
 			_refresh_equipment()
-	else:
-		# Non-equippable - could drop, use, etc.
-		pass
+
+# ============================================================================
+# DROP CONFIRMATION
+# ============================================================================
+
+func _request_drop() -> void:
+	if selected_item == null:
+		return
+	_pending_drop_item = selected_item
+	var item_name: String = _get_item_name(selected_item)
+	_confirm_dialog.show_confirm("Drop %s?" % item_name)
+
+func _on_drop_confirmed() -> void:
+	if _pending_drop_item != null and player:
+		if player.drop_item(_pending_drop_item):
+			item_dropped.emit(_pending_drop_item)
+			selected_item = null
+			selected_slot_index = -1
+			_refresh_inventory()
+	_pending_drop_item = null
+
+func _on_drop_cancelled() -> void:
+	_pending_drop_item = null
+
+# ============================================================================
+# ITEM INFO
+# ============================================================================
 
 func _update_item_info(item: Variant) -> void:
 	if item == null:
@@ -301,6 +579,7 @@ func _update_item_info(item: Variant) -> void:
 		return
 
 	var name_str: String = _get_item_name(item)
+	var rarity_color: Color = ThemeColors.get_rarity_color(item)
 	var stats_str: String = ""
 
 	if "attack_bonus" in item and item.attack_bonus != 0:
@@ -317,7 +596,9 @@ func _update_item_info(item: Variant) -> void:
 	var desc_str: String = item.description if "description" in item else ""
 
 	item_info.bbcode_enabled = true
-	item_info.text = "[b]%s[/b]\n%s\n%s" % [name_str, stats_str, desc_str]
+	item_info.text = "[color=#%s][b]%s[/b][/color]\n%s\n%s" % [
+		rarity_color.to_html(false), name_str, stats_str, desc_str
+	]
 
 func _update_weight_display() -> void:
 	if not player:
@@ -342,7 +623,6 @@ func _update_weight_display() -> void:
 func _get_item_char(item: Variant) -> String:
 	if item == null:
 		return "?"
-	# ItemData/ArtifactData classes have display_char property
 	if "display_char" in item and item.display_char != "":
 		return item.display_char
 	return "?"
@@ -351,24 +631,20 @@ func _get_item_icon(item: Variant) -> AtlasTexture:
 	if item == null or not _tileset_texture:
 		return null
 
-	# Get item index - works for both ItemData and ArtifactData
 	var item_index: int = -1
 	if "index" in item:
 		item_index = item.index
 	else:
 		return null
 
-	# Determine if it's an artifact or regular item
 	var is_artifact: bool = item is DataManager.ArtifactData if item else false
 
-	# Get atlas coordinates from TileMapper
 	var atlas_coords: Vector2i
 	if is_artifact:
 		atlas_coords = TileMapper.get_artifact_coords(item_index)
 	else:
 		atlas_coords = TileMapper.get_item_coords(item_index)
 
-	# Create atlas texture with the correct region
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _tileset_texture
 	atlas.region = Rect2(
@@ -429,13 +705,58 @@ func _create_slot_style(color: Color) -> StyleBoxFlat:
 	style.corner_radius_bottom_right = 4
 	return style
 
+# ============================================================================
+# INPUT
+# ============================================================================
+
 func _input(event: InputEvent) -> void:
 	if not visible:
+		return
+
+	# Block input if confirm dialog is showing
+	if _confirm_dialog.visible:
 		return
 
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("inventory"):
 		close()
 		get_viewport().set_input_as_handled()
+		return
+
+	if event is InputEventKey and event.pressed:
+		# Arrow keys for navigation
+		match event.keycode:
+			KEY_UP:
+				_move_focus(0, -1)
+				get_viewport().set_input_as_handled()
+				return
+			KEY_DOWN:
+				_move_focus(0, 1)
+				get_viewport().set_input_as_handled()
+				return
+			KEY_LEFT:
+				_move_focus(-1, 0)
+				get_viewport().set_input_as_handled()
+				return
+			KEY_RIGHT:
+				_move_focus(1, 0)
+				get_viewport().set_input_as_handled()
+				return
+			KEY_TAB:
+				_toggle_focus_mode()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_ENTER:
+				_activate_focused()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_S:
+				_cycle_sort()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_F:
+				_cycle_filter()
+				get_viewport().set_input_as_handled()
+				return
 
 	# Quick equip with 'e'
 	if event.is_action_pressed("equip") and selected_item != null:
@@ -444,13 +765,9 @@ func _input(event: InputEvent) -> void:
 			_try_equip_item(selected_item, item_slot)
 		get_viewport().set_input_as_handled()
 
-	# Drop with 'd'
+	# Drop with 'd' - now shows confirm dialog
 	if event.is_action_pressed("drop") and selected_item != null:
-		if player.drop_item(selected_item):
-			item_dropped.emit(selected_item)
-			selected_item = null
-			selected_slot_index = -1
-			_refresh_inventory()
+		_request_drop()
 		get_viewport().set_input_as_handled()
 
 	# Unequip with 'r'

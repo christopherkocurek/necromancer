@@ -6,7 +6,7 @@ enum GameState { CHARACTER_CREATION, PLAYING, PAUSED, GAME_OVER }
 var current_state: GameState = GameState.CHARACTER_CREATION
 
 @onready var level_container: Node2D = $LevelContainer
-@onready var hud: HUD = $HUD
+@onready var hud: CanvasLayer = $HUD  # HUD class - using CanvasLayer to avoid load order issues
 @onready var turn_system: TurnSystem = $TurnSystem
 @onready var floater_manager: Node = $FloaterManager
 @onready var ui_layer: CanvasLayer = $UILayer
@@ -184,9 +184,12 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	current_level.update_entity_visibility()
 	current_level.apply_fov_to_tilemap()
 
-	# Show HUD
+	# Show HUD and wire minimap
 	hud.visible = true
+	hud.set_level(current_level)
+	hud.set_player(player)
 	hud.update_player_stats(player)
+	hud.refresh_minimap()
 
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
@@ -337,6 +340,7 @@ func _descend() -> void:
 	# Update systems
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
+	hud.set_level(current_level)
 
 	# Update FOV: geometry → lighting → entity visibility → tilemap
 	var fov_radius: int = current_level.get_fov_radius()
@@ -375,6 +379,7 @@ func _ascend() -> void:
 
 	turn_system.set_level(current_level)
 	floater_manager.set_container(current_level.get_node("Effects"))
+	hud.set_level(current_level)
 
 	# Update FOV: geometry → lighting → entity visibility → tilemap
 	var fov_radius: int = current_level.get_fov_radius()
@@ -437,6 +442,25 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_targeting()
 		else:
 			_try_use_forge()
+		get_viewport().set_input_as_handled()
+
+	# Stealth toggle (; key) - direct keycode check, bypasses action system for macOS compatibility
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SEMICOLON or event.unicode == 59:
+			if player and GameManager.is_player_turn:
+				player.toggle_stealth_mode()
+				player._skip_input_this_frame = true
+			get_viewport().set_input_as_handled()
+			return
+
+	# Minimap toggle (M key)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_M and not event.shift_pressed:
+		hud.toggle_minimap()
+		get_viewport().set_input_as_handled()
+
+	# Bottom bar expand/collapse (Tab key)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_TAB:
+		hud.toggle_bottom_bar()
 		get_viewport().set_input_as_handled()
 
 	# Help overlay (? key = Shift+/)
@@ -739,13 +763,17 @@ func _observe_visible_monsters() -> void:
 	if not monster_memory or not current_level:
 		return
 
-	# Record observations for all visible monsters
+	# Record observations for all visible monsters and update health bars
 	for entity in current_level.entities:
 		if not is_instance_valid(entity):
 			continue
 		if entity is Monster and entity.is_alive:
 			if current_level.is_tile_visible(entity.grid_position):
 				monster_memory.record_observation(entity)
+				# Update health bar based on knowledge tier
+				if entity.monster_data and "index" in entity.monster_data:
+					var tier: int = monster_memory.get_knowledge_tier(entity.monster_data.index)
+					entity.update_health_bar(tier)
 
 func get_monster_memory() -> RefCounted:
 	return monster_memory
