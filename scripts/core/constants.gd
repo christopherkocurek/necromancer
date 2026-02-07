@@ -553,3 +553,48 @@ const RACE_CHALLENGE_FACTORS: Dictionary = {
 
 static func get_race_challenge_factor(race_name: String) -> int:
 	return RACE_CHALLENGE_FACTORS.get(race_name, 4)
+
+# ============================================================================
+# HORN / FLUTE SYSTEM (tval 66)
+# ============================================================================
+
+const TVAL_HORN: int = 66
+
+# Horn sval identifiers
+const HORN_TERROR: int = 0
+const HORN_THUNDER: int = 1
+const HORN_FORCE: int = 2
+const HORN_BLASTING: int = 3
+const HORN_CHALLENGE: int = 4
+const FLUTE_FAIRY: int = 5
+
+# Horn cone parameters
+const HORN_CONE_RADIUS: int = 3
+const HORN_CONE_ANGLE: int = 90  # degrees
+
+# Horn effect durations and values
+const HORN_TERROR_FEAR_DURATION: int = 10
+const HORN_THUNDER_DAMAGE_DICE: String = "10d4"
+const HORN_THUNDER_STUN_DURATION: int = 2
+const HORN_FORCE_KNOCKBACK_MIN: int = 1
+const HORN_FORCE_KNOCKBACK_MAX: int = 3
+const HORN_BLASTING_RANGE: int = 3
+const HORN_CHALLENGE_DURATION: int = 20
+const HORN_CHALLENGE_AGGRO_RADIUS: int = 5
+const FLUTE_FAIRY_RADIUS: int = 3
+const FLUTE_FAIRY_DURATION: int = 10
+
+# Horn noise values (added to floor_alertness)
+const HORN_NOISE_TERROR: int = 10
+const HORN_NOISE_THUNDER: int = 20
+const HORN_NOISE_FORCE: int = 20
+const HORN_NOISE_BLASTING: int = 30
+const HORN_NOISE_CHALLENGE: int = 20
+const HORN_NOISE_FLUTE: int = 5
+
+# Status effect IDs for horn/flute
+const EFFECT_BATTLE_FURY: StringName = &"battle_fury"
+const EFFECT_FAIRY_MIST: StringName = &"fairy_mist"
+
+# Horn svals that require directional targeting
+const HORN_DIRECTIONAL_SVALS: Array[int] = [0, 1, 2, 3]

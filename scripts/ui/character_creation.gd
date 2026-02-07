@@ -1,21 +1,24 @@
 extends Control
 class_name CharacterCreation
-## Character creation flow: Race -> House -> Trait -> Stats -> Name -> Start Game
-## Enhanced with stage transitions, progress indicator, stat bars, and name file loading.
+## Character creation flow: Race -> House -> Gender -> Trait -> Stats -> Name -> Confirm
+## Enhanced with gender selection, age system, parentage history, and NameGenerator integration.
 
 signal creation_complete(character_data: Dictionary)
 signal creation_cancelled
 
-enum Stage { RACE, HOUSE, TRAIT, STATS, NAME, CONFIRM }
+enum Stage { RACE, HOUSE, GENDER, TRAIT, STATS, NAME, CONFIRM }
 
 var current_stage: Stage = Stage.RACE
 
 # Character build state
 var selected_race: String = ""
 var selected_house: String = ""
+var selected_gender: String = ""
 var selected_trait: String = ""
 var base_stats: Dictionary = {"str": 0, "dex": 0, "con": 0, "gra": 0}
 var character_name: String = ""
+var character_age: int = 0
+var character_history: String = ""
 
 # UI References (set in _ready or via @onready)
 @onready var stage_label: Label = $VBoxContainer/StageLabel
@@ -41,7 +44,7 @@ var _progress_container: HBoxContainer = null
 var _preview_rect: TextureRect = null
 var _tileset_texture: Texture2D = null
 
-# Name list loaded from file
+# Name list loaded from file (legacy fallback)
 var _name_list: PackedStringArray = []
 const NAMES_FILE_PATH := "res://data/names.txt"
 const FALLBACK_NAMES: Array[String] = [
@@ -57,9 +60,25 @@ const STAT_COLORS: Dictionary = {
 	"gra": Color("#A855F7"),  # Purple
 }
 
+# Age ranges by race + house (lore-accurate)
+const AGE_RANGES: Dictionary = {
+	"Man_Gondor": {"min": 18, "max": 75},
+	"Man_Rohan": {"min": 16, "max": 70},
+	"Man_Dunedain": {"min": 25, "max": 140},
+	"Dwarf": {"min": 40, "max": 250},
+	"Hobbit": {"min": 25, "max": 130},
+	"Elf_Lothlorien": {"min": 100, "max": 2000, "ancient_chance": 500, "ancient_min": 3000, "ancient_max": 7000},
+	"Elf_Rivendell": {"min": 100, "max": 3000},
+	"Elf_Greenwood": {"min": 100, "max": 2000},
+}
+
+# History data parsed from history.txt
+var _history_chains: Dictionary = {}  # primary_index -> Array of {secondary, probability, house, text}
+
 func _ready() -> void:
 	_load_names_file()
 	_load_tileset()
+	_load_history_data()
 	_setup_progress_indicator()
 	_setup_ui()
 	_show_stage(Stage.RACE)
@@ -80,6 +99,65 @@ func _load_names_file() -> void:
 func _load_tileset() -> void:
 	if FileAccess.file_exists("res://assets/sprites/necromancer_dcss_tileset.png"):
 		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
+
+func _load_history_data() -> void:
+	## Parse history.txt into chain lookup tables for parentage generation.
+	var path: String = "res://data/history.txt"
+	if not FileAccess.file_exists(path):
+		return
+	var file := FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return
+
+	var current_primary: int = -1
+	var current_secondary: int = 0
+	var current_probability: int = 0
+	var current_house: int = 0
+	var current_text: String = ""
+
+	while not file.eof_reached():
+		var line: String = file.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
+			continue
+
+		if line.begins_with("N:"):
+			# Save previous entry if valid
+			if current_primary >= 0 and not current_text.is_empty():
+				if current_primary not in _history_chains:
+					_history_chains[current_primary] = []
+				_history_chains[current_primary].append({
+					"secondary": current_secondary,
+					"probability": current_probability,
+					"house": current_house,
+					"text": current_text
+				})
+
+			# Parse N: line - primary:secondary:probability:house
+			var parts: PackedStringArray = line.substr(2).split(":")
+			if parts.size() >= 4:
+				current_primary = int(parts[0])
+				current_secondary = int(parts[1])
+				current_probability = int(parts[2])
+				current_house = int(parts[3])
+			current_text = ""
+
+		elif line.begins_with("D:"):
+			var text: String = line.substr(2)
+			if current_text.is_empty():
+				current_text = text
+			else:
+				current_text += " " + text
+
+	# Save last entry
+	if current_primary >= 0 and not current_text.is_empty():
+		if current_primary not in _history_chains:
+			_history_chains[current_primary] = []
+		_history_chains[current_primary].append({
+			"secondary": current_secondary,
+			"probability": current_probability,
+			"house": current_house,
+			"text": current_text
+		})
 
 func _setup_progress_indicator() -> void:
 	# Create progress dots above the stage label
@@ -142,6 +220,8 @@ func _populate_stage(stage: Stage) -> void:
 			_show_race_selection()
 		Stage.HOUSE:
 			_show_house_selection()
+		Stage.GENDER:
+			_show_gender_selection()
 		Stage.TRAIT:
 			_show_trait_selection()
 		Stage.STATS:
@@ -215,6 +295,7 @@ func _show_race_selection() -> void:
 func _on_race_selected(race_name: String) -> void:
 	selected_race = race_name
 	selected_house = ""  # Reset house when race changes
+	selected_gender = ""  # Reset gender when race changes
 	_update_race_info()
 	_update_navigation()
 
@@ -304,6 +385,68 @@ func _update_house_info() -> void:
 	]
 
 # ============================================================================
+# GENDER SELECTION
+# ============================================================================
+
+func _show_gender_selection() -> void:
+	stage_label.text = "Choose Your Gender"
+
+	# Character preview sprite
+	if _tileset_texture:
+		var preview_container := CenterContainer.new()
+		_preview_rect = TextureRect.new()
+		_preview_rect.custom_minimum_size = Vector2(180, 180)
+		_preview_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_preview_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# Show male preview by default, will update on selection
+		_update_character_preview()
+		preview_container.add_child(_preview_rect)
+		content_container.add_child(preview_container)
+
+	for gender in ["Male", "Female"]:
+		var btn := Button.new()
+		btn.text = gender
+		btn.toggle_mode = true
+		btn.button_group = _get_or_create_button_group("gender")
+		btn.pressed.connect(_on_gender_selected.bind(gender.to_lower()))
+
+		if selected_gender == gender.to_lower():
+			btn.button_pressed = true
+
+		ThemeColors.apply_button_theme(btn)
+		content_container.add_child(btn)
+
+	# Note about portraits
+	var note_label := Label.new()
+	note_label.text = "(No female character portraits yet)"
+	note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	ThemeColors.apply_body_font(note_label, ThemeColors.FONT_SIZE_HINT)
+	content_container.add_child(note_label)
+
+	_update_gender_info()
+
+func _on_gender_selected(gender: String) -> void:
+	selected_gender = gender
+	_update_character_preview()
+	_update_gender_info()
+	_update_navigation()
+
+func _update_gender_info() -> void:
+	if selected_gender.is_empty():
+		info_label.text = "Select a gender for your character."
+		return
+
+	var display_gender: String = selected_gender.capitalize()
+	var pronoun_text: String = "He/Him" if selected_gender == "male" else "She/Her"
+	var child_text: String = "son" if selected_gender == "male" else "daughter"
+
+	info_label.bbcode_enabled = true
+	info_label.text = "[b]%s[/b]\nPronouns: %s\nReferred to as %s in histories." % [
+		display_gender, pronoun_text, child_text
+	]
+
+# ============================================================================
 # TRAIT SELECTION
 # ============================================================================
 
@@ -332,7 +475,7 @@ func _show_trait_selection() -> void:
 		info_label.text = "No traits available."
 		return
 
-	# Build name→TraitData lookup
+	# Build name->TraitData lookup
 	var trait_lookup: Dictionary = {}
 	for td in all_traits:
 		trait_lookup[td.name] = td
@@ -594,7 +737,7 @@ func _get_stat_summary() -> String:
 	]
 
 # ============================================================================
-# NAME ENTRY
+# NAME ENTRY (with age and parentage)
 # ============================================================================
 
 func _show_name_entry() -> void:
@@ -611,23 +754,190 @@ func _show_name_entry() -> void:
 		preview_container.add_child(_preview_rect)
 		content_container.add_child(preview_container)
 
+	# Name entry row
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+
 	var name_edit := LineEdit.new()
 	name_edit.placeholder_text = "Enter name..."
 	name_edit.text = character_name
 	name_edit.text_changed.connect(_on_name_changed)
-	name_edit.custom_minimum_size.x = 420
+	name_edit.custom_minimum_size.x = 320
 	name_edit.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
 	name_edit.add_theme_color_override("caret_color", ThemeColors.GOLD_WARM)
-	content_container.add_child(name_edit)
+	name_row.add_child(name_edit)
 
-	# Random name button
+	# Random name button (uses NameGenerator)
 	var random_btn := Button.new()
 	random_btn.text = "Random Name"
 	random_btn.pressed.connect(_on_random_name)
 	ThemeColors.apply_button_theme(random_btn)
-	content_container.add_child(random_btn)
+	name_row.add_child(random_btn)
+	content_container.add_child(name_row)
+
+	# Age display with reroll
+	if character_age == 0:
+		_roll_age()
+
+	var age_row := HBoxContainer.new()
+	age_row.add_theme_constant_override("separation", 8)
+
+	var age_label := Label.new()
+	age_label.text = "Age: %d" % character_age
+	age_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+	ThemeColors.apply_body_font(age_label)
+	age_row.add_child(age_label)
+	stat_labels["_age_label"] = age_label
+
+	var reroll_btn := Button.new()
+	reroll_btn.text = "(r)eroll"
+	reroll_btn.pressed.connect(_on_reroll_age)
+	ThemeColors.apply_button_theme(reroll_btn)
+	age_row.add_child(reroll_btn)
+
+	content_container.add_child(age_row)
+
+	# Generate history if not already done
+	if character_history.is_empty():
+		_generate_history()
+
+	# History display
+	var history_label := RichTextLabel.new()
+	history_label.bbcode_enabled = true
+	history_label.fit_content = true
+	history_label.scroll_active = false
+	history_label.custom_minimum_size = Vector2(0, 60)
+	history_label.add_theme_color_override("default_color", ThemeColors.TEXT_SECONDARY)
+	ThemeColors.apply_rich_body_font(history_label)
+
+	var muted := ThemeColors.TEXT_MUTED.to_html(false)
+	history_label.text = "[color=#%s]%s[/color]" % [muted, character_history]
+	content_container.add_child(history_label)
+	stat_labels["_history_label"] = history_label
 
 	info_label.text = _get_character_summary()
+
+func _roll_age() -> void:
+	## Roll an age based on race + house with lore-accurate ranges.
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var house_alt: String = ""
+	if house_data and not house_data.alternate_name.is_empty():
+		house_alt = house_data.alternate_name
+		# Strip "the " prefix for key matching (e.g. "the Dunedain" -> "Dunedain")
+		if house_alt.begins_with("the "):
+			house_alt = house_alt.substr(4)
+
+	# Build lookup key: try race_house first, then race alone
+	var key: String = selected_race + "_" + house_alt
+	if key not in AGE_RANGES:
+		key = selected_race
+	if key not in AGE_RANGES:
+		# Fallback to base race.txt values
+		var race: DataManager.RaceData = DataManager.get_race(selected_race)
+		if race:
+			character_age = randi_range(race.age_base, race.age_max)
+		else:
+			character_age = randi_range(20, 60)
+		return
+
+	var range_data: Dictionary = AGE_RANGES[key]
+
+	# Check for ancient Lothlorien elf (1/500 chance)
+	if "ancient_chance" in range_data:
+		if randi_range(1, range_data["ancient_chance"]) == 1:
+			character_age = randi_range(range_data["ancient_min"], range_data["ancient_max"])
+			return
+
+	character_age = randi_range(range_data["min"], range_data["max"])
+
+func _on_reroll_age() -> void:
+	_roll_age()
+	# Update age label
+	if stat_labels.has("_age_label"):
+		var age_label: Label = stat_labels["_age_label"]
+		age_label.text = "Age: %d" % character_age
+	# Regenerate history since age changed
+	_generate_history()
+	_update_history_display()
+	info_label.text = _get_character_summary()
+
+func _generate_history() -> void:
+	## Generate parentage text by walking the history.txt chain tables.
+	## Chain: start at race's history_index, roll probability, follow secondary index.
+	var race: DataManager.RaceData = DataManager.get_race(selected_race)
+	if not race:
+		character_history = _generate_fallback_history()
+		return
+
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var house_index: int = house_data.index if house_data else 0
+
+	var history_parts: Array[String] = []
+	var current_index: int = race.history_index
+
+	# Walk the chain: follow primary_index -> secondary_index until secondary == 0
+	var max_steps: int = 20  # Safety limit
+	var steps: int = 0
+	while current_index > 0 and steps < max_steps:
+		steps += 1
+		if current_index not in _history_chains:
+			break
+
+		var entries: Array = _history_chains[current_index]
+		var roll: int = randi_range(1, 100)
+		var chosen_text: String = ""
+		var chosen_secondary: int = 0
+
+		# Find matching entry by probability (entries are sorted by ascending probability)
+		for entry in entries:
+			# Filter by house: house 0 means any house, otherwise must match
+			if entry["house"] != 0 and entry["house"] != house_index:
+				continue
+			if roll <= entry["probability"]:
+				chosen_text = entry["text"]
+				chosen_secondary = entry["secondary"]
+				break
+
+		# Fallback: pick last matching entry if nothing matched
+		if chosen_text.is_empty():
+			for entry in entries:
+				if entry["house"] == 0 or entry["house"] == house_index:
+					chosen_text = entry["text"]
+					chosen_secondary = entry["secondary"]
+
+		if not chosen_text.is_empty():
+			# Apply gender substitution: "child" -> "son"/"daughter"
+			var child_word: String = "son" if selected_gender == "male" else "daughter"
+			chosen_text = chosen_text.replace("child", child_word)
+			history_parts.append(chosen_text)
+
+		current_index = chosen_secondary
+
+	if history_parts.is_empty():
+		character_history = _generate_fallback_history()
+	else:
+		character_history = " ".join(history_parts)
+
+func _generate_fallback_history() -> String:
+	## Fallback history when history.txt chain data is unavailable.
+	var child_word: String = "son" if selected_gender == "male" else "daughter"
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var location: String = ""
+	if house_data and not house_data.alternate_name.is_empty():
+		location = house_data.alternate_name
+	else:
+		location = selected_house
+
+	var professions: Array[String] = ["warrior", "craftsman", "healer", "archer", "scholar"]
+	var profession: String = professions.pick_random()
+
+	return "You are the %s of a %s from %s." % [child_word, profession, location]
+
+func _update_history_display() -> void:
+	if stat_labels.has("_history_label"):
+		var history_label: RichTextLabel = stat_labels["_history_label"]
+		var muted := ThemeColors.TEXT_MUTED.to_html(false)
+		history_label.text = "[color=#%s]%s[/color]" % [muted, character_history]
 
 func _update_character_preview() -> void:
 	if not _preview_rect or not _tileset_texture:
@@ -638,7 +948,8 @@ func _update_character_preview() -> void:
 	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
 	if house_data:
 		house_id = house_data.index
-	var coords: Vector2i = TileMapper.get_player_coords_v2(selected_race, house_id, "male")
+	var gender: String = selected_gender if not selected_gender.is_empty() else "male"
+	var coords: Vector2i = TileMapper.get_player_coords_v2(selected_race, house_id, gender)
 
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _tileset_texture
@@ -651,16 +962,24 @@ func _on_name_changed(new_name: String) -> void:
 	_update_navigation()
 
 func _on_random_name() -> void:
-	if _name_list.size() > 0:
-		character_name = _name_list[randi() % _name_list.size()]
+	# Use NameGenerator with race + house + gender awareness
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var house_alt: String = ""
+	if house_data and not house_data.alternate_name.is_empty():
+		house_alt = house_data.alternate_name
 	else:
-		character_name = FALLBACK_NAMES.pick_random()
+		house_alt = selected_house
+
+	var gender: String = selected_gender if not selected_gender.is_empty() else "male"
+	character_name = NameGenerator.get_random_name(selected_race, house_alt, gender)
 
 	# Update LineEdit
 	for child in content_container.get_children():
-		if child is LineEdit:
-			child.text = character_name
-			break
+		if child is HBoxContainer:
+			for sub_child in child.get_children():
+				if sub_child is LineEdit:
+					sub_child.text = character_name
+					break
 
 	info_label.text = _get_character_summary()
 	_update_navigation()
@@ -677,9 +996,12 @@ func _get_character_summary() -> String:
 	var display_name: String = character_name if not character_name.is_empty() else "(unnamed)"
 	var house_suffix: String = house.alternate_name if house and not house.alternate_name.is_empty() else selected_house
 	var trait_text: String = selected_trait if not selected_trait.is_empty() else "(none)"
+	var gender_text: String = selected_gender.capitalize() if not selected_gender.is_empty() else "?"
+	var age_text: String = str(character_age) if character_age > 0 else "?"
 
-	return "%s of %s\n%s %s\nTrait: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
-		display_name, house_suffix, selected_race, selected_house, trait_text,
+	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
+		display_name, house_suffix, selected_race, selected_house,
+		gender_text, age_text, trait_text,
 		final_str, final_dex, final_con, final_gra, Player.STARTING_XP
 	]
 
@@ -702,7 +1024,15 @@ func _show_confirmation() -> void:
 		content_container.add_child(preview_container)
 
 	var gold := ThemeColors.PRIMARY.to_html(false)
-	info_label.text = _get_character_summary() + "\n\n[color=#%s]Press 'Start Game' to begin your quest.[/color]" % gold
+	var muted := ThemeColors.TEXT_MUTED.to_html(false)
+	var summary: String = _get_character_summary()
+
+	# Add history below the summary
+	var history_text: String = ""
+	if not character_history.is_empty():
+		history_text = "\n\n[color=#%s]%s[/color]" % [muted, character_history]
+
+	info_label.text = summary + history_text + "\n\n[color=#%s]Press 'Start Game' to begin your quest.[/color]" % gold
 	info_label.bbcode_enabled = true
 
 # ============================================================================
@@ -720,6 +1050,9 @@ func _update_navigation() -> void:
 		Stage.HOUSE:
 			next_button.text = "Next"
 			next_button.disabled = selected_house.is_empty()
+		Stage.GENDER:
+			next_button.text = "Next"
+			next_button.disabled = selected_gender.is_empty()
 		Stage.TRAIT:
 			next_button.text = "Next"
 			next_button.disabled = selected_trait.is_empty()
@@ -749,9 +1082,12 @@ func _finish_creation() -> void:
 	var character_data := {
 		"race": selected_race,
 		"house": selected_house,
+		"gender": selected_gender,
 		"trait": selected_trait,
 		"base_stats": base_stats.duplicate(),
-		"name": character_name
+		"name": character_name,
+		"age": character_age,
+		"history": character_history,
 	}
 	creation_complete.emit(character_data)
 
@@ -772,3 +1108,12 @@ func _input(event: InputEvent) -> void:
 			_on_back_pressed()
 		else:
 			creation_cancelled.emit()
+
+	# Keyboard shortcut for age reroll in NAME stage
+	if current_stage == Stage.NAME and event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_R and not event.shift_pressed and not event.ctrl_pressed:
+			# Only reroll if focus is NOT on the LineEdit
+			var focused: Control = get_viewport().gui_get_focus_owner()
+			if not focused is LineEdit:
+				_on_reroll_age()
+				get_viewport().set_input_as_handled()

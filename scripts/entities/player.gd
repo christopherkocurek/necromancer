@@ -11,6 +11,9 @@ signal player_died(cause: String, killer_name: String)
 @export var house_name: String = ""
 @export var trait_name: String = ""
 var trait_effect_id: String = ""  # Code-facing ID from trait data (e.g. "defiance")
+var gender: String = "male"      # "male" or "female"
+var age: int = 0                 # Character age in years
+var history: String = ""         # Parentage/background flavor text
 
 # Trait state tracking
 var _trait_fortune_used: bool = false   # Fortune's Favor: once per floor
@@ -1814,6 +1817,10 @@ func handle_input() -> bool:
 	# Search for secret doors (Shift+S)
 	if Input.is_action_just_pressed("search"):
 		return _try_search()
+
+	# Blow horn/flute (P key)
+	if Input.is_action_just_pressed("blow_horn"):
+		return _use_first_consumable(Constants.TVAL_HORN)
 
 	return false
 

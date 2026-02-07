@@ -42,6 +42,7 @@ enum Tile {
 	DOOR_SECRET = 14,    # Secret door - looks like wall until discovered
 	WATER = 15,          # Shallow water - passable, slows movement
 	LAVA = 16,           # Lava - passable but deals fire damage on step
+	VINE_FLOOR = 17,     # Thick vines (depths 1-3) - passable, slows movement
 }
 
 # Track which traps have been triggered (to avoid re-triggering)
@@ -156,16 +157,18 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR:
 			return true
 		_:
 			return false
 
-## Get movement energy cost for a tile (water costs double)
+## Get movement energy cost for a tile (water costs double, vines cost 1.5x)
 func get_movement_cost(pos: Vector2i) -> int:
 	var tile := get_tile(pos)
 	if tile == Tile.WATER:
 		return Constants.ACTION_COST * 2  # Double energy cost to wade
+	if tile == Tile.VINE_FLOOR:
+		return int(Constants.ACTION_COST * 1.5)  # 150 energy instead of 100
 	return Constants.ACTION_COST
 
 ## Called when an entity steps on a tile. Returns true if something happened.
@@ -181,7 +184,19 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	if tile == Tile.WATER and entity is Player:
 		GameManager.log_message("You wade through shallow water.", ThemeColors.SECONDARY)
 
+	if tile == Tile.VINE_FLOOR and entity is Player:
+		EventBus.message_logged.emit("You push through tangled vines.", ThemeColors.TEXT_MUTED)
+
 	return false
+
+## Get a display name for the terrain at a position (for HUD / look mode)
+func get_terrain_name(pos: Vector2i) -> String:
+	match get_tile(pos):
+		Tile.VINE_FLOOR: return "Vines"
+		Tile.WATER: return "Water"
+		Tile.LAVA: return "Lava"
+		Tile.FORGE: return "Forge"
+		_: return ""
 
 func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
 	# Check for Perception to potentially spot and avoid (50% + Per*5%)

@@ -130,6 +130,54 @@ const EFFECT_DATA: Dictionary = {
 			5: "You are engulfed in flames!",
 		}
 	},
+	&"true_sight": {
+		"name": "True Sight",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "Your vision pierces all illusion!",
+		"recovery_message": "Your enhanced sight fades.",
+	},
+	&"spider_bane": {
+		"name": "Spider-bane",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "Your blood becomes toxic to spiders!",
+		"recovery_message": "The spider-bane toxin fades from your blood.",
+	},
+	&"grace_boost": {
+		"name": "Grace Boost",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "You feel a surge of grace!",
+		"recovery_message": "The grace boost fades.",
+	},
+	&"thornvine": {
+		"name": "Thornvine Protection",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "Thorny vines harden your skin!",
+		"recovery_message": "The thornvine protection fades.",
+	},
+	Constants.EFFECT_BATTLE_FURY: {
+		"name": "Battle Fury",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "Battle-fury surges through you!",
+		"recovery_message": "Your battle-fury subsides.",
+	},
+	Constants.EFFECT_FAIRY_MIST: {
+		"name": "Fairy Mist",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "A shroud of magical darkness envelops you.",
+		"recovery_message": "The fairy mist dissipates.",
+	},
 }
 
 # ============================================================================

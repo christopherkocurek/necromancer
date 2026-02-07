@@ -25,11 +25,11 @@ Then separately:
 
 Usage:
     python3 fix_monster_magenta_v2.py --correct 12 13 16 21  # Color correct specific
-    python3 fix_monster_magenta_v2.py --correct-all           # Color correct all tier 1
+    python3 fix_monster_magenta_v2.py --correct-all           # Color correct ALL monsters
     python3 fix_monster_magenta_v2.py --process 12 13 16 21   # BG remove + resize
-    python3 fix_monster_magenta_v2.py --process-all            # Process all tier 1
+    python3 fix_monster_magenta_v2.py --process-all            # Process ALL monsters
     python3 fix_monster_magenta_v2.py --full 12 13 16 21      # Both steps
-    python3 fix_monster_magenta_v2.py --full-all               # Everything, all tier 1
+    python3 fix_monster_magenta_v2.py --full-all               # Everything, ALL monsters
     python3 fix_monster_magenta_v2.py --compare 12 13 16 21   # Before/after preview
 """
 
@@ -53,13 +53,25 @@ except ImportError as e:
 
 BASE_DIR = Path(__file__).parent
 RAW_DIR = BASE_DIR / "monster_v2" / "raw"
-TIER_DIR = BASE_DIR / "monster_v2" / "tier_1"
+TIER_DIR = BASE_DIR / "monster_v2"  # Tier subdirs created dynamically
 CORRECTED_DIR = BASE_DIR / "monster_v2" / "corrected"
 COMPARE_DIR = BASE_DIR / "monster_v2" / "comparisons"
 
 TILE_SIZE = 64
 
 TIER_1_IDS = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31]
+
+# All monster IDs grouped by tier
+TIER_IDS = {
+    1: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31],
+    2: [32, 33, 34, 35, 36, 37, 38, 39, 40, 51],
+    3: [52, 53, 54, 55, 56, 57, 58, 59, 60, 71, 73, 80, 85],
+    4: [72, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 86, 91, 100],
+    5: [92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 111],
+    6: [112, 113, 114, 115, 116, 117, 118, 131, 136],
+    7: [132, 133, 134, 135, 137],
+    8: [301, 302, 303, 304, 305, 306, 307, 308, 309, 310],
+}
 
 # ============================================================================
 # PER-MONSTER COLOR TARGETS
@@ -69,6 +81,7 @@ TIER_1_IDS = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31]
 # bleed: 0=no correction needed, 1=normal, 2=heavy (user-identified worst cases)
 
 MONSTER_COLORS = {
+    # === TIER 1: OUTER PITS (Depths 1-3) ===
     11: {"name": "Mirkwood Spider",  "hue_deg": 25,  "achromatic": False, "bleed": 1},  # dark brown
     12: {"name": "Giant Rat",        "hue_deg": 25,  "achromatic": False, "bleed": 2},  # dark brown
     13: {"name": "Black Squirrel",   "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # jet black
@@ -82,7 +95,90 @@ MONSTER_COLORS = {
     21: {"name": "Warg Pup",         "hue_deg": 30,  "achromatic": False, "bleed": 2},  # tawny brown
     22: {"name": "Broodmother",      "hue_deg": 25,  "achromatic": False, "bleed": 1},  # brown-black
     31: {"name": "Orc Slave",        "hue_deg": 80,  "achromatic": False, "bleed": 1},  # gray-green
+    # === TIER 2: LOWER HALLS (Depths 4-6) ===
+    32: {"name": "Orc Soldier",      "hue_deg": 80,  "achromatic": False, "bleed": 1},  # dark green skin
+    33: {"name": "Orc Crossbowman",  "hue_deg": 80,  "achromatic": False, "bleed": 1},  # dark green skin
+    34: {"name": "Warg",             "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # dark gray fur
+    35: {"name": "Orc Thrallmaster", "hue_deg": 80,  "achromatic": False, "bleed": 1},  # dark green skin
+    36: {"name": "Orc Captain",      "hue_deg": 80,  "achromatic": False, "bleed": 1},  # dark green, iron
+    37: {"name": "Warg Rider",       "hue_deg": 80,  "achromatic": False, "bleed": 1},  # green orc + gray warg
+    38: {"name": "Hill Troll",       "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # gray rocky skin
+    39: {"name": "Gashnak Warg-lord","hue_deg": 0,   "achromatic": True,  "bleed": 2},  # white fur, battle scars
+    40: {"name": "Orc Warchief",     "hue_deg": 80,  "achromatic": False, "bleed": 1},  # dark green, black iron
+    51: {"name": "Dark Acolyte",     "hue_deg": 260, "achromatic": False, "bleed": 1},  # dark violet robes
+    # === TIER 3: DARK HALLS (Depths 7-9) ===
+    52: {"name": "Ghoul",            "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # gray rotting flesh
+    53: {"name": "Mirk-troll",       "hue_deg": 100, "achromatic": False, "bleed": 1},  # black-green hide
+    54: {"name": "Easterling Warrior","hue_deg": 30, "achromatic": False, "bleed": 1},  # bronze armor, olive
+    55: {"name": "Dark Sorcerer",    "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # black robes, pale
+    56: {"name": "Tortured Wretch",  "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # pale skin, bloody
+    57: {"name": "Easterling Champion","hue_deg": 40,"achromatic": False, "bleed": 1},  # gold-red armor
+    58: {"name": "Ghast",            "hue_deg": 100, "achromatic": False, "bleed": 1},  # sickly green flesh
+    59: {"name": "Karvag Torturer",  "hue_deg": 5,   "achromatic": False, "bleed": 1},  # blood-red skin
+    60: {"name": "Master Sorcerer",  "hue_deg": 260, "achromatic": False, "bleed": 1},  # violet robes, gold
+    71: {"name": "Skeleton",         "hue_deg": 40,  "achromatic": False, "bleed": 1},  # yellowed bone
+    73: {"name": "Zombie",           "hue_deg": 100, "achromatic": False, "bleed": 1},  # gray-green flesh
+    80: {"name": "Easterling Infiltrator","hue_deg": 0,"achromatic": True,"bleed": 1},  # dark blue-black
+    85: {"name": "Tunnel Crawler",   "hue_deg": 25,  "achromatic": False, "bleed": 1},  # brown carapace
+    # === TIER 4: NECROPOLIS (Depths 10-12) ===
+    72: {"name": "Skeleton Warrior",  "hue_deg": 40, "achromatic": False, "bleed": 1},  # bone, rusted iron
+    74: {"name": "Wight",            "hue_deg": 200, "achromatic": False, "bleed": 1},  # pale blue glow
+    75: {"name": "Corpse-candle",    "hue_deg": 60,  "achromatic": False, "bleed": 1},  # yellow-green glow
+    76: {"name": "Necromancer Adept","hue_deg": 100, "achromatic": False, "bleed": 1},  # dark robes, green
+    77: {"name": "Barrow-wight",     "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # dark rotting, frost
+    78: {"name": "Bone Golem",       "hue_deg": 40,  "achromatic": False, "bleed": 1},  # bone white
+    79: {"name": "Grishnakh",        "hue_deg": 260, "achromatic": False, "bleed": 1},  # dark armor, violet
+    81: {"name": "Cave Troll",       "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # gray stone skin
+    82: {"name": "Dark Ritualist",   "hue_deg": 260, "achromatic": False, "bleed": 1},  # violet robes
+    83: {"name": "Corsair of Umbar", "hue_deg": 210, "achromatic": False, "bleed": 1},  # dark blue leather
+    84: {"name": "Dunlending",       "hue_deg": 210, "achromatic": False, "bleed": 1},  # blue woad, pale
+    86: {"name": "Pale Crawler",     "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # chalk white
+    91: {"name": "Phantom",          "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # translucent gray
+    100:{"name": "BN Acolyte",       "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # dark robes, pale
+    # === TIER 5: PITS OF DESPAIR (Depths 13-15) ===
+    92: {"name": "Shadow",           "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # pure black
+    93: {"name": "Whispering Shade", "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # black smoke
+    94: {"name": "Wraith",           "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # dark gray robes
+    95: {"name": "Fell Spirit",      "hue_deg": 260, "achromatic": False, "bleed": 1},  # dark violet energy
+    96: {"name": "Spectre",          "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # pale white mist
+    97: {"name": "Vampire Thrall",   "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # ashen gray
+    98: {"name": "Wailing Horror",   "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # pale white
+    99: {"name": "Uvatha",           "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # pitch black
+    101:{"name": "Haradrim Assassin","hue_deg": 30,  "achromatic": False, "bleed": 1},  # dark robes, dark skin
+    102:{"name": "Cave Worm",        "hue_deg": 210, "achromatic": False, "bleed": 1},  # blue-gray armored
+    103:{"name": "Oathbreaker",      "hue_deg": 120, "achromatic": False, "bleed": 1},  # spectral green
+    104:{"name": "Morgul Sorcerer",  "hue_deg": 100, "achromatic": False, "bleed": 1},  # sickly green runes
+    111:{"name": "Black Numenorean", "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # dark plate, pale
+    # === TIER 6: INNER SANCTUM (Depths 16-18) ===
+    112:{"name": "Olog-hai",         "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # dark gray, black iron
+    113:{"name": "Vampire",          "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # dark leathery
+    114:{"name": "Greater Wraith",   "hue_deg": 260, "achromatic": False, "bleed": 1},  # dark violet robes
+    115:{"name": "Vampire Lord",     "hue_deg": 5,   "achromatic": False, "bleed": 1},  # crimson cloak, pale
+    116:{"name": "Shadow Lord",      "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # absolute black
+    117:{"name": "Maia Thrall",      "hue_deg": 20,  "achromatic": False, "bleed": 1},  # orange-red fire
+    118:{"name": "Khamul",           "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # pitch black
+    131:{"name": "Elite Olog-hai",   "hue_deg": 0,   "achromatic": True,  "bleed": 2},  # black iron armor
+    136:{"name": "BN Lord",          "hue_deg": 260, "achromatic": False, "bleed": 1},  # dark armor, purple
+    # === TIER 7: THRONE ROOM (Depths 19-20) ===
+    132:{"name": "Greater Shadow",   "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # void black
+    133:{"name": "Void Wraith",      "hue_deg": 260, "achromatic": False, "bleed": 1},  # void-black, violet
+    134:{"name": "Thrain's Shade",   "hue_deg": 200, "achromatic": False, "bleed": 1},  # blue-white spectral
+    135:{"name": "Sauron",           "hue_deg": 40,  "achromatic": False, "bleed": 1},  # black+burning gold
+    137:{"name": "Mouth of Sauron",  "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # black armor
+    # === TIER 8: HALLUCINATIONS ===
+    301:{"name": "Gandalf",          "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # gray robes
+    302:{"name": "Thranduil",        "hue_deg": 100, "achromatic": False, "bleed": 1},  # silver-green
+    303:{"name": "Galadriel",        "hue_deg": 0,   "achromatic": True,  "bleed": 1},  # white glowing
+    304:{"name": "Elrond",           "hue_deg": 220, "achromatic": False, "bleed": 1},  # dark blue robes
+    305:{"name": "Thorin",           "hue_deg": 220, "achromatic": False, "bleed": 1},  # blue-silver armor
+    306:{"name": "Beorn",            "hue_deg": 25,  "achromatic": False, "bleed": 1},  # bear-brown
+    307:{"name": "Radagast",         "hue_deg": 25,  "achromatic": False, "bleed": 1},  # brown robes
+    308:{"name": "Eagle",            "hue_deg": 35,  "achromatic": False, "bleed": 1},  # golden-brown
+    309:{"name": "Great Elk",        "hue_deg": 210, "achromatic": False, "bleed": 1},  # blue-gray fur
+    310:{"name": "Ent",              "hue_deg": 25,  "achromatic": False, "bleed": 1},  # dark brown bark
 }
+
+ALL_IDS = sorted(MONSTER_COLORS.keys())
 
 # Magenta hue zone (degrees)
 MAGENTA_ZONE_MIN = 275
@@ -554,6 +650,14 @@ def correct_monster(monster_id):
     return True
 
 
+def get_tier_for_monster(monster_id):
+    """Determine which tier a monster belongs to."""
+    for tier, ids in TIER_IDS.items():
+        if monster_id in ids:
+            return tier
+    return 1  # fallback
+
+
 def process_monster(monster_id):
     """Step 2: BG removal + aggressive pink cleanup + crop + resize + dark."""
     # Prefer corrected version, fall back to raw
@@ -592,15 +696,17 @@ def process_monster(monster_id):
     # Resize
     img_64 = cropped.resize((TILE_SIZE, TILE_SIZE), Image.Resampling.NEAREST)
 
-    # Save light
-    TIER_DIR.mkdir(parents=True, exist_ok=True)
-    light_path = TIER_DIR / f"monster_{monster_id}_light.png"
+    # Save light into correct tier subdir
+    tier = get_tier_for_monster(monster_id)
+    tier_dir = TIER_DIR / f"tier_{tier}"
+    tier_dir.mkdir(parents=True, exist_ok=True)
+    light_path = tier_dir / f"monster_{monster_id}_light.png"
     img_64.save(light_path)
-    print(f"    Saved: {light_path.name}")
+    print(f"    Saved: {light_path.name} (tier_{tier}/)")
 
     # Dark variant
     dark = generate_dark_variant(img_64)
-    dark_path = TIER_DIR / f"monster_{monster_id}_dark.png"
+    dark_path = tier_dir / f"monster_{monster_id}_dark.png"
     dark.save(dark_path)
     print(f"    Saved: {dark_path.name}")
 
@@ -684,15 +790,15 @@ def main():
     group.add_argument("--correct", nargs="+", type=int, metavar="ID",
                        help="Color correct specific monster IDs")
     group.add_argument("--correct-all", action="store_true",
-                       help="Color correct all tier 1")
+                       help="Color correct ALL monsters (all tiers)")
     group.add_argument("--process", nargs="+", type=int, metavar="ID",
                        help="BG remove + resize specific IDs (after correction)")
     group.add_argument("--process-all", action="store_true",
-                       help="BG remove + resize all tier 1")
+                       help="BG remove + resize ALL monsters (all tiers)")
     group.add_argument("--full", nargs="+", type=int, metavar="ID",
                        help="Full pipeline (correct + process) specific IDs")
     group.add_argument("--full-all", action="store_true",
-                       help="Full pipeline all tier 1")
+                       help="Full pipeline ALL monsters (all tiers)")
     group.add_argument("--compare", nargs="+", type=int, metavar="ID",
                        help="Generate before/after comparison image")
 
@@ -707,9 +813,9 @@ def main():
         print(f"\nDone: {ok}/{len(ids)} corrected")
 
     elif args.correct_all:
-        ids = TIER_1_IDS
+        ids = ALL_IDS
         print(f"{'=' * 60}")
-        print(f"COLOR CORRECTION ALL TIER 1 - {len(ids)} monsters")
+        print(f"COLOR CORRECTION ALL MONSTERS - {len(ids)} monsters")
         print(f"{'=' * 60}")
         ok = sum(1 for mid in ids if correct_monster(mid))
         print(f"\nDone: {ok}/{len(ids)} corrected")
@@ -723,9 +829,9 @@ def main():
         print(f"\nDone: {ok}/{len(ids)} processed")
 
     elif args.process_all:
-        ids = TIER_1_IDS
+        ids = ALL_IDS
         print(f"{'=' * 60}")
-        print(f"BG REMOVAL + RESIZE ALL TIER 1 - {len(ids)} monsters")
+        print(f"BG REMOVAL + RESIZE ALL MONSTERS - {len(ids)} monsters")
         print(f"{'=' * 60}")
         ok = sum(1 for mid in ids if process_monster(mid))
         print(f"\nDone: {ok}/{len(ids)} processed")
@@ -743,9 +849,9 @@ def main():
         print(f"\nDone: {ok}/{len(ids)} fully processed")
 
     elif args.full_all:
-        ids = TIER_1_IDS
+        ids = ALL_IDS
         print(f"{'=' * 60}")
-        print(f"FULL PIPELINE ALL TIER 1 - {len(ids)} monsters")
+        print(f"FULL PIPELINE ALL MONSTERS - {len(ids)} monsters")
         print(f"{'=' * 60}")
         print("\n--- Step 1: Color Correction ---")
         for mid in ids:

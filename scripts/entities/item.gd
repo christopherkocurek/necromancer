@@ -59,7 +59,11 @@ func _apply_sprite_region(sprite_index: int) -> void:
 	if not sprite or not TileMapper:
 		return
 
-	var atlas_coords := TileMapper.get_object_coords(sprite_index)
+	var atlas_coords: Vector2i
+	if artifact_data:
+		atlas_coords = TileMapper.get_artifact_coords(sprite_index)
+	else:
+		atlas_coords = TileMapper.get_object_coords(sprite_index)
 	var tile_size := GameManager.TILE_SIZE
 	sprite.region_rect = Rect2(
 		atlas_coords.x * tile_size,

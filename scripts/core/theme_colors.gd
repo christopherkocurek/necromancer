@@ -268,6 +268,8 @@ static func get_status_color(status_name: String) -> Color:
 		"rage": return STATUS_RAGE
 		"darkened": return STATUS_DARKENED
 		"image": return STATUS_IMAGE
+		"battle_fury": return STATUS_BUFF
+		"fairy_mist": return STATUS_DARKENED
 		_: return TEXT_PRIMARY
 
 ## Get color for a damage type

@@ -67,11 +67,17 @@ func generate(target_level: Level, depth: int) -> void:
 	# Add features based on depth
 	_add_features(depth)
 
+	# Apply forest terrain (vine floor) for shallow depths
+	_apply_forest_terrain(level, depth)
+
 	# Spawn monsters
 	_spawn_monsters(depth)
 
 	# Spawn items
 	_spawn_items(depth)
+
+	# Spawn lore objects
+	_spawn_lore_objects(depth)
 
 	level.generation_complete.emit(level.width, level.height)
 
@@ -683,6 +689,65 @@ func _spawn_items(depth: int) -> void:
 			spawned += 1
 
 	print("Spawned %d items at depth %d" % [spawned, depth])
+
+# ============================================================================
+# FOREST TERRAIN (Vine Floor)
+# ============================================================================
+
+## Apply vine floor terrain to shallow depths (1-3), replacing some floor tiles.
+func _apply_forest_terrain(level_node: Level, depth: int) -> void:
+	if depth > 3:
+		return  # Only depths 1-3
+
+	var vine_chance: int = 25 - (depth * 5)  # 20%, 15%, 10%
+
+	var vine_count: int = 0
+	for y in range(1, level_node.height - 1):
+		for x in range(1, level_node.width - 1):
+			var pos := Vector2i(x, y)
+			if level_node.get_tile(pos) == Level.Tile.FLOOR:
+				if randi() % 100 < vine_chance:
+					level_node.set_tile(pos, Level.Tile.VINE_FLOOR)
+					vine_count += 1
+
+	if vine_count > 0:
+		print("Applied %d vine floor tiles at depth %d" % [vine_count, depth])
+
+# ============================================================================
+# LORE OBJECT SPAWNING
+# ============================================================================
+
+## Spawn 1-3 lore objects (tval=2, IDs 500-557) per floor based on depth.
+func _spawn_lore_objects(depth: int) -> void:
+	var count: int = randi_range(1, 3)
+
+	# Build list of eligible lore items by scanning DataManager's items
+	var eligible: Array[DataManager.ItemData] = []
+	for item_data: DataManager.ItemData in DataManager.items.values():
+		if item_data.tval == 2 and item_data.index >= 500 and item_data.index <= 557:
+			if item_data.depth <= depth:
+				eligible.append(item_data)
+
+	if eligible.is_empty():
+		return
+
+	var item_scene := preload("res://scenes/entities/item.tscn")
+	var spawned: int = 0
+
+	for _i in range(count):
+		var lore_data: DataManager.ItemData = eligible.pick_random()
+		var spawn_pos: Vector2i = level.find_random_floor()
+		if spawn_pos == Vector2i(-1, -1):
+			continue
+
+		var item: Item = item_scene.instantiate()
+		item.grid_position = spawn_pos
+		item.initialize_from_item_data(lore_data)
+		level.add_item(item)
+		spawned += 1
+
+	if spawned > 0:
+		print("Spawned %d lore objects at depth %d" % [spawned, depth])
 
 # ============================================================================
 # NPC SPAWNING

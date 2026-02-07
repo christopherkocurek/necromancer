@@ -835,6 +835,13 @@ func get_random_food_for_depth(depth: int) -> ItemData:
 		return null
 	return food_items.pick_random()
 
+## Look up an item by tval and sval (used for starting equipment grants)
+func get_item_by_tval_sval(tval: int, sval: int) -> ItemData:
+	for i in items.values():
+		if i.tval == tval and i.sval == sval:
+			return i
+	return null
+
 func _validate_data() -> void:
 	print("=== DataManager Validation ===")
 	print("Loaded %d monsters, %d items, %d artifacts, %d abilities" % [

@@ -43,6 +43,12 @@ var is_light_sensitive: bool = false  # Penalized in lit tiles
 var is_dark_aura: bool = false  # Suppresses player light when adjacent
 var _light_recoil_shown: bool = false  # Track if we showed the recoil message this turn
 
+# Werewolf shapeshifting
+var werewolf_form: String = "human"  # "human" or "wolf"
+var _shift_cooldown: int = 0  # Turns until can shift again
+var _wolf_speed_bonus: int = 0  # Temporary speed bonus applied in wolf form
+var _wolf_attack_bonus: int = 0  # Temporary attack bonus applied in wolf form
+
 var health_bar: EntityHealthBar = null
 
 func _ready() -> void:
@@ -138,6 +144,9 @@ func take_turn() -> void:
 		return
 
 	EventBus.turn_started.emit(self)
+
+	# Werewolf shapeshifting AI
+	_werewolf_ai_update()
 
 	# CONFUSED: Random movement instead of normal AI
 	if status_fx and status_fx.is_confused():
@@ -583,6 +592,9 @@ func get_total_attack(target: Entity) -> int:
 	if is_light_sensitive and is_in_lit_tile():
 		att -= 2
 
+	# Werewolf form bonuses
+	att += _wolf_attack_bonus
+
 	return att
 
 ## Monster evasion modifier stack per NECROMANCER_DESIGN_CANON section 1.5
@@ -609,6 +621,10 @@ func get_total_evasion(attacker: Entity) -> int:
 	if is_light_sensitive and is_in_lit_tile():
 		evn -= 2
 
+	# Werewolf wolf form: -1 evasion (more aggressive, less defensive)
+	if _is_werewolf() and werewolf_form == "wolf":
+		evn -= 1
+
 	# Shield Brother: player with shield_brother trait and a shield reduces adjacent monster evasion by 1
 	var sb_player: Player = GameManager.player
 	if is_instance_valid(sb_player) and sb_player.trait_effect_id == "shield_brother":
@@ -620,9 +636,19 @@ func get_total_evasion(attacker: Entity) -> int:
 
 	return evn
 
+## Override damage dice for werewolf human form (reduced to 1d6 unarmed)
+func _get_attack_damage_dice() -> String:
+	if _is_werewolf() and werewolf_form == "human":
+		return "1d6"
+	return damage_dice
+
 ## Resolve monster attack special effects (FIRE, COLD, BLIND, etc.)
 func _on_successful_hit(target: Entity, _hit_result: int, _damage: int) -> void:
 	if not monster_data or monster_data.attacks.is_empty():
+		return
+
+	# Werewolf human form: no special attack effects (just basic unarmed)
+	if _is_werewolf() and werewolf_form == "human":
 		return
 
 	var attack: DataManager.AttackData = monster_data.attacks[0]
@@ -982,3 +1008,81 @@ func _spell_ranged_attack(cast_target: Entity, distance: int, tier: int) -> bool
 	GameManager.log_message("The %s hits you with a %s! (%d damage)" % [entity_name, proj_name, dmg], ThemeColors.MSG_ERROR)
 	cast_target.take_damage(dmg, "physical", self)
 	return true
+
+# ============================================================================
+# WEREWOLF SHAPESHIFTING
+# ============================================================================
+
+## Check if this monster is a werewolf
+func _is_werewolf() -> bool:
+	return monster_data != null and monster_data.name == "Werewolf"
+
+## Werewolf AI: decide whether to shift forms each turn
+func _werewolf_ai_update() -> void:
+	if not _is_werewolf():
+		return
+
+	_shift_cooldown = maxi(0, _shift_cooldown - 1)
+
+	# Shift to wolf when alert and seeing the player
+	if werewolf_form == "human" and _shift_cooldown == 0:
+		if alertness >= Constants.ALERTNESS_ALERT and ai_state == AIState.HUNTING:
+			_shift_to_wolf()
+
+	# Shift back to human when fleeing or badly wounded
+	elif werewolf_form == "wolf" and _shift_cooldown == 0:
+		if current_morale < 20 or current_health < max_health / 4:
+			_shift_to_human()
+
+## Transform into wolf form: +2 attack, speed boost, full monster attacks
+func _shift_to_wolf() -> void:
+	werewolf_form = "wolf"
+	_shift_cooldown = 5  # Can't shift again for 5 turns
+	_wolf_attack_bonus = 2
+	# Speed boost: temporarily increase speed tier by 1
+	if speed < 7:
+		speed += 1
+		_wolf_speed_bonus = 1
+	GameManager.log_message("The %s transforms into a savage wolf!" % entity_name, ThemeColors.BLOOD_RED)
+	vfx_flash(Color(0.6, 0.6, 0.6), 0.1, 0.3)
+	vfx_particles(Color(0.5, 0.5, 0.5), 6, 25.0, 0.5)
+	_notify_pack_shift("wolf")
+
+## Transform back to human form: remove wolf bonuses, more cautious
+func _shift_to_human() -> void:
+	werewolf_form = "human"
+	_shift_cooldown = 5
+	# Remove wolf form bonuses
+	_wolf_attack_bonus = 0
+	if _wolf_speed_bonus > 0:
+		speed -= _wolf_speed_bonus
+		_wolf_speed_bonus = 0
+	GameManager.log_message("The %s shifts back to human form." % entity_name, ThemeColors.TEXT_DIM)
+	vfx_flash(Color(0.3, 0.3, 0.5), 0.1, 0.3)
+
+## Notify nearby werewolves to shift (pack mentality)
+## When one werewolf transforms, nearby pack members shift on their next turn
+func _notify_pack_shift(form: String) -> void:
+	if not GameManager.current_level:
+		return
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or entity == self:
+			continue
+		if not entity is Monster:
+			continue
+		var mon: Monster = entity as Monster
+		if not mon.is_alive or not mon._is_werewolf():
+			continue
+		var dist: int = _grid_distance(grid_position, mon.grid_position)
+		if dist > 5:
+			continue
+		if mon._shift_cooldown > 0:
+			continue
+		if form == "wolf" and mon.werewolf_form == "human":
+			# Alert the pack member so it meets the shift condition next turn
+			mon.alertness = maxi(mon.alertness, Constants.ALERTNESS_ALERT)
+			# Force hunting state so the AI check passes
+			mon.ai_state = AIState.HUNTING
+		elif form == "human" and mon.werewolf_form == "wolf":
+			# Reduce morale to trigger shift back on their turn
+			mon.current_morale = mini(mon.current_morale, 15)

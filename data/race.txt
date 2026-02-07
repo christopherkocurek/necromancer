@@ -56,7 +56,7 @@ C:0|1|2
 F:BOW_PROFICIENCY
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:37:3:3    # , Fragment of Lembas (3)
-E:23:7:1:1     # | Curved sword (1)
+E:23:8:1:1     # | Curved Sword (1)
 D:The Elves of Middle-earth have dwindled in the Third Age, but those
 D: who remain are wise and fair. Whether from the golden woods of
 D: Lothlorien, the hidden valley of Rivendell, or the dark forests
@@ -79,7 +79,7 @@ C:3|4|5
 F:SWORD_PROFICIENCY
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:35:5:5    # , Pieces of Dark Bread (5)
-E:23:7:1:1     # | Curved sword (1)
+E:23:8:1:1     # | Curved Sword (1)
 D:Men are the secondborn children of Iluvatar, mortal and fleeting.
 D: Yet in the Third Age, many great kingdoms of Men still stand.
 D: The Rangers of the North carry the blood of Numenor, the
@@ -103,8 +103,8 @@ C:6|7|8
 F:AXE_PROFICIENCY | ARC_PENALTY | DWARVEN_RESILIENCE
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:35:5:5    # , Pieces of Dark Bread (5)
-E:21:8:1:1     # \ War Hammer (1)
-E:23:7:1:1     # | Curved sword (1)
+E:21:8:1:1     # \ Dwarven Hammer (1)
+E:23:8:1:1     # | Curved Sword (1)
 D:The Dwarves are a tough and secretive people, created by
 D: Aule the Smith in ages past. They are master craftsmen
 D: and fierce warriors, though slow to trust outsiders.
@@ -133,7 +133,7 @@ E:56:2:1:1       # - Wand of Slowing (1)
 E:56:3:1:1       # - Wand of Light (1)
 E:56:4:1:1       # - Wand of Fear (1)
 E:56:5:1:1       # - Wand of Sleep (1)
-E:23:7:1:1       # | Curved sword (1)
+E:23:8:1:1       # | Curved Sword (1)
 D:The Istari are Maiar spirits sent to Middle-earth in the
 D: guise of old men. Though their true power is veiled, they
 D: possess wisdom and strength far beyond mortal ken. This
@@ -156,6 +156,7 @@ C:9|10|11
 F:SMALL_STATURE | HOBBIT_LUCK | SLING_PROFICIENCY
 E:39:0:3:3     # ~ Wooden Torches (3)
 E:80:38:5:5    # , Seed Cakes (5)
+E:23:9:1:1     # | Sylvan Blade (1)
 E:18:1:1:1     # } Sling (1)
 E:16:1:10:10   # - Sling Stones (10)
 D:Hobbits are a small, quiet folk who love peace, good food,

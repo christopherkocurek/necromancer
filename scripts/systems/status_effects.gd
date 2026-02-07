@@ -72,6 +72,10 @@ func remove_effect(effect_id: StringName, show_message: bool = true) -> void:
 	var old_dur: int = effects[effect_id]
 	effects.erase(effect_id)
 
+	# Restore stats for effects that modify them
+	if owner:
+		_on_effect_removed(effect_id)
+
 	if show_message and owner:
 		var msg: String = EffectDefinitions.get_recovery_message(effect_id, old_dur)
 		if not msg.is_empty():
@@ -267,3 +271,81 @@ func from_dict(data: Dictionary) -> void:
 	effects.clear()
 	for effect_id in data:
 		effects[StringName(effect_id)] = data[effect_id]
+
+# ============================================================================
+# STAT-MODIFYING EFFECT HOOKS
+# ============================================================================
+
+## Called when an effect expires or is removed. Restores any stat modifications.
+func _on_effect_removed(effect_id: StringName) -> void:
+	if not owner:
+		return
+
+	match effect_id:
+		Constants.EFFECT_RAGE:
+			# Restore stats modified by rage (stored as metadata)
+			if owner.has_meta("rage_str_bonus"):
+				var bonus: int = owner.get_meta("rage_str_bonus")
+				owner.strength -= bonus
+				owner.remove_meta("rage_str_bonus")
+			if owner.has_meta("rage_con_bonus"):
+				var bonus: int = owner.get_meta("rage_con_bonus")
+				owner.constitution -= bonus
+				owner.remove_meta("rage_con_bonus")
+			if owner.has_meta("rage_dex_penalty"):
+				var penalty: int = owner.get_meta("rage_dex_penalty")
+				owner.dexterity += penalty
+				owner.remove_meta("rage_dex_penalty")
+			if owner.has_meta("rage_gra_penalty"):
+				var penalty: int = owner.get_meta("rage_gra_penalty")
+				owner.grace += penalty
+				owner.remove_meta("rage_gra_penalty")
+			# Recalculate stats after removing bonuses
+			if owner is Player:
+				owner._recalculate_stats()
+		&"grace_boost":
+			# Restore grace from pipe-weed or similar grace boost
+			if owner.has_meta("grace_boost_amount"):
+				var amount: int = owner.get_meta("grace_boost_amount")
+				owner.grace -= amount
+				owner.remove_meta("grace_boost_amount")
+				if owner is Player:
+					owner._recalculate_stats()
+		&"thornvine":
+			# Remove temporary protection dice bonus
+			if owner.has_meta("thornvine_protection"):
+				var bonus: int = owner.get_meta("thornvine_protection")
+				owner.protection_dice -= bonus
+				owner.remove_meta("thornvine_protection")
+		Constants.EFFECT_BATTLE_FURY:
+			# Reverse Horn of Challenge stat modifications
+			if owner.has_meta("battle_fury_str"):
+				owner.strength -= owner.get_meta("battle_fury_str")
+				owner.remove_meta("battle_fury_str")
+			if owner.has_meta("battle_fury_con"):
+				owner.constitution -= owner.get_meta("battle_fury_con")
+				owner.remove_meta("battle_fury_con")
+			if owner.has_meta("battle_fury_dex"):
+				owner.dexterity += owner.get_meta("battle_fury_dex")
+				owner.remove_meta("battle_fury_dex")
+			if owner.has_meta("battle_fury_gra"):
+				owner.grace += owner.get_meta("battle_fury_gra")
+				owner.remove_meta("battle_fury_gra")
+			if owner is Player:
+				owner._recalculate_stats()
+		Constants.EFFECT_FAIRY_MIST:
+			# Fairy mist dissipates - re-light affected tiles
+			# The FOV system will handle re-lighting on the next update
+			if owner.has_meta("fairy_mist_center"):
+				owner.remove_meta("fairy_mist_center")
+			if owner.has_meta("fairy_mist_radius"):
+				owner.remove_meta("fairy_mist_radius")
+			# Force a full FOV refresh to restore lighting
+			if GameManager.current_level and owner is Player:
+				var level: Level = GameManager.current_level
+				var fov_radius: int = level.get_fov_radius()
+				var light_radius: int = owner.get_light_radius()
+				level.update_fov(owner.grid_position, fov_radius)
+				level.apply_lighting(owner.grid_position, light_radius)
+				level.update_entity_visibility()
+				level.apply_fov_to_tilemap()

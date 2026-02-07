@@ -255,6 +255,9 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 		player.race_name = character_data.get("race", "Man")
 		player.house_name = character_data.get("house", "")
 		player.trait_name = character_data.get("trait", "")
+		player.gender = character_data.get("gender", "male")
+		player.age = character_data.get("age", 0)
+		player.history = character_data.get("history", "")
 		player._apply_trait()
 
 		# Apply base stat allocation
@@ -275,12 +278,90 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	player.grid_position = start_pos
 	current_level.add_entity(player)
 
+	# Grant starting equipment from race data
+	_grant_starting_equipment(player)
+
 	# Store reference
 	GameManager.player = player
 
 	# Set player on quest system
 	if quest_system:
 		quest_system.set_player(player)
+
+# ============================================================================
+# STARTING EQUIPMENT
+# ============================================================================
+
+func _grant_starting_equipment(p: Player) -> void:
+	## Grant starting items based on race data E: lines (tval:sval:min:max).
+	var race_data: DataManager.RaceData = DataManager.get_race(p.race_name)
+	if not race_data:
+		return
+
+	for entry in race_data.starting_equipment:
+		var tval: int = entry["tval"]
+		var sval: int = entry["sval"]
+		var min_qty: int = entry["min_qty"]
+		var max_qty: int = entry["max_qty"]
+		var qty: int = randi_range(min_qty, max_qty)
+
+		var item_data: DataManager.ItemData = DataManager.get_item_by_tval_sval(tval, sval)
+		if not item_data:
+			push_warning("Starting equipment not found: tval=%d sval=%d" % [tval, sval])
+			continue
+
+		for i in range(qty):
+			var item_copy: DataManager.ItemData = _duplicate_item_data(item_data)
+			item_copy.identified = true  # Starting equipment is always identified
+
+			# Set fuel for light sources
+			if tval == 39 and item_copy.fuel < 0:
+				item_copy.fuel = 5000  # Standard torch fuel
+
+			# Try auto-equipping to an appropriate slot
+			var equipped: bool = false
+
+			# Melee/ranged weapons -> weapon slot
+			if tval in [18, 21, 22, 23] and p.equipment["weapon"] == null:
+				p.equipment["weapon"] = item_copy
+				equipped = true
+			# Light sources -> light slot
+			elif tval == 39 and p.equipment["light"] == null:
+				p.equipment["light"] = item_copy
+				equipped = true
+			# Ammo -> quiver slot
+			elif tval == 16 and p.equipment["quiver"] == null:
+				p.equipment["quiver"] = item_copy
+				equipped = true
+
+			# If not equipped, add to inventory
+			if not equipped:
+				p.inventory.append(item_copy)
+
+func _duplicate_item_data(source: DataManager.ItemData) -> DataManager.ItemData:
+	## Create a deep copy of an ItemData for inventory use.
+	var copy := DataManager.ItemData.new()
+	copy.index = source.index
+	copy.name = source.name
+	copy.display_char = source.display_char
+	copy.color = source.color
+	copy.tval = source.tval
+	copy.sval = source.sval
+	copy.pval = source.pval
+	copy.depth = source.depth
+	copy.rarity = source.rarity
+	copy.weight = source.weight
+	copy.cost = source.cost
+	copy.allocation = source.allocation
+	copy.attack_bonus = source.attack_bonus
+	copy.damage_dice = source.damage_dice
+	copy.evasion_bonus = source.evasion_bonus
+	copy.protection_dice = source.protection_dice
+	copy.flags = source.flags.duplicate()
+	copy.description = source.description
+	copy.identified = source.identified
+	copy.fuel = source.fuel
+	return copy
 
 func _process(_delta: float) -> void:
 	if current_state != GameState.PLAYING:
@@ -445,6 +526,22 @@ func _update_camera_zoom() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if current_state != GameState.PLAYING:
 		return
+
+	# Horn directional prompt intercept (must come before UI/movement checks)
+	if ConsumableSystem.has_pending_horn():
+		if event is InputEventKey and event.pressed and not event.echo:
+			var horn_dir: Vector2i = DirectionPrompt.get_direction_from_event(event)
+			if horn_dir != Vector2i.ZERO:
+				if ConsumableSystem.complete_horn_use(horn_dir):
+					player.consume_energy()
+					turn_system._after_player_action()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_ESCAPE:
+				ConsumableSystem.cancel_horn_use()
+				get_viewport().set_input_as_handled()
+				return
+		return  # Block all other input while awaiting direction
 
 	# Don't process game input if UI is open
 	if _is_ui_open():

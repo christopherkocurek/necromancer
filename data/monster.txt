@@ -658,6 +658,23 @@ F:TERRITORIAL | RAND_25 | RES_POIS
 D:A blind, pallid creature adapted to the absolute darkness
 D: of the deep. Its touch causes disorientation.
 
+N:87:Werewolf
+W:8:2
+G:W:s
+I:3:8d8:0
+A:15:6:5:5
+P:[+8,1d4]
+B:BITE:POISON:(+8,2d6)
+B:CLAW:HURT:(+7,1d8)
+B:CLAW:HURT:(+7,1d8)
+F:WOLF | EVIL | SMART | FRIENDS | DROP_33
+F:OPEN_DOOR | BASH_DOOR
+D:A terrifying creature, cursed to shift between human and
+D: wolf form. In wolf form, it is savage and fast, with a
+D: venomous bite. In human form, it is cunning and cautious.
+D: Werewolves hunt in packs and are feared throughout the
+D: northern reaches of Mirkwood. Their bite carries a dark venom.
+
 # Layer 4 Unique
 N:79:Grishnákh, Crypt Lord
 W:12:10

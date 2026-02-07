@@ -121,37 +121,373 @@ static func eat_food(player: Player, item: Variant) -> bool:
 		return false
 
 	var sval: int = item.sval if "sval" in item else 0
+	var pval: int = item.pval if "pval" in item else 0
 	GameManager.identify_item(item)
 
 	match sval:
+		# ================================================================
+		# BASIC HERBS (sval 0-11)
+		# ================================================================
+		0:  # Orc-rage Mushroom - battle rage
+			var duration: int = _roll_dice(10, 4)
+			_apply_rage(player, duration, 1, 1, 1, 1)
+			player.remove_status("afraid")
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("A dark fury rises within you!", ThemeColors.STATUS_RAGE)
+		1:  # Waymeal - major hunger restoration
+			player.restore_hunger(pval if pval > 0 else 2000)
+			GameManager.log_message("The traveler's herb staves off your hunger.", ThemeColors.TEXT_PRIMARY)
+		2:  # Terror - fear + haste
+			var fear_dur: int = _roll_dice(10, 4)
+			var haste_dur: int = _roll_dice(5, 4)
+			# Check fear immunity
+			if player.has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_MAJESTY):
+				GameManager.log_message("Your majesty overcomes the herb's terror!", ThemeColors.PRIMARY)
+			elif player.status_fx and player.status_fx.has_effect(Constants.EFFECT_RAGE):
+				GameManager.log_message("Your rage overcomes the herb's terror!", ThemeColors.STATUS_RAGE)
+			else:
+				player.apply_status("afraid", fear_dur)
+			player.apply_status("fast", haste_dur)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("A burst of terrified energy courses through you!", ThemeColors.MSG_WARNING)
+		3:  # Healer's Herb - halve cuts, heal 50% HP
+			# Halve current cuts
+			if player.status_fx and player.status_fx.has_effect(Constants.EFFECT_CUT):
+				var cut_dur: int = player.status_fx.get_duration(Constants.EFFECT_CUT)
+				var new_cut: int = cut_dur / 2
+				if new_cut <= 0:
+					player.remove_status("cut")
+				else:
+					player.status_fx.effects[Constants.EFFECT_CUT] = new_cut
+			# Heal 50% of max HP (with Herbcraft bonus)
+			var heal_amount: int = player.max_health / 2
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				heal_amount *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
+			player.heal(heal_amount, player)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The medicinal herb soothes your wounds.", ThemeColors.HEALTH_HIGH)
+		4:  # Restoration - restore all stats by 3
+			_restore_stats(player, 3)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("You feel your strength returning!", ThemeColors.ABILITY_LEARNED)
 		5:  # Emptiness herb - drains hunger!
 			player.hunger = maxi(0, player.hunger - 1000)
 			player.restore_hunger(0)  # Trigger state update
 			GameManager.log_message("A gnawing emptiness fills your stomach!", ThemeColors.MSG_ERROR)
+		6:  # Visions - cure blindness + hallucination
+			player.remove_status("blind")
+			var hallu_dur: int = _roll_dice(80, 4)
+			# Check hallucination immunity
+			if player.status_fx and player.status_fx._check_resistance(Constants.EFFECT_IMAGE):
+				GameManager.log_message("Your mind resists the visions.", ThemeColors.MSG_INFO)
+			else:
+				player.apply_status("image", hallu_dur)
+				GameManager.log_message("Brilliant visions flood your mind as your sight returns!", ThemeColors.MSG_WARNING)
+			player.restore_hunger(pval if pval > 0 else 250)
+		7:  # Entrancement - stun/trance
+			var entrance_dur: int = _roll_dice(10, 4)
+			# Check free action immunity
+			if player.status_fx and player.status_fx._check_resistance(Constants.EFFECT_ENTRANCED):
+				GameManager.log_message("Your will resists the entrancement.", ThemeColors.MSG_INFO)
+			else:
+				player.apply_status("entranced", entrance_dur)
+			player.restore_hunger(pval if pval > 0 else 250)
+		8:  # Weakness - CURSE: permanent STR loss
+			player.strength = maxi(0, player.strength - 1)
+			player._recalculate_stats()
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("You feel weaker!", ThemeColors.MSG_ERROR)
+		9:  # Sickness - CURSE: permanent CON loss
+			player.constitution = maxi(0, player.constitution - 1)
+			player._recalculate_stats()
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("You feel sickly!", ThemeColors.MSG_ERROR)
+		10:  # Athelas - cure-all + heal 25%
+			player.remove_status("poisoned")
+			player.remove_status("afraid")
+			player.remove_status("confused")
+			player.remove_status("image")
+			var athelas_heal: int = player.max_health / 4
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				athelas_heal *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
+			player.heal(athelas_heal, player)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The kingsfoil drives back the shadow! You feel renewed.", ThemeColors.HEALTH_HIGH)
+		11:  # Pipe-weed - cure fear + temp Grace
+			player.remove_status("afraid")
+			# Apply temporary +3 Grace boost
+			_apply_grace_boost(player, 3, 30)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("You take a few puffs. A wisp of smoke rises as your nerves steady.", ThemeColors.MSG_STEALTH)
 		12:  # Phosphorescent Moss - grants +1 light radius for 50 turns
 			player.apply_status(Constants.EFFECT_PHOSPHOR, 50)
-			player.restore_hunger(250)
+			player.restore_hunger(pval if pval > 0 else 250)
 			GameManager.log_message("The glowing moss fills you with a warm luminescence. You glow faintly!", ThemeColors.MSG_INFO)
-		35:  # Travel Bread - basic sustenance + hunger restore
-			player.heal(randi_range(2, 8), player)
+		13:  # Silverbark Moss - cure poison + minor heal
+			player.remove_status("poisoned")
+			var silver_heal: int = 10
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				silver_heal *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
+			player.heal(silver_heal, player)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The silverbark moss purges the toxins from your body.", ThemeColors.HEALTH_HIGH)
+		14:  # Nightshade Berry - poison damage + true sight (risk/reward)
+			var poison_dmg: int = _roll_dice(3, 6)
+			player.take_damage(poison_dmg, "poison", null)
+			GameManager.log_message("The nightshade burns your throat! (%d damage)" % poison_dmg, ThemeColors.MSG_ERROR)
+			player.apply_status("true_sight", 20)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("Your vision pierces the veil -- you can see the invisible!", ThemeColors.MSG_INFO)
+		15:  # Thornvine Root - temporary +2 protection dice
+			_apply_thornvine(player, 2, 30)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("Thorny vines harden beneath your skin, granting protection.", ThemeColors.SECONDARY)
+		16:  # Moonpetal - restore voice charges
+			var voice_restore: int = 5
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				voice_restore *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the effect!", ThemeColors.ABILITY_LEARNED)
+			player.voice_charges = mini(player.voice_charges + voice_restore, player.max_voice)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The moonpetal's essence restores your voice.", ThemeColors.SECONDARY)
+		17:  # Spider-bane - blood becomes toxic to spiders
+			player.apply_status("spider_bane", 50)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("A bitter taste fills your mouth. Spiders will regret biting you!", ThemeColors.MSG_WARNING)
+		18:  # Gloomcap - CURSE: confusion + some hunger
+			var confuse_dur: int = _roll_dice(5, 4)
+			player.apply_status("confused", confuse_dur)
 			player.restore_hunger(500)
+			GameManager.log_message("The mushroom's spores cloud your mind, but your belly is full.", ThemeColors.MSG_ERROR)
+
+		# ================================================================
+		# IMPROVED HERBS - Alchemy Outputs (sval 20-23)
+		# ================================================================
+		20:  # Concentrated Healer's Herb - cure ALL cuts + heal 75% HP
+			player.remove_status("cut")
+			var conc_heal: int = (player.max_health * 3) / 4
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				conc_heal *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
+			player.heal(conc_heal, player)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The concentrated herbs heal your wounds completely!", ThemeColors.HEALTH_HIGH)
+		21:  # Potent Athelas - full cure-all + heal 50% HP
+			player.remove_status("poisoned")
+			player.remove_status("afraid")
+			player.remove_status("confused")
+			player.remove_status("image")
+			player.remove_status("blind")
+			player.remove_status("stunned")
+			player.remove_status("entranced")
+			player.remove_status("slow")
+			var potent_heal: int = player.max_health / 2
+			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+				potent_heal *= 2
+				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
+			player.heal(potent_heal, player)
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("The potent kingsfoil banishes all shadow! You are fully restored.", ThemeColors.HEALTH_HIGH)
+		22:  # Concentrated Waymeal - 4000 hunger
+			player.restore_hunger(4000)
+			GameManager.log_message("The concentrated waymeal fills you completely.", ThemeColors.TEXT_PRIMARY)
+		23:  # Potent Orc-rage Mushroom - enhanced rage
+			var potent_dur: int = _roll_dice(15, 4)
+			_apply_rage(player, potent_dur, 2, 2, 2, 2)
+			player.remove_status("afraid")
+			player.restore_hunger(pval if pval > 0 else 250)
+			GameManager.log_message("An overwhelming fury consumes you! You feel unstoppable!", ThemeColors.STATUS_RAGE)
+
+		# ================================================================
+		# FOOD ITEMS (sval 35-38)
+		# ================================================================
+		35:  # Travel Bread - basic sustenance
+			player.restore_hunger(pval if pval > 0 else 1500)
 			GameManager.log_message("You eat the bread. It's stale but filling.", ThemeColors.TEXT_PRIMARY)
-		36:  # Dried Meat - solid sustenance + hunger restore
-			player.heal(randi_range(3, 10), player)
-			player.restore_hunger(700)
+		36:  # Dried Meat - solid sustenance
+			player.restore_hunger(pval if pval > 0 else 2000)
 			GameManager.log_message("You chew the tough dried meat. It fills you up.", ThemeColors.TEXT_PRIMARY)
-		37:  # Fragment of Lembas - good healing + major hunger restore
-			player.heal(randi_range(10, 20), player)
-			player.restore_hunger(1000)
-			GameManager.log_message("The Elvish waybread fills you with renewed vigor.", ThemeColors.HEALTH_HIGH)
+		37:  # Fragment of Lembas - good sustenance + grace restore
+			player.restore_hunger(pval if pval > 0 else 3000)
+			# Restore 1 Grace if drained below base
+			# (Simple approach: always +1 Grace, capped at a reasonable max)
+			if player.grace < 10:  # Only restore if below a reasonable threshold
+				player.grace += 1
+				player._recalculate_stats()
+				GameManager.log_message("The Elvish waybread fills you with renewed vigor and grace.", ThemeColors.HEALTH_HIGH)
+			else:
+				GameManager.log_message("The Elvish waybread fills you with renewed vigor.", ThemeColors.HEALTH_HIGH)
+		38:  # Cram - filling but bland
+			player.restore_hunger(pval if pval > 0 else 2000)
+			GameManager.log_message("You eat the dense waybread. Filling but bland.", ThemeColors.TEXT_PRIMARY)
 		_:
-			# Generic herb - minor healing + small hunger restore
-			player.heal(randi_range(1, 6), player)
+			# Unknown herb - minimal fallback
 			player.restore_hunger(200)
-			GameManager.log_message("You eat the herb.", ThemeColors.TEXT_PRIMARY)
+			GameManager.log_message("You eat the herb. It has little effect.", ThemeColors.TEXT_PRIMARY)
 
 	if player.run_stats:
 		player.run_stats.herbs_consumed += 1
+
+	return true
+
+# ============================================================================
+# HERB HELPER FUNCTIONS
+# ============================================================================
+
+## Roll NdS dice (e.g., 10d4 = roll 10 four-sided dice and sum)
+static func _roll_dice(num: int, sides: int) -> int:
+	var total: int = 0
+	for i in range(num):
+		total += randi_range(1, sides)
+	return total
+
+## Apply rage status with stat modifications tracked via metadata
+static func _apply_rage(player: Player, duration: int, str_bonus: int, con_bonus: int, dex_penalty: int, gra_penalty: int) -> void:
+	# If already raging, remove old rage bonuses first
+	if player.status_fx and player.status_fx.has_effect(Constants.EFFECT_RAGE):
+		player.status_fx.remove_effect(Constants.EFFECT_RAGE, false)
+
+	# Apply stat changes
+	player.strength += str_bonus
+	player.constitution += con_bonus
+	player.dexterity -= dex_penalty
+	player.grace -= gra_penalty
+
+	# Store bonuses as metadata for restoration on expiry
+	player.set_meta("rage_str_bonus", str_bonus)
+	player.set_meta("rage_con_bonus", con_bonus)
+	player.set_meta("rage_dex_penalty", dex_penalty)
+	player.set_meta("rage_gra_penalty", gra_penalty)
+
+	player.apply_status("rage", duration)
+	player._recalculate_stats()
+	EventBus.status_applied.emit(player, Constants.EFFECT_RAGE, duration)
+
+## Apply temporary Grace boost tracked via metadata
+static func _apply_grace_boost(player: Player, amount: int, duration: int) -> void:
+	# If already boosted, remove old bonus first
+	if player.status_fx and player.status_fx.has_effect(&"grace_boost"):
+		player.status_fx.remove_effect(&"grace_boost", false)
+
+	player.grace += amount
+	player.set_meta("grace_boost_amount", amount)
+	player.apply_status("grace_boost", duration)
+	player._recalculate_stats()
+
+## Apply temporary protection dice bonus from Thornvine Root
+static func _apply_thornvine(player: Player, dice_bonus: int, duration: int) -> void:
+	# If already active, remove old bonus first
+	if player.status_fx and player.status_fx.has_effect(&"thornvine"):
+		player.status_fx.remove_effect(&"thornvine", false)
+
+	player.protection_dice += dice_bonus
+	player.set_meta("thornvine_protection", dice_bonus)
+	player.apply_status("thornvine", duration)
+
+## Restore all 4 base stats by up to the given amount (won't exceed original base)
+static func _restore_stats(player: Player, amount: int) -> void:
+	# Simple restoration: increase each stat by amount
+	# In Sil-Q, restoration returns stats drained by monsters/curse herbs
+	player.strength += amount
+	player.dexterity += amount
+	player.constitution += amount
+	player.grace += amount
+	player._recalculate_stats()
+
+# ============================================================================
+# HERBCRAFT ALCHEMY SYSTEM
+# ============================================================================
+
+## Herb alchemy recipe table: sval -> output item name in DataManager
+const ALCHEMY_RECIPES: Dictionary = {
+	3: "& Concentrated Healer's Herb~",   # 2x Healer's Herb -> Concentrated
+	10: "& Potent Athelas~",              # 2x Athelas -> Potent
+	1: "& Concentrated Waymeal~",         # 2x Waymeal -> Concentrated
+	0: "& Potent Orc-rage Mushroom~",     # 2x Orc-rage -> Potent
+}
+
+## Try to combine two identical herbs via Herbcraft alchemy.
+## herb1_idx and herb2_idx are indices into player.inventory.
+## Returns true if combining was successful.
+static func try_herb_alchemy(player: Player, herb1_idx: int, herb2_idx: int) -> bool:
+	# Validate indices
+	if herb1_idx < 0 or herb1_idx >= player.inventory.size():
+		GameManager.log_message("Invalid item selection.", ThemeColors.MSG_ERROR)
+		return false
+	if herb2_idx < 0 or herb2_idx >= player.inventory.size():
+		GameManager.log_message("Invalid item selection.", ThemeColors.MSG_ERROR)
+		return false
+	if herb1_idx == herb2_idx:
+		GameManager.log_message("You need two separate herbs to combine.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Check Herbcraft ability
+	if not player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+		GameManager.log_message("You lack the Herbcraft knowledge to combine herbs.", ThemeColors.MSG_ERROR)
+		return false
+
+	var herb1: Variant = player.inventory[herb1_idx]
+	var herb2: Variant = player.inventory[herb2_idx]
+
+	# Both must be herbs (tval 80)
+	if not "tval" in herb1 or herb1.tval != 80:
+		GameManager.log_message("That is not a herb.", ThemeColors.MSG_ERROR)
+		return false
+	if not "tval" in herb2 or herb2.tval != 80:
+		GameManager.log_message("That is not a herb.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Both must be the same sval (same herb type)
+	var herb_sval: int = herb1.sval if "sval" in herb1 else -1
+	var herb2_sval: int = herb2.sval if "sval" in herb2 else -2
+	if herb_sval != herb2_sval:
+		GameManager.log_message("You can only combine identical herbs.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Check if this herb has a recipe
+	if not ALCHEMY_RECIPES.has(herb_sval):
+		GameManager.log_message("These herbs cannot be combined.", ThemeColors.MSG_SYSTEM)
+		return false
+
+	# Look up the output item from DataManager
+	var output_name: String = ALCHEMY_RECIPES[herb_sval]
+	var output_template: Variant = DataManager.get_item(output_name)
+	if output_template == null:
+		GameManager.log_message("Something went wrong with the alchemy.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Create a new item instance (copy from template)
+	var new_item: DataManager.ItemData = DataManager.ItemData.new()
+	new_item.index = output_template.index
+	new_item.name = output_template.name
+	new_item.display_char = output_template.display_char
+	new_item.color = output_template.color
+	new_item.tval = output_template.tval
+	new_item.sval = output_template.sval
+	new_item.pval = output_template.pval
+	new_item.depth = output_template.depth
+	new_item.rarity = output_template.rarity
+	new_item.weight = output_template.weight
+	new_item.cost = output_template.cost
+	new_item.flags = output_template.flags.duplicate()
+	new_item.description = output_template.description
+	new_item.identified = true  # Player created it, so it's identified
+
+	# Remove the two input herbs (remove higher index first to avoid shifting)
+	var idx_high: int = maxi(herb1_idx, herb2_idx)
+	var idx_low: int = mini(herb1_idx, herb2_idx)
+	player.inventory.remove_at(idx_high)
+	player.inventory.remove_at(idx_low)
+
+	# Add the output herb to inventory
+	player.inventory.append(new_item)
+
+	var herb_name: String = herb1.name if "name" in herb1 else "herb"
+	GameManager.log_message("You carefully combine two %s into %s!" % [herb_name, new_item.name], ThemeColors.ABILITY_LEARNED)
+	EventBus.item_used.emit(player, new_item)
 
 	return true
 
@@ -330,6 +666,69 @@ static func use_flask(player: Player, item: Variant) -> bool:
 			return false
 
 # ============================================================================
+# HORN / FLUTE EFFECTS (tval 66)
+# ============================================================================
+
+## Pending horn item awaiting directional input from the player.
+## Set by use_horn() when the horn requires a direction, read by main.gd.
+static var _pending_horn_item: Variant = null
+static var _pending_horn_player: Player = null
+
+## Start using a horn/flute. For directional horns, sets pending state and
+## returns false (item not yet consumed). For self-targeted horns, executes
+## immediately and returns true.
+static func use_horn(player: Player, item: Variant) -> bool:
+	if item == null or not "tval" in item or item.tval != Constants.TVAL_HORN:
+		return false
+
+	var sval: int = item.sval if "sval" in item else -1
+
+	# Self-targeted horns: execute immediately
+	if sval not in Constants.HORN_DIRECTIONAL_SVALS:
+		GameManager.identify_item(item)
+		return HornSystem.use_horn(player, item, Vector2i.ZERO)
+
+	# Directional horns: prompt for direction
+	_pending_horn_item = item
+	_pending_horn_player = player
+	GameManager.log_message("Blow horn in which direction? (movement keys to aim, Escape to cancel)", ThemeColors.TEXT_PRIMARY)
+	return false  # Not consumed yet - waiting for direction
+
+## Complete a pending horn use with a direction. Called from main.gd input handler.
+## Returns true if the horn was consumed (item should be removed from inventory).
+## Also removes the consumed horn from player inventory automatically.
+static func complete_horn_use(direction: Vector2i) -> bool:
+	if _pending_horn_item == null or _pending_horn_player == null:
+		return false
+
+	var item: Variant = _pending_horn_item
+	var player: Player = _pending_horn_player
+	_pending_horn_item = null
+	_pending_horn_player = null
+
+	GameManager.identify_item(item)
+	var success: bool = HornSystem.use_horn(player, item, direction)
+
+	# Remove the horn from inventory if successfully used
+	if success and player:
+		var idx: int = player.inventory.find(item)
+		if idx >= 0:
+			player.inventory.remove_at(idx)
+
+	return success
+
+## Cancel a pending horn use.
+static func cancel_horn_use() -> void:
+	if _pending_horn_item != null:
+		GameManager.log_message("Cancelled.", ThemeColors.MSG_SYSTEM)
+	_pending_horn_item = null
+	_pending_horn_player = null
+
+## Check if there is a pending horn awaiting directional input.
+static func has_pending_horn() -> bool:
+	return _pending_horn_item != null
+
+# ============================================================================
 # CONSUMABLE DISPATCHER
 # ============================================================================
 
@@ -349,6 +748,8 @@ static func use_item(player: Player, item: Variant) -> bool:
 			return read_scroll(player, item)
 		56:  # Wand
 			return zap_wand(player, item)
+		66:  # Horn/Flute
+			return use_horn(player, item)
 		_:
 			GameManager.log_message("You can't use that.", ThemeColors.MSG_SYSTEM)
 			return false

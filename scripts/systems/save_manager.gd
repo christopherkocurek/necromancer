@@ -182,6 +182,9 @@ func _serialize_player(player: Player) -> Dictionary:
 		"house_name": player.house_name,
 		"trait_name": player.trait_name,
 		"trait_effect_id": player.trait_effect_id,
+		"gender": player.gender,
+		"age": player.age,
+		"history": player.history,
 		"trait_undying_used": player._trait_undying_used,
 		"hobbit_luck_used": player._hobbit_luck_used,
 		"oath_target_type": player._oath_target_type,
@@ -354,6 +357,9 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	player.house_name = data.get("house_name", "")
 	player.trait_name = data.get("trait_name", "")
 	player.trait_effect_id = data.get("trait_effect_id", "")
+	player.gender = data.get("gender", "male")
+	player.age = data.get("age", 0)
+	player.history = data.get("history", "")
 	player._trait_undying_used = data.get("trait_undying_used", false)
 	player._hobbit_luck_used = data.get("hobbit_luck_used", false)
 	player._oath_target_type = data.get("oath_target_type", "")
