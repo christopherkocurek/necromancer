@@ -1,6 +1,6 @@
 [gd_resource type="TileSet" format=3 uid="uid://cmv6lvgvv7q3l"]
 
-[ext_resource type="Texture2D" uid="uid://8luxwbug3nk6" path="res://assets/sprites/necromancer_dcss_tileset.png" id="1_atlas"]
+[ext_resource type="Texture2D" uid="uid://ckb0limj58rx6" path="res://assets/sprites/necromancer_dcss_tileset.png" id="1_atlas"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_main"]
 texture = ExtResource("1_atlas")

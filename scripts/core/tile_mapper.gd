@@ -8,8 +8,7 @@ var terrain_coords: Dictionary = {}
 var monster_coords: Dictionary = {}
 var item_coords: Dictionary = {}
 var artifact_coords: Dictionary = {}
-var player_coords: Dictionary = {}  # Legacy: race_id -> Vector2i
-var player_coords_v2: Dictionary = {}  # New: "race_house_gender" -> {"light": Vector2i, "dark": Vector2i}
+var player_coords: Dictionary = {}
 var effect_coords: Dictionary = {}
 
 # Monster display char to ID mapping (for existing code compatibility)
@@ -144,19 +143,20 @@ func _load_terrain_coords() -> void:
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
 
 func _load_monster_coords() -> void:
-	monster_coords[11] = Vector2i(0, 24)
-	monster_coords[12] = Vector2i(1, 24)
-	monster_coords[13] = Vector2i(2, 24)
-	monster_coords[14] = Vector2i(3, 24)
-	monster_coords[15] = Vector2i(4, 24)
-	monster_coords[16] = Vector2i(5, 24)
-	monster_coords[17] = Vector2i(6, 24)
-	monster_coords[18] = Vector2i(7, 24)
-	monster_coords[19] = Vector2i(8, 24)
-	monster_coords[20] = Vector2i(9, 24)
-	monster_coords[21] = Vector2i(10, 24)
-	monster_coords[22] = Vector2i(11, 24)
-	monster_coords[31] = Vector2i(12, 8)
+	# Tier 1 monsters relocated to row 24 (rows 8-9 cols 0-11 used by player v2 sprites)
+	monster_coords[11] = Vector2i(0, 24)   # Mirkwood Spider
+	monster_coords[12] = Vector2i(1, 24)   # Giant Rat
+	monster_coords[13] = Vector2i(2, 24)   # Black Squirrel
+	monster_coords[14] = Vector2i(3, 24)   # Crebain
+	monster_coords[15] = Vector2i(4, 24)   # Tanglethorn
+	monster_coords[16] = Vector2i(5, 24)   # Giant Bat
+	monster_coords[17] = Vector2i(6, 24)   # Web Spinner
+	monster_coords[18] = Vector2i(7, 24)   # Orc Scout
+	monster_coords[19] = Vector2i(8, 24)   # Swamp Adder
+	monster_coords[20] = Vector2i(9, 24)   # Great Spider
+	monster_coords[21] = Vector2i(10, 24)  # Warg Pup
+	monster_coords[22] = Vector2i(11, 24)  # Broodmother
+	monster_coords[31] = Vector2i(12, 24)  # Orc Slave
 	monster_coords[32] = Vector2i(13, 8)
 	monster_coords[33] = Vector2i(14, 8)
 	monster_coords[34] = Vector2i(15, 8)
@@ -176,18 +176,18 @@ func _load_monster_coords() -> void:
 	monster_coords[58] = Vector2i(29, 8)
 	monster_coords[59] = Vector2i(30, 8)
 	monster_coords[60] = Vector2i(31, 8)
-	monster_coords[71] = Vector2i(12, 24)
-	monster_coords[72] = Vector2i(14, 24)
-	monster_coords[73] = Vector2i(13, 24)
-	monster_coords[74] = Vector2i(15, 24)
-	monster_coords[75] = Vector2i(16, 24)
-	monster_coords[76] = Vector2i(17, 24)
-	monster_coords[77] = Vector2i(18, 24)
-	monster_coords[78] = Vector2i(19, 24)
-	monster_coords[79] = Vector2i(20, 24)
-	monster_coords[91] = Vector2i(21, 24)
-	monster_coords[92] = Vector2i(22, 24)
-	monster_coords[93] = Vector2i(23, 24)
+	monster_coords[71] = Vector2i(0, 9)
+	monster_coords[72] = Vector2i(2, 9)
+	monster_coords[73] = Vector2i(1, 9)
+	monster_coords[74] = Vector2i(3, 9)
+	monster_coords[75] = Vector2i(4, 9)
+	monster_coords[76] = Vector2i(5, 9)
+	monster_coords[77] = Vector2i(6, 9)
+	monster_coords[78] = Vector2i(7, 9)
+	monster_coords[79] = Vector2i(8, 9)
+	monster_coords[91] = Vector2i(9, 9)
+	monster_coords[92] = Vector2i(10, 9)
+	monster_coords[93] = Vector2i(11, 9)
 	monster_coords[94] = Vector2i(12, 9)
 	monster_coords[95] = Vector2i(13, 9)
 	monster_coords[96] = Vector2i(14, 9)
@@ -624,35 +624,18 @@ func _load_artifact_coords() -> void:
 	artifact_coords[222] = Vector2i(18, 23)
 
 func _load_player_coords() -> void:
-	# V2 player sprites: 4 races x 3 houses x 2 genders = 24 sprites
-	# Layout: Row per race, M/F pairs per house, dark variants offset +6 cols
-	# Row 6: Elf (h0=Lothlorien, h1=Rivendell, h2=Greenwood)
-	# Row 7: Man (h3=Dunedain, h4=Rohan, h5=Gondor)
-	# Row 8: Dwarf (h6=Khazad-dum, h7=Erebor, h8=Iron Hills)
-	# Row 9: Hobbit (h9=Shire, h10=Gamgees, h11=Tooks)
-	var races: Array = [
-		{"name": "Elf", "row": 6, "houses": [0, 1, 2]},
-		{"name": "Man", "row": 7, "houses": [3, 4, 5]},
-		{"name": "Dwarf", "row": 8, "houses": [6, 7, 8]},
-		{"name": "Hobbit", "row": 9, "houses": [9, 10, 11]},
-	]
-	for race in races:
-		var row: int = race["row"]
-		var col: int = 0
-		for house_id in race["houses"]:
-			for gender in ["male", "female"]:
-				var key: String = "%s_%d_%s" % [race["name"], house_id, gender]
-				player_coords_v2[key] = {
-					"light": Vector2i(col, row),
-					"dark": Vector2i(col + 6, row),
-				}
-				col += 1
-	# Legacy fallback: race_id -> default male sprite of first house
-	player_coords[0] = Vector2i(0, 6)  # Elf Lothlorien M
-	player_coords[1] = Vector2i(0, 7)  # Man Dunedain M
-	player_coords[2] = Vector2i(0, 8)  # Dwarf Khazad-dum M
-	player_coords[3] = Vector2i(0, 7)  # Istari -> Man fallback
-	player_coords[4] = Vector2i(0, 9)  # Hobbit Shire M
+	player_coords[0] = Vector2i(0, 6)  # Elf
+	player_coords[1] = Vector2i(1, 6)  # Man
+	player_coords[2] = Vector2i(2, 6)  # Dwarf
+	player_coords[3] = Vector2i(3, 6)  # Istari
+	player_coords[4] = Vector2i(4, 6)  # Hobbit
+	player_coords[5] = Vector2i(5, 6)
+	player_coords[6] = Vector2i(6, 6)
+	player_coords[7] = Vector2i(7, 6)
+	player_coords[8] = Vector2i(8, 6)
+	player_coords[9] = Vector2i(9, 6)
+	player_coords[10] = Vector2i(10, 6)
+	player_coords[11] = Vector2i(11, 6)
 
 func _load_effect_coords() -> void:
 	effect_coords[0] = Vector2i(12, 6)
@@ -741,27 +724,38 @@ func get_artifact_coords(artifact_id: int) -> Vector2i:
 	return get_item_coords(artifact_id)
 
 func get_player_coords(race_id: int) -> Vector2i:
-	## Legacy: Get player tile coordinates by race only.
+	## Get player tile coordinates by race.
 	if player_coords.has(race_id):
 		return player_coords[race_id]
 	return Vector2i(0, 0)
 
+## V2 player sprite lookup: race + house + gender -> tileset coords
+## Layout: rows 6-9, cols 0-5 (light), cols 6-11 (dark)
+## Row 6: Elf (h0,h1,h2), Row 7: Man (h3,h4,h5), Row 8: Dwarf (h6,h7,h8), Row 9: Hobbit (h9,h10,h11)
+const PLAYER_V2_RACES := {
+	"Elf":    {"row": 6, "houses": [0, 1, 2]},
+	"Man":    {"row": 7, "houses": [3, 4, 5]},
+	"Dwarf":  {"row": 8, "houses": [6, 7, 8]},
+	"Hobbit": {"row": 9, "houses": [9, 10, 11]},
+}
+
 func get_player_coords_v2(race_name: String, house_id: int, gender: String = "male", lit: bool = true) -> Vector2i:
-	## Get player tile coords by race name, house ID, and gender.
-	## gender: "male" or "female". lit: true for visible, false for fog-of-war.
-	var key: String = "%s_%d_%s" % [race_name, house_id, gender]
-	if player_coords_v2.has(key):
-		var data: Dictionary = player_coords_v2[key]
-		return data["light"] if lit else data["dark"]
-	# Fallback: try male of same race/house
+	## Get player v2 tile coordinates by race name, house, and gender.
+	var race_info: Dictionary = PLAYER_V2_RACES.get(race_name, {})
+	if race_info.is_empty():
+		return Vector2i(0, 6)
+	var row: int = race_info["row"]
+	var houses: Array = race_info["houses"]
+	var house_index: int = houses.find(house_id)
+	if house_index == -1:
+		house_index = 0
+	# Each house has male + female = 2 cols
+	var col: int = house_index * 2
 	if gender == "female":
-		var male_key: String = "%s_%d_male" % [race_name, house_id]
-		if player_coords_v2.has(male_key):
-			var data: Dictionary = player_coords_v2[male_key]
-			return data["light"] if lit else data["dark"]
-	# Final fallback: legacy race lookup
-	var race_ids: Dictionary = {"Elf": 0, "Man": 1, "Dwarf": 2, "Istari": 3, "Hobbit": 4}
-	return get_player_coords(race_ids.get(race_name, 1))
+		col += 1
+	if not lit:
+		col += 6  # Dark variants at cols 6-11
+	return Vector2i(col, row)
 
 func get_effect_coords(effect_id: int) -> Vector2i:
 	## Get effect/status tile coordinates.
