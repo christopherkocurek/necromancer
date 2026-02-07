@@ -47,6 +47,7 @@ const SPIRIT_GLOW := Color("#4488FF")        # Full voice glow
 const PARCHMENT_BG := Color("#D4C5A0")       # Parchment interior
 const PARCHMENT_EDGE := Color("#8B7D5E")     # Parchment border
 const PARCHMENT_TEXT := Color("#2A2219")      # Dark text on parchment
+const SCROLL_INK := Color("#0E0C08")          # Near-black ink for scroll text (high contrast)
 
 # ============================================================================
 # TEXT (4 tiers, all >=4.5:1 contrast vs BG_DARK)
@@ -414,21 +415,10 @@ const UI_TEXTURE_PATHS := {
 	"book_spine": "res://assets/ui/frames/book_spine.png",
 	"bookmark_tab": "res://assets/ui/frames/bookmark_tab.png",
 	"gutter_shadow": "res://assets/ui/frames/gutter_shadow.png",
-	# Tome of Fallen Heroes (DALL-E generated)
-	"tome_cover": "res://assets/ui/tome/cover.png",
-	"tome_spine": "res://assets/ui/tome/spine.png",
-	"tome_page_index": "res://assets/ui/tome/page_index.png",
-	"tome_page_melee": "res://assets/ui/tome/page_melee.png",
-	"tome_page_archery": "res://assets/ui/tome/page_archery.png",
-	"tome_page_evasion": "res://assets/ui/tome/page_evasion.png",
-	"tome_page_stealth": "res://assets/ui/tome/page_stealth.png",
-	"tome_page_perception": "res://assets/ui/tome/page_perception.png",
-	"tome_page_will": "res://assets/ui/tome/page_will.png",
-	"tome_page_smithing": "res://assets/ui/tome/page_smithing.png",
-	"tome_page_lore": "res://assets/ui/tome/page_lore.png",
-	"tome_page_edges": "res://assets/ui/tome/page_edges.png",
-	"tome_corner_dogear": "res://assets/ui/tome/corner_dogear.png",
-	"tome_loose_note": "res://assets/ui/tome/loose_note.png",
+	# Scroll UI (DALL-E generated parchment pages + scroll rollers)
+	"scroll_bg": "res://assets/ui/tome/scroll_bg.png",
+	"scroll_roller_left": "res://assets/ui/tome/scroll_roller.png",
+	"scroll_roller_right": "res://assets/ui/tome/scroll_roller_right.png",
 }
 
 const FONT_PATHS := {
@@ -441,9 +431,6 @@ const SHADER_PATHS := {
 	"gold_glow": "res://assets/shaders/ui/gold_glow.gdshader",
 	"vignette": "res://assets/shaders/ui/vignette.gdshader",
 	"engraved": "res://assets/shaders/ui/engraved_text.gdshader",
-	"page_turn": "res://assets/shaders/ui/page_turn.gdshader",
-	"paper_lighting": "res://assets/shaders/ui/paper_lighting.gdshader",
-	"book_depth": "res://assets/shaders/ui/book_depth.gdshader",
 }
 
 # 9-slice margin definitions per texture (left, top, right, bottom)

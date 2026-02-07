@@ -68,6 +68,11 @@ const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
 
 func _ready() -> void:
+	# Scale all content uniformly when window is resized
+	get_window().set_flag(Window.FLAG_RESIZE_DISABLED, false)
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	get_tree().root.content_scale_size = Vector2i(1920, 1080)
 	_setup_ui_panels()
 	_show_character_creation()
 
@@ -318,6 +323,7 @@ func _grant_starting_equipment(p: Player) -> void:
 		for i in range(qty):
 			var item_copy: DataManager.ItemData = _duplicate_item_data(item_data)
 			item_copy.identified = true  # Starting equipment is always identified
+			item_copy.stack_count = 1
 
 			# Set fuel for light sources
 			if tval == 39 and item_copy.fuel < 0:
@@ -343,9 +349,9 @@ func _grant_starting_equipment(p: Player) -> void:
 				p.equipment["quiver"] = item_copy
 				equipped = true
 
-			# If not equipped, add to inventory
+			# If not equipped, add to inventory (uses stacking for consumables)
 			if not equipped:
-				p.inventory.append(item_copy)
+				p.pick_up_item(item_copy)
 
 func _duplicate_item_data(source: DataManager.ItemData) -> DataManager.ItemData:
 	## Create a deep copy of an ItemData for inventory use.
@@ -371,6 +377,7 @@ func _duplicate_item_data(source: DataManager.ItemData) -> DataManager.ItemData:
 	copy.description = source.description
 	copy.identified = source.identified
 	copy.fuel = source.fuel
+	copy.stack_count = source.stack_count if "stack_count" in source else 1
 	return copy
 
 func _process(_delta: float) -> void:
@@ -660,7 +667,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if diag_dir != Vector2i.ZERO:
 				player.moved_this_turn = true
 				if player.try_move(diag_dir):
-					player.consume_energy()
+					var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
+					player.consume_energy(move_cost)
 					turn_system._after_player_action()
 				get_viewport().set_input_as_handled()
 				return
@@ -1141,7 +1149,8 @@ func _process_auto_explore_step() -> void:
 
 	# Move the player
 	if player.try_move(direction):
-		player.consume_energy()
+		var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
+		player.consume_energy(move_cost)
 		auto_explore.confirm_step_taken()
 
 		# Record monster observations

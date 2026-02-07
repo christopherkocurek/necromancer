@@ -1242,6 +1242,11 @@ class MonsterData:
 	var flags3: int = 0  # RF3 - race/resist flags
 	var flags4: int = 0  # RF4 - spell/ranged flags
 
+	func _init() -> void:
+		spell_types = []
+		attacks = []
+		flags = []
+
 	func roll_health() -> int:
 		return DataManager.roll_dice(health_dice) if health_dice else 10
 
@@ -1310,6 +1315,10 @@ class ItemData:
 	var fuel: int = -1               # Fuel for light sources (-1 = no fuel system)
 	var stack_count: int = 1         # Stacking: how many in this stack (1 = single item)
 
+	func _init() -> void:
+		flags = []
+		granted_abilities = []
+
 class ArtifactData:
 	var index: int = 0
 	var name: String = ""
@@ -1327,6 +1336,9 @@ class ArtifactData:
 	var flags: Array[String] = []
 	var description: String = ""
 
+	func _init() -> void:
+		flags = []
+
 class AbilityData:
 	var index: int = 0
 	var name: String = ""
@@ -1337,6 +1349,10 @@ class AbilityData:
 	var prereqs: Array = []       # P: parsed as [{skill: int, ability: int}, ...]
 	var item_grants: Array = []   # T: parsed as [{tval: int, min_sval: int, max_sval: int}, ...]
 	var description: String = ""
+
+	func _init() -> void:
+		prereqs = []
+		item_grants = []
 
 	# Keep old field name for compatibility
 	var skill_requirement: int:
@@ -1368,6 +1384,11 @@ class RaceData:
 	var starting_equipment: Array = []
 	var description: String = ""
 
+	func _init() -> void:
+		compatible_houses = []
+		flags = []
+		starting_equipment = []
+
 class HouseData:
 	var index: int = 0
 	var name: String = ""
@@ -1383,6 +1404,9 @@ class HouseData:
 	var affinities: Array[String] = []
 	var description: String = ""
 
+	func _init() -> void:
+		affinities = []
+
 class TraitData:
 	var index: int = 0
 	var name: String = ""
@@ -1397,6 +1421,9 @@ class TerrainData:
 	var mimic_char: String = ""
 	var flags: Array[String] = []
 
+	func _init() -> void:
+		flags = []
+
 class VaultData:
 	var index: int = 0
 	var name: String = ""
@@ -1407,6 +1434,10 @@ class VaultData:
 	var rarity: int = 1          # From X: field[2]
 	var flags: Array[String] = [] # From F: lines
 	var map_lines: Array[String] = []
+
+	func _init() -> void:
+		flags = []
+		map_lines = []
 
 	func has_flag(flag_name: String) -> bool:
 		return flag_name in flags

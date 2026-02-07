@@ -95,6 +95,67 @@ N:5:54:100:0
 D:of a Sindar king.
 
 
+# Hobbit History
+#
+#  Hobbit --> 30 --> 31 --> 32 --> 33 --> 34 --> 35
+
+N:30:31:20:0
+D:You are one of many children
+N:30:31:55:0
+D:You are one of several children
+N:30:31:85:0
+D:You are one of two children
+N:30:31:100:0
+D:You are the only child
+
+N:31:32:30:0
+D:of a Hobbit farmer.
+N:31:32:55:0
+D:of a Hobbit gardener.
+N:31:32:70:0
+D:of a Hobbit cook.
+N:31:32:85:0
+D:of a Hobbit herbalist.
+N:31:32:95:0
+D:of a Hobbit innkeeper.
+N:31:32:100:0
+D:of a Hobbit adventurer.
+
+N:32:33:10:0
+D:You are the black sheep of the family.
+N:32:33:40:0
+D:You are considered somewhat peculiar.
+N:32:33:80:0
+D:You are a credit to the family.
+N:32:33:100:0
+D:You were a well liked child.
+
+# Hobbit Description
+
+N:33:34:40:0
+D:You have brown eyes,
+N:33:34:70:0
+D:You have hazel eyes,
+N:33:34:90:0
+D:You have green eyes,
+N:33:34:100:0
+D:You have bright blue eyes,
+
+N:34:35:70:0
+D:curly
+N:34:35:100:0
+D:wavy
+
+N:35:0:40:0
+D:brown hair, and a ruddy complexion.
+N:35:0:70:0
+D:sandy hair, and a warm complexion.
+N:35:0:90:0
+D:golden hair, and a fair complexion.
+N:35:0:100:0
+D:auburn hair, and a freckled complexion.
+
+
 # Naugrim History
 
 N:16:17:25:0

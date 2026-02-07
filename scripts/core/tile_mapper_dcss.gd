@@ -454,6 +454,7 @@ func _load_player_coords() -> void:
     player_coords[3] = Vector2i(15, 3)  # Istari
 
 func _load_effect_coords() -> void:
+	pass
 
 func _load_char_mappings() -> void:
     # Map display characters to monster IDs for compatibility
@@ -490,52 +491,52 @@ func _load_char_mappings() -> void:
 # ============================================================================
 
 func get_terrain_coords(terrain_id: int, lit: bool = true) -> Vector2i:
-    """Get terrain tile coordinates. lit=true for visible, false for remembered."""
+    ## Get terrain tile coordinates. lit=true for visible, false for remembered.
     if terrain_coords.has(terrain_id):
         var data: Dictionary = terrain_coords[terrain_id]
         return data["light"] if lit else data["dark"]
     return Vector2i(0, 0)  # Default to first tile
 
 func get_monster_coords(monster_id: int) -> Vector2i:
-    """Get monster tile coordinates by ID."""
+    ## Get monster tile coordinates by ID.
     if monster_coords.has(monster_id):
         return monster_coords[monster_id]
     return Vector2i(0, 0)
 
 func get_monster_coords_for_char(display_char: String) -> Vector2i:
-    """Get monster tile coordinates by display character."""
+    ## Get monster tile coordinates by display character.
     if char_to_monster_id.has(display_char):
         var monster_id: int = char_to_monster_id[display_char]
         return get_monster_coords(monster_id)
     return Vector2i(0, 0)
 
 func get_item_coords(item_id: int) -> Vector2i:
-    """Get item tile coordinates."""
+    ## Get item tile coordinates.
     if item_coords.has(item_id):
         return item_coords[item_id]
     return Vector2i(0, 0)
 
 func get_artifact_coords(artifact_id: int) -> Vector2i:
-    """Get artifact tile coordinates."""
+    ## Get artifact tile coordinates.
     if artifact_coords.has(artifact_id):
         return artifact_coords[artifact_id]
     # Fall back to items
     return get_item_coords(artifact_id)
 
 func get_player_coords(race_id: int) -> Vector2i:
-    """Get player tile coordinates by race."""
+    ## Get player tile coordinates by race.
     if player_coords.has(race_id):
         return player_coords[race_id]
     return Vector2i(0, 0)
 
 func get_effect_coords(effect_id: int) -> Vector2i:
-    """Get effect/status tile coordinates."""
+    ## Get effect/status tile coordinates.
     if effect_coords.has(effect_id):
         return effect_coords[effect_id]
     return Vector2i(0, 0)
 
 func get_object_coords(object_id: int) -> Vector2i:
-    """Compatibility function - tries items then artifacts."""
+    ## Compatibility function - tries items then artifacts.
     if item_coords.has(object_id):
         return item_coords[object_id]
     if artifact_coords.has(object_id):

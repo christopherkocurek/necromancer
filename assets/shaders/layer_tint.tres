@@ -6,5 +6,5 @@
 shader = ExtResource("1_shader")
 shader_parameter/tint_color = Color(1, 1, 1, 1)
 shader_parameter/tint_strength = 0.0
-shader_parameter/gamma = 0.4
+shader_parameter/gamma = 1.0
 shader_parameter/magenta_tolerance = 0.15

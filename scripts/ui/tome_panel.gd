@@ -1,7 +1,7 @@
 extends Control
 class_name TomePanel
-## Tome of Fallen Heroes — unified skill tree + ability browser.
-## Single-page book navigation: Index page or Chapter page, with page-turn transitions.
+## Ancient Scroll — unified skill tree + ability browser.
+## Single-page scroll navigation: Index page or Chapter page, with crossfade transitions.
 
 signal skill_increased(skill_name: String, new_level: int)
 signal ability_purchased(ability_name: String)
@@ -136,8 +136,6 @@ var title_label: Label
 
 # Single page (replaces left_page/spine/right_page)
 var page_container: PanelContainer
-var page_bg: TextureRect
-var _paper_material: ShaderMaterial
 var index_content: VBoxContainer
 var chapter_content: VBoxContainer
 
@@ -172,22 +170,10 @@ var cancel_btn: Button
 # Layered depth elements
 var book_shadow: ColorRect
 var cover_texture: TextureRect
-var page_edges_texture: TextureRect
-var corner_dogear: TextureRect
-var loose_note: TextureRect
+var scroll_roller_left: TextureRect
+var scroll_roller_right: TextureRect
 var page_turn_overlay: ColorRect
-var _page_turn_material: ShaderMaterial
 var _is_turning_page: bool = false
-
-# Parallax state
-var _base_note_offset: Vector2 = Vector2.ZERO
-var _base_corner_offset: Vector2 = Vector2.ZERO
-
-# Skill-to-page texture mapping
-const SKILL_PAGE_KEYS: Array[String] = [
-	"tome_page_melee", "tome_page_archery", "tome_page_evasion", "tome_page_stealth",
-	"tome_page_perception", "tome_page_will", "tome_page_smithing", "tome_page_lore",
-]
 
 # Footer
 var footer_xp: Label
@@ -201,19 +187,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
-	# Subtle parallax: shift decorative layers based on mouse position
+	# Subtle parallax: shift shadow based on mouse position
 	var vp_size := get_viewport_rect().size
 	if vp_size.x < 1.0:
 		return
 	var mouse := get_viewport().get_mouse_position()
-	# Normalized -1..+1 from center
 	var nx: float = (mouse.x / vp_size.x - 0.5) * 2.0
 	var ny: float = (mouse.y / vp_size.y - 0.5) * 2.0
-	# Parallax amounts (small, subtle)
-	if corner_dogear and corner_dogear.visible:
-		corner_dogear.offset_left = _base_corner_offset.x + nx * 3.0
-		corner_dogear.offset_top = _base_corner_offset.y + ny * 2.0
-	# Book shadow slight shift (depth cue)
 	if book_shadow:
 		book_shadow.offset_left = -590 + nx * 4.0
 		book_shadow.offset_top = -358 + ny * 3.0
@@ -221,11 +201,9 @@ func _process(_delta: float) -> void:
 func open(player_ref: Player) -> void:
 	player = player_ref
 	current_page = PageState.INDEX
-	_swap_page_texture_instant()
 	index_content.visible = true
 	chapter_content.visible = false
 	_refresh_all()
-	_randomize_loose_note(selected_skill_idx)
 	PanelTransition.open_panel(self)
 	set_process(true)
 	grab_focus()
@@ -240,7 +218,7 @@ func close() -> void:
 # ===========================================================================
 
 func _setup_ui() -> void:
-	# Layer 0: Drop shadow beneath the book (depth cue)
+	# Layer 0: Drop shadow beneath the scroll (depth cue)
 	book_shadow = ColorRect.new()
 	book_shadow.anchor_left = 0.5
 	book_shadow.anchor_top = 0.5
@@ -254,42 +232,41 @@ func _setup_ui() -> void:
 	book_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(book_shadow)
 
-	# Layer 1: Book cover texture (DALL-E leather, slightly larger than pages)
+	# Layer 1: Scroll parchment background (replaces leather book cover)
 	cover_texture = TextureRect.new()
 	cover_texture.anchor_left = 0.5
 	cover_texture.anchor_top = 0.5
 	cover_texture.anchor_right = 0.5
 	cover_texture.anchor_bottom = 0.5
-	cover_texture.offset_left = -608
+	cover_texture.offset_left = -540
 	cover_texture.offset_top = -378
-	cover_texture.offset_right = 608
+	cover_texture.offset_right = 540
 	cover_texture.offset_bottom = 378
 	cover_texture.stretch_mode = TextureRect.STRETCH_SCALE
 	cover_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var cover_tex: Texture2D = ThemeColors.get_texture("tome_cover")
-	if cover_tex:
-		cover_texture.texture = cover_tex
-		var depth_shader: Shader = ThemeColors.get_shader("book_depth")
-		if depth_shader:
-			var depth_mat := ShaderMaterial.new()
-			depth_mat.shader = depth_shader
-			cover_texture.material = depth_mat
+	var scroll_bg_tex: Texture2D = ThemeColors.get_texture("scroll_bg")
+	if scroll_bg_tex:
+		cover_texture.texture = scroll_bg_tex
 	else:
-		cover_texture.self_modulate = Color(0.18, 0.12, 0.08, 1.0)
+		# Fallback: warm parchment tone
+		cover_texture.self_modulate = Color(0.72, 0.65, 0.48, 1.0)
 	add_child(cover_texture)
 
-	# Layer 2: Book frame
+	# Layer 1b: Scroll rollers (left and right)
+	_setup_scroll_rollers()
+
+	# Layer 2: Content frame (transparent over scroll bg)
 	book_frame = PanelContainer.new()
 	book_frame.anchor_left = 0.5
 	book_frame.anchor_top = 0.5
 	book_frame.anchor_right = 0.5
 	book_frame.anchor_bottom = 0.5
-	book_frame.offset_left = -600
+	book_frame.offset_left = -500
 	book_frame.offset_top = -370
-	book_frame.offset_right = 600
+	book_frame.offset_right = 500
 	book_frame.offset_bottom = 370
 	var frame_style := StyleBoxFlat.new()
-	frame_style.bg_color = Color(0, 0, 0, 0) if cover_tex else Color(0.15, 0.1, 0.07, 0.95)
+	frame_style.bg_color = Color(0, 0, 0, 0)
 	frame_style.content_margin_left = 12
 	frame_style.content_margin_right = 12
 	frame_style.content_margin_top = 8
@@ -303,7 +280,7 @@ func _setup_ui() -> void:
 
 	# Title
 	title_label = Label.new()
-	title_label.text = "TOME OF FALLEN HEROES"
+	title_label.text = "ANCIENT SCROLL"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ThemeColors.apply_heading_font(title_label, ThemeColors.FONT_SIZE_H2)
 	var engraved: Shader = ThemeColors.get_shader("engraved")
@@ -316,14 +293,8 @@ func _setup_ui() -> void:
 	# Content: Single page area (full width)
 	_setup_page(main_vbox)
 
-	# Layer 3: Page edges
-	_setup_page_edges()
-	# Layer 4: Corner dogear overlay
-	_setup_corner_overlay()
-	# Layer 5: Page turn overlay
+	# Page turn overlay (crossfade)
 	_setup_page_turn_overlay()
-	# Layer 6: Loose note
-	_setup_loose_note()
 	# Footer bar
 	_setup_footer(main_vbox)
 
@@ -334,53 +305,17 @@ func _setup_page(parent: VBoxContainer) -> void:
 	page_container.clip_contents = true
 	var page_style := StyleBoxFlat.new()
 	page_style.bg_color = Color(0, 0, 0, 0)
-	page_style.content_margin_left = 24
-	page_style.content_margin_right = 24
+	page_style.content_margin_left = 100
+	page_style.content_margin_right = 100
 	page_style.content_margin_top = 8
 	page_style.content_margin_bottom = 8
 	page_container.add_theme_stylebox_override("panel", page_style)
 	parent.add_child(page_container)
 
-	# Page texture background
-	page_bg = TextureRect.new()
-	page_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	page_bg.stretch_mode = TextureRect.STRETCH_SCALE
-	page_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page_bg.show_behind_parent = true
-	var index_tex: Texture2D = ThemeColors.get_texture("tome_page_index")
-	if index_tex:
-		page_bg.texture = index_tex
-		var paper_shader: Shader = ThemeColors.get_shader("paper_lighting")
-		if paper_shader:
-			_paper_material = ShaderMaterial.new()
-			_paper_material.shader = paper_shader
-			_paper_material.set_shader_parameter("light_pos", Vector2(0.5, 0.2))
-			_paper_material.set_shader_parameter("shadow_at_spine", 0.0)
-			_paper_material.set_shader_parameter("desaturation", 0.45)
-			_paper_material.set_shader_parameter("brightness_boost", 1.15)
-			page_bg.material = _paper_material
-	else:
-		page_container.remove_theme_stylebox_override("panel")
-		var fallback: StyleBox = ThemeColors.create_textured_panel("panel_parchment", 12.0)
-		page_container.add_theme_stylebox_override("panel", fallback)
-	page_container.add_child(page_bg)
-
-	# [#7] Dark backing panel — increased opacity (0.55 → 0.68) to mute texture
-	var page_backing := PanelContainer.new()
-	page_backing.set_anchors_preset(Control.PRESET_FULL_RECT)
-	var backing_style := StyleBoxFlat.new()
-	backing_style.bg_color = Color(0.12, 0.09, 0.06, 0.68)
-	backing_style.content_margin_left = 24
-	backing_style.content_margin_right = 24
-	backing_style.content_margin_top = 8
-	backing_style.content_margin_bottom = 8
-	page_backing.add_theme_stylebox_override("panel", backing_style)
-	page_container.add_child(page_backing)
-
-	# Stack both content containers inside the backing
+	# Content containers sit directly on the scroll parchment (no sub-page)
 	var stack := Control.new()
 	stack.set_anchors_preset(Control.PRESET_FULL_RECT)
-	page_backing.add_child(stack)
+	page_container.add_child(stack)
 
 	index_content = VBoxContainer.new()
 	index_content.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -462,7 +397,7 @@ func _create_skill_row(idx: int) -> Dictionary:
 	row_normal.content_margin_left = 4
 	row_btn.add_theme_stylebox_override("normal", row_normal)
 	var row_hover := StyleBoxFlat.new()
-	row_hover.bg_color = Color(ThemeColors.PARCHMENT_EDGE, 0.15)
+	row_hover.bg_color = Color(ThemeColors.SCROLL_INK, 0.08)
 	row_hover.content_margin_left = 4
 	row_btn.add_theme_stylebox_override("hover", row_hover)
 
@@ -487,7 +422,7 @@ func _create_skill_row(idx: int) -> Dictionary:
 	if heading_font:
 		numeral_label.add_theme_font_override("font", heading_font)
 	numeral_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	numeral_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+	_apply_scroll_ink(numeral_label)
 	numeral_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(numeral_label)
 
@@ -498,7 +433,7 @@ func _create_skill_row(idx: int) -> Dictionary:
 	if heading_font:
 		name_label.add_theme_font_override("font", heading_font)
 	name_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
-	name_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+	_apply_scroll_ink(name_label)
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(name_label)
 
@@ -507,7 +442,7 @@ func _create_skill_row(idx: int) -> Dictionary:
 	level_label.custom_minimum_size.x = 65
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ThemeColors.apply_body_font(level_label, ThemeColors.FONT_SIZE_BODY)
-	level_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+	_apply_scroll_ink(level_label)
 	level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(level_label)
 
@@ -543,7 +478,7 @@ func _create_skill_row(idx: int) -> Dictionary:
 	if body_font:
 		preview_label.add_theme_font_override("font", body_font)
 	preview_label.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT - 2)
-	preview_label.add_theme_color_override("font_color", Color(ThemeColors.PARCHMENT_TEXT, 0.6))
+	_apply_scroll_ink(preview_label, Color(ThemeColors.SCROLL_INK, 0.55))
 	preview_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Indent to align with skill name (past numeral column)
 	preview_label.add_theme_constant_override("margin_left", 50)
@@ -561,6 +496,13 @@ func _create_skill_row(idx: int) -> Dictionary:
 		"buy_btn": buy_btn,
 		"preview_label": preview_label,
 	}
+
+# Helper: apply dark ink color + shadow for readability on parchment
+func _apply_scroll_ink(label: Label, color: Color = ThemeColors.SCROLL_INK) -> void:
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_color_override("font_shadow_color", Color(1, 1, 1, 0.4))
 
 # [#6] Helper: circular stone button style for +/- investment buttons
 func _apply_circular_button_style(btn: Button) -> void:
@@ -594,7 +536,7 @@ func _apply_circular_button_style(btn: Button) -> void:
 	disabled.corner_radius_bottom_left = 17
 	disabled.corner_radius_bottom_right = 17
 	btn.add_theme_stylebox_override("disabled", disabled)
-	btn.add_theme_color_override("font_disabled_color", Color(ThemeColors.PARCHMENT_EDGE, 0.4))
+	btn.add_theme_color_override("font_disabled_color", Color(ThemeColors.SCROLL_INK, 0.35))
 
 func _setup_chapter_content() -> void:
 	# Chapter header
@@ -614,7 +556,7 @@ func _setup_chapter_content() -> void:
 	if body_font:
 		chapter_flavor.add_theme_font_override("font", body_font)
 	chapter_flavor.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT)
-	chapter_flavor.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+	chapter_flavor.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.7))
 	chapter_flavor.add_theme_constant_override("shadow_offset_x", 1)
 	chapter_flavor.add_theme_constant_override("shadow_offset_y", 1)
 	chapter_flavor.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
@@ -693,7 +635,7 @@ func _setup_chapter_content() -> void:
 	detail_panel = PanelContainer.new()
 	detail_panel.custom_minimum_size.y = 160
 	var detail_style := StyleBoxFlat.new()
-	detail_style.bg_color = Color(ThemeColors.PARCHMENT_EDGE, 0.35)
+	detail_style.bg_color = Color(ThemeColors.SCROLL_INK, 0.12)
 	detail_style.border_width_top = 2
 	detail_style.border_color = Color(ThemeColors.GOLD_WARM, 0.5)
 	detail_style.content_margin_left = 12
@@ -713,7 +655,7 @@ func _setup_chapter_content() -> void:
 
 	detail_name = Label.new()
 	ThemeColors.apply_heading_font(detail_name, ThemeColors.FONT_SIZE_LARGE)
-	detail_name.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+	_apply_scroll_ink(detail_name)
 	detail_vbox.add_child(detail_name)
 
 	detail_desc = RichTextLabel.new()
@@ -722,7 +664,7 @@ func _setup_chapter_content() -> void:
 	detail_desc.scroll_active = false
 	detail_desc.custom_minimum_size.y = 40
 	ThemeColors.apply_rich_body_font(detail_desc, ThemeColors.FONT_SIZE_HINT)
-	detail_desc.add_theme_color_override("default_color", ThemeColors.PARCHMENT_TEXT)
+	detail_desc.add_theme_color_override("default_color", ThemeColors.SCROLL_INK)
 	detail_vbox.add_child(detail_desc)
 
 	detail_prereqs = Label.new()
@@ -755,42 +697,45 @@ func _setup_chapter_content() -> void:
 
 	_clear_detail()
 
-func _setup_page_edges() -> void:
-	page_edges_texture = TextureRect.new()
-	page_edges_texture.anchor_left = 0.5
-	page_edges_texture.anchor_top = 0.5
-	page_edges_texture.anchor_right = 0.5
-	page_edges_texture.anchor_bottom = 0.5
-	page_edges_texture.offset_left = 596
-	page_edges_texture.offset_top = -360
-	page_edges_texture.offset_right = 596 + 24
-	page_edges_texture.offset_bottom = 360
-	page_edges_texture.stretch_mode = TextureRect.STRETCH_SCALE
-	page_edges_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var edges_tex: Texture2D = ThemeColors.get_texture("tome_page_edges")
-	if edges_tex:
-		page_edges_texture.texture = edges_tex
+func _setup_scroll_rollers() -> void:
+	# Left scroll roller
+	scroll_roller_left = TextureRect.new()
+	scroll_roller_left.anchor_left = 0.5
+	scroll_roller_left.anchor_top = 0.5
+	scroll_roller_left.anchor_right = 0.5
+	scroll_roller_left.anchor_bottom = 0.5
+	scroll_roller_left.offset_left = -608
+	scroll_roller_left.offset_top = -378
+	scroll_roller_left.offset_right = -508
+	scroll_roller_left.offset_bottom = 378
+	scroll_roller_left.stretch_mode = TextureRect.STRETCH_SCALE
+	scroll_roller_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var roller_left_tex: Texture2D = ThemeColors.get_texture("scroll_roller_left")
+	if roller_left_tex:
+		scroll_roller_left.texture = roller_left_tex
 	else:
-		page_edges_texture.self_modulate = Color(0.82, 0.76, 0.65, 0.8)
-	add_child(page_edges_texture)
+		# Fallback: dark wood-like bar
+		scroll_roller_left.self_modulate = Color(0.22, 0.16, 0.10, 1.0)
+	add_child(scroll_roller_left)
 
-func _setup_corner_overlay() -> void:
-	corner_dogear = TextureRect.new()
-	corner_dogear.anchor_left = 0.5
-	corner_dogear.anchor_top = 0.5
-	corner_dogear.offset_left = 510
-	corner_dogear.offset_top = -365
-	corner_dogear.custom_minimum_size = Vector2(64, 64)
-	corner_dogear.stretch_mode = TextureRect.STRETCH_SCALE
-	corner_dogear.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var corner_tex: Texture2D = ThemeColors.get_texture("tome_corner_dogear")
-	if corner_tex:
-		corner_dogear.texture = corner_tex
-		corner_dogear.self_modulate = Color(1, 1, 1, 0.7)
+	# Right scroll roller (mirrored)
+	scroll_roller_right = TextureRect.new()
+	scroll_roller_right.anchor_left = 0.5
+	scroll_roller_right.anchor_top = 0.5
+	scroll_roller_right.anchor_right = 0.5
+	scroll_roller_right.anchor_bottom = 0.5
+	scroll_roller_right.offset_left = 508
+	scroll_roller_right.offset_top = -378
+	scroll_roller_right.offset_right = 608
+	scroll_roller_right.offset_bottom = 378
+	scroll_roller_right.stretch_mode = TextureRect.STRETCH_SCALE
+	scroll_roller_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var roller_right_tex: Texture2D = ThemeColors.get_texture("scroll_roller_right")
+	if roller_right_tex:
+		scroll_roller_right.texture = roller_right_tex
 	else:
-		corner_dogear.visible = false
-	add_child(corner_dogear)
-	_base_corner_offset = Vector2(corner_dogear.offset_left, corner_dogear.offset_top)
+		scroll_roller_right.self_modulate = Color(0.22, 0.16, 0.10, 1.0)
+	add_child(scroll_roller_right)
 
 func _setup_page_turn_overlay() -> void:
 	page_turn_overlay = ColorRect.new()
@@ -804,34 +749,7 @@ func _setup_page_turn_overlay() -> void:
 	page_turn_overlay.offset_bottom = 340
 	page_turn_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page_turn_overlay.visible = false
-	var page_turn_shader: Shader = ThemeColors.get_shader("page_turn")
-	if page_turn_shader:
-		_page_turn_material = ShaderMaterial.new()
-		_page_turn_material.shader = page_turn_shader
-		page_turn_overlay.material = _page_turn_material
 	add_child(page_turn_overlay)
-
-func _setup_loose_note() -> void:
-	loose_note = TextureRect.new()
-	loose_note.anchor_left = 0.5
-	loose_note.anchor_top = 0.5
-	loose_note.anchor_right = 0.5
-	loose_note.anchor_bottom = 0.5
-	loose_note.offset_left = -530
-	loose_note.offset_top = 200
-	loose_note.offset_right = -530 + 96
-	loose_note.offset_bottom = 200 + 96
-	loose_note.stretch_mode = TextureRect.STRETCH_SCALE
-	loose_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	loose_note.rotation_degrees = -7.0
-	var note_tex: Texture2D = ThemeColors.get_texture("tome_loose_note")
-	if note_tex:
-		loose_note.texture = note_tex
-		loose_note.self_modulate = Color(1, 1, 1, 0.6)
-	else:
-		loose_note.visible = false
-	add_child(loose_note)
-	_base_note_offset = Vector2(loose_note.offset_left, loose_note.offset_top)
 
 func _setup_footer(parent: VBoxContainer) -> void:
 	var footer := HBoxContainer.new()
@@ -883,14 +801,14 @@ func _refresh_index_page() -> void:
 			row.buy_btn.disabled = effective_level >= 20 or not _can_afford_invest(skill_name)
 		elif current_level >= 20:
 			row.level_label.text = "Lv %d" % current_level
-			row.level_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+			row.level_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
 			row.cost_label.text = "MASTERED"
 			row.cost_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
 			row.buy_btn.disabled = true
 			row.minus_btn.visible = false
 		else:
 			row.level_label.text = "Lv %d" % current_level
-			row.level_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+			row.level_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
 			var cost: int = player.get_skill_cost(current_level, 1, skill_name)
 			row.cost_label.text = "[%d XP]" % cost
 			if _can_afford_invest(skill_name):
@@ -907,10 +825,10 @@ func _refresh_index_page() -> void:
 			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.GOLD_WARM, 0.6))
 		elif preview.next_name != "":
 			row.preview_label.text = "      Next: %s (Lv %d)  |  %d/%d abilities" % [preview.next_name, preview.next_level, preview.learned, preview.total]
-			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.PARCHMENT_TEXT, 0.5))
+			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.7))
 		else:
 			row.preview_label.text = "      %d abilities" % preview.total
-			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.PARCHMENT_TEXT, 0.4))
+			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.6))
 	_update_confirm_bar()
 
 # [#4] Helper: get next ability and progress counts for a skill tree
@@ -966,7 +884,7 @@ func _refresh_chapter_page() -> void:
 			tier_header.text = "--- Requires Level %d ---" % current_tier
 			tier_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			ThemeColors.apply_body_font(tier_header, ThemeColors.FONT_SIZE_HINT)
-			tier_header.add_theme_color_override("font_color", Color(ThemeColors.PARCHMENT_EDGE, 0.7))
+			tier_header.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.45))
 			ability_vbox.add_child(tier_header)
 
 		var btn := _create_ability_row(ability, player_skill_level, btn_index)
@@ -993,18 +911,16 @@ func _create_ability_row(ability: DataManager.AbilityData, player_skill_level: i
 	var use_heading_font: bool = false
 
 	if has_it:
-		name_color = ThemeColors.PARCHMENT_TEXT
+		name_color = ThemeColors.SCROLL_INK
 		use_heading_font = true
 	elif can_learn:
-		name_color = Color(ThemeColors.PARCHMENT_TEXT, 0.85)
+		name_color = Color(ThemeColors.SCROLL_INK, 0.85)
 	elif meets_level and has_prereqs and not has_xp:
 		name_color = ThemeColors.ABILITY_NO_XP
 	elif not meets_level:
-		# [#1] LOCKED: 0.2 → 0.6 — readable but clearly disabled
-		name_color = Color(ThemeColors.PARCHMENT_TEXT, 0.6)
+		name_color = Color(ThemeColors.SCROLL_INK, 0.4)
 	else:
-		# [#1] BLOCKED (has prereqs unmet): 0.4 → 0.7
-		name_color = Color(ThemeColors.PARCHMENT_TEXT, 0.7)
+		name_color = Color(ThemeColors.SCROLL_INK, 0.5)
 
 	var btn := Button.new()
 	btn.flat = true
@@ -1026,7 +942,7 @@ func _create_ability_row(ability: DataManager.AbilityData, player_skill_level: i
 	normal_style.content_margin_left = 8
 	btn.add_theme_stylebox_override("normal", normal_style)
 	var hover_style := StyleBoxFlat.new()
-	hover_style.bg_color = Color(ThemeColors.PARCHMENT_EDGE, 0.15)
+	hover_style.bg_color = Color(ThemeColors.SCROLL_INK, 0.08)
 	hover_style.content_margin_left = 8
 	btn.add_theme_stylebox_override("hover", hover_style)
 
@@ -1153,8 +1069,8 @@ func _update_selection_indicators() -> void:
 			sel_style.content_margin_left = 4
 			btn.add_theme_stylebox_override("normal", sel_style)
 		else:
-			row.name_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
-			row.numeral_label.add_theme_color_override("font_color", ThemeColors.PARCHMENT_TEXT)
+			row.name_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
+			row.numeral_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
 			# Restore transparent normal style
 			var norm_style := StyleBoxFlat.new()
 			norm_style.bg_color = Color(0, 0, 0, 0)
@@ -1200,24 +1116,11 @@ func _navigate_to_chapter(skill_idx: int) -> void:
 	_play_page_turn(skill_idx, true)
 	_update_selection_indicators()
 	_update_marginalia()
-	_randomize_loose_note(skill_idx)
 
 func _navigate_to_index() -> void:
 	current_page = PageState.INDEX
 	_play_page_turn(selected_skill_idx, false)
 	_update_selection_indicators()
-
-func _swap_page_texture_instant() -> void:
-	if current_page == PageState.INDEX:
-		var index_tex: Texture2D = ThemeColors.get_texture("tome_page_index")
-		if index_tex and page_bg:
-			page_bg.texture = index_tex
-	else:
-		var page_key: String = SKILL_PAGE_KEYS[selected_skill_idx] if selected_skill_idx < SKILL_PAGE_KEYS.size() else ""
-		if page_key != "":
-			var tex: Texture2D = ThemeColors.get_texture(page_key)
-			if tex and page_bg:
-				page_bg.texture = tex
 
 # ===========================================================================
 # ACTIONS
@@ -1229,7 +1132,6 @@ func _select_skill(idx: int) -> void:
 			selected_skill_idx = idx
 			_update_selection_indicators()
 			_update_marginalia()
-			_randomize_loose_note(idx)
 		_navigate_to_chapter(idx)
 	else:
 		if idx != selected_skill_idx:
@@ -1255,20 +1157,12 @@ func _play_page_turn(_skill_idx: int, to_chapter: bool) -> void:
 	tween.tween_property(page_turn_overlay, "color:a", 0.0, 0.15)
 	tween.tween_callback(_finish_page_turn_cleanup)
 
-func _finish_page_turn_swap(to_chapter: bool, skill_idx: int) -> void:
+func _finish_page_turn_swap(to_chapter: bool, _skill_idx: int) -> void:
 	if to_chapter:
-		if skill_idx >= 0 and skill_idx < SKILL_PAGE_KEYS.size():
-			var page_key: String = SKILL_PAGE_KEYS[skill_idx]
-			var tex: Texture2D = ThemeColors.get_texture(page_key)
-			if tex and page_bg:
-				page_bg.texture = tex
 		index_content.visible = false
 		chapter_content.visible = true
 		_refresh_chapter_page()
 	else:
-		var index_tex: Texture2D = ThemeColors.get_texture("tome_page_index")
-		if index_tex and page_bg:
-			page_bg.texture = index_tex
 		chapter_content.visible = false
 		index_content.visible = true
 		_refresh_index_page()
@@ -1277,27 +1171,6 @@ func _finish_page_turn_swap(to_chapter: bool, skill_idx: int) -> void:
 func _finish_page_turn_cleanup() -> void:
 	_is_turning_page = false
 	page_turn_overlay.visible = false
-	if _page_turn_material:
-		_page_turn_material.set_shader_parameter("progress", 0.0)
-
-func _randomize_loose_note(skill_idx: int) -> void:
-	if not loose_note or not loose_note.visible:
-		return
-	var rng_x: float = fmod(sin(float(skill_idx) * 73.17) * 43758.5453, 1.0)
-	var rng_y: float = fmod(sin(float(skill_idx) * 127.33) * 24634.6345, 1.0)
-	var rng_rot: float = fmod(sin(float(skill_idx) * 31.71) * 91827.3456, 1.0)
-	var new_left: float = _base_note_offset.x + (rng_x - 0.5) * 60.0
-	var new_top: float = _base_note_offset.y + (rng_y - 0.5) * 40.0
-	var rotation: float = -12.0 + rng_rot * 18.0
-	var tween := create_tween()
-	tween.set_ease(Tween.EASE_OUT)
-	tween.set_trans(Tween.TRANS_QUAD)
-	tween.set_parallel(true)
-	tween.tween_property(loose_note, "offset_left", new_left, 0.25)
-	tween.tween_property(loose_note, "offset_top", new_top, 0.25)
-	tween.tween_property(loose_note, "offset_right", new_left + 96.0, 0.25)
-	tween.tween_property(loose_note, "offset_bottom", new_top + 96.0, 0.25)
-	tween.tween_property(loose_note, "rotation_degrees", rotation, 0.25)
 
 func _on_skill_invest(idx: int) -> void:
 	if not player:
@@ -1536,7 +1409,6 @@ func _input(event: InputEvent) -> void:
 				selected_skill_idx = new_idx
 				_update_selection_indicators()
 				_update_marginalia()
-				_randomize_loose_note(new_idx)
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_DOWN or event.keycode == KEY_J:
 			var new_idx := mini(SKILL_NAMES.size() - 1, selected_skill_idx + 1)
@@ -1544,7 +1416,6 @@ func _input(event: InputEvent) -> void:
 				selected_skill_idx = new_idx
 				_update_selection_indicators()
 				_update_marginalia()
-				_randomize_loose_note(new_idx)
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 			if not pending_investments.is_empty():

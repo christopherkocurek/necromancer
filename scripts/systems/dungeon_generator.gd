@@ -471,14 +471,7 @@ func _add_features(depth: int) -> void:
 					if level.get_tile(rubble_pos) == Level.Tile.FLOOR:
 						level.set_tile(rubble_pos, Level.Tile.RUBBLE)
 
-	# Add a forge on certain levels
-	if depth % 4 == 0 and rooms.size() > 2:
-		var forge_room := rooms[randi() % rooms.size()]
-		var forge_pos := Vector2i(
-			forge_room.position.x + forge_room.size.x / 2,
-			forge_room.position.y + forge_room.size.y / 2
-		)
-		level.set_tile(forge_pos, Level.Tile.FORGE)
+	# Forges are guaranteed by _ensure_forges() - no random placement here
 
 	# Add water pools (depth > 4)
 	if depth > 4:
@@ -1064,29 +1057,38 @@ func _validate_connectivity() -> bool:
 		return false
 	return true
 
-## Ensure at least one forge exists on levels where smithing is expected
+## Guarantee forges every 2 floors up to depth 10 (Sil-Q style).
+## After depth 10, forges appear with 25% chance per floor.
 func _ensure_forges(depth: int) -> void:
-	# Forges should appear every 2-4 levels
-	if depth % 3 != 0 and depth % 4 != 0:
+	var should_have_forge: bool = false
+	if depth <= 10 and depth % 2 == 0:
+		should_have_forge = true  # Guaranteed: depths 2, 4, 6, 8, 10
+	elif depth > 10 and randf() < 0.25:
+		should_have_forge = true  # 25% chance after depth 10
+
+	if not should_have_forge:
 		return
 
-	# Check if a forge already exists
+	# Check if a forge already exists (placed by vaults or decoration)
 	for y in range(level.height):
 		for x in range(level.width):
 			if level.get_tile(Vector2i(x, y)) == Level.Tile.FORGE:
 				return  # Already have one
 
-	# Place forge in middle room
-	if rooms.size() < 3:
+	# Place forge - try rooms in random order until successful
+	if rooms.is_empty():
 		return
-	var middle_room: Rect2i = rooms[rooms.size() / 2]
-	var forge_pos := Vector2i(
-		middle_room.position.x + middle_room.size.x / 2,
-		middle_room.position.y + middle_room.size.y / 2
-	)
-	if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
-		level.set_tile(forge_pos, Level.Tile.FORGE)
-		print("Placed guaranteed forge at depth %d, pos %s" % [depth, forge_pos])
+	var room_order: Array = range(rooms.size())
+	room_order.shuffle()
+	for idx in room_order:
+		var room: Rect2i = rooms[idx]
+		var forge_pos := Vector2i(
+			room.position.x + room.size.x / 2,
+			room.position.y + room.size.y / 2
+		)
+		if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
+			level.set_tile(forge_pos, Level.Tile.FORGE)
+			return
 
 ## Connect vault corridor points ($) to nearest room centers
 func _connect_vault_corridor_points() -> void:

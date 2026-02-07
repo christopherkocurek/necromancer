@@ -101,8 +101,11 @@ func _handle_player_input() -> void:
 
 	if player.handle_input():
 		# Player took an action - consume energy
-		# DO NOT EDIT: No await here - immediate response to player input
-		player.consume_energy()
+		# Movement actions pay terrain-based cost; non-movement actions pay standard cost
+		if player.moved_this_turn and current_level:
+			player.consume_energy(current_level.get_movement_cost(player.grid_position))
+		else:
+			player.consume_energy()
 		_after_player_action()
 
 func _after_player_action() -> void:
@@ -170,30 +173,30 @@ func _process_monster_turn() -> void:
 		current_state = TurnState.PROCESSING
 		return
 
-	var monster: Monster = pending_monsters.pop_front()
-	if monster.is_alive and monster.can_act():
-		monster.reset_light_recoil()  # Allow recoil message next player action
-		monster.take_turn()
-		monster.consume_energy()
+	# Process all pending monsters synchronously in one frame for instant responsiveness.
+	# The 0.01s move tweens run independently and don't need awaiting.
+	while not pending_monsters.is_empty():
+		var monster: Monster = pending_monsters.pop_front()
+		if monster.is_alive and monster.can_act():
+			monster.reset_light_recoil()
+			monster.take_turn()
+			monster.consume_energy()
 
-		# Refresh entity visibility after monster moved
-		if current_level:
-			current_level.update_entity_visibility()
+	# Refresh entity visibility once after all monsters moved
+	if current_level:
+		current_level.update_entity_visibility()
 
-		# Only wait for visible monsters to keep things snappy
-		if monster.visible:
-			await _wait_for_animation()
-
-	# Continue processing or go back to determine next actor
-	if pending_monsters.is_empty():
-		current_state = TurnState.PROCESSING
-	# else stay in MONSTER_ACTING to process next
+	current_state = TurnState.PROCESSING
 
 func _end_round() -> void:
 	current_round += 1
 	EventBus.round_completed.emit(current_round)
 
-	# Per-round effects (NO energy grants here — energy is granted in _process_game_tick)
+	# Grant energy so entities can eventually act even when terrain costs exceed per-tick gain
+	# (e.g. vine/web costs 150 but speed-2 entities gain 100/tick → deadlock without this)
+	_process_game_tick()
+
+	# Per-round effects
 	if player and player.is_alive:
 		player.tick_status_effects()
 		player.tick_light_fuel()

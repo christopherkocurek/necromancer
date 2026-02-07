@@ -148,7 +148,7 @@ D: trembles before their might.
 
 N:4:Hobbit
 S:-2:2:0:2
-I:5:30:120
+I:30:30:120
 H:42:3
 W:70:6
 C:9|10|11
