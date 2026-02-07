@@ -37,6 +37,7 @@ var is_mindless: bool = false
 var is_territorial: bool = false  # Won't flee from home
 var is_cowardly: bool = false  # Flees easier
 var is_brave: bool = false  # Won't flee unless critical
+var has_friends_flag: bool = false  # Pack monster (Crebain, wolves, etc.) — uses surround AI
 var is_pack_leader: bool = false
 var pack_id: int = -1  # For escort/pack morale bonuses
 var is_light_sensitive: bool = false  # Penalized in lit tiles
@@ -111,6 +112,7 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	is_brave = data.has_flag("BRAVE") or is_unique  # Uniques are brave
 	is_light_sensitive = data.has_flag("LIGHT_SENSITIVE")
 	is_dark_aura = data.has_flag("DARK_AURA")
+	has_friends_flag = data.has_flag("FRIENDS")
 
 	# Morale modifiers from flags
 	if is_cowardly:
@@ -411,6 +413,19 @@ func _hunt_behavior() -> void:
 	if dist <= perception_range and _try_cast_spell(target, dist):
 		return
 
+	# Pack surround AI: FRIENDS monsters try to flank the player instead of beelining
+	if has_friends_flag and dist <= 6:
+		var surround_pos: Vector2i = _pick_surround_tile(target.grid_position)
+		if surround_pos != Vector2i(-1, -1):
+			if GameManager.current_level:
+				var path: Array[Vector2i] = GameManager.current_level.find_path(grid_position, surround_pos)
+				if path.size() > 1:
+					var next_pos: Vector2i = path[1]
+					var dir: Vector2i = next_pos - grid_position
+					if can_move_to(next_pos):
+						try_move(dir)
+						return
+
 	# Use A* pathfinding
 	if GameManager.current_level:
 		var path: Array[Vector2i] = GameManager.current_level.find_path(grid_position, target.grid_position)
@@ -480,6 +495,82 @@ func _is_large_monster() -> bool:
 func _grid_distance(a: Vector2i, b: Vector2i) -> int:
 	# Chebyshev distance (8-directional)
 	return max(abs(a.x - b.x), abs(a.y - b.y))
+
+## Pick an adjacent tile around the target that is unoccupied and opposite from allies.
+## Returns Vector2i(-1, -1) if no suitable surround tile found.
+func _pick_surround_tile(target_pos: Vector2i) -> Vector2i:
+	var offsets: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+
+	# Find which tiles around the target are occupied by allies
+	var ally_offsets: Array[Vector2i] = []
+	if GameManager.current_level:
+		for off: Vector2i in offsets:
+			var check_pos: Vector2i = target_pos + off
+			var entity = GameManager.current_level.get_entity_at(check_pos)
+			if is_instance_valid(entity) and entity is Monster and entity != self and entity.is_alive:
+				ally_offsets.append(off)
+
+	# Score each position: prefer tiles opposite from allies (flanking)
+	var best_pos: Vector2i = Vector2i(-1, -1)
+	var best_score: int = -999
+
+	for off: Vector2i in offsets:
+		var pos: Vector2i = target_pos + off
+		if pos == grid_position:
+			# Already here — score it highly
+			return Vector2i(-1, -1)  # We're already adjacent, let normal attack handle it
+
+		if not GameManager.current_level:
+			continue
+		if not GameManager.current_level.is_in_bounds(pos):
+			continue
+
+		# Must be walkable and unoccupied
+		var tile: int = GameManager.current_level.get_tile(pos)
+		if not GameManager.current_level.is_passable(pos):
+			continue
+		var occupant = GameManager.current_level.get_entity_at(pos)
+		if occupant != null and occupant != self:
+			continue
+
+		# Score: bonus for being opposite an ally (flanking position)
+		var score: int = 0
+		var opposite: Vector2i = Vector2i(-off.x, -off.y)
+		for ally_off: Vector2i in ally_offsets:
+			if ally_off == opposite:
+				score += 5  # Strong flanking bonus
+			elif ally_off.x == -off.x or ally_off.y == -off.y:
+				score += 2  # Partial flanking
+
+		# Prefer closer tiles (shorter path)
+		var dist_to_tile: int = _grid_distance(grid_position, pos)
+		score -= dist_to_tile
+
+		if score > best_score:
+			best_score = score
+			best_pos = pos
+
+	return best_pos
+
+## Check if this monster has an ally on the opposite side of the target (flanking).
+## Returns true if any same-type or FRIENDS ally occupies the tile opposite this monster.
+func _is_flanking(target_pos: Vector2i) -> bool:
+	if not GameManager.current_level:
+		return false
+	var my_offset: Vector2i = grid_position - target_pos
+	var opposite_pos: Vector2i = target_pos - my_offset
+	if not GameManager.current_level.is_in_bounds(opposite_pos):
+		return false
+	var entity = GameManager.current_level.get_entity_at(opposite_pos)
+	if not is_instance_valid(entity) or not entity is Monster:
+		return false
+	if entity == self or not entity.is_alive:
+		return false
+	return true
 
 func _direction_toward(target_pos: Vector2i) -> Vector2i:
 	var diff := target_pos - grid_position
@@ -577,6 +668,10 @@ func get_total_attack(target: Entity) -> int:
 
 	# Overwhelming/Flanking: +1 per adjacent ally
 	att += _count_nearby_allies(1)
+
+	# Pack flanking bonus: +2 when ally on opposite side of target (FRIENDS flag)
+	if has_friends_flag and is_instance_valid(target) and _is_flanking(target.grid_position):
+		att += 2
 
 	# SMALL_STATURE: large monsters get -2 attack vs small races (Hobbits)
 	if is_instance_valid(target) and target is Player:

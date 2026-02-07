@@ -43,6 +43,7 @@ enum Tile {
 	WATER = 15,          # Shallow water - passable, slows movement
 	LAVA = 16,           # Lava - passable but deals fire damage on step
 	VINE_FLOOR = 17,     # Thick vines (depths 1-3) - passable, slows movement
+	POISON_STREAM = 18,  # Poison stream (depths 1-3) - passable, 1d4 damage + 3-turn poison
 }
 
 # Track which traps have been triggered (to avoid re-triggering)
@@ -157,18 +158,20 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM:
 			return true
 		_:
 			return false
 
-## Get movement energy cost for a tile (water costs double, vines cost 1.5x)
+## Get movement energy cost for a tile (water costs double, vines cost 1.5x, poison stream 2x)
 func get_movement_cost(pos: Vector2i) -> int:
 	var tile := get_tile(pos)
 	if tile == Tile.WATER:
 		return Constants.ACTION_COST * 2  # Double energy cost to wade
 	if tile == Tile.VINE_FLOOR:
 		return int(Constants.ACTION_COST * 1.5)  # 150 energy instead of 100
+	if tile == Tile.POISON_STREAM:
+		return Constants.ACTION_COST * 2  # 200 energy to wade through poison
 	return Constants.ACTION_COST
 
 ## Called when an entity steps on a tile. Returns true if something happened.
@@ -187,6 +190,9 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	if tile == Tile.VINE_FLOOR and entity is Player:
 		EventBus.message_logged.emit("You push through tangled vines.", ThemeColors.TEXT_MUTED)
 
+	if tile == Tile.POISON_STREAM:
+		return _poison_stream_damage(entity, pos)
+
 	return false
 
 ## Get a display name for the terrain at a position (for HUD / look mode)
@@ -196,6 +202,7 @@ func get_terrain_name(pos: Vector2i) -> String:
 		Tile.WATER: return "Water"
 		Tile.LAVA: return "Lava"
 		Tile.FORGE: return "Forge"
+		Tile.POISON_STREAM: return "Poison Stream"
 		_: return ""
 
 func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
@@ -281,6 +288,17 @@ func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 	var verb: String = "burn" if entity == GameManager.player else "burns"
 	GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], ThemeColors.COMBAT_CRIT)
+	return true
+
+func _poison_stream_damage(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	var dmg: int = randi_range(1, 4)  # 1d4 poison damage
+	entity.take_damage(dmg, "poison", null)
+	entity.apply_status("poisoned", 3)
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "wade" if entity == GameManager.player else "wades"
+	GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 	return true
 
 func is_transparent(pos: Vector2i) -> bool:

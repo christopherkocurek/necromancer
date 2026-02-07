@@ -70,11 +70,20 @@ func generate(target_level: Level, depth: int) -> void:
 	# Apply forest terrain (vine floor) for shallow depths
 	_apply_forest_terrain(level, depth)
 
+	# Apply themed room decorations for depths 1-3
+	_apply_themed_rooms(depth)
+
+	# Generate poison streams for depths 1-3
+	_generate_poison_streams(depth)
+
 	# Spawn monsters
 	_spawn_monsters(depth)
 
 	# Spawn items
 	_spawn_items(depth)
+
+	# Spawn artifacts (unique, depth-gated)
+	_spawn_artifacts(depth)
 
 	# Spawn lore objects
 	_spawn_lore_objects(depth)
@@ -714,6 +723,154 @@ func _apply_forest_terrain(level_node: Level, depth: int) -> void:
 		print("Applied %d vine floor tiles at depth %d" % [vine_count, depth])
 
 # ============================================================================
+# THEMED ROOM DECORATIONS (Depths 1-3)
+# ============================================================================
+
+## Apply themed room decorations: forest rooms, tower rooms, or standard.
+## Distribution by depth:
+##   Depth 1: 70% forest / 20% tower / 10% standard
+##   Depth 2: 40% forest / 40% tower / 20% standard
+##   Depth 3: 15% forest / 65% tower / 20% standard
+func _apply_themed_rooms(depth: int) -> void:
+	if depth < 1 or depth > 3:
+		return
+
+	# Themed distribution by depth
+	var forest_pct: float
+	var tower_pct: float
+	match depth:
+		1:
+			forest_pct = 0.70
+			tower_pct = 0.20
+		2:
+			forest_pct = 0.40
+			tower_pct = 0.40
+		_:  # depth 3
+			forest_pct = 0.15
+			tower_pct = 0.65
+
+	var forest_count: int = 0
+	var tower_count: int = 0
+
+	for room_rect: Rect2i in rooms:
+		# Skip very small rooms (< 4x4)
+		if room_rect.size.x < 4 or room_rect.size.y < 4:
+			continue
+
+		var roll: float = randf()
+		if roll < forest_pct:
+			_decorate_forest_room(room_rect)
+			forest_count += 1
+		elif roll < forest_pct + tower_pct:
+			_decorate_tower_room(room_rect)
+			tower_count += 1
+		# else: standard room, no decoration
+
+	if forest_count + tower_count > 0:
+		print("Themed rooms at depth %d: %d forest, %d tower" % [depth, forest_count, tower_count])
+
+## Forest room: scatter tree pillars (wall tiles) inside, convert 40% floor to vine floor.
+func _decorate_forest_room(room_rect: Rect2i) -> void:
+	# Scatter tree pillars (wall tiles) inside the room — 1 per ~12 tiles
+	var area: int = room_rect.size.x * room_rect.size.y
+	var tree_count: int = maxi(1, area / 12)
+
+	for _i in range(tree_count):
+		# Place trees away from edges (at least 1 tile inside)
+		var tx: int = randi_range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 2)
+		var ty: int = randi_range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 2)
+		var tpos := Vector2i(tx, ty)
+		if level.get_tile(tpos) == Level.Tile.FLOOR:
+			# Don't block stairs
+			if level.get_tile(tpos) != Level.Tile.STAIRS_DOWN and level.get_tile(tpos) != Level.Tile.STAIRS_UP:
+				level.set_tile(tpos, Level.Tile.WALL)
+
+	# Convert 40% of remaining floor tiles to vine floor
+	for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+		for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+			var pos := Vector2i(x, y)
+			if level.get_tile(pos) == Level.Tile.FLOOR:
+				if randf() < 0.40:
+					level.set_tile(pos, Level.Tile.VINE_FLOOR)
+
+## Tower room: stone pillar grid (every 3rd tile), rubble near walls.
+func _decorate_tower_room(room_rect: Rect2i) -> void:
+	# Place stone pillars on a 3-tile grid inside the room
+	for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+		for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+			# Pillar every 3 tiles (offset from room origin)
+			var local_x: int = x - room_rect.position.x
+			var local_y: int = y - room_rect.position.y
+			if local_x % 3 == 0 and local_y % 3 == 0:
+				var pos := Vector2i(x, y)
+				if level.get_tile(pos) == Level.Tile.FLOOR:
+					level.set_tile(pos, Level.Tile.WALL)
+
+	# Scatter rubble near walls (1 tile inside each edge)
+	for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+		for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+			var local_x: int = x - room_rect.position.x
+			var local_y: int = y - room_rect.position.y
+			var near_edge: bool = (local_x <= 1 or local_x >= room_rect.size.x - 2 or
+								   local_y <= 1 or local_y >= room_rect.size.y - 2)
+			if near_edge:
+				var pos := Vector2i(x, y)
+				if level.get_tile(pos) == Level.Tile.FLOOR and randf() < 0.25:
+					level.set_tile(pos, Level.Tile.RUBBLE)
+
+# ============================================================================
+# POISON STREAM GENERATION (Depths 1-3)
+# ============================================================================
+
+## Generate 1-2 winding poison streams per level at depths 1-3.
+## Uses random walk to create 1-tile-wide winding paths through rooms.
+func _generate_poison_streams(depth: int) -> void:
+	if depth < 1 or depth > 3:
+		return
+
+	var stream_count: int = randi_range(1, 2)
+	var total_tiles: int = 0
+
+	for _s in range(stream_count):
+		if rooms.is_empty():
+			break
+
+		# Pick a random room to start the stream
+		var start_room: Rect2i = rooms[randi() % rooms.size()]
+		# Start at a random position inside the room
+		var pos := Vector2i(
+			randi_range(start_room.position.x + 1, start_room.position.x + start_room.size.x - 2),
+			randi_range(start_room.position.y + 1, start_room.position.y + start_room.size.y - 2)
+		)
+
+		if not level.is_in_bounds(pos):
+			continue
+
+		# Random walk for 8-15 tiles
+		var walk_length: int = randi_range(8, 15)
+		var directions: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+		var current_dir: Vector2i = directions[randi() % directions.size()]
+
+		for _step in range(walk_length):
+			if not level.is_in_bounds(pos):
+				break
+
+			var tile: int = level.get_tile(pos)
+			# Only place on floor or vine floor (don't overwrite stairs, walls, doors)
+			if tile == Level.Tile.FLOOR or tile == Level.Tile.VINE_FLOOR:
+				level.set_tile(pos, Level.Tile.POISON_STREAM)
+				total_tiles += 1
+
+			# Winding: 60% continue same direction, 40% turn
+			if randf() < 0.40:
+				current_dir = directions[randi() % directions.size()]
+
+			pos += current_dir
+
+	if total_tiles > 0:
+		print("Generated %d poison stream tiles at depth %d" % [total_tiles, depth])
+
+# ============================================================================
 # LORE OBJECT SPAWNING
 # ============================================================================
 
@@ -800,3 +957,106 @@ func spawn_thrain_if_appropriate(depth: int, quest_system: Node) -> bool:
 	print("Spawned Thrain II at depth %d, position %s" % [depth, spawn_pos])
 
 	return true
+
+# ============================================================================
+# ARTIFACT SPAWNING
+# ============================================================================
+
+## Depth-gated spawn chance for unique artifacts.
+## Each artifact can only appear once per game run.
+func _spawn_artifacts(depth: int) -> void:
+	# Depth-gated spawn chance
+	var spawn_chance: float = 0.0
+	if depth >= 5 and depth <= 8:
+		spawn_chance = 0.05
+	elif depth >= 9 and depth <= 12:
+		spawn_chance = 0.08
+	elif depth >= 13 and depth <= 16:
+		spawn_chance = 0.12
+	elif depth >= 17:
+		spawn_chance = 0.18
+
+	if spawn_chance <= 0.0:
+		return
+
+	if randf() > spawn_chance:
+		return
+
+	# Build list of eligible artifacts
+	var eligible: Array = []
+	for artifact: DataManager.ArtifactData in DataManager.artifacts.values():
+		# Skip quest artifacts (indices 175-198)
+		if artifact.index >= 175 and artifact.index <= 198:
+			continue
+		# Skip already-spawned artifacts
+		if artifact.index in GameManager.spawned_artifacts:
+			continue
+		# Depth eligibility: artifact.depth <= current_depth + 2
+		if artifact.depth > depth + 2:
+			continue
+		eligible.append(artifact)
+
+	if eligible.is_empty():
+		return
+
+	# Weighted random selection: weight = 1.0 / rarity
+	var total_weight: float = 0.0
+	var weights: Array[float] = []
+	for a: DataManager.ArtifactData in eligible:
+		var w: float = 1.0 / maxf(float(a.rarity), 1.0)
+		weights.append(w)
+		total_weight += w
+
+	if total_weight <= 0.0:
+		return
+
+	var roll: float = randf() * total_weight
+	var cumulative: float = 0.0
+	var chosen: DataManager.ArtifactData = eligible[0]
+	for i in range(eligible.size()):
+		cumulative += weights[i]
+		if roll <= cumulative:
+			chosen = eligible[i]
+			break
+
+	# Find placement position: prefer last room (farthest from entry stairs)
+	var spawn_pos: Vector2i = Vector2i(-1, -1)
+
+	if rooms.size() > 2:
+		# Use last room (usually farthest from stairs up which is in first room)
+		var target_room: Rect2i = rooms[rooms.size() - 1]
+		spawn_pos = Vector2i(
+			target_room.position.x + target_room.size.x / 2,
+			target_room.position.y + target_room.size.y / 2
+		)
+		if not level.is_in_bounds(spawn_pos) or level.get_tile(spawn_pos) != Level.Tile.FLOOR:
+			spawn_pos = _find_floor_in_room(target_room)
+
+	# Fallback: random floor tile
+	if spawn_pos == Vector2i(-1, -1):
+		spawn_pos = level.find_random_floor()
+
+	if spawn_pos == Vector2i(-1, -1):
+		return
+
+	# Spawn the artifact
+	var item_scene := preload("res://scenes/entities/item.tscn")
+	var item: Item = item_scene.instantiate()
+	item.grid_position = spawn_pos
+	item.initialize_from_artifact_data(chosen)
+	level.add_item(item)
+
+	# Track that this artifact has been spawned
+	GameManager.spawned_artifacts.append(chosen.index)
+
+	print("Spawned artifact '%s' (idx %d) at depth %d, pos %s" % [
+		chosen.name, chosen.index, depth, spawn_pos
+	])
+
+func _find_floor_in_room(room_rect: Rect2i) -> Vector2i:
+	for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+		for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+				return pos
+	return Vector2i(-1, -1)

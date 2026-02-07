@@ -580,19 +580,34 @@ func _song_of_banishment() -> bool:
 	start_cooldown(LoreAbility.SONG_OF_BANISHMENT, 9999)
 	return true
 
-## Deep Memory (142): Actively identify all unidentified items in inventory
+## Deep Memory (142): Reveal nearby dungeon layout (progressive map reveal)
 func _deep_memory() -> bool:
 	if not player:
 		return false
-	var identified: int = 0
-	for item in player.inventory:
-		if "identified" in item and not item.identified:
-			item.identified = true
-			identified += 1
-	if identified > 0:
-		GameManager.log_message("You focus your deep memory... %d item%s identified!" % [identified, "s" if identified != 1 else ""], ThemeColors.ABILITY_LEARNED)
+	var level: Level = GameManager.current_level
+	if not level:
+		return false
+
+	var lore_skill: int = player.get_skill("lore")
+	var radius: int = clampi(lore_skill * 3, 5, 30)
+	var center: Vector2i = player.grid_position
+	var revealed: int = 0
+
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var pos := Vector2i(center.x + dx, center.y + dy)
+			if not level.is_in_bounds(pos):
+				continue
+			var idx: int = pos.y * level.width + pos.x
+			if not level.explored[idx]:
+				level.explored[idx] = true
+				revealed += 1
+
+	if revealed > 0:
+		level.apply_fov_to_tilemap()
+		GameManager.log_message("Ancient knowledge floods your mind... the dungeon layout becomes clear.", ThemeColors.ABILITY_LEARNED)
 	else:
-		GameManager.log_message("You focus your deep memory, but all items are already identified.", ThemeColors.MSG_SYSTEM)
+		GameManager.log_message("You focus your deep memory, but the surroundings are already known to you.", ThemeColors.MSG_SYSTEM)
 	return true
 
 ## Inner Light (147): Damages light-sensitive monsters in your light radius

@@ -292,8 +292,10 @@ func _refresh_inventory() -> void:
 		if i < _sorted_items.size():
 			var item = _sorted_items[i]
 			slot.icon = _get_item_icon(item)
-			slot.text = ""
-			slot.tooltip_text = _get_item_name(item)
+			# Show stack count overlay
+			var stack: int = item.stack_count if "stack_count" in item else 1
+			slot.text = "x%d" % stack if stack > 1 else ""
+			slot.tooltip_text = _get_item_display_with_stack(item)
 			# Apply rarity border color
 			_apply_rarity_border(slot, item)
 		else:
@@ -610,7 +612,7 @@ func _update_item_info(item: Variant) -> void:
 		item_info.text = "Select an item to see details."
 		return
 
-	var name_str: String = _get_item_name(item)
+	var name_str: String = _get_item_display_with_stack(item)
 	var rarity_color: Color = ThemeColors.get_rarity_color(item)
 	var stats_str: String = ""
 
@@ -641,7 +643,8 @@ func _update_weight_display() -> void:
 	var total_weight: float = 0.0
 	for item in player.inventory:
 		if "weight" in item:
-			total_weight += item.weight / 10.0
+			var stack: int = item.stack_count if "stack_count" in item else 1
+			total_weight += (item.weight * stack) / 10.0
 
 	for slot_key in player.equipment:
 		var item = player.equipment[slot_key]
@@ -693,6 +696,13 @@ func _get_item_name(item: Variant) -> String:
 	if item == null:
 		return "Unknown"
 	return GameManager.get_item_display_name(item)
+
+func _get_item_display_with_stack(item: Variant) -> String:
+	var name_str: String = _get_item_name(item)
+	var stack: int = item.stack_count if "stack_count" in item else 1
+	if stack > 1:
+		return "%s (x%d)" % [name_str, stack]
+	return name_str
 
 func _get_item_slot(item: Variant) -> int:
 	if item == null:

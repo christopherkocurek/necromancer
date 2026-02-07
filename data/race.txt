@@ -54,8 +54,8 @@ H:72:3
 W:140:8
 C:0|1|2
 F:BOW_PROFICIENCY
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:37:3:3    # , Fragment of Lembas (3)
+E:39:0:1:1     # ~ Wooden Torch (1)
+E:80:37:2:2    # , Fragment of Lembas (2)
 E:23:8:1:1     # | Curved Sword (1)
 D:The Elves of Middle-earth have dwindled in the Third Age, but those
 D: who remain are wise and fair. Whether from the golden woods of
@@ -77,8 +77,8 @@ H:70:4
 W:150:12
 C:3|4|5
 F:SWORD_PROFICIENCY
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:35:5:5    # , Pieces of Dark Bread (5)
+E:39:0:1:1     # ~ Wooden Torch (1)
+E:80:35:3:3    # , Pieces of Dark Bread (3)
 E:23:8:1:1     # | Curved Sword (1)
 D:Men are the secondborn children of Iluvatar, mortal and fleeting.
 D: Yet in the Third Age, many great kingdoms of Men still stand.
@@ -101,10 +101,9 @@ H:54:2
 W:155:10
 C:6|7|8
 F:AXE_PROFICIENCY | ARC_PENALTY | DWARVEN_RESILIENCE
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:35:5:5    # , Pieces of Dark Bread (5)
+E:39:0:1:1     # ~ Wooden Torch (1)
+E:80:35:2:2    # , Pieces of Dark Bread (2)
 E:21:8:1:1     # \ Dwarven Hammer (1)
-E:23:8:1:1     # | Curved Sword (1)
 D:The Dwarves are a tough and secretive people, created by
 D: Aule the Smith in ages past. They are master craftsmen
 D: and fierce warriors, though slow to trust outsiders.
@@ -154,11 +153,11 @@ H:42:3
 W:70:6
 C:9|10|11
 F:SMALL_STATURE | HOBBIT_LUCK | SLING_PROFICIENCY
-E:39:0:3:3     # ~ Wooden Torches (3)
-E:80:38:5:5    # , Seed Cakes (5)
+E:39:0:1:1     # ~ Wooden Torch (1)
+E:80:38:3:3    # , Seed Cakes (3)
 E:23:9:1:1     # | Sylvan Blade (1)
 E:18:1:1:1     # } Sling (1)
-E:16:1:10:10   # - Sling Stones (10)
+E:16:1:5:5     # - Sling Stones (5)
 D:Hobbits are a small, quiet folk who love peace, good food,
 D: and comfortable homes. Yet when pressed, they show a
 D: remarkable resilience. Their small stature makes them

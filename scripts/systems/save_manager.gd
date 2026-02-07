@@ -273,7 +273,37 @@ func _serialize_item_object(item) -> Dictionary:
 		data["type"] = item.type
 	if "quantity" in item:
 		data["quantity"] = item.quantity
-	# Add any other item properties as needed
+	if "stack_count" in item:
+		data["stack_count"] = item.stack_count
+	# Serialize ItemData fields for full roundtrip
+	if "index" in item:
+		data["index"] = item.index
+	if "tval" in item:
+		data["tval"] = item.tval
+	if "sval" in item:
+		data["sval"] = item.sval
+	if "pval" in item:
+		data["pval"] = item.pval
+	if "weight" in item:
+		data["weight"] = item.weight
+	if "attack_bonus" in item:
+		data["attack_bonus"] = item.attack_bonus
+	if "damage_dice" in item:
+		data["damage_dice"] = item.damage_dice
+	if "evasion_bonus" in item:
+		data["evasion_bonus"] = item.evasion_bonus
+	if "protection_dice" in item:
+		data["protection_dice"] = item.protection_dice
+	if "display_char" in item:
+		data["display_char"] = item.display_char
+	if "color" in item:
+		data["color"] = item.color
+	if "description" in item:
+		data["description"] = item.description
+	if "flags" in item:
+		data["flags"] = item.flags.duplicate() if item.flags is Array else item.flags
+	if "fuel" in item:
+		data["fuel"] = item.fuel
 	return data
 
 func _serialize_level(level: Level) -> Dictionary:

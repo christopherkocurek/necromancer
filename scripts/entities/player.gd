@@ -86,6 +86,7 @@ var _last_hunger_state: String = "well_fed"  # Track state transitions for messa
 var equipment: Dictionary = {
 	"weapon": null,
 	"off_hand": null,
+	"bow": null,
 	"armor": null,
 	"cloak": null,
 	"head": null,
@@ -97,6 +98,27 @@ var equipment: Dictionary = {
 	"light": null,
 	"quiver": null,
 }
+
+# Equipment flags applied from equipped items (recalculated each stat update)
+var equip_flags: Dictionary = {}
+
+# Skill bonuses from equipment flags
+var equip_skill_bonuses: Dictionary = {
+	"perception": 0,
+	"will": 0,
+	"stealth": 0,
+	"melee": 0,
+	"archery": 0,
+	"evasion": 0,
+	"smithing": 0,
+	"lore": 0,
+}
+
+# Equipment stat bonuses (recalculated fresh each _recalculate_stats call)
+var _equip_str_bonus: int = 0
+var _equip_dex_bonus: int = 0
+var _equip_con_bonus: int = 0
+var _equip_gra_bonus: int = 0
 
 # Inventory
 var inventory: Array = []
@@ -576,24 +598,33 @@ func _any_adjacent_alert_enemy() -> bool:
 # Note: voice charge gain on floor entry is in reset_per_floor_traits()
 
 func _recalculate_stats() -> void:
-	# Base stats (no levels in Sil-Q)
+	# Apply equipment flags (stat/skill bonuses, resistances, ability grants)
+	# This sets _equip_*_bonus and equip_skill_bonuses without modifying base stats
+	_apply_equipment_flags()
+
+	# Effective stats = base + equipment bonuses
+	var eff_con: int = constitution + _equip_con_bonus
+	var eff_gra: int = grace + _equip_gra_bonus
+	var eff_str: int = strength + _equip_str_bonus
+	var eff_dex: int = dexterity + _equip_dex_bonus
+
 	# Sil-Q formula: 20 * 1.2^Con (compounding 20% per Con point)
 	var hp_base: int = 2000  # 20 * 100 for integer math
-	if constitution >= 0:
-		for i in range(constitution):
+	if eff_con >= 0:
+		for i in range(eff_con):
 			hp_base = hp_base * 12 / 10
 	else:
-		for i in range(-constitution):
+		for i in range(-eff_con):
 			hp_base = hp_base * 10 / 12
 	max_health = hp_base / 100
 
 	# Sil-Q formula: max_voice = 20 * 1.2^Grace (compounding 20% per Grace point)
 	var voice_base: int = 2000  # 20 * 100 for integer math
-	if grace >= 0:
-		for i in range(grace):
+	if eff_gra >= 0:
+		for i in range(eff_gra):
 			voice_base = voice_base * 12 / 10
 	else:
-		for i in range(-grace):
+		for i in range(-eff_gra):
 			voice_base = voice_base * 10 / 12
 	var old_max: int = max_voice
 	max_voice = voice_base / 100
@@ -604,13 +635,12 @@ func _recalculate_stats() -> void:
 		voice_charges = max_voice
 
 	# Combat bonuses from skills and stats
-	melee_bonus = skills["melee"] + (strength / 2)
-	evasion_bonus = skills["evasion"] + (dexterity / 2)
+	melee_bonus = skills["melee"] + (eff_str / 2) + equip_skill_bonuses.get("melee", 0)
+	evasion_bonus = skills["evasion"] + (eff_dex / 2) + equip_skill_bonuses.get("evasion", 0)
 
 	# Equipment bonuses
 	var equip_attack: int = 0
 	var equip_evasion: int = 0
-	var equip_protection: String = ""
 
 	for slot in equipment:
 		var item = equipment[slot]
@@ -621,8 +651,6 @@ func _recalculate_stats() -> void:
 			equip_attack += item.attack_bonus
 		if "evasion_bonus" in item:
 			equip_evasion += item.evasion_bonus
-		# Protection dice are accumulated as strings for now
-		# TODO: Parse and combine protection dice properly
 
 	melee_bonus += equip_attack
 	evasion_bonus += equip_evasion
@@ -636,6 +664,98 @@ func _recalculate_stats() -> void:
 
 	# Update protection dice from armor
 	_recalculate_protection()
+
+func _apply_equipment_flags() -> void:
+	equip_flags.clear()
+	_equip_str_bonus = 0
+	_equip_dex_bonus = 0
+	_equip_con_bonus = 0
+	_equip_gra_bonus = 0
+	for key in equip_skill_bonuses:
+		equip_skill_bonuses[key] = 0
+
+	for slot in equipment:
+		var item: Variant = equipment[slot]
+		if item == null:
+			continue
+		if "flags" not in item:
+			continue
+
+		var pval: int = 1
+		if "pval" in item:
+			pval = maxi(item.pval, 1)
+
+		for flag in item.flags:
+			match flag:
+				# Stat bonuses (scaled by pval) - stored as bonuses, not added to base
+				"STR":
+					_equip_str_bonus += pval
+				"DEX":
+					_equip_dex_bonus += pval
+				"CON":
+					_equip_con_bonus += pval
+				"GRA":
+					_equip_gra_bonus += pval
+				# Skill bonuses (scaled by pval)
+				"PERCEPTION":
+					equip_skill_bonuses["perception"] += pval
+				"WILL":
+					equip_skill_bonuses["will"] += pval
+				"STEALTH":
+					equip_skill_bonuses["stealth"] += pval
+				"MELEE":
+					equip_skill_bonuses["melee"] += pval
+				"ARCHERY":
+					equip_skill_bonuses["archery"] += pval
+				# Boolean resistance flags
+				"RES_FIRE", "RES_COLD", "RES_POIS", "RES_DARK", "RES_FEAR", \
+				"RES_STUN", "RES_CONFU", "RES_HALLU":
+					equip_flags[flag] = true
+				# Boolean utility flags
+				"FREE_ACT", "SEE_INVIS", "REGEN", "LIGHT", "SLOW_DIGEST", \
+				"SUST_STR", "SUST_DEX", "SUST_CON", "SUST_GRA", "MEDIC", \
+				"CHEAT_DEATH":
+					equip_flags[flag] = true
+				# Negative flags
+				"HUNGER", "AGGRAVATE", "FEAR", "DANGER", "HAUNTED", \
+				"LIGHT_CURSE":
+					equip_flags[flag] = true
+				# Brand flags
+				"BRAND_FIRE", "BRAND_COLD", "BRAND_POIS":
+					equip_flags[flag] = true
+
+	# Apply granted abilities from B: lines
+	for slot in equipment:
+		var item: Variant = equipment[slot]
+		if item == null:
+			continue
+		if "granted_abilities" not in item:
+			continue
+		for ability_ref in item.granted_abilities:
+			if ability_ref.size() >= 2:
+				var skill_id: int = ability_ref[0]
+				var ability_id: int = ability_ref[1]
+				if skill_id >= 0 and skill_id < Constants.S_MAX and ability_id >= 0 and ability_id < Constants.ABILITIES_MAX:
+					have_ability[skill_id][ability_id] = true
+					active_ability[skill_id][ability_id] = true
+
+func has_equip_flag(flag_name: String) -> bool:
+	return equip_flags.has(flag_name)
+
+func get_effective_strength() -> int:
+	return strength + _equip_str_bonus
+
+func get_effective_dexterity() -> int:
+	return dexterity + _equip_dex_bonus
+
+func get_effective_constitution() -> int:
+	return constitution + _equip_con_bonus
+
+func get_effective_grace() -> int:
+	return grace + _equip_gra_bonus
+
+func get_effective_skill(skill_name: String) -> int:
+	return skills.get(skill_name, 0) + equip_skill_bonuses.get(skill_name, 0)
 
 func _recalculate_protection() -> void:
 	# Sum up protection dice from all armor pieces
@@ -847,6 +967,47 @@ func get_total_skill_points() -> int:
 		total += skill_value
 	return total
 
+## Find the first equippable item from a list of Item nodes on the floor.
+## Returns the Item node (not data) if found, or null if nothing can be equipped.
+func try_equip_from_floor(items_on_floor: Array) -> Item:
+	for item_node in items_on_floor:
+		if not is_instance_valid(item_node):
+			continue
+		var item_data = item_node.get_data()
+		if item_data == null or "tval" not in item_data:
+			continue
+		var tval: int = item_data.tval
+		if tval not in Constants.TVAL_TO_SLOT:
+			continue
+		var slot_id: int = Constants.TVAL_TO_SLOT[tval]
+		var slot_key: String = _equip_slot_id_to_key(slot_id)
+		if slot_key.is_empty():
+			continue
+		# If slot is occupied, check if we can unequip to inventory
+		if equipment[slot_key] != null:
+			if inventory.size() >= max_inventory:
+				continue  # Can't unequip, skip
+		return item_node
+	return null
+
+## Convert EquipSlot enum to equipment dictionary key.
+func _equip_slot_id_to_key(slot_id: int) -> String:
+	match slot_id:
+		Constants.EquipSlot.WEAPON: return "weapon"
+		Constants.EquipSlot.OFF_HAND: return "off_hand"
+		Constants.EquipSlot.BOW: return "bow"
+		Constants.EquipSlot.QUIVER: return "quiver"
+		Constants.EquipSlot.HEAD: return "head"
+		Constants.EquipSlot.BODY: return "armor"
+		Constants.EquipSlot.CLOAK: return "cloak"
+		Constants.EquipSlot.HANDS: return "hands"
+		Constants.EquipSlot.FEET: return "feet"
+		Constants.EquipSlot.NECK: return "amulet"
+		Constants.EquipSlot.RING_L: return "ring_left"
+		Constants.EquipSlot.RING_R: return "ring_right"
+		Constants.EquipSlot.LIGHT: return "light"
+	return ""
+
 # ============================================================================
 # SKILLS
 # ============================================================================
@@ -901,10 +1062,25 @@ func has_lore_for(monster_type: String) -> bool:
 # ============================================================================
 
 func pick_up_item(item_data: Variant) -> bool:
+	# Try stacking first for stackable items
+	if "tval" in item_data and item_data.tval in Constants.STACKABLE_TVALS:
+		for existing_item in inventory:
+			if "tval" in existing_item and "sval" in existing_item and "name" in existing_item:
+				if existing_item.tval == item_data.tval and existing_item.sval == item_data.sval and existing_item.name == item_data.name:
+					var existing_count: int = existing_item.stack_count if "stack_count" in existing_item else 1
+					var add_count: int = item_data.stack_count if "stack_count" in item_data else 1
+					if existing_count + add_count <= Constants.MAX_STACK_SIZE:
+						existing_item.stack_count = existing_count + add_count
+						EventBus.item_picked_up.emit(self, item_data)
+						return true
+
 	if inventory.size() >= max_inventory:
 		GameManager.log_message("Your pack is full!", ThemeColors.MSG_ERROR)
 		return false
 
+	# Ensure stack_count is set
+	if "stack_count" not in item_data:
+		item_data.stack_count = 1
 	inventory.append(item_data)
 	EventBus.item_picked_up.emit(self, item_data)
 	return true
@@ -913,6 +1089,34 @@ func drop_item(item_data: Variant) -> bool:
 	var idx := inventory.find(item_data)
 	if idx < 0:
 		return false
+
+	var count: int = item_data.stack_count if "stack_count" in item_data else 1
+	if count > 1:
+		# Drop one from the stack
+		item_data.stack_count = count - 1
+		# Create a copy for the ground with stack_count = 1
+		var drop_copy = item_data.duplicate() if item_data is Dictionary else item_data
+		if item_data is DataManager.ItemData:
+			drop_copy = DataManager.ItemData.new()
+			drop_copy.index = item_data.index
+			drop_copy.name = item_data.name
+			drop_copy.display_char = item_data.display_char
+			drop_copy.color = item_data.color
+			drop_copy.tval = item_data.tval
+			drop_copy.sval = item_data.sval
+			drop_copy.pval = item_data.pval
+			drop_copy.depth = item_data.depth
+			drop_copy.rarity = item_data.rarity
+			drop_copy.weight = item_data.weight
+			drop_copy.cost = item_data.cost
+			drop_copy.attack_bonus = item_data.attack_bonus
+			drop_copy.damage_dice = item_data.damage_dice
+			drop_copy.evasion_bonus = item_data.evasion_bonus
+			drop_copy.protection_dice = item_data.protection_dice
+			drop_copy.description = item_data.description
+			drop_copy.stack_count = 1
+		EventBus.item_dropped.emit(self, drop_copy, grid_position)
+		return true
 
 	inventory.remove_at(idx)
 	EventBus.item_dropped.emit(self, item_data, grid_position)
@@ -1252,7 +1456,7 @@ func _get_attack_damage_dice() -> String:
 
 ## Ranged damage from equipped bow/sling
 func _get_ranged_damage_dice() -> String:
-	var ranged_weapon = equipment.get("off_hand")
+	var ranged_weapon = equipment.get("bow")
 	if ranged_weapon != null and "tval" in ranged_weapon:
 		if ranged_weapon.tval == 19 or ranged_weapon.tval == 18:  # TV_BOW or TV_SLING
 			if "damage_dice" in ranged_weapon and ranged_weapon.damage_dice != "":

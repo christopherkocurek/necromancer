@@ -24,6 +24,9 @@ var identified_types: Dictionary = {}  # "tval:sval" -> true
 # Flavor names for unidentified consumables (randomized per game)
 var flavor_names: Dictionary = {}  # "tval:sval" -> String
 
+# Artifact tracking - each artifact can only spawn once per game
+var spawned_artifacts: Array[int] = []  # artifact indices that have been spawned
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -33,6 +36,7 @@ func start_new_game() -> void:
 	is_player_turn = true
 	current_state = GameState.PLAYING
 	identified_types.clear()
+	spawned_artifacts.clear()
 	_randomize_flavor_names()
 	EventBus.game_started.emit()
 
@@ -45,6 +49,7 @@ func reset_game() -> void:
 	turn_count = 0
 	identified_types.clear()
 	flavor_names.clear()
+	spawned_artifacts.clear()
 	is_player_turn = true
 	current_state = GameState.MAIN_MENU
 	current_zoom_index = 1

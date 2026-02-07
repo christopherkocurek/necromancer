@@ -258,6 +258,16 @@ func load_items() -> void:
 						var f := flag.strip_edges()
 						if f != "":
 							current_item.flags.append(f)
+			"B":
+				# B:skill_id/ability_id - grants an ability when equipped
+				if current_item:
+					var b_parts := value.split(":")
+					for b_entry in b_parts:
+						var ab_parts := b_entry.strip_edges().split("/")
+						if ab_parts.size() >= 2:
+							current_item.granted_abilities.append(
+								[int(ab_parts[0]), int(ab_parts[1])]
+							)
 			"D":
 				if current_item:
 					if current_item.description.is_empty():
@@ -773,6 +783,12 @@ func get_item(name: String) -> ItemData:
 func get_artifact(name: String) -> ArtifactData:
 	return artifacts.get(name)
 
+func get_artifact_by_index(idx: int) -> ArtifactData:
+	for a in artifacts.values():
+		if a.index == idx:
+			return a
+	return null
+
 func get_ability(name: String) -> AbilityData:
 	return abilities.get(name)
 
@@ -816,11 +832,13 @@ func get_random_item_for_depth(depth: int) -> ItemData:
 	var valid_items: Array[ItemData] = []
 	for i in items.values():
 		if i.depth <= depth and i.depth >= depth - 3:
-			valid_items.append(i)
+			if "INSTA_ART" not in i.flags:
+				valid_items.append(i)
 	if valid_items.is_empty():
 		for i in items.values():
 			if i.depth <= depth:
-				valid_items.append(i)
+				if "INSTA_ART" not in i.flags:
+					valid_items.append(i)
 	if valid_items.is_empty():
 		return null
 	return valid_items.pick_random()
@@ -1043,10 +1061,12 @@ class ItemData:
 	var evasion_bonus: int = 0      # Bonus/penalty to evasion
 	var protection_dice: String = "" # e.g. "1d4" for armor
 	var flags: Array[String] = []
+	var granted_abilities: Array = []  # B: lines parsed as [[skill_id, ability_id], ...]
 	var description: String = ""
 	# Identification (Phase D)
 	var identified: bool = false     # Whether this specific item is identified
 	var fuel: int = -1               # Fuel for light sources (-1 = no fuel system)
+	var stack_count: int = 1         # Stacking: how many in this stack (1 = single item)
 
 class ArtifactData:
 	var index: int = 0

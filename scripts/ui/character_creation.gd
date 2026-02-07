@@ -3,6 +3,8 @@ class_name CharacterCreation
 ## Character creation flow: Race -> House -> Gender -> Trait -> Stats -> Name -> Confirm
 ## Enhanced with gender selection, age system, parentage history, and NameGenerator integration.
 
+const BackstoryGeneratorScript := preload("res://scripts/systems/backstory_generator.gd")
+
 signal creation_complete(character_data: Dictionary)
 signal creation_cancelled
 
@@ -82,6 +84,8 @@ func _ready() -> void:
 	_setup_progress_indicator()
 	_setup_ui()
 	_show_stage(Stage.RACE)
+	if AudioManager:
+		AudioManager.play_music("main_theme")
 
 func _load_names_file() -> void:
 	if not FileAccess.file_exists(NAMES_FILE_PATH):
@@ -438,12 +442,11 @@ func _update_gender_info() -> void:
 		return
 
 	var display_gender: String = selected_gender.capitalize()
-	var pronoun_text: String = "He/Him" if selected_gender == "male" else "She/Her"
 	var child_text: String = "son" if selected_gender == "male" else "daughter"
 
 	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\nPronouns: %s\nReferred to as %s in histories." % [
-		display_gender, pronoun_text, child_text
+	info_label.text = "[b]%s[/b]\nReferred to as %s in histories." % [
+		display_gender, child_text
 	]
 
 # ============================================================================
@@ -1023,16 +1026,54 @@ func _show_confirmation() -> void:
 		preview_container.add_child(_preview_rect)
 		content_container.add_child(preview_container)
 
+	# Generate procedural backstory
+	var backstory_data: Dictionary = {
+		"race": selected_race,
+		"house": selected_house,
+		"gender": selected_gender,
+		"trait": selected_trait,
+		"base_stats": base_stats,
+		"age": character_age,
+	}
+	var backstory: String = BackstoryGeneratorScript.generate(backstory_data)
+	# Merge backstory into history (parentage chain + backstory)
+	if not character_history.is_empty():
+		character_history = character_history + "\n\n" + backstory
+	else:
+		character_history = backstory
+
 	var gold := ThemeColors.PRIMARY.to_html(false)
+	var warm_gold: String = ThemeColors.GOLD_WARM.to_html(false)
 	var muted := ThemeColors.TEXT_MUTED.to_html(false)
 	var summary: String = _get_character_summary()
 
-	# Add history below the summary
-	var history_text: String = ""
-	if not character_history.is_empty():
-		history_text = "\n\n[color=#%s]%s[/color]" % [muted, character_history]
+	# Backstory in a scrollable parchment-style container
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 200)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_container.add_child(scroll)
 
-	info_label.text = summary + history_text + "\n\n[color=#%s]Press 'Start Game' to begin your quest.[/color]" % gold
+	var backstory_panel := PanelContainer.new()
+	var parchment_style: StyleBoxFlat = ThemeColors.create_panel_stylebox(
+		Color(0.12, 0.10, 0.08, 0.9),
+		Color(0.6, 0.5, 0.3, 0.5),
+		1, 8
+	)
+	backstory_panel.add_theme_stylebox_override("panel", parchment_style)
+	backstory_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(backstory_panel)
+
+	var backstory_label := RichTextLabel.new()
+	backstory_label.bbcode_enabled = true
+	backstory_label.fit_content = true
+	backstory_label.scroll_active = false
+	backstory_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ThemeColors.apply_rich_body_font(backstory_label)
+	backstory_label.text = "[color=#%s]%s[/color]" % [warm_gold, character_history]
+	backstory_panel.add_child(backstory_label)
+
+	info_label.text = summary + "\n\n[color=#%s]Press 'Start Game' to begin your quest.[/color]" % gold
 	info_label.bbcode_enabled = true
 
 # ============================================================================

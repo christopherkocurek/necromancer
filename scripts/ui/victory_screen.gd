@@ -61,6 +61,8 @@ func show_victory(player: Player, stats: RunStats, v_type: String) -> void:
 	_prepare_display()
 	show()
 	_start_phased_reveal()
+	if AudioManager:
+		AudioManager.play_music("victory")
 
 func _store_player_data(player: Player) -> void:
 	player_data = {

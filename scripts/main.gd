@@ -65,6 +65,7 @@ const AutoExploreScript := preload("res://scripts/systems/auto_explore.gd")
 const MonsterMemoryScript := preload("res://scripts/systems/monster_memory.gd")
 const BestiaryPanelScript := preload("res://scripts/ui/bestiary_panel.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
+const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
 
 func _ready() -> void:
 	_setup_ui_panels()
@@ -151,6 +152,9 @@ func _setup_ui_panels() -> void:
 
 	# Connect NPC interaction event
 	EventBus.npc_interacted.connect(_on_npc_interacted)
+
+	# Connect item drop event to spawn ground items
+	EventBus.item_dropped.connect(_on_item_dropped_to_ground)
 
 func _show_character_creation() -> void:
 	current_state = GameState.CHARACTER_CREATION
@@ -321,16 +325,20 @@ func _grant_starting_equipment(p: Player) -> void:
 			# Try auto-equipping to an appropriate slot
 			var equipped: bool = false
 
-			# Melee/ranged weapons -> weapon slot
-			if tval in [18, 21, 22, 23] and p.equipment["weapon"] == null:
+			# Melee weapons -> weapon slot
+			if tval in [21, 22, 23] and p.equipment["weapon"] == null:
 				p.equipment["weapon"] = item_copy
+				equipped = true
+			# Ranged weapons (bows/slings) -> bow slot
+			elif tval in [18, 19] and p.equipment["bow"] == null:
+				p.equipment["bow"] = item_copy
 				equipped = true
 			# Light sources -> light slot
 			elif tval == 39 and p.equipment["light"] == null:
 				p.equipment["light"] = item_copy
 				equipped = true
 			# Ammo -> quiver slot
-			elif tval == 16 and p.equipment["quiver"] == null:
+			elif tval in [16, 17] and p.equipment["quiver"] == null:
 				p.equipment["quiver"] = item_copy
 				equipped = true
 
@@ -358,6 +366,7 @@ func _duplicate_item_data(source: DataManager.ItemData) -> DataManager.ItemData:
 	copy.evasion_bonus = source.evasion_bonus
 	copy.protection_dice = source.protection_dice
 	copy.flags = source.flags.duplicate()
+	copy.granted_abilities = source.granted_abilities.duplicate(true)
 	copy.description = source.description
 	copy.identified = source.identified
 	copy.fuel = source.fuel
@@ -602,6 +611,30 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_targeting()
 		else:
 			_try_use_forge()
+		get_viewport().set_input_as_handled()
+
+	# Equip from floor (E key when no panel is open)
+	if event.is_action_pressed("equip"):
+		if player and current_level and GameManager.is_player_turn:
+			var floor_items: Array[Item] = current_level.get_items_at(player.grid_position)
+			if not floor_items.is_empty():
+				var item_node: Item = player.try_equip_from_floor(floor_items)
+				if item_node != null:
+					var item_data = item_node.get_data()
+					var tval: int = item_data.tval
+					var slot_id: int = Constants.TVAL_TO_SLOT[tval]
+					var slot_key: String = player._equip_slot_id_to_key(slot_id)
+					current_level.remove_item(item_node)
+					item_node.queue_free()
+					player.pick_up_item(item_data)
+					player.equip_item(item_data, slot_key)
+					var item_name: String = GameManager.get_item_display_name(item_data)
+					GameManager.log_message("You pick up and equip the %s." % item_name, ThemeColors.MSG_LOOT)
+					player.consume_energy()
+					turn_system._after_player_action()
+					hud.update_player_stats(player)
+				else:
+					GameManager.log_message("Nothing equippable here.", ThemeColors.MSG_SYSTEM)
 		get_viewport().set_input_as_handled()
 
 	# Stealth toggle (; key) - direct keycode check, bypasses action system for macOS compatibility
@@ -1128,3 +1161,25 @@ func _toggle_bestiary() -> void:
 
 func _on_bestiary_closed() -> void:
 	GameManager.is_player_turn = true
+
+# ============================================================================
+# ITEM DROP HANDLER
+# ============================================================================
+
+func _on_item_dropped_to_ground(entity: Node, item_data: Variant, pos: Vector2i) -> void:
+	## Spawn a ground Item node when an item is dropped from inventory.
+	if not current_level:
+		return
+
+	var item_node: Item = ITEM_SCENE.instantiate()
+	item_node.grid_position = pos
+
+	if item_data is DataManager.ArtifactData:
+		item_node.initialize_from_artifact_data(item_data)
+	elif item_data is DataManager.ItemData:
+		item_node.initialize_from_item_data(item_data)
+
+	current_level.add_item(item_node)
+
+	var item_name: String = item_node.get_display_name()
+	GameManager.log_message("You drop the %s." % item_name, ThemeColors.MSG_SYSTEM)

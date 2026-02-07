@@ -29,6 +29,7 @@ PanelTransition="*res://scripts/ui/panel_transition.gd"
 TooltipManager="*res://scripts/ui/tooltip_manager.gd"
 TutorialManager="*res://scripts/ui/tutorial_manager.gd"
 HelpOverlay="*res://scripts/ui/help_overlay.gd"
+AudioManager="*res://scripts/core/audio_manager.gd"
 
 [display]
 
@@ -37,6 +38,7 @@ window/size/viewport_height=1080
 window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [input]
 

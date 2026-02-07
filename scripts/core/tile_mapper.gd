@@ -123,7 +123,7 @@ func _load_terrain_coords() -> void:
 	# enum Tile { VOID=0, FLOOR=1, WALL=2, DOOR_CLOSED=3, DOOR_OPEN=4,
 	#   STAIRS_DOWN=5, STAIRS_UP=6, CHASM=7, RUBBLE=8, FORGE=9, TRAP=10,
 	#   TRAP_TRIGGERED=11, DOOR_LOCKED=12, DOOR_JAMMED=13, DOOR_SECRET=14,
-	#   WATER=15, LAVA=16, VINE_FLOOR=17 }
+	#   WATER=15, LAVA=16, VINE_FLOOR=17, POISON_STREAM=18 }
 	# VOID(0) -> darkness(0) already correct at (0,0)/(1,0)
 	# FLOOR(1) -> open floor(1) already correct at (2,0)/(3,0)
 	terrain_coords[2] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # WALL ->  (terrain 11)
@@ -142,6 +142,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[15] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # WATER ->  (terrain 51)
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
 	terrain_coords[17] = {"light": Vector2i(12, 5), "dark": Vector2i(13, 5)}    # VINE_FLOOR ->  (terrain 86)
+	terrain_coords[18] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # POISON_STREAM -> reuse water coords (terrain 51)
 
 func _load_monster_coords() -> void:
 	# === Tier 1: Outer Pits ===
@@ -327,6 +328,12 @@ func _load_item_coords() -> void:
 	item_coords[137] = Vector2i(8, 13)  # the Blessed Realm
 	item_coords[138] = Vector2i(9, 13)  # Haunted Dreams
 	item_coords[139] = Vector2i(10, 13)  # the Vigilant Eye
+	item_coords[140] = Vector2i(3, 13)  # the Hearth (shares Last Chances sprite)
+	item_coords[141] = Vector2i(5, 13)  # Clear Sight (shares Grace sprite)
+	item_coords[142] = Vector2i(4, 13)  # Fortitude (shares Constitution sprite)
+	item_coords[143] = Vector2i(8, 13)  # Starlight (shares Blessed Realm sprite)
+	item_coords[144] = Vector2i(7, 13)  # the Stoneheart (shares Preservation sprite)
+	item_coords[145] = Vector2i(8, 13)  # Lorien-light (shares Blessed Realm sprite)
 	item_coords[150] = Vector2i(11, 13)  # Secrets
 	item_coords[151] = Vector2i(12, 13)  # Ered Luin
 	item_coords[152] = Vector2i(13, 13)  # Evasion
@@ -341,6 +348,15 @@ func _load_item_coords() -> void:
 	item_coords[161] = Vector2i(22, 13)  # the Shadow's Vanguard
 	item_coords[162] = Vector2i(23, 13)  # Venom's End
 	item_coords[171] = Vector2i(24, 13)  # the Laiquendi
+	item_coords[173] = Vector2i(11, 13)  # the Watchful (shares Secrets sprite)
+	item_coords[174] = Vector2i(15, 13)  # Endurance (shares Strength sprite)
+	item_coords[175] = Vector2i(24, 13)  # the Forester (shares Laiquendi sprite)
+	item_coords[176] = Vector2i(12, 13)  # Iron Will (shares Ered Luin sprite)
+	item_coords[177] = Vector2i(23, 13)  # the Greenwood (shares Venom's End sprite)
+	item_coords[178] = Vector2i(15, 13)  # Durin's Folk (shares Strength sprite)
+	item_coords[179] = Vector2i(16, 13)  # Noldor Memory (shares Dexterity sprite)
+	item_coords[180] = Vector2i(9, 13)  # the Shadow-ward (shares Haunted Dreams sprite)
+	item_coords[181] = Vector2i(17, 13)  # Wrathful Fire (shares Frost sprite)
 	item_coords[191] = Vector2i(25, 13)  # Imprisonment
 	item_coords[192] = Vector2i(26, 13)  # Freedom
 	item_coords[193] = Vector2i(27, 13)  # Light

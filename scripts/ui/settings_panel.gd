@@ -84,13 +84,19 @@ func _setup_tabs() -> void:
 	controls_tab.add_child(scroll)
 	tab_container.add_child(controls_tab)
 
-	# Audio tab (placeholder)
+	# Audio tab
 	var audio_tab := VBoxContainer.new()
 	audio_tab.name = "Audio"
-	var placeholder := Label.new()
-	placeholder.text = "Audio settings coming soon."
-	placeholder.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
-	audio_tab.add_child(placeholder)
+	if AudioManager:
+		_add_volume_slider(audio_tab, "Master Volume", "Master", AudioManager.master_volume)
+		_add_volume_slider(audio_tab, "Music Volume", "Music", AudioManager.music_volume)
+		_add_volume_slider(audio_tab, "SFX Volume", "SFX", AudioManager.sfx_volume)
+		_add_volume_slider(audio_tab, "UI Volume", "UI", AudioManager.ui_volume)
+	else:
+		var placeholder := Label.new()
+		placeholder.text = "AudioManager not available."
+		placeholder.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		audio_tab.add_child(placeholder)
 	tab_container.add_child(audio_tab)
 
 var _rebinding_action: String = ""
@@ -154,6 +160,31 @@ func _add_slider(parent: VBoxContainer, label_text: String, min_val: float, max_
 	value_label.text = "%.2f" % initial
 	ThemeColors.apply_body_font(value_label, ThemeColors.FONT_SIZE_HINT)
 	slider.value_changed.connect(func(v: float) -> void: value_label.text = "%.2f" % v)
+	row.add_child(value_label)
+	parent.add_child(row)
+
+func _add_volume_slider(parent: VBoxContainer, label_text: String, bus_name: String, initial: float) -> void:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size.x = 300
+	ThemeColors.apply_body_font(label)
+	row.add_child(label)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.value = initial
+	slider.step = 0.01
+	slider.custom_minimum_size.x = 200
+	slider.value_changed.connect(func(v: float) -> void:
+		if AudioManager:
+			AudioManager.set_volume(bus_name, v)
+	)
+	row.add_child(slider)
+	var value_label := Label.new()
+	value_label.text = "%d%%" % int(initial * 100)
+	ThemeColors.apply_body_font(value_label, ThemeColors.FONT_SIZE_HINT)
+	slider.value_changed.connect(func(v: float) -> void: value_label.text = "%d%%" % int(v * 100))
 	row.add_child(value_label)
 	parent.add_child(row)
 

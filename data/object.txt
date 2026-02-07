@@ -903,12 +903,73 @@ F:HAUNTED | SEE_INVIS | EASY_KNOW
 # (ability 4/2 is Keen Senses)
 N:139:the Vigilant Eye
 G:":d
-I:40:7:0
-W:4:0:1:0
+I:40:7:1
+W:12:0:1:0
 P:0:0d0:0:0d0
-A:10/20
+A:12/20
 F:PERCEPTION | RES_HALLU
 B:4/2
+
+
+N:140:the Hearth
+G:":d
+I:40:8:0
+W:3:3:1:100
+P:0:0d0:0:0d0
+A:3/3
+F:SLOW_DIGEST | EASY_KNOW
+D:A simple amulet of warm copper, warding off the pangs of hunger.
+
+
+N:141:Clear Sight
+G:":d
+I:40:9:1
+W:4:4:1:200
+P:0:0d0:0:0d0
+A:4/4
+F:PERCEPTION
+D:A clear crystal pendant that sharpens the wearer's senses.
+
+
+N:142:Fortitude
+G:":d
+I:40:10:1
+W:5:4:1:300
+P:0:0d0:0:0d0
+A:5/4
+F:WILL
+D:A heavy stone amulet carved with ancient runes of resolve.
+
+
+N:143:Starlight
+G:":d
+I:40:11:1
+W:9:7:1:1500
+P:0:0d0:0:0d0
+A:9/7
+F:LIGHT | RES_DARK
+D:A silver pendant that glows with the captured light of Earendil's star.
+
+
+N:144:the Stoneheart
+G:":d
+I:40:12:0
+W:8:6:1:2000
+P:0:0d0:0:0d0
+A:8/6
+F:SUST_STR | SUST_CON | EASY_KNOW
+D:A granite amulet carved by Dwarf-smiths, hardening flesh against decay.
+
+
+N:145:Lorien-light
+G:":d
+I:40:13:2
+W:15:12:1:10000
+P:0:0d0:0:0d0
+A:15/12
+F:GRA | REGEN | LIGHT
+D:A golden brooch blessed by the Lady of Light, its radiance mends and restores.
+
 
 ##### Rings #####
 
@@ -934,20 +995,20 @@ F:WILL | RES_FEAR | RES_CONFU
 
 N:152:Evasion
 G:=:d
-I:45:2:0
+I:45:2:2
 W:8:0:1:500
-P:0:0d0:0:0d0
+P:0:0d0:2:0d0
 A:8/15
-D:It helps you avoid your enemies' blows. 
+D:It helps you avoid your enemies' blows.
 
 
 N:153:Protection
 G:=:d
-I:45:3:0
+I:45:3:1
 W:7:0:1:500
-P:0:0d0:0:0d0
+P:0:0d0:0:1d2
 A:7/4
-D:It provides protection from damage. 
+D:It provides protection from damage.
 
 
 N:154:Strength
@@ -988,11 +1049,11 @@ F:RES_COLD | EASY_KNOW
 
 N:158:Accuracy
 G:=:d
-I:45:8:0
+I:45:8:2
 W:12:0:1:500
-P:0:0d0:0:0d0
+P:2:0d0:0:0d0
 A:12/15
-D:It helps you hit your opponents. 
+D:It helps you hit your opponents.
 
 
 N:159:Free Action
@@ -1053,6 +1114,101 @@ F:STEALTH | ARCHERY | EASY_KNOW
 #A:10/2
 #F:AGGRAVATE | EASY_KNOW
 
+
+# Common rings (depth 2-5)
+
+N:173:the Watchful
+G:=:d
+I:45:22:1
+W:3:3:1:100
+P:0:0d0:0:0d0
+A:3/3
+F:PERCEPTION
+D:A thin silver band that heightens awareness of approaching danger.
+
+
+N:174:Endurance
+G:=:d
+I:45:23:1
+W:2:3:1:100
+P:0:0d0:0:0d0
+A:2/3
+F:CON
+D:A band of dark iron that hardens the body against exhaustion.
+
+
+N:175:the Forester
+G:=:d
+I:45:24:1
+W:4:4:1:150
+P:0:0d0:0:0d0
+A:4/4
+F:STEALTH
+D:A ring carved from green-veined wood, muffling the wearer's steps.
+
+
+N:176:Iron Will
+G:=:d
+I:45:25:0
+W:3:4:1:200
+P:0:0d0:0:0d0
+A:3/4
+F:RES_FEAR | EASY_KNOW
+D:A band of cold-forged iron that steels the heart against terror.
+
+
+# Uncommon rings (depth 7-10)
+
+N:177:the Greenwood
+G:=:d
+I:45:26:1
+W:8:6:1:800
+P:0:0d0:0:0d0
+A:8/6
+F:GRA | RES_POIS
+D:A ring woven from living Greenwood bark, warding against venom.
+
+
+N:178:Durin's Folk
+G:=:d
+I:45:27:1
+W:7:6:1:800
+P:0:0d0:0:0d0
+A:7/6
+F:STR | RES_FIRE
+D:A sturdy mithril ring bearing the anvil-mark of the Longbeards.
+
+
+# Rare rings (depth 12-15)
+
+N:179:Noldor Memory
+G:=:d
+I:45:28:2
+W:13:10:1:5000
+P:0:0d0:0:0d0
+A:13/10
+F:GRA | WILL
+D:An ancient ring of pale gold from Tirion, its wearer recalls the light of the Trees.
+
+
+N:180:the Shadow-ward
+G:=:d
+I:45:29:0
+W:12:9:1:3000
+P:0:0d0:0:0d0
+A:12/9
+F:SEE_INVIS | RES_FEAR | EASY_KNOW
+D:A ring of dark steel that pierces illusion and banishes dread.
+
+
+N:181:Wrathful Fire
+G:=:d
+I:45:30:0
+W:14:12:1:6000
+P:0:0d0:0:0d0
+A:14/12
+F:BRAND_FIRE | AGGRAVATE
+D:A ring of molten gold that sheathes weapons in flame but draws foes near.
 
 
 ##### Staves #####

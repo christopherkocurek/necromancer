@@ -422,7 +422,9 @@ enum EquipSlot {
 
 # TVAL to equipment slot mapping
 const TVAL_TO_SLOT: Dictionary = {
+	16: EquipSlot.QUIVER,    # TV_SLING_AMMO
 	17: EquipSlot.QUIVER,    # TV_ARROW
+	18: EquipSlot.BOW,       # TV_SLING
 	19: EquipSlot.BOW,       # TV_BOW
 	20: EquipSlot.WEAPON,    # TV_DIGGING
 	21: EquipSlot.WEAPON,    # TV_HAFTED
@@ -598,3 +600,11 @@ const EFFECT_FAIRY_MIST: StringName = &"fairy_mist"
 
 # Horn svals that require directional targeting
 const HORN_DIRECTIONAL_SVALS: Array[int] = [0, 1, 2, 3]
+
+# ============================================================================
+# ITEM STACKING
+# ============================================================================
+
+# TVALs that can stack in inventory (arrows/stones, torches, potions, food/herbs)
+const STACKABLE_TVALS: Array[int] = [16, 39, 75, 80]
+const MAX_STACK_SIZE: int = 20

@@ -168,6 +168,9 @@ func _process_game_tick() -> void:
 			monster.take_turn()
 			monster.consume_energy()
 
+	# Refresh entity visibility after all monsters have moved
+	current_level.update_entity_visibility()
+
 	# Increment round counter
 	current_round += 1
 
@@ -210,6 +213,10 @@ func _process_monster_turn() -> void:
 		monster.reset_light_recoil()  # Allow recoil message next player action
 		monster.take_turn()
 		monster.consume_energy()
+
+		# Refresh entity visibility after monster moved
+		if current_level:
+			current_level.update_entity_visibility()
 
 		# Only wait for visible monsters to keep things snappy
 		if monster.visible:

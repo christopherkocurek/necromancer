@@ -34,6 +34,12 @@ var minimap: Minimap = null
 # --- Stealth meter ---
 var stealth_meter: ColorRect = null
 
+# --- Low HP peril warning ---
+var _last_hp_pct: float = 1.0
+var _peril_shown: bool = false
+var peril_flash: ColorRect = null
+var peril_label: Label = null
+
 # --- Message system ---
 const MAX_MESSAGES := 200
 var messages: Array[Dictionary] = []
@@ -60,6 +66,7 @@ func _ready() -> void:
 	_build_floating_message_log()
 	_build_minimap()
 	_build_stealth_meter()
+	_build_peril_overlay()
 	_connect_signals()
 
 # ============================================================================
@@ -407,6 +414,9 @@ func update_player_stats(player: Player) -> void:
 	var hp_color: Color = ThemeColors.get_health_color(health_pct)
 	health_label.add_theme_color_override("font_color", hp_color)
 
+	# Peril warning check
+	_check_peril_warning(player.current_health, player.max_health)
+
 	# XP
 	xp_label.text = _format_number(player.xp_available)
 
@@ -547,6 +557,70 @@ func refresh_minimap() -> void:
 func toggle_minimap() -> void:
 	if minimap:
 		minimap.visible = not minimap.visible
+
+# ============================================================================
+# PERIL WARNING (Sauron senses your peril)
+# ============================================================================
+
+func _build_peril_overlay() -> void:
+	# Red flash overlay
+	peril_flash = ColorRect.new()
+	peril_flash.color = Color(0.8, 0.0, 0.0, 0.0)
+	peril_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	peril_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	peril_flash.visible = false
+	add_child(peril_flash)
+
+	# Warning label
+	peril_label = Label.new()
+	peril_label.text = "SAURON SENSES YOUR PERIL..."
+	peril_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	peril_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	peril_label.set_anchors_preset(Control.PRESET_CENTER)
+	peril_label.add_theme_font_size_override("font_size", 36)
+	peril_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.1))
+	peril_label.modulate.a = 0.0
+	peril_label.visible = false
+	add_child(peril_label)
+
+func _check_peril_warning(current_hp: int, max_hp: int) -> void:
+	if max_hp <= 0:
+		return
+	var hp_pct: float = float(current_hp) / float(max_hp)
+
+	# Crossing below 10% from above
+	if hp_pct < 0.1 and _last_hp_pct >= 0.1 and current_hp > 0:
+		_show_peril_warning()
+
+	# Reset when healing above 10%
+	if hp_pct >= 0.1:
+		_peril_shown = false
+
+	_last_hp_pct = hp_pct
+
+func _show_peril_warning() -> void:
+	if _peril_shown:
+		return
+	_peril_shown = true
+
+	# Red flash
+	peril_flash.visible = true
+	var flash_tween: Tween = create_tween()
+	flash_tween.tween_property(peril_flash, "color:a", 0.35, 0.15)
+	flash_tween.tween_property(peril_flash, "color:a", 0.0, 1.0)
+	flash_tween.tween_callback(func(): peril_flash.visible = false)
+
+	# Label
+	peril_label.visible = true
+	peril_label.modulate.a = 0.0
+	var label_tween: Tween = create_tween()
+	label_tween.tween_property(peril_label, "modulate:a", 1.0, 0.2)
+	label_tween.tween_interval(1.5)
+	label_tween.tween_property(peril_label, "modulate:a", 0.0, 1.0)
+	label_tween.tween_callback(func(): peril_label.visible = false)
+
+	# Log message
+	EventBus.message_logged.emit("SAURON SENSES YOUR PERIL...", ThemeColors.COMBAT_CRIT)
 
 # ============================================================================
 # BOTTOM BAR EXPAND/COLLAPSE
