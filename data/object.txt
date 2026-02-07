@@ -1900,6 +1900,45 @@ D: Orc-rage Mushrooms with Alchemy. Provides nourishment for
 D: about 250 turns.
 
 
+##### Light Ecology Items #####
+
+N:416:& Phosphorescent Moss~
+G:,:G
+I:80:12:250
+W:8:0:1:50
+P:0:0d0:0:0d0
+A:8/3:14/2
+F:EASY_KNOW
+D:A clump of softly glowing cave moss. When eaten, it fills you with
+D: a warm luminescence, increasing your light radius by 1 for 50 turns.
+D: Provides nourishment for about 250 turns under normal conditions.
+
+
+N:417:& Vial~ of Torch Oil
+G:!:U
+I:77:1:1000
+W:3:0:5:5
+P:0:0d0:0:0d0
+A:3/2:7/1:11/1
+F:EASY_KNOW
+D:A small vial of thick, flammable oil specially formulated for wooden
+D: torches. It refuels a wooden torch by 1,000 turns of light, up to
+D: a maximum of 3,000 turns. Cannot be used on lanterns.
+
+
+N:418:& Nightshade Cloak~
+G:(:D
+I:35:7:0
+W:10:0:15:3000
+P:0:0d0:2:1d0
+A:10/4:16/2
+F:DARKNESS | STEALTH
+D:A cloak woven from the petals of the deadly nightshade plant and
+D: enchanted by sorcerers of Dol Guldur. It reduces your light radius
+D: by 2 but grants +4 to Stealth. Those who wear it become one with
+D: the darkness, unseen by most eyes.
+
+
 #### Damaged items ####
 
 N:420:& Rusted Helm~

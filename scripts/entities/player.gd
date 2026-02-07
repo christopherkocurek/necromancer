@@ -69,6 +69,16 @@ var voice_charges: int = 20  # For song/voice abilities (starts full)
 var max_voice: int = 20
 var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
+# Hunger system - soft pressure mechanic
+var hunger: int = 2000  # Current hunger (counts down per turn)
+const HUNGER_MAX: int = 2000       # Well-fed (starting value)
+const HUNGER_NORMAL: int = 1500    # Normal - no effects
+const HUNGER_HUNGRY: int = 800     # Getting hungry - stat penalty starts
+const HUNGER_FAMISHED: int = 400   # Serious - bigger penalties, no regen
+const HUNGER_STARVING: int = 100   # Critical - HP loss
+var _starving_turns: int = 0       # Turns spent at 0 hunger (for death timer)
+var _last_hunger_state: String = "well_fed"  # Track state transitions for messages
+
 # Equipment slots
 var equipment: Dictionary = {
 	"weapon": null,
@@ -326,17 +336,17 @@ func learn_ability(skill: int, ability: int) -> void:
 	have_ability[skill][ability] = true
 
 func _setup_player_sprite() -> void:
-	# Map race to player sprite index (matches player_coords in tile_mapper.gd)
-	# Elf=0, Man=1, Dwarf=2, Istari=3, Hobbit=4
+	# V2: Look up sprite by race + house + gender
+	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
+	if house_data:
+		set_sprite_from_player_v2(race_name, house_data.index, "male")
+		return
+	# Legacy fallback: race only
 	var race_to_sprite: Dictionary[String, int] = {
-		"Noldor": 0,
-		"Sindar": 0,
-		"Man": 1,
-		"Dwarf": 2,
-		"Istari": 3,
-		"Hobbit": 4,
+		"Noldor": 0, "Sindar": 0, "Elf": 0,
+		"Man": 1, "Dwarf": 2, "Istari": 3, "Hobbit": 4,
 	}
-	var race_sprite_id: int = race_to_sprite.get(race_name, 1)  # Default to Man
+	var race_sprite_id: int = race_to_sprite.get(race_name, 1)
 	set_sprite_from_player_id(race_sprite_id)
 
 func _apply_racial_modifiers() -> void:
@@ -614,6 +624,13 @@ func _recalculate_stats() -> void:
 	melee_bonus += equip_attack
 	evasion_bonus += equip_evasion
 
+	# Hunger penalties to combat stats
+	var hunger_pen: Dictionary = get_hunger_penalties()
+	if hunger_pen.get("str", 0) != 0:
+		melee_bonus += hunger_pen.str  # Negative value = penalty
+	if hunger_pen.get("dex", 0) != 0:
+		evasion_bonus += hunger_pen.dex  # Negative value = penalty
+
 	# Update protection dice from armor
 	_recalculate_protection()
 
@@ -680,6 +697,87 @@ func _parse_dice_string(dice_str: String) -> Dictionary:
 		result.dice = int(parts[0]) if parts[0].is_valid_int() else 0
 		result.sides = int(parts[1]) if parts[1].is_valid_int() else 0
 	return result
+
+# ============================================================================
+# HUNGER SYSTEM
+# ============================================================================
+
+## Get current hunger state as a string
+func get_hunger_state() -> String:
+	if hunger > HUNGER_NORMAL:
+		return "well_fed"
+	elif hunger > HUNGER_HUNGRY:
+		return "normal"
+	elif hunger > HUNGER_FAMISHED:
+		return "hungry"
+	elif hunger > HUNGER_STARVING:
+		return "famished"
+	else:
+		return "starving"
+
+## Decay hunger by 1 per turn and apply state-change messages
+func tick_hunger() -> void:
+	var old_state: String = _last_hunger_state
+	hunger = maxi(0, hunger - 1)
+	var new_state: String = get_hunger_state()
+
+	# Log message on state transitions
+	if new_state != old_state:
+		match new_state:
+			"hungry":
+				GameManager.log_message("You are hungry.", ThemeColors.MSG_WARNING)
+			"famished":
+				GameManager.log_message("You are famished!", ThemeColors.MSG_ERROR)
+			"starving":
+				GameManager.log_message("You are starving!", ThemeColors.MSG_ERROR)
+			"normal":
+				if old_state == "hungry":
+					GameManager.log_message("You no longer feel hungry.", ThemeColors.MSG_INFO)
+			"well_fed":
+				GameManager.log_message("You feel well fed.", ThemeColors.MSG_INFO)
+		_last_hunger_state = new_state
+
+	# Track turns at 0 hunger for escalating damage
+	if hunger == 0:
+		_starving_turns += 1
+	else:
+		_starving_turns = 0
+
+## Apply hunger penalties to combat stats. Called during stat recalculation.
+## Returns a Dictionary with penalty values.
+func get_hunger_penalties() -> Dictionary:
+	var state: String = get_hunger_state()
+	match state:
+		"hungry":
+			return {"str": -1, "dex": -1, "will": -1, "no_regen": false}
+		"famished":
+			return {"str": -2, "dex": -2, "will": -2, "no_regen": true}
+		"starving":
+			return {"str": -3, "dex": -3, "will": -3, "no_regen": true}
+		_:
+			return {"str": 0, "dex": 0, "will": 0, "no_regen": false}
+
+## Apply starvation damage (called from turn processing).
+## At starving: -1 HP every 5 turns. At 0 hunger for 100+ turns: 1d4 per turn.
+func apply_starvation_damage(current_round: int) -> void:
+	if hunger <= HUNGER_STARVING and hunger > 0:
+		# -1 HP every 5 turns when starving
+		if current_round % 5 == 0:
+			take_damage(1, "starvation", null)
+			GameManager.log_message("You are wasting away from hunger!", ThemeColors.MSG_ERROR)
+	elif hunger == 0 and _starving_turns >= 100:
+		# After 100 turns at 0, take 1d4 damage per turn
+		var damage: int = randi_range(1, 4)
+		take_damage(damage, "starvation", null)
+		GameManager.log_message("You are dying of starvation! (%d damage)" % damage, ThemeColors.MSG_ERROR)
+
+## Restore hunger from eating food
+func restore_hunger(amount: int) -> void:
+	var old_state: String = get_hunger_state()
+	hunger = mini(hunger + amount, HUNGER_MAX)
+	var new_state: String = get_hunger_state()
+	if new_state != old_state:
+		_last_hunger_state = new_state
 
 # ============================================================================
 # XP SYSTEM (Sil-Q style - XP as currency)
@@ -1583,7 +1681,36 @@ func get_light_radius() -> int:
 	if status_fx and status_fx.has_effect(Constants.EFFECT_BURNING):
 		base_radius += 1
 
+	# PHOSPHOR: +1 light radius from Phosphorescent Moss
+	if status_fx and status_fx.has_effect(Constants.EFFECT_PHOSPHOR):
+		base_radius += 1
+
+	# Depth darkness modifier (deeper layers suppress light)
+	if GameManager.current_level:
+		var depth_mod: int = LayerConfig.get_darkness_modifier(GameManager.current_level.depth)
+		base_radius = maxi(1, base_radius + depth_mod)
+
+	# Dark Aura: adjacent monsters with DARK_AURA suppress light by 1 each
+	if GameManager.current_level:
+		var dark_aura_count: int = _count_adjacent_dark_aura()
+		if dark_aura_count > 0:
+			base_radius = maxi(1, base_radius - dark_aura_count)
+
 	return base_radius
+
+## Count adjacent monsters that have the DARK_AURA flag
+func _count_adjacent_dark_aura() -> int:
+	if not GameManager.current_level:
+		return 0
+	var count: int = 0
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		var dist: int = maxi(absi(entity.grid_position.x - grid_position.x),
+						absi(entity.grid_position.y - grid_position.y))
+		if dist <= 1 and entity.is_dark_aura:
+			count += 1
+	return count
 
 ## Tick fuel consumption for equipped light source (called each round)
 func tick_light_fuel() -> void:

@@ -124,15 +124,30 @@ static func eat_food(player: Player, item: Variant) -> bool:
 	GameManager.identify_item(item)
 
 	match sval:
-		35:  # Dark Bread - basic sustenance
+		5:  # Emptiness herb - drains hunger!
+			player.hunger = maxi(0, player.hunger - 1000)
+			player.restore_hunger(0)  # Trigger state update
+			GameManager.log_message("A gnawing emptiness fills your stomach!", ThemeColors.MSG_ERROR)
+		12:  # Phosphorescent Moss - grants +1 light radius for 50 turns
+			player.apply_status(Constants.EFFECT_PHOSPHOR, 50)
+			player.restore_hunger(250)
+			GameManager.log_message("The glowing moss fills you with a warm luminescence. You glow faintly!", ThemeColors.MSG_INFO)
+		35:  # Travel Bread - basic sustenance + hunger restore
 			player.heal(randi_range(2, 8), player)
+			player.restore_hunger(500)
 			GameManager.log_message("You eat the bread. It's stale but filling.", ThemeColors.TEXT_PRIMARY)
-		37:  # Fragment of Lembas - good healing
+		36:  # Dried Meat - solid sustenance + hunger restore
+			player.heal(randi_range(3, 10), player)
+			player.restore_hunger(700)
+			GameManager.log_message("You chew the tough dried meat. It fills you up.", ThemeColors.TEXT_PRIMARY)
+		37:  # Fragment of Lembas - good healing + major hunger restore
 			player.heal(randi_range(10, 20), player)
+			player.restore_hunger(1000)
 			GameManager.log_message("The Elvish waybread fills you with renewed vigor.", ThemeColors.HEALTH_HIGH)
 		_:
-			# Generic herb - minor healing
+			# Generic herb - minor healing + small hunger restore
 			player.heal(randi_range(1, 6), player)
+			player.restore_hunger(200)
 			GameManager.log_message("You eat the herb.", ThemeColors.TEXT_PRIMARY)
 
 	if player.run_stats:
@@ -269,6 +284,52 @@ static func _wand_status_effect(player: Player, effect: String, duration: int) -
 		GameManager.log_message("The %s is affected!" % nearest.entity_name, ThemeColors.MSG_INFO)
 
 # ============================================================================
+# FLASK EFFECTS (tval 77)
+# ============================================================================
+
+## Use a flask on the player's equipped light source. Returns true if consumed.
+static func use_flask(player: Player, item: Variant) -> bool:
+	if item == null or not "tval" in item or item.tval != 77:
+		return false
+
+	var sval: int = item.sval if "sval" in item else 0
+	GameManager.identify_item(item)
+
+	var light_item = player.equipment.get("light")
+	if light_item == null:
+		GameManager.log_message("You have no light source equipped to refuel.", ThemeColors.MSG_SYSTEM)
+		return false
+
+	var light_sval: int = light_item.sval if "sval" in light_item else -1
+
+	match sval:
+		0:  # Flask of Oil - refuels brass lantern
+			if light_sval != 1:  # sval 1 = Brass Lantern
+				GameManager.log_message("Oil can only refuel a brass lantern.", ThemeColors.MSG_SYSTEM)
+				return false
+			if not "fuel" in light_item:
+				GameManager.log_message("This light source doesn't use fuel.", ThemeColors.MSG_SYSTEM)
+				return false
+			var fuel_add: int = item.pval if "pval" in item else 3000
+			light_item.fuel = mini(light_item.fuel + fuel_add, 7000)
+			GameManager.log_message("You refuel your lantern.", ThemeColors.MSG_INFO)
+			return true
+		1:  # Torch Oil - refuels wooden torch
+			if light_sval != 0:  # sval 0 = Wooden Torch
+				GameManager.log_message("Torch oil can only refuel a wooden torch.", ThemeColors.MSG_SYSTEM)
+				return false
+			if not "fuel" in light_item:
+				GameManager.log_message("This light source doesn't use fuel.", ThemeColors.MSG_SYSTEM)
+				return false
+			var fuel_add: int = item.pval if "pval" in item else 1000
+			light_item.fuel = mini(light_item.fuel + fuel_add, 3000)
+			GameManager.log_message("You apply torch oil. Your torch burns brighter!", ThemeColors.MSG_INFO)
+			return true
+		_:
+			GameManager.log_message("You can't use that.", ThemeColors.MSG_SYSTEM)
+			return false
+
+# ============================================================================
 # CONSUMABLE DISPATCHER
 # ============================================================================
 
@@ -280,6 +341,8 @@ static func use_item(player: Player, item: Variant) -> bool:
 	match item.tval:
 		75:  # Potion
 			return quaff_potion(player, item)
+		77:  # Flask (oil/torch oil)
+			return use_flask(player, item)
 		80:  # Food/Herb
 			return eat_food(player, item)
 		55:  # Scroll

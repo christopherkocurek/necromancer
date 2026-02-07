@@ -107,6 +107,10 @@ func set_sprite_from_player_id(race_id: int) -> void:
 	var atlas_coords := TileMapper.get_player_coords(race_id)
 	set_sprite_from_atlas_coords(atlas_coords)
 
+func set_sprite_from_player_v2(race_name: String, house_id: int, gender: String = "male") -> void:
+	var atlas_coords := TileMapper.get_player_coords_v2(race_name, house_id, gender)
+	set_sprite_from_atlas_coords(atlas_coords)
+
 func set_sprite_from_atlas_coords(atlas_coords: Vector2i) -> void:
 	_pending_atlas_coords = atlas_coords
 	if sprite:
@@ -243,11 +247,23 @@ func die(killer: Entity = null) -> void:
 	_play_death_animation()
 
 func _play_death_animation() -> void:
+	# Determine if this is a significant kill (unique/boss)
+	var is_boss: bool = false
+	if self is Monster:
+		var mon: Monster = self as Monster
+		is_boss = mon.is_unique or mon.is_dragon
+
 	# Brief white flash before fade
 	if sprite:
-		sprite.modulate = Color(2.0, 2.0, 2.0)
-	# Spawn burst particles
-	_spawn_death_particles()
+		if is_boss:
+			sprite.modulate = Color(3.0, 2.5, 1.0)  # Gold flash for bosses
+		else:
+			sprite.modulate = Color(2.0, 2.0, 2.0)
+
+	# Spawn burst particles (more for bosses)
+	var particle_count: int = 15 if is_boss else 10
+	_spawn_death_particles(particle_count, is_boss)
+
 	# Fade out and free
 	var tween := create_tween()
 	if sprite:
@@ -255,23 +271,27 @@ func _play_death_animation() -> void:
 	tween.tween_property(self, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(queue_free)
 
-func _spawn_death_particles() -> void:
-	for i in range(5):
+func _spawn_death_particles(count: int = 10, is_boss: bool = false) -> void:
+	var color: Color = ThemeColors.DMG_CRIT if is_boss else ThemeColors.DMG_PHYSICAL
+	var spread: float = 50.0 if is_boss else 35.0
+	for i in range(count):
 		var particle := Node2D.new()
 		var dot := ColorRect.new()
-		dot.size = Vector2(4, 4)
-		dot.position = Vector2(-2, -2)
-		dot.color = ThemeColors.DMG_PHYSICAL
+		var dot_size: float = 5.0 if is_boss else 4.0
+		dot.size = Vector2(dot_size, dot_size)
+		dot.position = Vector2(-dot_size / 2, -dot_size / 2)
+		dot.color = color
 		particle.add_child(dot)
 		particle.position = Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2)
 		add_child(particle)
 		# Burst outward with random angle
-		var angle: float = TAU * i / 5.0 + randf_range(-0.3, 0.3)
-		var target_pos: Vector2 = particle.position + Vector2.from_angle(angle) * randf_range(20, 40)
+		var angle: float = TAU * i / float(count) + randf_range(-0.3, 0.3)
+		var target_pos: Vector2 = particle.position + Vector2.from_angle(angle) * randf_range(spread * 0.5, spread)
+		var duration: float = 0.5 if is_boss else 0.4
 		var ptween := create_tween()
 		ptween.set_parallel(true)
-		ptween.tween_property(particle, "position", target_pos, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-		ptween.tween_property(dot, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
+		ptween.tween_property(particle, "position", target_pos, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		ptween.tween_property(dot, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN)
 		ptween.chain().tween_callback(particle.queue_free)
 
 # ============================================================================
@@ -305,6 +325,60 @@ func vfx_particles(color: Color, count: int = 5, spread: float = 30.0, duration:
 		pt.set_parallel(true)
 		pt.tween_property(particle, "position", target_pos, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 		pt.tween_property(dot, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN)
+		pt.chain().tween_callback(particle.queue_free)
+
+## Spawn directional particles (e.g., dripping down, rising up).
+## direction: normalized Vector2 for particle travel direction.
+func vfx_particles_directional(color: Color, direction: Vector2, count: int = 3, spread_angle: float = 0.4, distance: float = 20.0, duration: float = 0.4) -> void:
+	var base_angle: float = direction.angle()
+	for i in range(count):
+		var particle := Node2D.new()
+		var dot := ColorRect.new()
+		dot.size = Vector2(3, 3)
+		dot.position = Vector2(-1.5, -1.5)
+		dot.color = color
+		particle.add_child(dot)
+		particle.position = Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2)
+		add_child(particle)
+		var angle: float = base_angle + randf_range(-spread_angle, spread_angle)
+		var dist: float = randf_range(distance * 0.6, distance)
+		var target_pos: Vector2 = particle.position + Vector2.from_angle(angle) * dist
+		var pt := create_tween()
+		pt.set_parallel(true)
+		pt.tween_property(particle, "position", target_pos, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		pt.tween_property(dot, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN)
+		pt.chain().tween_callback(particle.queue_free)
+
+## Brief horizontal dodge animation - shift right then snap back.
+func vfx_dodge(offset_px: float = 2.0, duration: float = 0.15) -> void:
+	if not sprite:
+		return
+	var orig_pos: Vector2 = sprite.position
+	var shifted: Vector2 = orig_pos + Vector2(offset_px, 0)
+	var t := create_tween()
+	t.tween_property(sprite, "position", shifted, duration * 0.4).set_ease(Tween.EASE_OUT)
+	t.tween_property(sprite, "position", orig_pos, duration * 0.6).set_ease(Tween.EASE_IN)
+
+## Spawn ring of particles above the entity (for stun stars effect).
+func vfx_ring_particles(color: Color, count: int = 5, radius: float = 10.0, duration: float = 0.6) -> void:
+	var center: Vector2 = Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2 - 12)
+	for i in range(count):
+		var particle := Node2D.new()
+		var dot := ColorRect.new()
+		dot.size = Vector2(2, 2)
+		dot.position = Vector2(-1, -1)
+		dot.color = color
+		particle.add_child(dot)
+		var angle: float = TAU * i / float(count)
+		particle.position = center + Vector2.from_angle(angle) * radius
+		add_child(particle)
+		# Orbit animation: rotate around center
+		var end_angle: float = angle + TAU * 0.75
+		var end_pos: Vector2 = center + Vector2.from_angle(end_angle) * radius
+		var pt := create_tween()
+		pt.set_parallel(true)
+		pt.tween_property(particle, "position", end_pos, duration).set_ease(Tween.EASE_IN_OUT)
+		pt.tween_property(dot, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN).set_delay(duration * 0.5)
 		pt.chain().tween_callback(particle.queue_free)
 
 ## Spawn a floating text label at this entity's position.

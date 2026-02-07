@@ -825,6 +825,16 @@ func get_random_item_for_depth(depth: int) -> ItemData:
 		return null
 	return valid_items.pick_random()
 
+## Get a random food item (tval 80) appropriate for depth
+func get_random_food_for_depth(depth: int) -> ItemData:
+	var food_items: Array[ItemData] = []
+	for i in items.values():
+		if i.tval == 80 and i.depth <= depth:
+			food_items.append(i)
+	if food_items.is_empty():
+		return null
+	return food_items.pick_random()
+
 func _validate_data() -> void:
 	print("=== DataManager Validation ===")
 	print("Loaded %d monsters, %d items, %d artifacts, %d abilities" % [

@@ -107,6 +107,8 @@ func _handle_player_input() -> void:
 
 func _after_player_action() -> void:
 	if current_level:
+		# Refresh glowing items before lighting pass
+		current_level.refresh_glowing_items()
 		# Update FOV: geometry → lighting → entity visibility → tilemap
 		var fov_radius: int = current_level.get_fov_radius()
 		var light_radius: int = player.get_light_radius()
@@ -114,6 +116,9 @@ func _after_player_action() -> void:
 		current_level.apply_lighting(player.grid_position, light_radius)
 		current_level.update_entity_visibility()
 		current_level.apply_fov_to_tilemap()
+
+		# Light ecology: check light-sensitive monsters near player
+		_check_light_recoil()
 
 	EventBus.turn_ended.emit(player)
 
@@ -125,6 +130,16 @@ func _after_player_action() -> void:
 
 	# Check if player can act again, otherwise wait for monsters
 	current_state = TurnState.PROCESSING
+
+## Check light-sensitive monsters near the player and trigger recoil effects
+func _check_light_recoil() -> void:
+	if not player or not current_level:
+		return
+	for entity in current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		if entity.is_light_sensitive:
+			entity.check_light_recoil(player)
 
 func _check_ambient_message() -> void:
 	# Occasionally show atmospheric messages based on current layer
@@ -160,13 +175,26 @@ func _process_game_tick() -> void:
 	if player and player.is_alive:
 		player.tick_status_effects()
 		player.reset_turn_state()
+
+		# Hunger decay (1 per turn)
+		player.tick_hunger()
+
+		# Check hunger penalties for regen suppression
+		var hunger_penalties: Dictionary = player.get_hunger_penalties()
+		var no_regen: bool = hunger_penalties.get("no_regen", false)
+
 		# HP regeneration: 1 HP every (20 - Con) turns, minimum every 5 turns
+		# Suppressed when famished or starving
 		var regen_interval: int = maxi(5, 20 - player.constitution)
-		if current_round % regen_interval == 0 and player.current_health < player.max_health:
+		if not no_regen and current_round % regen_interval == 0 and player.current_health < player.max_health:
 			player.current_health = mini(player.current_health + 1, player.max_health)
 		# Voice regeneration: 1 charge every 3 turns
-		if current_round % 3 == 0 and player.voice_charges < player.max_voice:
+		# Suppressed when famished or starving
+		if not no_regen and current_round % 3 == 0 and player.voice_charges < player.max_voice:
 			player.voice_charges += 1
+
+		# Starvation damage
+		player.apply_starvation_damage(current_round)
 
 	for monster in current_level.get_monsters():
 		if monster.is_alive:
@@ -179,6 +207,7 @@ func _process_monster_turn() -> void:
 
 	var monster: Monster = pending_monsters.pop_front()
 	if monster.is_alive and monster.can_act():
+		monster.reset_light_recoil()  # Allow recoil message next player action
 		monster.take_turn()
 		monster.consume_energy()
 
@@ -200,6 +229,8 @@ func _end_round() -> void:
 		player.grant_energy()
 		player.tick_status_effects()
 		player.tick_light_fuel()
+		player.tick_hunger()
+		player.apply_starvation_damage(current_round)
 		player.reset_turn_state()
 
 	if current_level:

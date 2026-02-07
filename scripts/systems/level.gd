@@ -64,6 +64,12 @@ var trap_types: Dictionary = {}  # Vector2i -> TrapType
 # Secret door tracking
 var secret_doors: Dictionary = {}  # Vector2i -> bool (true if still hidden)
 
+# Dark zones: rooms with no ambient light (depth 10+)
+var dark_zone_rooms: Dictionary = {}  # room_id -> true for rooms that are dark zones
+
+# Glowing items on the ground: positions of items that emit light
+var glowing_items: Array[Vector2i] = []
+
 # Floor-wide alertness (Phase B: Stealth)
 var floor_alertness: int = 0  # 0-50+, rises with noise, decays over time
 
@@ -290,6 +296,10 @@ func set_tile_visible(pos: Vector2i, value: bool) -> void:
 		if value:
 			set_explored(pos, true)
 
+func is_tile_lit(pos: Vector2i) -> bool:
+	if not is_in_bounds(pos): return false
+	return tile_lit[pos.y * width + pos.x]
+
 func is_room_lit(pos: Vector2i) -> bool:
 	if not is_in_bounds(pos): return false
 	return room_lit[pos.y * width + pos.x]
@@ -447,16 +457,16 @@ func update_fov(center: Vector2i, radius: int) -> void:
 			x += dx
 			y += dy
 
-## Apply lighting pass: combines player torch radius with room glow
+## Apply lighting pass: combines player torch radius with room glow + glowing items
 func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
 	var arr_size: int = width * height
 
-	# Step 1: Find which lit rooms are visible in FOV
+	# Step 1: Find which lit rooms are visible in FOV (skip dark zone rooms)
 	var lit_rooms_seen: Dictionary = {}
 	for i in range(arr_size):
 		if tile_in_fov[i] and room_lit[i]:
 			var rid: int = room_id[i]
-			if rid >= 0:
+			if rid >= 0 and not dark_zone_rooms.has(rid):
 				lit_rooms_seen[rid] = true
 
 	# Step 2: Single pass - determine lighting and final visibility
@@ -470,7 +480,7 @@ func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
 
 		# Lit by player torch?
 		var is_lit: bool = dist <= player_light_radius
-		# Lit by room glow?
+		# Lit by room glow? (not in dark zones)
 		if not is_lit:
 			var rid: int = room_id[i]
 			if rid >= 0 and lit_rooms_seen.has(rid):
@@ -480,6 +490,61 @@ func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
 		if is_lit:
 			tile_visibility[i] = true
 			explored[i] = true
+
+	# Step 3: Glowing items on the ground emit light (radius 2)
+	_apply_glowing_item_light()
+
+## Refresh the glowing_items list from current ground items
+func refresh_glowing_items() -> void:
+	glowing_items.clear()
+	for item in items:
+		if not is_instance_valid(item):
+			continue
+		if _item_has_glow(item):
+			glowing_items.append(item.grid_position)
+
+## Check if an item should glow (has LIGHT flag or is an artifact with GLOW)
+func _item_has_glow(item: Item) -> bool:
+	if not is_instance_valid(item):
+		return false
+	if item.item_data and "flags" in item.item_data:
+		var flags = item.item_data.flags
+		if flags is Array:
+			return "GLOW" in flags or "LIGHT" in flags
+		elif flags is String:
+			return "GLOW" in flags or "LIGHT" in flags
+	return false
+
+## Apply light from glowing items on the ground
+func _apply_glowing_item_light() -> void:
+	if glowing_items.is_empty():
+		return
+	var glow_radius: int = 2
+	for glow_pos in glowing_items:
+		for dy in range(-glow_radius, glow_radius + 1):
+			for dx in range(-glow_radius, glow_radius + 1):
+				var pos: Vector2i = glow_pos + Vector2i(dx, dy)
+				if not is_in_bounds(pos):
+					continue
+				var dist: int = maxi(absi(dx), absi(dy))
+				if dist > glow_radius:
+					continue
+				var idx: int = pos.y * width + pos.x
+				if tile_in_fov[idx] and not tile_lit[idx]:
+					tile_lit[idx] = true
+					tile_visibility[idx] = true
+					explored[idx] = true
+
+## Get the darkness modifier for this level's depth
+func get_darkness_modifier() -> int:
+	return LayerConfig.get_darkness_modifier(depth)
+
+## Mark a room as a dark zone (no ambient room glow)
+func set_dark_zone(room_idx: int) -> void:
+	dark_zone_rooms[room_idx] = true
+	# Also clear room_lit for tiles in that room
+	if room_idx < rooms.size():
+		set_room_lit_by_rect(rooms[room_idx], false)
 
 func update_entity_visibility() -> void:
 	for entity in entities:

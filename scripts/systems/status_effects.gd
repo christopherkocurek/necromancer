@@ -103,6 +103,21 @@ func tick_effects() -> void:
 
 		var duration: int = effects[effect_id]
 
+		# Word of Command per-turn will save: monsters can break free from fear early
+		if effect_id == Constants.EFFECT_AFRAID and owner and owner.has_meta("word_of_command_fear"):
+			var save_dc: int = owner.get_meta("word_of_command_save_dc", 15)
+			var monster_will: int = 5
+			if owner is Monster and owner.monster_data:
+				monster_will = owner.monster_data.will if owner.monster_data.will else 5
+			var save_roll: int = randi_range(1, 20) + monster_will
+			if save_roll >= save_dc:
+				# Monster breaks free from Word of Command fear
+				to_remove.append(effect_id)
+				owner.remove_meta("word_of_command_fear")
+				owner.remove_meta("word_of_command_save_dc")
+				GameManager.log_message("The %s shakes off the fear!" % owner.entity_name, ThemeColors.MSG_SYSTEM)
+				continue
+
 		# Apply damage effects first (before decay)
 		_apply_damage(effect_id, duration)
 
@@ -123,6 +138,10 @@ func tick_effects() -> void:
 	# Remove expired effects
 	for effect_id in to_remove:
 		remove_effect(effect_id, true)
+		# Clean up Word of Command metadata if fear ends naturally
+		if effect_id == Constants.EFFECT_AFRAID and owner and owner.has_meta("word_of_command_fear"):
+			owner.remove_meta("word_of_command_fear")
+			owner.remove_meta("word_of_command_save_dc")
 
 ## Apply damage from damage-over-time effects.
 func _apply_damage(effect_id: StringName, duration: int) -> void:

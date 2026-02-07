@@ -222,6 +222,9 @@ func _serialize_player(player: Player) -> Dictionary:
 		# Voice
 		"voice_charges": player.voice_charges,
 		"max_voice": player.max_voice,
+		# Hunger
+		"hunger": player.hunger,
+		"starving_turns": player._starving_turns,
 		# Inventory & equipment
 		"inventory": _serialize_inventory(player.inventory),
 		"equipment": _serialize_equipment(player.equipment),
@@ -404,6 +407,11 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	# Voice
 	player.voice_charges = data.get("voice_charges", 0)
 	player.max_voice = data.get("max_voice", 10)
+
+	# Hunger
+	player.hunger = data.get("hunger", Player.HUNGER_MAX)
+	player._starving_turns = data.get("starving_turns", 0)
+	player._last_hunger_state = player.get_hunger_state()
 
 	# Inventory & equipment
 	player.inventory = data.get("inventory", []).duplicate()

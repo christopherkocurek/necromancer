@@ -15,3 +15,16 @@ mono_crash.*.json
 
 # macOS
 .DS_Store
+
+# Python
+__pycache__/
+
+# Raw DALL-E generated assets (large, not needed in repo)
+tileset_generation/terrain_v2/
+tileset_generation/monster_v2/
+tileset_generation/player_v2/
+tileset_generation/*_progress.json
+
+# Tileset backups
+assets/sprites/*_backup_*.png
+assets/sprites/*_backup_*.png.import

@@ -39,6 +39,9 @@ var is_cowardly: bool = false  # Flees easier
 var is_brave: bool = false  # Won't flee unless critical
 var is_pack_leader: bool = false
 var pack_id: int = -1  # For escort/pack morale bonuses
+var is_light_sensitive: bool = false  # Penalized in lit tiles
+var is_dark_aura: bool = false  # Suppresses player light when adjacent
+var _light_recoil_shown: bool = false  # Track if we showed the recoil message this turn
 
 var health_bar: EntityHealthBar = null
 
@@ -100,6 +103,8 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	is_mindless = data.has_flag("MINDLESS") or data.has_flag("EMPTY_MIND")
 	is_cowardly = data.has_flag("COWARD")
 	is_brave = data.has_flag("BRAVE") or is_unique  # Uniques are brave
+	is_light_sensitive = data.has_flag("LIGHT_SENSITIVE")
+	is_dark_aura = data.has_flag("DARK_AURA")
 
 	# Morale modifiers from flags
 	if is_cowardly:
@@ -306,6 +311,9 @@ func _update_morale() -> void:
 		if dist_from_home <= 5:
 			current_morale += 30
 
+	# Light sensitivity: -20 morale in lit tiles
+	current_morale += get_light_sensitivity_morale_mod()
+
 	# Mindless creatures don't flee
 	if is_mindless:
 		current_morale = Constants.BASE_MORALE * 3
@@ -430,14 +438,19 @@ func _flee_behavior() -> void:
 	]
 
 	var best_dir: Vector2i = Vector2i.ZERO
-	var best_dist: int = -1
+	var best_score: int = -999
 
 	for dir: Vector2i in directions:
 		var new_pos: Vector2i = grid_position + dir
 		if can_move_to(new_pos):
 			var dist: int = _grid_distance(new_pos, player.grid_position)
-			if dist > best_dist:
-				best_dist = dist
+			var score: int = dist
+			# Light-sensitive monsters strongly prefer dark tiles when fleeing
+			if is_light_sensitive and GameManager.current_level:
+				if not GameManager.current_level.is_tile_lit(new_pos):
+					score += 5  # Strong preference for dark tiles
+			if score > best_score:
+				best_score = score
 				best_dir = dir
 
 	if best_dir != Vector2i.ZERO:
@@ -502,6 +515,46 @@ func can_move_to(target: Vector2i) -> bool:
 	return true
 
 # ============================================================================
+# LIGHT ECOLOGY
+# ============================================================================
+
+## Check if this monster is currently in a lit tile
+func is_in_lit_tile() -> bool:
+	if not GameManager.current_level:
+		return false
+	return GameManager.current_level.is_tile_lit(grid_position)
+
+## Check light sensitivity effects and show recoil message when player moves adjacent with light
+func check_light_recoil(player: Player) -> void:
+	if not is_light_sensitive or not is_alive:
+		return
+	if _light_recoil_shown:
+		return
+	var dist: int = maxi(absi(grid_position.x - player.grid_position.x),
+					absi(grid_position.y - player.grid_position.y))
+	if dist <= 1 and player.has_light():
+		_light_recoil_shown = true
+		GameManager.log_message("The %s recoils from the light!" % entity_name, ThemeColors.MSG_WARNING)
+		# Flash yellow via sprite tint
+		if sprite:
+			var orig: Color = sprite.modulate
+			sprite.modulate = Color.YELLOW
+			var flash_tween := create_tween()
+			flash_tween.tween_property(sprite, "modulate", orig, 0.4)
+
+## Reset the recoil flag each turn so the message can trigger again next turn
+func reset_light_recoil() -> void:
+	_light_recoil_shown = false
+
+## Get the light sensitivity morale penalty (applied in morale calc)
+func get_light_sensitivity_morale_mod() -> int:
+	if not is_light_sensitive:
+		return 0
+	if is_in_lit_tile():
+		return -20
+	return 0
+
+# ============================================================================
 # COMBAT MODIFIERS (Phase A: Sil-Q modifier stack)
 # ============================================================================
 
@@ -526,6 +579,10 @@ func get_total_attack(target: Entity) -> int:
 	if status_fx and status_fx.is_blind():
 		att = att / 2
 
+	# Light sensitive: -2 attack in lit tiles
+	if is_light_sensitive and is_in_lit_tile():
+		att -= 2
+
 	return att
 
 ## Monster evasion modifier stack per NECROMANCER_DESIGN_CANON section 1.5
@@ -547,6 +604,10 @@ func get_total_evasion(attacker: Entity) -> int:
 	# Blind: halve evasion
 	if status_fx and status_fx.is_blind():
 		evn = evn / 2
+
+	# Light sensitive: -2 evasion in lit tiles
+	if is_light_sensitive and is_in_lit_tile():
+		evn -= 2
 
 	# Shield Brother: player with shield_brother trait and a shield reduces adjacent monster evasion by 1
 	var sb_player: Player = GameManager.player

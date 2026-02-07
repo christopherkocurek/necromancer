@@ -134,6 +134,10 @@ func confirm_step_taken() -> void:
 	if not is_exploring:
 		return
 
+	# Remove the step we just took from the path
+	if not path.is_empty():
+		path.remove_at(0)
+
 	# Update cached state
 	last_player_health = player.current_health
 	_cache_visible_state()
@@ -327,6 +331,8 @@ func should_stop_on_input() -> bool:
 	   Input.is_action_just_pressed("skills") or \
 	   Input.is_action_just_pressed("abilities") or \
 	   Input.is_action_just_pressed("look") or \
+	   Input.is_action_just_pressed("rest") or \
+	   Input.is_action_just_pressed("rest_n") or \
 	   Input.is_action_just_pressed("ui_cancel"):
 		stop_explore("Cancelled")
 		return true

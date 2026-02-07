@@ -633,13 +633,12 @@ func _update_character_preview() -> void:
 	if not _preview_rect or not _tileset_texture:
 		return
 
-	# Map race to a monster sprite index (race sprites in DCSS tileset)
-	var race_sprite_map: Dictionary = {
-		"Noldor": 0, "Sindar": 1, "Naugrim": 2, "Edain": 3,
-		"Man": 3, "Elf": 0, "Dwarf": 2, "Half-Elf": 1,
-	}
-	var sprite_id: int = race_sprite_map.get(selected_race, 0)
-	var coords: Vector2i = TileMapper.get_monster_coords(sprite_id)
+	# Use v2 player sprite system: race name + house ID + gender
+	var house_id: int = 0
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	if house_data:
+		house_id = house_data.index
+	var coords: Vector2i = TileMapper.get_player_coords_v2(selected_race, house_id, "male")
 
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _tileset_texture

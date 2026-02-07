@@ -110,7 +110,7 @@ N:5:'Evenstar'
 I:40:16:1
 W:14:20:1:7000
 P:0:0d0:0:0d0
-F:CON | REGEN | LIGHT
+F:CON | REGEN | LIGHT | GLOW
 F:INSTA_ART
 D:A silver pendant set with a white stone that glimmers like
 D: starlight on water. It was crafted in Rivendell and brings
@@ -568,7 +568,7 @@ N:54:'Narsil Shard'
 I:23:4:0
 W:14:4:5:100000
 P:2:1d7:0:0d0
-F:LIGHT | SLAY_UNDEAD
+F:LIGHT | SLAY_UNDEAD | GLOW
 F:THROWING
 D:A shard of Narsil, the sword that was broken. Even this
 D: fragment of the blade that cut the Ring from Sauron's hand
@@ -1518,7 +1518,7 @@ G:*:w
 I:39:2:3
 W:4:5:1:10000
 P:0:0d0:0:0d0
-F:RES_FEAR | LIGHT | SEE_INVIS | SLAY_UNDEAD
+F:RES_FEAR | LIGHT | SEE_INVIS | SLAY_UNDEAD | GLOW
 D:A crystal phial filled with the light of Eärendil's star,
 D: caught in the waters of Galadriel's fountain. It shines
 D: in the darkest places and is a bane to all creatures of
@@ -1950,7 +1950,7 @@ G:*:w
 I:39:2:3
 W:16:20:1:50000
 P:0:0d0:0:0d0
-F:WILL | GRA | LIGHT | RES_FEAR
+F:WILL | GRA | LIGHT | RES_FEAR | GLOW
 F:INSTA_ART
 D:The Star of Elendil, a white gem bound upon the brow of
 D: the Kings of Arnor. It shines with a clear light that
@@ -1982,7 +1982,7 @@ G:(:B
 I:35:1:2
 W:18:25:15:60000
 P:0:0d0:2:1d0
-F:STEALTH | GRA | LIGHT | FREE_ACT
+F:STEALTH | GRA | LIGHT | FREE_ACT | GLOW
 D:A cloak of deepest blue sewn with gems that gleam like
 D: stars. It is the finest work of the weavers of Lothlórien,
 D: and those who wear it walk with the grace of the Eldar.

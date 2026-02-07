@@ -173,6 +173,14 @@ func _assign_room_data(depth: int) -> void:
 		if randf() < lit_chance:
 			level.set_room_lit_by_rect(rooms[room_idx], true)
 
+	# Dark zones: at depth 10+, some rooms become dark zones (no ambient light)
+	# Frequency increases with depth: 20% at depth 10, 50% at depth 15, 80% at depth 20
+	if depth >= 10:
+		var dark_zone_chance: float = clampf(0.20 + (depth - 10) * 0.06, 0.20, 0.80)
+		for room_idx in range(rooms.size()):
+			if randf() < dark_zone_chance:
+				level.set_dark_zone(room_idx)
+
 func _carve_h_corridor(x1: int, x2: int, y: int) -> void:
 	var start := mini(x1, x2)
 	var end := maxi(x1, x2)
@@ -648,6 +656,29 @@ func _spawn_items(depth: int) -> void:
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
 			item.initialize_from_item_data(item_data)
+			level.add_item(item)
+			spawned += 1
+
+	# Spawn additional food items (more on upper levels, fewer deeper)
+	# Upper levels (1-5): 2-3 food items, mid (6-10): 1-2, deep (11+): 0-1
+	var food_count: int = 0
+	if depth <= 5:
+		food_count = randi_range(2, 3)
+	elif depth <= 10:
+		food_count = randi_range(1, 2)
+	else:
+		food_count = randi_range(0, 1)
+
+	for _i in range(food_count):
+		var spawn_pos := level.find_random_floor()
+		if spawn_pos == Vector2i(-1, -1):
+			continue
+
+		var food_data := DataManager.get_random_food_for_depth(depth)
+		if food_data:
+			var item: Item = item_scene.instantiate()
+			item.grid_position = spawn_pos
+			item.initialize_from_item_data(food_data)
 			level.add_item(item)
 			spawned += 1
 

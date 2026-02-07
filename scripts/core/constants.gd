@@ -234,6 +234,8 @@ const RF2_FLANKING: int = 0x00000800
 const RF2_CHARGE: int = 0x04000000
 const RF2_KNOCK_BACK: int = 0x10000000
 const RF2_ZONE_OF_CONTROL: int = 0x80000000
+const RF2_LIGHT_SENSITIVE: int = 0x20000000
+const RF2_DARK_AURA: int = 0x40000000
 
 # ============================================================================
 # MONSTER FLAGS (RF3 - race/resist)
@@ -305,6 +307,8 @@ const FLAG_MAP: Dictionary = {
 	"CHARGE": [2, RF2_CHARGE],
 	"KNOCK_BACK": [2, RF2_KNOCK_BACK],
 	"ZONE_OF_CONTROL": [2, RF2_ZONE_OF_CONTROL],
+	"LIGHT_SENSITIVE": [2, RF2_LIGHT_SENSITIVE],
+	"DARK_AURA": [2, RF2_DARK_AURA],
 
 	# RF3 - Race/Resist
 	"ORC": [3, RF3_ORC],
@@ -501,6 +505,7 @@ const EFFECT_IMAGE: StringName = &"image"  # Hallucination
 const EFFECT_RAGE: StringName = &"rage"
 const EFFECT_DARKENED: StringName = &"darkened"
 const EFFECT_BURNING: StringName = &"burning"
+const EFFECT_PHOSPHOR: StringName = &"phosphor"  # +1 light radius from Phosphorescent Moss
 
 # Stun thresholds
 const STUN_THRESHOLD_HEAVY: int = 50

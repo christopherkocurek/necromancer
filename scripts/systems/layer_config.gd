@@ -10,6 +10,7 @@ const LAYERS = {
 		"tint": Color(1.0, 1.0, 1.0, 1.0),  # No tint - base stone dungeon
 		"tint_strength": 0.0,
 		"fov_radius": 8,
+		"darkness_modifier": 0,
 		"room_count_min": 6,
 		"room_count_max": 12,
 		"room_size_min": 4,
@@ -29,6 +30,7 @@ const LAYERS = {
 		"tint": Color(0.85, 1.0, 0.85, 1.0),  # Slight green tint
 		"tint_strength": 0.15,
 		"fov_radius": 8,
+		"darkness_modifier": 0,
 		"room_count_min": 7,
 		"room_count_max": 14,
 		"room_size_min": 4,
@@ -49,6 +51,7 @@ const LAYERS = {
 		"tint": Color(0.85, 0.85, 1.0, 1.0),  # Blue tint
 		"tint_strength": 0.2,
 		"fov_radius": 7,
+		"darkness_modifier": -1,
 		"room_count_min": 6,
 		"room_count_max": 12,
 		"room_size_min": 5,
@@ -69,6 +72,7 @@ const LAYERS = {
 		"tint": Color(0.9, 0.75, 1.0, 1.0),  # Purple/Violet tint
 		"tint_strength": 0.25,
 		"fov_radius": 7,
+		"darkness_modifier": -1,
 		"room_count_min": 8,
 		"room_count_max": 16,
 		"room_size_min": 5,
@@ -90,6 +94,7 @@ const LAYERS = {
 		"tint": Color(1.0, 0.8, 0.7, 1.0),  # Red/Orange tint
 		"tint_strength": 0.3,
 		"fov_radius": 6,
+		"darkness_modifier": -2,
 		"room_count_min": 5,
 		"room_count_max": 10,
 		"room_size_min": 6,
@@ -111,6 +116,7 @@ const LAYERS = {
 		"tint": Color(0.7, 0.65, 0.5, 1.0),  # Dark with gold hints
 		"tint_strength": 0.35,
 		"fov_radius": 6,
+		"darkness_modifier": -2,
 		"room_count_min": 4,
 		"room_count_max": 8,
 		"room_size_min": 8,
@@ -132,6 +138,7 @@ const LAYERS = {
 		"tint": Color(0.5, 0.45, 0.3, 1.0),  # Dark + Bright Gold
 		"tint_strength": 0.4,
 		"fov_radius": 5,
+		"darkness_modifier": -3,
 		"room_count_min": 2,
 		"room_count_max": 5,
 		"room_size_min": 10,
@@ -231,6 +238,11 @@ static func get_generation_params(depth: int) -> Dictionary:
 		"corridor_width": layer.get("corridor_width", 1),
 		"vault_chance": layer.get("vault_chance", 0.1)
 	}
+
+## Get the darkness modifier for a specific depth (reduces player light radius)
+static func get_darkness_modifier(depth: int) -> int:
+	var layer := get_layer_for_depth(depth)
+	return layer.get("darkness_modifier", 0)
 
 ## Check if this is a boss level (specific depths with guaranteed boss)
 static func is_boss_level(depth: int) -> bool:

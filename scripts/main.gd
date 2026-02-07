@@ -15,8 +15,7 @@ var current_state: GameState = GameState.CHARACTER_CREATION
 # Note: Using Control type to avoid load-order issues with class_name registration
 var character_creation: Control = null
 var inventory_panel: Control = null
-var skills_panel: Control = null
-var abilities_panel: Control = null
+var tome_panel: Control = null
 var death_screen: Control = null
 var look_panel: Control = null
 var dialogue_panel: Control = null  # DialoguePanel - using Control to avoid load order issues
@@ -37,6 +36,15 @@ var voice_menu: PopupMenu = null
 var _voice_menu_abilities: Array[Dictionary] = []  # Cached list from ability_system
 var _pending_voice_ability_id: int = -1  # Ability waiting for target selection
 
+# Resting state (Z / Shift+Z)
+var _resting: bool = false
+var _rest_turns_taken: int = 0
+var _rest_max_turns: int = 0  # 0 = rest until full, >0 = rest N turns
+var _rest_hp_before: int = 0  # Track HP for damage interrupt
+
+# Auto-explore state (flag-based loop)
+var _auto_exploring: bool = false
+
 # Systems (Phase 8C) - using Node/RefCounted to avoid load order issues
 var auto_explore: RefCounted = null  # AutoExplore
 var monster_memory: RefCounted = null
@@ -46,8 +54,7 @@ const LEVEL_SCENE := preload("res://scenes/levels/level.tscn")
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
 const CHARACTER_CREATION_SCENE := preload("res://scenes/ui/character_creation.tscn")
 const INVENTORY_PANEL_SCENE := preload("res://scenes/ui/inventory_panel.tscn")
-const SKILLS_PANEL_SCENE := preload("res://scenes/ui/skills_panel.tscn")
-const ABILITIES_PANEL_SCENE := preload("res://scenes/ui/abilities_panel.tscn")
+const TOME_PANEL_SCENE := preload("res://scenes/ui/tome_panel.tscn")
 const DEATH_SCREEN_SCENE := preload("res://scenes/ui/death_screen.tscn")
 const LOOK_PANEL_SCENE := preload("res://scenes/ui/look_panel.tscn")
 const DIALOGUE_PANEL_SCENE := preload("res://scenes/ui/dialogue_panel.tscn")
@@ -76,15 +83,10 @@ func _setup_ui_panels() -> void:
 	inventory_panel.closed.connect(_on_inventory_closed)
 	ui_layer.add_child(inventory_panel)
 
-	# Instantiate skills panel (hidden by default)
-	skills_panel = SKILLS_PANEL_SCENE.instantiate()
-	skills_panel.closed.connect(_on_skills_closed)
-	ui_layer.add_child(skills_panel)
-
-	# Instantiate abilities panel (hidden by default)
-	abilities_panel = ABILITIES_PANEL_SCENE.instantiate()
-	abilities_panel.closed.connect(_on_abilities_closed)
-	ui_layer.add_child(abilities_panel)
+	# Instantiate Tome panel (replaces skills + abilities panels)
+	tome_panel = TOME_PANEL_SCENE.instantiate()
+	tome_panel.closed.connect(_on_tome_closed)
+	ui_layer.add_child(tome_panel)
 
 	# Instantiate death screen (hidden by default)
 	death_screen = DEATH_SCREEN_SCENE.instantiate()
@@ -190,6 +192,7 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	turn_system.set_player(player)
 	ability_system.set_player(player)
 	floater_manager.set_container(current_level.get_node("Effects"))
+	floater_manager.connect_ability_system(ability_system)
 
 	# Initial FOV update: geometry → lighting → entity visibility → tilemap
 	var fov_radius: int = current_level.get_fov_radius()
@@ -213,7 +216,7 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
 	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, ThemeColors.MSG_INFO)
-	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Skills: @  Pickup: G", ThemeColors.MSG_SYSTEM)
+	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Tome: T  Pickup: G", ThemeColors.MSG_SYSTEM)
 
 	# Show layer entry message
 	var entry_msg := LayerConfig.get_entry_message(1, 0)
@@ -304,6 +307,13 @@ func _process(_delta: float) -> void:
 	elif Input.is_action_just_pressed("zoom_out"):
 		GameManager.cycle_zoom_reverse()
 		_update_camera_zoom()
+
+	# Process resting / auto-exploring when it's the player's turn
+	if player and player.is_alive and turn_system.current_state == TurnSystem.TurnState.PLAYER_INPUT:
+		if _resting:
+			_process_rest_step()
+		elif _auto_exploring:
+			_process_auto_explore_step()
 
 func _check_stairs() -> void:
 	if not player or not current_level:
@@ -440,19 +450,33 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_ui_open():
 		return
 
+	# Interrupt resting or auto-exploring on any key press
+	if (_resting or _auto_exploring) and event is InputEventKey and event.pressed and not event.echo:
+		if _resting:
+			_stop_rest("Interrupted")
+		if _auto_exploring:
+			_stop_auto_explore_flag("Interrupted")
+		get_viewport().set_input_as_handled()
+		return
+
 	# Inventory toggle
 	if event.is_action_pressed("inventory"):
 		_toggle_inventory()
 		get_viewport().set_input_as_handled()
 
-	# Skills toggle
+	# Skills toggle (@ key → opens Tome)
 	if event.is_action_pressed("skills"):
-		_toggle_skills()
+		_toggle_tome()
 		get_viewport().set_input_as_handled()
 
-	# Abilities toggle (A key)
+	# Abilities toggle (A key → opens Tome)
 	if event.is_action_pressed("abilities"):
-		_toggle_abilities()
+		_toggle_tome()
+		get_viewport().set_input_as_handled()
+
+	# Tome toggle (T key)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_T and not event.shift_pressed and not event.echo:
+		_toggle_tome()
 		get_viewport().set_input_as_handled()
 
 	# Look mode toggle (X key)
@@ -463,6 +487,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Auto-explore (O key)
 	if event.is_action_pressed("auto_explore"):
 		_start_auto_explore()
+		get_viewport().set_input_as_handled()
+
+	# Rest (Z key) - rest until full
+	if event.is_action_pressed("rest"):
+		_start_rest(0)
+		get_viewport().set_input_as_handled()
+
+	# Rest N turns (Shift+Z) - rest for 20 turns
+	if event.is_action_pressed("rest_n"):
+		_start_rest(20)
 		get_viewport().set_input_as_handled()
 
 	# F key: Fire (archery) if bow equipped, else forge if on forge tile
@@ -514,8 +548,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _is_ui_open() -> bool:
 	return (inventory_panel and inventory_panel.visible) or \
-		   (skills_panel and skills_panel.visible) or \
-		   (abilities_panel and abilities_panel.visible) or \
+		   (tome_panel and tome_panel.visible) or \
 		   (look_panel and look_panel.visible) or \
 		   (dialogue_panel and dialogue_panel.visible) or \
 		   (smithing_panel and smithing_panel.visible) or \
@@ -528,46 +561,26 @@ func _toggle_inventory() -> void:
 		inventory_panel.close()
 	else:
 		# Close other panels first
-		if skills_panel and skills_panel.visible:
-			skills_panel.close()
-		if abilities_panel and abilities_panel.visible:
-			abilities_panel.close()
+		if tome_panel and tome_panel.visible:
+			tome_panel.close()
 		inventory_panel.open(player)
 		GameManager.is_player_turn = false  # Pause game while in menu
 
-func _toggle_skills() -> void:
-	if skills_panel.visible:
-		skills_panel.close()
+func _toggle_tome() -> void:
+	if tome_panel.visible:
+		tome_panel.close()
 	else:
 		# Close other panels first
 		if inventory_panel and inventory_panel.visible:
 			inventory_panel.close()
-		if abilities_panel and abilities_panel.visible:
-			abilities_panel.close()
-		skills_panel.open(player)
-		GameManager.is_player_turn = false  # Pause game while in menu
-
-func _toggle_abilities() -> void:
-	if abilities_panel.visible:
-		abilities_panel.close()
-	else:
-		# Close other panels first
-		if inventory_panel and inventory_panel.visible:
-			inventory_panel.close()
-		if skills_panel and skills_panel.visible:
-			skills_panel.close()
-		abilities_panel.open(player)
-		GameManager.is_player_turn = false  # Pause game while in menu
+		tome_panel.open(player)
+		GameManager.is_player_turn = false
 
 func _on_inventory_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
 
-func _on_skills_closed() -> void:
-	GameManager.is_player_turn = true
-	hud.update_player_stats(player)
-
-func _on_abilities_closed() -> void:
+func _on_tome_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
 
@@ -578,10 +591,8 @@ func _toggle_look() -> void:
 		# Close other panels first
 		if inventory_panel and inventory_panel.visible:
 			inventory_panel.close()
-		if skills_panel and skills_panel.visible:
-			skills_panel.close()
-		if abilities_panel and abilities_panel.visible:
-			abilities_panel.close()
+		if tome_panel and tome_panel.visible:
+			tome_panel.close()
 		look_panel.open(player, current_level)
 		GameManager.is_player_turn = false  # Pause game while in look mode
 
@@ -712,10 +723,8 @@ func _toggle_settings() -> void:
 		# Close other panels first
 		if inventory_panel and inventory_panel.visible:
 			inventory_panel.close()
-		if skills_panel and skills_panel.visible:
-			skills_panel.close()
-		if abilities_panel and abilities_panel.visible:
-			abilities_panel.close()
+		if tome_panel and tome_panel.visible:
+			tome_panel.close()
 		if look_panel and look_panel.visible:
 			look_panel.close()
 		if bestiary_panel and bestiary_panel.visible:
@@ -793,10 +802,8 @@ func _open_smithing_panel() -> void:
 	# Close other panels first
 	if inventory_panel and inventory_panel.visible:
 		inventory_panel.close()
-	if skills_panel and skills_panel.visible:
-		skills_panel.close()
-	if abilities_panel and abilities_panel.visible:
-		abilities_panel.close()
+	if tome_panel and tome_panel.visible:
+		tome_panel.close()
 	if look_panel and look_panel.visible:
 		look_panel.close()
 
@@ -806,6 +813,94 @@ func _open_smithing_panel() -> void:
 func _on_smithing_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
+
+# ============================================================================
+# RESTING (Z / Shift+Z)
+# ============================================================================
+
+func _start_rest(max_turns: int) -> void:
+	if not player or not player.is_alive:
+		return
+
+	# Don't rest if a monster is visible
+	if _has_visible_monster():
+		GameManager.log_message("You cannot rest with enemies in sight!", ThemeColors.MSG_WARNING)
+		return
+
+	# Check if already at full HP and voice
+	if max_turns == 0 and player.current_health >= player.max_health and player.voice_charges >= player.max_voice:
+		GameManager.log_message("You are already at full health and voice.", ThemeColors.MSG_SYSTEM)
+		return
+
+	_resting = true
+	_rest_turns_taken = 0
+	_rest_max_turns = max_turns
+	_rest_hp_before = player.current_health
+	GameManager.log_message("Resting... (press any key to stop)", ThemeColors.MSG_SYSTEM)
+
+func _process_rest_step() -> void:
+	if not _resting or not player or not player.is_alive:
+		_stop_rest("Invalid state")
+		return
+
+	# Check interrupt conditions BEFORE taking a turn
+	# 1. Monster visible
+	if _has_visible_monster():
+		_stop_rest("Monster spotted!")
+		return
+
+	# 2. Took damage since last check
+	if player.current_health < _rest_hp_before:
+		_stop_rest("Took damage!")
+		return
+
+	# 3. Reached max turns (if set)
+	if _rest_max_turns > 0 and _rest_turns_taken >= _rest_max_turns:
+		_stop_rest("Rested for %d turns" % _rest_turns_taken)
+		return
+
+	# 4. Fully rested (if resting until full)
+	if _rest_max_turns == 0 and player.current_health >= player.max_health and player.voice_charges >= player.max_voice:
+		_stop_rest("Fully rested (%d turns)" % _rest_turns_taken)
+		return
+
+	# Take a rest turn (equivalent to waiting)
+	_rest_turns_taken += 1
+
+	# Slow HP regen during rest: +1 HP every 10 rest turns
+	if _rest_turns_taken % 10 == 0 and player.current_health < player.max_health:
+		player.current_health = mini(player.current_health + 1, player.max_health)
+
+	# Simulate player consuming energy and processing the game tick
+	player.consume_energy()
+	turn_system._after_player_action()
+
+	# Update HP tracker for damage detection
+	_rest_hp_before = player.current_health
+
+	# Show progress every 10 turns
+	if _rest_turns_taken % 10 == 0:
+		GameManager.log_message("Resting... (turn %d)" % _rest_turns_taken, ThemeColors.MSG_SYSTEM)
+
+func _stop_rest(reason: String) -> void:
+	if not _resting:
+		return
+	_resting = false
+	if _rest_turns_taken > 0:
+		GameManager.log_message("Rest ended: %s" % reason, ThemeColors.MSG_SYSTEM)
+	else:
+		GameManager.log_message(reason, ThemeColors.MSG_WARNING)
+
+func _has_visible_monster() -> bool:
+	if not current_level:
+		return false
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive:
+			if current_level.is_tile_visible(entity.grid_position):
+				return true
+	return false
 
 # ============================================================================
 # AUTO-EXPLORE (Phase 8C)
@@ -820,20 +915,22 @@ func _start_auto_explore() -> void:
 	auto_explore.set_player(player)
 
 	if auto_explore.start_explore():
-		# Process auto-explore turns
-		_process_auto_explore()
+		_auto_exploring = true
 
-func _process_auto_explore() -> void:
-	if not auto_explore or not auto_explore.is_exploring:
+func _process_auto_explore_step() -> void:
+	if not _auto_exploring or not auto_explore or not auto_explore.is_exploring:
+		_stop_auto_explore_flag("Invalid state")
 		return
 
-	# Check for manual input to stop
-	if auto_explore.should_stop_on_input():
+	if not player or not player.is_alive:
+		_stop_auto_explore_flag("Player died")
 		return
 
-	# Get next step
+	# Get next step (handles stop conditions internally)
 	var next_pos: Vector2i = auto_explore.get_next_step()
 	if next_pos == Vector2i(-1, -1):
+		# auto_explore already called stop_explore with the reason
+		_auto_exploring = false
 		return
 
 	# Calculate direction
@@ -844,24 +941,27 @@ func _process_auto_explore() -> void:
 		player.consume_energy()
 		auto_explore.confirm_step_taken()
 
-		# Update FOV: geometry → lighting → entity visibility → tilemap
-		var fov_radius: int = current_level.get_fov_radius()
-		var light_radius: int = player.get_light_radius()
-		current_level.update_fov(player.grid_position, fov_radius)
-		current_level.apply_lighting(player.grid_position, light_radius)
-		current_level.update_entity_visibility()
-		current_level.apply_fov_to_tilemap()
-
 		# Record monster observations
 		_observe_visible_monsters()
 
-		# Process game tick
-		turn_system._process_game_tick()
+		# Process the full game tick via the turn system
+		turn_system._after_player_action()
 
-		# Continue auto-explore on next frame if still exploring
-		if auto_explore.is_exploring:
-			await get_tree().create_timer(0.05).timeout
-			_process_auto_explore()
+		# Check if auto_explore stopped itself during the tick
+		if not auto_explore.is_exploring:
+			_auto_exploring = false
+	else:
+		# Move failed (blocked), try to find a new path
+		auto_explore.path.clear()
+		if not auto_explore._find_new_path():
+			_stop_auto_explore_flag("Path blocked")
+
+func _stop_auto_explore_flag(reason: String) -> void:
+	if not _auto_exploring:
+		return
+	_auto_exploring = false
+	if auto_explore and auto_explore.is_exploring:
+		auto_explore.stop_explore(reason)
 
 # ============================================================================
 # MONSTER MEMORY (Phase 8C)
@@ -921,10 +1021,8 @@ func _toggle_bestiary() -> void:
 		# Close other panels first
 		if inventory_panel and inventory_panel.visible:
 			inventory_panel.close()
-		if skills_panel and skills_panel.visible:
-			skills_panel.close()
-		if abilities_panel and abilities_panel.visible:
-			abilities_panel.close()
+		if tome_panel and tome_panel.visible:
+			tome_panel.close()
 		if look_panel and look_panel.visible:
 			look_panel.close()
 		if bestiary_panel and monster_memory:

@@ -17,8 +17,10 @@ var depth_label: Label
 var turn_label: Label
 var prot_label: Label
 var stealth_label: Label
+var hunger_label: Label              # Hunger state indicator
 var status_container: HBoxContainer
 var stats_container: HBoxContainer   # Center column stats
+var quick_slots_container: HBoxContainer  # 6 equipment slot panels
 
 # --- Floating Message Log ---
 var message_panel: PanelContainer
@@ -135,6 +137,12 @@ func _build_action_bar() -> void:
 	ThemeColors.apply_body_font(stealth_label, ThemeColors.FONT_SIZE_BODY)
 	stats_container.add_child(stealth_label)
 
+	# Hunger indicator
+	hunger_label = Label.new()
+	hunger_label.text = ""
+	ThemeColors.apply_body_font(hunger_label, ThemeColors.FONT_SIZE_BODY)
+	stats_container.add_child(hunger_label)
+
 	# Status pills (right side of stats row)
 	var status_spacer := Control.new()
 	status_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -145,10 +153,11 @@ func _build_action_bar() -> void:
 	stats_container.add_child(status_container)
 
 	# Row 2: Quick slots (6 equipment icons)
-	var quick_slots := HBoxContainer.new()
-	quick_slots.add_theme_constant_override("separation", 4)
-	quick_slots.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_child(quick_slots)
+	quick_slots_container = HBoxContainer.new()
+	quick_slots_container.add_theme_constant_override("separation", 4)
+	quick_slots_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(quick_slots_container)
+	var quick_slots := quick_slots_container
 
 	for slot_name in EQUIP_SLOTS:
 		var slot := PanelContainer.new()
@@ -424,6 +433,9 @@ func update_player_stats(player: Player) -> void:
 	else:
 		stealth_label.text = ""
 
+	# Hunger indicator
+	_update_hunger_display(player)
+
 	# Stealth meter
 	_update_stealth_meter(player)
 
@@ -431,22 +443,13 @@ func update_player_stats(player: Player) -> void:
 	_update_equip_icons(player)
 
 func _update_equip_icons(player: Player) -> void:
-	# Find the quick slots container
-	var quick_slots: HBoxContainer = null
-	for child in action_bar.get_child(0).get_children():
-		if child is VBoxContainer:
-			for sub in child.get_children():
-				if sub is HBoxContainer and sub.get_child_count() == EQUIP_SLOTS.size():
-					quick_slots = sub
-					break
-			break
-	if not quick_slots:
+	if not quick_slots_container:
 		return
 
 	for i in range(EQUIP_SLOTS.size()):
-		if i >= quick_slots.get_child_count():
+		if i >= quick_slots_container.get_child_count():
 			break
-		var slot: PanelContainer = quick_slots.get_child(i)
+		var slot: PanelContainer = quick_slots_container.get_child(i)
 		var slot_name: String = EQUIP_SLOTS[i]
 		var item = player.equipment.get(slot_name)
 
@@ -495,6 +498,34 @@ func _update_stealth_meter(player: Player) -> void:
 				max_alertness = entity.alertness
 
 	stealth_meter.color = ThemeColors.get_alertness_color(max_alertness)
+
+func _update_hunger_display(player: Player) -> void:
+	if not hunger_label:
+		return
+	var state: String = player.get_hunger_state()
+	match state:
+		"well_fed", "normal":
+			hunger_label.text = ""
+		"hungry":
+			hunger_label.text = "Hungry"
+			hunger_label.add_theme_color_override("font_color", ThemeColors.MSG_WARNING)
+		"famished":
+			hunger_label.text = "Famished!"
+			hunger_label.add_theme_color_override("font_color", ThemeColors.DMG_FIRE)
+		"starving":
+			hunger_label.text = "STARVING!"
+			hunger_label.add_theme_color_override("font_color", ThemeColors.MSG_ERROR)
+			# Blink effect for starving
+			if not hunger_label.has_meta("starving_blink"):
+				hunger_label.set_meta("starving_blink", true)
+				var tween := create_tween()
+				tween.set_loops()
+				tween.tween_property(hunger_label, "modulate:a", 0.3, 0.4).set_ease(Tween.EASE_IN_OUT)
+				tween.tween_property(hunger_label, "modulate:a", 1.0, 0.4).set_ease(Tween.EASE_IN_OUT)
+	# Stop blinking when no longer starving
+	if state != "starving" and hunger_label.has_meta("starving_blink"):
+		hunger_label.remove_meta("starving_blink")
+		hunger_label.modulate.a = 1.0
 
 # ============================================================================
 # MINIMAP

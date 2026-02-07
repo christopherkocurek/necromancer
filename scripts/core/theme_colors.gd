@@ -148,6 +148,14 @@ const ABILITY_AVAILABLE := Color("#E8E2D6")  # White
 const ABILITY_LOCKED := Color("#6B7280")     # Dim gray
 const ABILITY_BLOCKED := Color("#CD5C5C")    # Indian red
 const ABILITY_HEADER := Color("#C8A84E")     # Gold
+const ABILITY_NO_XP := Color("#FACC15")      # Yellow (can learn but no XP)
+
+# ============================================================================
+# TOME OF FALLEN HEROES
+# ============================================================================
+const MARGINALIA_INK := Color("#7D5A4A")     # Warm brown-red for handwritten notes
+const RED_INK := Color("#6B2020")            # Desaturated crimson for warnings
+const TOME_SPINE_SHADOW := Color("#1A1815")  # Deep brown-black
 
 # ============================================================================
 # BORDERS
@@ -198,6 +206,25 @@ const FLASH_CHARGE := Color(2.0, 1.6, 0.6, 1.0)          # Warm impact gold
 const FLASH_VANISH := Color(0.3, 0.3, 0.5, 0.6)          # Dark shadow
 const FLASH_SPRINT := Color(0.8, 2.0, 0.8, 1.0)          # Speed green
 const FLASH_CRIPPLE := Color(1.5, 1.8, 2.5, 1.0)         # Icy blue-white
+
+# Enhanced combat VFX flashes
+const FLASH_BLOCK_YELLOW := Color(2.0, 1.8, 0.4, 1.0)    # Shield impact yellow
+const FLASH_CRIT_WHITE := Color(3.0, 3.0, 3.0, 1.0)      # White-hot critical
+const FLASH_FEAR_ORANGE := Color(1.8, 1.4, 0.3, 1.0)     # Fear orange glow
+const FLASH_STUN_RED := Color(2.0, 0.5, 0.5, 1.0)        # Stun red pulse
+const FLASH_POISON_GREEN := Color(0.5, 2.0, 0.5, 1.0)    # Poison green tint
+const FLASH_BANISH_PURPLE := Color(1.5, 0.5, 2.5, 1.0)   # Banishment purple
+const FLASH_COMMAND_BLUE := Color(1.5, 1.8, 3.0, 1.0)    # Word of Command blue-white
+const FLASH_HERBCRAFT_GREEN := Color(0.6, 2.5, 0.8, 1.0) # Herbcraft healing green
+const FLASH_OPENING_BLUE := Color(0.8, 1.5, 2.5, 1.0)    # Word of Opening blue
+
+# VFX particle colors (non-flash, used for particle spawning)
+const VFX_DODGE_CYAN := Color("#67E8F9")                  # Dodge indicator
+const VFX_STUN_STAR := Color("#FACC15")                   # Stun stars (yellow)
+const VFX_POISON_DRIP := Color("#22C55E")                 # Poison drip (darker green)
+const VFX_REGEN_SPARKLE := Color("#6EE7B7")               # Regen sparkle (light green)
+const VFX_BLEED_DROP := Color("#B91C1C")                   # Bleeding drop (dark red)
+const VFX_BURN_FLAME := Color("#FB923C")                   # Burning flame (orange)
 
 # ============================================================================
 # FONT SIZES
@@ -379,6 +406,26 @@ const UI_TEXTURE_PATHS := {
 	"xp_fill": "res://assets/ui/decorative/xp_bar_fill.png",
 	"health_fill": "res://assets/ui/decorative/health_bar_fill.png",
 	"voice_fill": "res://assets/ui/decorative/voice_bar_fill.png",
+	"book_cover": "res://assets/ui/frames/book_cover.png",
+	"book_page": "res://assets/ui/backgrounds/book_page.png",
+	"book_spine": "res://assets/ui/frames/book_spine.png",
+	"bookmark_tab": "res://assets/ui/frames/bookmark_tab.png",
+	"gutter_shadow": "res://assets/ui/frames/gutter_shadow.png",
+	# Tome of Fallen Heroes (DALL-E generated)
+	"tome_cover": "res://assets/ui/tome/cover.png",
+	"tome_spine": "res://assets/ui/tome/spine.png",
+	"tome_page_index": "res://assets/ui/tome/page_index.png",
+	"tome_page_melee": "res://assets/ui/tome/page_melee.png",
+	"tome_page_archery": "res://assets/ui/tome/page_archery.png",
+	"tome_page_evasion": "res://assets/ui/tome/page_evasion.png",
+	"tome_page_stealth": "res://assets/ui/tome/page_stealth.png",
+	"tome_page_perception": "res://assets/ui/tome/page_perception.png",
+	"tome_page_will": "res://assets/ui/tome/page_will.png",
+	"tome_page_smithing": "res://assets/ui/tome/page_smithing.png",
+	"tome_page_lore": "res://assets/ui/tome/page_lore.png",
+	"tome_page_edges": "res://assets/ui/tome/page_edges.png",
+	"tome_corner_dogear": "res://assets/ui/tome/corner_dogear.png",
+	"tome_loose_note": "res://assets/ui/tome/loose_note.png",
 }
 
 const FONT_PATHS := {
@@ -391,6 +438,9 @@ const SHADER_PATHS := {
 	"gold_glow": "res://assets/shaders/ui/gold_glow.gdshader",
 	"vignette": "res://assets/shaders/ui/vignette.gdshader",
 	"engraved": "res://assets/shaders/ui/engraved_text.gdshader",
+	"page_turn": "res://assets/shaders/ui/page_turn.gdshader",
+	"paper_lighting": "res://assets/shaders/ui/paper_lighting.gdshader",
+	"book_depth": "res://assets/shaders/ui/book_depth.gdshader",
 }
 
 # 9-slice margin definitions per texture (left, top, right, bottom)
@@ -407,6 +457,9 @@ const NINE_SLICE_MARGINS := {
 	"bar_frame": Vector4(3, 3, 3, 3),
 	"tab_active": Vector4(6, 4, 6, 0),
 	"tab_inactive": Vector4(6, 4, 6, 4),
+	"book_cover": Vector4(10, 10, 10, 10),
+	"book_spine": Vector4(4, 8, 4, 8),
+	"tome_cover": Vector4(16, 16, 16, 16),
 }
 
 func _ready() -> void:

@@ -262,12 +262,15 @@ func _execute_ability(ability_id: int, target: Variant) -> bool:
 # ============================================================================
 
 ## Word of Command (140): AOE fear/stun in radius
+## Rebalanced: longer duration, player advantage on check, per-turn will saves,
+## dual effect (fear + stun) at Lore 8+, stronger morale hit.
 func _word_of_command() -> bool:
 	if not player or not GameManager.current_level:
 		return false
 
 	var lore_skill: int = player.get_skill("lore")
 	var radius: int = 2 + (lore_skill / 4)  # Base 2, +1 per 4 Lore
+	var fear_duration: int = 5 + lore_skill  # Base 5 at Lore 0, 15 at Lore 10, 25 at Lore 20
 
 	var affected: int = 0
 	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, radius)
@@ -282,17 +285,38 @@ func _word_of_command() -> bool:
 
 		var monster: Monster = entity
 
-		# Will save: monster Will vs player Lore
+		# Will check: player gets +5 advantage
 		var monster_will: int = monster.monster_data.will if monster.monster_data else 5
-		var player_roll: int = randi_range(1, 20) + lore_skill
+
+		# Immunity check: monsters with Will > player Lore + 10 are immune
+		if monster_will > lore_skill + 10:
+			GameManager.log_message("%s is too powerful to command!" % monster.entity_name, ThemeColors.MSG_WARNING)
+			continue
+
+		var player_roll: int = randi_range(1, 20) + lore_skill + 5
 		var monster_roll: int = randi_range(1, 20) + monster_will
 
 		if player_roll > monster_roll:
-			# Apply fear
-			monster.apply_status(Constants.EFFECT_AFRAID, 3 + (lore_skill / 3))
-			monster.current_morale -= 30
+			# Apply fear with Word of Command source tracking for per-turn will saves
+			monster.apply_status(Constants.EFFECT_AFRAID, fear_duration)
+			# Track source for per-turn will save in status_effects tick
+			monster.set_meta("word_of_command_fear", true)
+			monster.set_meta("word_of_command_save_dc", 10 + lore_skill / 2)
+
+			# Dual effect at Lore 8+: also apply stun
+			if lore_skill >= 8:
+				var stun_duration: int = lore_skill / 4
+				if stun_duration > 0:
+					monster.apply_status(Constants.EFFECT_STUNNED, stun_duration)
+					GameManager.log_message("The %s is stunned and paralyzed with fear!" % monster.entity_name, ThemeColors.MSG_WARNING)
+				else:
+					GameManager.log_message("The %s cowers in fear!" % monster.entity_name, ThemeColors.MSG_WARNING)
+			else:
+				GameManager.log_message("The %s cowers in fear!" % monster.entity_name, ThemeColors.MSG_WARNING)
+
+			# Stronger morale hit: -40 - (lore_skill * 2)
+			monster.current_morale -= (40 + lore_skill * 2)
 			affected += 1
-			GameManager.log_message("The %s cowers in fear!" % monster.entity_name, ThemeColors.MSG_WARNING)
 		else:
 			GameManager.log_message("The %s resists your word." % monster.entity_name, ThemeColors.MSG_SYSTEM)
 
