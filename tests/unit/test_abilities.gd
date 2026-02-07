@@ -264,3 +264,121 @@ func _heavy_armor_penalty(weight: int) -> int:
 	if weight < 150:
 		return 0
 	return weight / 50
+
+# ============================================================================
+# ABILITY XP COST FORMULA TESTS (Sil-Q economy)
+# ============================================================================
+
+func test_ability_cost_formula_first_ability():
+	# 1st ability in a skill: (0 + 1) * 500 = 500
+	assert_eq(_ability_xp_cost(0, 0), 500, "1st ability costs 500 XP")
+
+func test_ability_cost_formula_escalating():
+	# Cost escalates with # owned in that skill
+	assert_eq(_ability_xp_cost(1, 0), 1000, "2nd ability costs 1000 XP")
+	assert_eq(_ability_xp_cost(2, 0), 1500, "3rd ability costs 1500 XP")
+	assert_eq(_ability_xp_cost(4, 0), 2500, "5th ability costs 2500 XP")
+	assert_eq(_ability_xp_cost(9, 0), 5000, "10th ability costs 5000 XP")
+
+func test_ability_cost_with_positive_affinity():
+	# +1 affinity: -500 discount
+	assert_eq(_ability_xp_cost(0, 1), 0, "1st ability free with +1 affinity")
+	assert_eq(_ability_xp_cost(1, 1), 500, "2nd ability 500 with +1 affinity")
+	assert_eq(_ability_xp_cost(4, 1), 2000, "5th ability 2000 with +1 affinity")
+
+func test_ability_cost_with_negative_affinity():
+	# -1 penalty: +500 surcharge
+	assert_eq(_ability_xp_cost(0, -1), 1000, "1st ability 1000 with -1 penalty")
+	assert_eq(_ability_xp_cost(1, -1), 1500, "2nd ability 1500 with -1 penalty")
+
+func test_ability_cost_floor_at_zero():
+	# Cost can never go below 0
+	assert_eq(_ability_xp_cost(0, 2), 0, "1st ability free with +2 affinity")
+	assert_eq(_ability_xp_cost(0, 3), 0, "Floor at 0 even with large affinity")
+
+# ============================================================================
+# OR PREREQUISITE LOGIC TESTS
+# ============================================================================
+
+func test_or_prereqs_none_met():
+	# No prereqs met -> false
+	var met: Array[bool] = [false, false]
+	assert_false(_check_or_prereqs(met), "No prereqs met = cannot learn")
+
+func test_or_prereqs_one_met():
+	# One prereq met -> true (OR logic)
+	var met: Array[bool] = [true, false]
+	assert_true(_check_or_prereqs(met), "One prereq met = can learn (OR)")
+
+func test_or_prereqs_all_met():
+	# All prereqs met -> true
+	var met: Array[bool] = [true, true]
+	assert_true(_check_or_prereqs(met), "All prereqs met = can learn")
+
+func test_or_prereqs_empty():
+	# No prereqs -> true (always learnable)
+	var met: Array[bool] = []
+	assert_true(_check_or_prereqs(met), "Empty prereqs = always learnable")
+
+# ============================================================================
+# ABILITIES_IN_SKILL COUNTING TESTS
+# ============================================================================
+
+func test_abilities_in_skill_empty():
+	var innate: Array = []
+	for i in range(Constants.S_MAX):
+		var row: Array = []
+		for j in range(Constants.ABILITIES_MAX):
+			row.append(false)
+		innate.append(row)
+	assert_eq(_count_abilities_in_skill(innate, 0), 0, "No abilities learned = 0")
+
+func test_abilities_in_skill_counts_correctly():
+	var innate: Array = []
+	for i in range(Constants.S_MAX):
+		var row: Array = []
+		for j in range(Constants.ABILITIES_MAX):
+			row.append(false)
+		innate.append(row)
+	innate[0][0] = true  # Power
+	innate[0][1] = true  # Finesse
+	innate[0][5] = true  # Follow-Through
+	assert_eq(_count_abilities_in_skill(innate, 0), 3, "3 melee abilities learned")
+	assert_eq(_count_abilities_in_skill(innate, 1), 0, "No archery abilities")
+
+func test_abilities_in_skill_bounds():
+	var innate: Array = []
+	for i in range(Constants.S_MAX):
+		var row: Array = []
+		for j in range(Constants.ABILITIES_MAX):
+			row.append(false)
+		innate.append(row)
+	assert_eq(_count_abilities_in_skill(innate, -1), 0, "Negative index = 0")
+	assert_eq(_count_abilities_in_skill(innate, Constants.S_MAX), 0, "Out of bounds = 0")
+
+# ============================================================================
+# NEW HELPERS
+# ============================================================================
+
+## Mirrors the Sil-Q ability cost formula: (owned + 1) * 500 - 500 * affinity
+func _ability_xp_cost(owned_in_skill: int, affinity_level: int) -> int:
+	return maxi(0, (owned_in_skill + 1) * 500 - 500 * affinity_level)
+
+## OR prerequisite check: true if empty or ANY element is true
+func _check_or_prereqs(met: Array[bool]) -> bool:
+	if met.is_empty():
+		return true
+	for m in met:
+		if m:
+			return true
+	return false
+
+## Count abilities in a skill tree from innate array
+func _count_abilities_in_skill(innate: Array, skill_type: int) -> int:
+	if skill_type < 0 or skill_type >= innate.size():
+		return 0
+	var count: int = 0
+	for i in range(innate[skill_type].size()):
+		if innate[skill_type][i]:
+			count += 1
+	return count

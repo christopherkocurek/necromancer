@@ -1058,7 +1058,11 @@ func _on_ability_selected(idx: int) -> void:
 	detail_desc.text = ability.description
 
 	if not ability.prereqs.is_empty():
-		var prereq_text := "Prerequisites: "
+		var prereq_text: String
+		if player and player.has_ability(Constants.Skill.S_PER, 0):
+			prereq_text = "Prerequisites (bypassed): "
+		else:
+			prereq_text = "Prerequisites (need one): "
 		var parts: Array[String] = []
 		for prereq in ability.prereqs:
 			var prereq_skill: int = prereq.get("skill", 0)
@@ -1071,7 +1075,7 @@ func _on_ability_selected(idx: int) -> void:
 					parts.append("%s (%s)" % [prereq_name, skill_label])
 				else:
 					parts.append("%s (%s) [MISSING]" % [prereq_name, skill_label])
-		prereq_text += ", ".join(parts)
+		prereq_text += " | ".join(parts)
 		detail_prereqs.text = prereq_text
 		detail_prereqs.visible = true
 	else:
@@ -1081,7 +1085,14 @@ func _on_ability_selected(idx: int) -> void:
 		detail_cost.text = "Inscribed"
 		detail_cost.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
 	else:
-		detail_cost.text = "Cost: %d XP" % xp_cost
+		var skill_name: String = SKILL_NAMES[ability.skill_type] if ability.skill_type < SKILL_NAMES.size() else ""
+		var affinity: int = player.get_ability_affinity_level(skill_name) if player else 0
+		var affinity_text: String = ""
+		if affinity > 0:
+			affinity_text = " (-%d affinity)" % (affinity * 500)
+		elif affinity < 0:
+			affinity_text = " (+%d penalty)" % (-affinity * 500)
+		detail_cost.text = "Cost: %d XP%s" % [xp_cost, affinity_text]
 		if player and player.xp_available >= xp_cost:
 			detail_cost.add_theme_color_override("font_color", Color("#2D6A2E"))
 		else:
@@ -1429,13 +1440,18 @@ func _can_learn_ability(ability: DataManager.AbilityData) -> bool:
 	return true
 
 func _has_prerequisites(ability: DataManager.AbilityData) -> bool:
+	if ability.prereqs.is_empty():
+		return true
+	# Natural Talent bypasses prerequisite checks (C: Quick Study)
+	if player and player.has_ability(Constants.Skill.S_PER, 0):
+		return true
 	for prereq in ability.prereqs:
 		var prereq_skill: int = prereq.get("skill", 0)
 		var prereq_ability_idx: int = prereq.get("ability", 0)
 		var prereq_name := _find_ability_by_index(prereq_skill, prereq_ability_idx)
-		if prereq_name != "" and not _player_has_ability_by_name(prereq_name):
-			return false
-	return true
+		if prereq_name != "" and _player_has_ability_by_name(prereq_name):
+			return true  # Found one — that's enough (OR logic)
+	return false  # None met
 
 func _find_ability_by_index(skill_type: int, ability_num: int) -> String:
 	for ability in DataManager.abilities.values():
@@ -1444,7 +1460,12 @@ func _find_ability_by_index(skill_type: int, ability_num: int) -> String:
 	return ""
 
 func _get_ability_xp_cost(ability: DataManager.AbilityData) -> int:
-	return (ability.level_requirement + 1) * 300
+	if not player:
+		return 500
+	var skill_name: String = SKILL_NAMES[ability.skill_type] if ability.skill_type < SKILL_NAMES.size() else ""
+	var owned: int = player.abilities_in_skill(ability.skill_type)
+	var affinity: int = player.get_ability_affinity_level(skill_name)
+	return maxi(0, (owned + 1) * 500 - 500 * affinity)
 
 # ===========================================================================
 # INPUT

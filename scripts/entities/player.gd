@@ -363,6 +363,15 @@ func learn_ability(skill: int, ability: int) -> void:
 	active_ability[skill][ability] = true
 	have_ability[skill][ability] = true
 
+func abilities_in_skill(skill_type: int) -> int:
+	if skill_type < 0 or skill_type >= Constants.S_MAX:
+		return 0
+	var count: int = 0
+	for i in range(Constants.ABILITIES_MAX):
+		if innate_ability[skill_type][i]:
+			count += 1
+	return count
+
 func _setup_player_sprite() -> void:
 	# V2: Look up sprite by race + house + gender
 	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
@@ -938,6 +947,29 @@ const AFFINITY_MAP: Dictionary = {
 	"LOR_AFFINITY": "lore",
 }
 
+const PENALTY_MAP: Dictionary = {
+	"MEL_PENALTY": "melee", "ARC_PENALTY": "archery",
+	"EVN_PENALTY": "evasion", "STL_PENALTY": "stealth",
+	"PER_PENALTY": "perception", "WIL_PENALTY": "will",
+	"SMT_PENALTY": "smithing", "LOR_PENALTY": "lore",
+}
+
+func get_ability_affinity_level(skill_name: String) -> int:
+	var level: int = 0
+	var house_data := DataManager.get_house(house_name)
+	if house_data:
+		for flag in house_data.affinities:
+			if AFFINITY_MAP.get(flag, "") == skill_name:
+				level += 1
+	var race_data := DataManager.get_race(race_name)
+	if race_data:
+		for flag in race_data.flags:
+			if PENALTY_MAP.get(flag, "") == skill_name:
+				level -= 1
+			if AFFINITY_MAP.get(flag, "") == skill_name:
+				level += 1
+	return level
+
 func has_affinity(skill_name: String) -> bool:
 	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
 	if not house_data:
@@ -1089,7 +1121,18 @@ func pick_up_item(item_data: Variant) -> bool:
 	return true
 
 func drop_item(item_data: Variant) -> bool:
+	# Find item by reference first, then fall back to property match
 	var idx := inventory.find(item_data)
+	if idx < 0:
+		# Fallback: find by tval/sval/name match (handles reference mismatches)
+		for i in range(inventory.size()):
+			var inv_item: Variant = inventory[i]
+			if "tval" in inv_item and "sval" in inv_item and "name" in inv_item:
+				if "tval" in item_data and "sval" in item_data and "name" in item_data:
+					if inv_item.tval == item_data.tval and inv_item.sval == item_data.sval and inv_item.name == item_data.name:
+						idx = i
+						item_data = inv_item  # Use the actual inventory reference
+						break
 	if idx < 0:
 		return false
 
