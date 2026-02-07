@@ -888,8 +888,12 @@ func _try_cast_spell(cast_target: Entity, distance: int) -> bool:
 	if available_spells.is_empty():
 		return false
 
-	# Spell frequency: 33% chance to cast instead of melee/move (Sil-Q style)
-	if randf() > 0.33:
+	# Spell frequency: use parsed spell_frequency from S: line (0-100 scale)
+	# If spell_frequency is 0 or missing, monster never casts
+	var freq: int = monster_data.spell_frequency if "spell_frequency" in monster_data else 0
+	if freq <= 0:
+		return false
+	if randf() > (float(freq) / 100.0):
 		return false
 
 	# Pick a random spell from available
@@ -901,32 +905,27 @@ func _get_available_spells() -> Array[String]:
 	if not monster_data:
 		return spells
 
-	if monster_data.has_flag("SHRIEK"):
-		spells.append("SHRIEK")
-	if monster_data.has_flag("DARKNESS"):
-		spells.append("DARKNESS")
-	if monster_data.has_flag("SLOW"):
-		spells.append("SLOW")
-	if monster_data.has_flag("BR_FIRE"):
-		spells.append("BR_FIRE")
-	if monster_data.has_flag("BR_COLD"):
-		spells.append("BR_COLD")
-	if monster_data.has_flag("BR_POIS"):
-		spells.append("BR_POIS")
-	if monster_data.has_flag("BR_DARK"):
-		spells.append("BR_DARK")
-	if monster_data.has_flag("ARROW1"):
-		spells.append("ARROW1")
-	if monster_data.has_flag("ARROW2"):
-		spells.append("ARROW2")
-	if monster_data.has_flag("BOULDER"):
-		spells.append("BOULDER")
-	if monster_data.has_flag("HOLD"):
-		spells.append("HOLD")
-	if monster_data.has_flag("SCARE"):
-		spells.append("SCARE")
-	if monster_data.has_flag("CONF"):
-		spells.append("CONF")
+	# Primary source: spell_types array from S: lines in monster.txt
+	# Map CROSSBOW -> ARROW1 for compatibility with the spell execution system
+	for spell_type: String in monster_data.spell_types:
+		var mapped: String = spell_type
+		match spell_type:
+			"CROSSBOW":
+				mapped = "ARROW1"
+			"ARROW":
+				mapped = "ARROW1"
+		if mapped not in spells:
+			spells.append(mapped)
+
+	# Legacy fallback: also check flags array for older monsters that use F: lines for spells
+	var flag_spell_map: Array[String] = [
+		"SHRIEK", "DARKNESS", "SLOW", "BR_FIRE", "BR_COLD", "BR_POIS", "BR_DARK",
+		"ARROW1", "ARROW2", "BOULDER", "HOLD", "SCARE", "CONF"
+	]
+	for spell_name: String in flag_spell_map:
+		if monster_data.has_flag(spell_name) and spell_name not in spells:
+			spells.append(spell_name)
+
 	return spells
 
 func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:

@@ -70,6 +70,9 @@ var skills: Dictionary = {
 var lore_known: Dictionary = {}  # monster_type -> Array of lore abilities
 var voice_charges: int = 20  # For song/voice abilities (starts full)
 var max_voice: int = 20
+
+# Ability hotkeys (4 slots for quick-cast via 1-4 keys, -1 = empty)
+var ability_hotkeys: Array[int] = [-1, -1, -1, -1]
 var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
 # Hunger system - soft pressure mechanic
@@ -2034,7 +2037,11 @@ func _use_first_consumable(target_tval: int) -> bool:
 		var item = inventory[i]
 		if item != null and "tval" in item and item.tval == target_tval:
 			if ConsumableSystem.use_item(self, item):
-				inventory.remove_at(i)
+				var count: int = item.stack_count if "stack_count" in item else 1
+				if count > 1:
+					item.stack_count = count - 1
+				else:
+					inventory.remove_at(i)
 				return true  # Turn consumed
 			return false  # Couldn't use (e.g., blind reading)
 	var type_name: String = "potion" if target_tval == 75 else "food"

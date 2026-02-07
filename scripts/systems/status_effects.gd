@@ -109,6 +109,19 @@ func tick_effects() -> void:
 
 		# Word of Command per-turn will save: monsters can break free from fear early
 		if effect_id == Constants.EFFECT_AFRAID and owner and owner.has_meta("word_of_command_fear"):
+			# Guaranteed no-resist period: skip will saves while turns remain
+			if owner.has_meta("word_of_command_no_resist"):
+				var remaining: int = owner.get_meta("word_of_command_no_resist")
+				if remaining > 0:
+					owner.set_meta("word_of_command_no_resist", remaining - 1)
+					# Skip will save — guaranteed fear during no-resist period
+					effects[effect_id] = duration - _calculate_decay(effect_id, duration)
+					if effects[effect_id] <= 0:
+						to_remove.append(effect_id)
+					continue
+				else:
+					owner.remove_meta("word_of_command_no_resist")
+
 			var save_dc: int = owner.get_meta("word_of_command_save_dc", 15)
 			var monster_will: int = 5
 			if owner is Monster and owner.monster_data:
@@ -119,6 +132,8 @@ func tick_effects() -> void:
 				to_remove.append(effect_id)
 				owner.remove_meta("word_of_command_fear")
 				owner.remove_meta("word_of_command_save_dc")
+				if owner.has_meta("word_of_command_no_resist"):
+					owner.remove_meta("word_of_command_no_resist")
 				GameManager.log_message("The %s shakes off the fear!" % owner.entity_name, ThemeColors.MSG_SYSTEM)
 				continue
 
@@ -146,6 +161,8 @@ func tick_effects() -> void:
 		if effect_id == Constants.EFFECT_AFRAID and owner and owner.has_meta("word_of_command_fear"):
 			owner.remove_meta("word_of_command_fear")
 			owner.remove_meta("word_of_command_save_dc")
+			if owner.has_meta("word_of_command_no_resist"):
+				owner.remove_meta("word_of_command_no_resist")
 
 ## Apply damage from damage-over-time effects.
 func _apply_damage(effect_id: StringName, duration: int) -> void:

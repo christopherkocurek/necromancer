@@ -143,19 +143,28 @@ func load_monsters() -> void:
 									attack.damage_dice = dmg_parts[1].strip_edges()
 						current_monster.attacks.append(attack)
 			"S":
-				# S:spell_frequency | spell_power or spell types
+				# S: lines can contain a mix of:
+				#   SPELL_PCT_N  -> spell_frequency = N
+				#   POW_N        -> spell_power = N
+				#   Other tokens -> spell type names (CROSSBOW, SHRIEK, DARKNESS, etc.)
+				# Multiple S: lines accumulate (first has freq/power, second has types)
 				if current_monster:
-					if value.contains("|"):
-						var s_parts := value.split("|")
-						if s_parts.size() >= 1:
-							current_monster.spell_frequency = int(s_parts[0].strip_edges())
-						if s_parts.size() >= 2:
-							current_monster.spell_power = int(s_parts[1].strip_edges())
-					else:
-						# Spell types
-						var spells := value.split("|")
-						for spell in spells:
-							current_monster.spell_types.append(spell.strip_edges())
+					var s_tokens := value.split("|")
+					for token_raw in s_tokens:
+						var token: String = token_raw.strip_edges()
+						if token.is_empty():
+							continue
+						if token.begins_with("SPELL_PCT_"):
+							# Extract frequency: SPELL_PCT_40 -> 40
+							var pct_str: String = token.substr(10)
+							current_monster.spell_frequency = int(pct_str)
+						elif token.begins_with("POW_"):
+							# Extract power: POW_6 -> 6
+							var pow_str: String = token.substr(4)
+							current_monster.spell_power = int(pow_str)
+						else:
+							# Spell type name (CROSSBOW, SHRIEK, DARKNESS, etc.)
+							current_monster.spell_types.append(token)
 			"F":
 				# F:FLAG1 | FLAG2 | FLAG3
 				if current_monster:
@@ -850,7 +859,7 @@ func get_random_item_for_depth(depth: int) -> ItemData:
 		return null
 	return valid_items.pick_random()
 
-## Get a random food item (tval 80) appropriate for depth
+## Get a random food item (tval 80) appropriate for depth (any food or herb)
 func get_random_food_for_depth(depth: int) -> ItemData:
 	var food_items: Array[ItemData] = []
 	for i in items.values():
@@ -859,6 +868,30 @@ func get_random_food_for_depth(depth: int) -> ItemData:
 	if food_items.is_empty():
 		return null
 	return food_items.pick_random()
+
+## Get a random actual food item (not herbs/mushrooms) for depth
+## Actual food: sval >= 35 (Travel Bread, Dried Meat, Lembas, Cram) + Waymeal (sval 1)
+func get_random_actual_food(depth: int) -> ItemData:
+	var food_items: Array[ItemData] = []
+	for i in items.values():
+		if i.tval == 80 and i.depth <= depth:
+			if i.sval >= 35 or i.sval == 1:  # Actual food or Waymeal
+				food_items.append(i)
+	if food_items.is_empty():
+		return null
+	return food_items.pick_random()
+
+## Get a random herb/mushroom appropriate for depth
+## Herbs: tval 80, sval 0 or sval 2-23 (excludes actual food sval>=35 and Waymeal sval 1)
+func get_random_herb_for_depth(depth: int) -> ItemData:
+	var herb_items: Array[ItemData] = []
+	for i in items.values():
+		if i.tval == 80 and i.depth <= depth:
+			if i.sval != 1 and i.sval < 35:  # Herbs/mushrooms only
+				herb_items.append(i)
+	if herb_items.is_empty():
+		return null
+	return herb_items.pick_random()
 
 ## Look up an item by tval and sval (used for starting equipment grants)
 func get_item_by_tval_sval(tval: int, sval: int) -> ItemData:

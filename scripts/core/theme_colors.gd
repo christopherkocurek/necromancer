@@ -399,6 +399,7 @@ const UI_TEXTURE_PATHS := {
 	"tab_active": "res://assets/ui/frames/tab_active.png",
 	"tab_inactive": "res://assets/ui/frames/tab_inactive.png",
 	"orb_frame": "res://assets/ui/orbs/orb_frame.png",
+	"orb_frame_watcher": "res://assets/ui/orbs/orb_frame_watcher.png",
 	"orb_mask": "res://assets/ui/orbs/orb_mask.png",
 	"bg_stone": "res://assets/ui/backgrounds/bg_stone_tile.png",
 	"bg_leather": "res://assets/ui/backgrounds/bg_leather.png",

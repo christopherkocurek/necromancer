@@ -210,6 +210,7 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	hud.visible = true
 	hud.set_level(current_level)
 	hud.set_player(player)
+	hud._ability_system_ref = ability_system
 	hud.update_player_stats(player)
 	hud.refresh_minimap()
 
@@ -645,6 +646,78 @@ func _unhandled_input(event: InputEvent) -> void:
 				player._skip_input_this_frame = true
 			get_viewport().set_input_as_handled()
 			return
+
+	# Diagonal movement fallbacks (YUBN) - direct keycode check for macOS compatibility
+	# physical_keycode is unreliable for these keys on macOS, so we handle them directly
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if player and player.is_alive and turn_system.current_state == TurnSystem.TurnState.PLAYER_INPUT:
+			var diag_dir: Vector2i = Vector2i.ZERO
+			match event.keycode:
+				KEY_Y: diag_dir = Vector2i(-1, -1)  # up-left
+				KEY_U: diag_dir = Vector2i(1, -1)   # up-right
+				KEY_B: diag_dir = Vector2i(-1, 1)   # down-left
+				KEY_N: diag_dir = Vector2i(1, 1)    # down-right
+			if diag_dir != Vector2i.ZERO:
+				player.moved_this_turn = true
+				if player.try_move(diag_dir):
+					player.consume_energy()
+					turn_system._after_player_action()
+				get_viewport().set_input_as_handled()
+				return
+
+	# Ability hotkey quick-cast (1-4 number keys, no shift)
+	if event is InputEventKey and event.pressed and not event.shift_pressed and not event.echo:
+		var hotkey_slot: int = -1
+		match event.keycode:
+			KEY_1: hotkey_slot = 0
+			KEY_2: hotkey_slot = 1
+			KEY_3: hotkey_slot = 2
+			KEY_4: hotkey_slot = 3
+		if hotkey_slot >= 0 and player and player.is_alive and GameManager.is_player_turn:
+			if hotkey_slot < player.ability_hotkeys.size():
+				var hotkey_ability_id: int = player.ability_hotkeys[hotkey_slot]
+				if hotkey_ability_id >= 0 and ability_system:
+					var check: Dictionary = ability_system.can_use_ability(hotkey_ability_id)
+					if check.can_use:
+						if ability_system.has_method("_ability_needs_target") and ability_system._ability_needs_target(hotkey_ability_id):
+							# Needs a target - open targeting mode
+							_pending_voice_ability_id = hotkey_ability_id
+							var ab_name: String = ability_system._get_ability_name(hotkey_ability_id)
+							GameManager.log_message("Select a target for %s..." % ab_name, ThemeColors.MSG_INFO)
+							target_panel.open(player, current_level)
+							GameManager.is_player_turn = false
+						else:
+							var success: bool = ability_system.activate_ability(hotkey_ability_id)
+							if success:
+								player.consume_energy()
+								hud.update_player_stats(player)
+					else:
+						GameManager.log_message(check.reason, ThemeColors.MSG_ERROR)
+					get_viewport().set_input_as_handled()
+					return
+
+	# Ability hotkey binding (Shift+1-4 while voice menu is open)
+	if event is InputEventKey and event.pressed and event.shift_pressed and not event.echo:
+		if voice_menu and voice_menu.visible:
+			var bind_slot: int = -1
+			match event.keycode:
+				KEY_1: bind_slot = 0
+				KEY_2: bind_slot = 1
+				KEY_3: bind_slot = 2
+				KEY_4: bind_slot = 3
+			if bind_slot >= 0 and player:
+				var focused_idx: int = voice_menu.get_focused_item()
+				if focused_idx >= 0 and focused_idx < _voice_menu_abilities.size():
+					var ab: Dictionary = _voice_menu_abilities[focused_idx]
+					player.ability_hotkeys[bind_slot] = ab.id
+					GameManager.log_message("Bound %s to hotkey %d." % [ab.name, bind_slot + 1], ThemeColors.MSG_INFO)
+					hud.update_hotbar(player, ability_system)
+				else:
+					# No focused item - try to bind from index 0 if voice menu has items
+					if not _voice_menu_abilities.is_empty():
+						GameManager.log_message("Highlight an ability in the voice menu first, then press Shift+%d." % (bind_slot + 1), ThemeColors.MSG_SYSTEM)
+				get_viewport().set_input_as_handled()
+				return
 
 	# Voice ability menu (V key)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_V and not event.shift_pressed and not event.echo:
@@ -1131,6 +1204,8 @@ func _observe_visible_monsters() -> void:
 						var bonus: int = maxi(1, player_lore / 3)
 						for i in range(bonus):
 							monster_memory.record_observation(entity)
+						var monster_name: String = entity.entity_name if entity.entity_name else "creature"
+						GameManager.log_message("Deep Memory: You recall lore about the %s." % monster_name, ThemeColors.SKILL_LORE)
 				monster_memory.record_observation(entity)
 				# Update health bar based on knowledge tier (use effective tier with lore bonus)
 				if entity.monster_data and "index" in entity.monster_data:

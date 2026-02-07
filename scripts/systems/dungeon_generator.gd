@@ -1207,11 +1207,11 @@ func _spawn_items(depth: int) -> void:
 			level.add_item(item)
 			spawned += 1
 
-	# Spawn additional food items (depth-scaled, separate)
-	# Upper levels (1-5): 2-3, mid (6-10): 1-2, deep (11+): 0-1
+	# Spawn actual food items (depth-scaled, separate from herbs)
+	# Upper levels (1-5): 1-2, mid (6-10): 1-2, deep (11+): 0-1
 	var food_count: int = 0
 	if depth <= 5:
-		food_count = randi_range(2, 3)
+		food_count = randi_range(1, 2)
 	elif depth <= 10:
 		food_count = randi_range(1, 2)
 	else:
@@ -1222,11 +1222,32 @@ func _spawn_items(depth: int) -> void:
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		var food_data: DataManager.ItemData = DataManager.get_random_food_for_depth(depth)
+		var food_data: DataManager.ItemData = DataManager.get_random_actual_food(depth)
 		if food_data:
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
 			item.initialize_from_item_data(food_data)
+			level.add_item(item)
+			spawned += 1
+
+	# Spawn herbs separately (capped to avoid herb flooding)
+	# Shallow (1-6): 1-2, deep (7+): 0-1
+	var herb_count: int = 0
+	if depth <= 6:
+		herb_count = randi_range(1, 2)
+	else:
+		herb_count = randi_range(0, 1)
+
+	for _i in range(herb_count):
+		var spawn_pos: Vector2i = level.find_random_floor()
+		if spawn_pos == Vector2i(-1, -1):
+			continue
+
+		var herb_data: DataManager.ItemData = DataManager.get_random_herb_for_depth(depth)
+		if herb_data:
+			var item: Item = item_scene.instantiate()
+			item.grid_position = spawn_pos
+			item.initialize_from_item_data(herb_data)
 			level.add_item(item)
 			spawned += 1
 

@@ -131,7 +131,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[2] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # WALL ->  (terrain 11)
 	terrain_coords[3] = {"light": Vector2i(0, 2), "dark": Vector2i(1, 2)}    # DOOR_CLOSED ->  (terrain 32)
 	terrain_coords[4] = {"light": Vector2i(8, 0), "dark": Vector2i(9, 0)}    # DOOR_OPEN ->  (terrain 4)
-	terrain_coords[5] = {"light": Vector2i(2, 5), "dark": Vector2i(3, 5)}    # STAIRS_DOWN ->  (terrain 81)
+	terrain_coords[5] = {"light": Vector2i(18, 18), "dark": Vector2i(19, 18)}    # STAIRS_DOWN -> DALL-E regen
 	terrain_coords[6] = {"light": Vector2i(0, 5), "dark": Vector2i(1, 5)}    # STAIRS_UP ->  (terrain 80)
 	terrain_coords[7] = {"light": Vector2i(2, 1), "dark": Vector2i(3, 1)}    # CHASM ->  (terrain 17)
 	terrain_coords[8] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # RUBBLE ->  (terrain 1)
@@ -143,11 +143,11 @@ func _load_terrain_coords() -> void:
 	terrain_coords[14] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # DOOR_SECRET ->  (terrain 11)
 	terrain_coords[15] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # WATER ->  (terrain 51)
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
-	terrain_coords[17] = {"light": Vector2i(12, 5), "dark": Vector2i(13, 5)}    # VINE_FLOOR ->  (terrain 86)
-	terrain_coords[18] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # POISON_STREAM -> reuse water coords (terrain 51)
+	terrain_coords[17] = {"light": Vector2i(16, 18), "dark": Vector2i(17, 18)}    # VINE_FLOOR -> DALL-E regen
+	terrain_coords[18] = {"light": Vector2i(20, 18), "dark": Vector2i(21, 18)}    # POISON_STREAM -> DALL-E regen
 	# Stream D: New layer terrain types (row 18)
 	# These use placeholder coords until DALL-E sprites are generated
-	terrain_coords[19] = {"light": Vector2i(0, 18), "dark": Vector2i(1, 18)}    # WEB
+	terrain_coords[19] = {"light": Vector2i(0, 18), "dark": Vector2i(1, 18)}    # WEB -> DALL-E regen
 	terrain_coords[20] = {"light": Vector2i(2, 18), "dark": Vector2i(3, 18)}    # DARK_POOL
 	terrain_coords[21] = {"light": Vector2i(4, 18), "dark": Vector2i(5, 18)}    # MORGUL_RUNE
 	terrain_coords[22] = {"light": Vector2i(6, 18), "dark": Vector2i(7, 18)}    # SHADOW_BRAZIER
@@ -290,6 +290,8 @@ func _load_item_coords() -> void:
 	item_coords[46] = Vector2i(22, 11)  # Mithril Shield
 	item_coords[56] = Vector2i(23, 11)  # Ranger's Knife
 	item_coords[57] = Vector2i(24, 11)  # Orc-blade
+	item_coords[58] = Vector2i(1, 17)  # Curved Sword (DALL-E regen)
+	item_coords[59] = Vector2i(2, 17)  # Sylvan Blade
 	item_coords[60] = Vector2i(25, 11)  # Woodland Blade
 	item_coords[64] = Vector2i(26, 11)  # Longsword
 	item_coords[67] = Vector2i(27, 11)  # Rohirrim Blade

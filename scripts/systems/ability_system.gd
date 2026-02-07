@@ -301,11 +301,14 @@ func _word_of_command() -> bool:
 			monster.apply_status(Constants.EFFECT_AFRAID, fear_duration)
 			# Track source for per-turn will save in status_effects tick
 			monster.set_meta("word_of_command_fear", true)
-			monster.set_meta("word_of_command_save_dc", 10 + lore_skill / 2)
+			monster.set_meta("word_of_command_save_dc", 10 + lore_skill)
+			# Guaranteed no-resist period: 3 + lore/4 turns (Lore 0: 3, Lore 8: 5, Lore 16: 7)
+			var no_resist_turns: int = 3 + lore_skill / 4
+			monster.set_meta("word_of_command_no_resist", no_resist_turns)
 
 			# Dual effect at Lore 8+: also apply stun
 			if lore_skill >= 8:
-				var stun_duration: int = lore_skill / 4
+				var stun_duration: int = lore_skill / 3
 				if stun_duration > 0:
 					monster.apply_status(Constants.EFFECT_STUNNED, stun_duration)
 					GameManager.log_message("The %s is stunned and paralyzed with fear!" % monster.entity_name, ThemeColors.MSG_WARNING)

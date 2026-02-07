@@ -150,6 +150,9 @@ func _check_ambient_message() -> void:
 func _process_game_tick() -> void:
 	# Grant energy to all entities based on their speed
 	# This is called after each player action
+	# NOTE: Monster turns are NOT processed here — they are handled by the
+	# state machine via _determine_next_actor() -> _process_monster_turn()
+	# which provides proper animation delays and visibility checks.
 	if not current_level:
 		return
 
@@ -161,47 +164,6 @@ func _process_game_tick() -> void:
 	for monster in current_level.get_monsters():
 		if monster.is_alive:
 			monster.grant_energy()
-
-	# Process monster turns - monsters with enough energy act
-	for monster in current_level.get_monsters():
-		if monster.is_alive and monster.can_act():
-			monster.take_turn()
-			monster.consume_energy()
-
-	# Refresh entity visibility after all monsters have moved
-	current_level.update_entity_visibility()
-
-	# Increment round counter
-	current_round += 1
-
-	# Tick status effects
-	if player and player.is_alive:
-		player.tick_status_effects()
-		player.reset_turn_state()
-
-		# Hunger decay (1 per turn)
-		player.tick_hunger()
-
-		# Check hunger penalties for regen suppression
-		var hunger_penalties: Dictionary = player.get_hunger_penalties()
-		var no_regen: bool = hunger_penalties.get("no_regen", false)
-
-		# HP regeneration: 1 HP every (20 - Con) turns, minimum every 5 turns
-		# Suppressed when famished or starving
-		var regen_interval: int = maxi(5, 20 - player.constitution)
-		if not no_regen and current_round % regen_interval == 0 and player.current_health < player.max_health:
-			player.current_health = mini(player.current_health + 1, player.max_health)
-		# Voice regeneration: 1 charge every 3 turns
-		# Suppressed when famished or starving
-		if not no_regen and current_round % 3 == 0 and player.voice_charges < player.max_voice:
-			player.voice_charges += 1
-
-		# Starvation damage
-		player.apply_starvation_damage(current_round)
-
-	for monster in current_level.get_monsters():
-		if monster.is_alive:
-			monster.tick_status_effects()
 
 func _process_monster_turn() -> void:
 	if pending_monsters.is_empty():
@@ -231,19 +193,33 @@ func _end_round() -> void:
 	current_round += 1
 	EventBus.round_completed.emit(current_round)
 
-	# Grant energy to all entities
+	# Per-round effects (NO energy grants here — energy is granted in _process_game_tick)
 	if player and player.is_alive:
-		player.grant_energy()
 		player.tick_status_effects()
 		player.tick_light_fuel()
 		player.tick_hunger()
-		player.apply_starvation_damage(current_round)
 		player.reset_turn_state()
+
+		# Check hunger penalties for regen suppression
+		var hunger_penalties: Dictionary = player.get_hunger_penalties()
+		var no_regen: bool = hunger_penalties.get("no_regen", false)
+
+		# HP regeneration: 1 HP every (20 - Con) turns, minimum every 5 turns
+		# Suppressed when famished or starving
+		var regen_interval: int = maxi(5, 20 - player.constitution)
+		if not no_regen and current_round % regen_interval == 0 and player.current_health < player.max_health:
+			player.current_health = mini(player.current_health + 1, player.max_health)
+		# Voice regeneration: 1 charge every 3 turns
+		# Suppressed when famished or starving
+		if not no_regen and current_round % 3 == 0 and player.voice_charges < player.max_voice:
+			player.voice_charges += 1
+
+		# Starvation damage
+		player.apply_starvation_damage(current_round)
 
 	if current_level:
 		for monster in current_level.get_monsters():
 			if monster.is_alive:
-				monster.grant_energy()
 				monster.tick_status_effects()
 		# Decay floor-wide alertness
 		current_level.tick_floor_alertness()

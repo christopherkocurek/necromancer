@@ -232,7 +232,18 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 	var info: Dictionary = get_visible_info(monster, player_lore)
 
 	if info.name == "???":
-		lines.append("[color=gray]Unknown creature[/color]")
+		# Procedural DF-style description for unknown creatures
+		if is_instance_valid(monster) and monster.monster_data:
+			var desc_data: Dictionary = {
+				"char": monster.monster_data.display_char,
+				"color": monster.monster_data.color,
+				"health_dice": monster.monster_data.health_dice,
+				"flags": monster.monster_data.flags,
+			}
+			var desc: String = DescriptionGenerator.generate_monster_description(desc_data, 0)
+			lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc)
+		else:
+			lines.append("[color=gray]Unknown creature[/color]")
 		return lines
 
 	# Name with color based on stance
@@ -247,6 +258,19 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 				color = "gray"
 
 	lines.append("[color=%s]%s[/color]" % [color, info.name])
+
+	# Procedural description at IDENTIFIED/BASIC/DETAILED tiers (before COMPLETE)
+	var monster_id: int = monster.monster_data.index if is_instance_valid(monster) and monster.monster_data else -1
+	var effective_tier: int = get_effective_tier(monster_id, player_lore) if monster_id >= 0 else 0
+	if effective_tier < KnowledgeTier.COMPLETE and is_instance_valid(monster) and monster.monster_data:
+		var desc_data: Dictionary = {
+			"char": monster.monster_data.display_char,
+			"color": monster.monster_data.color,
+			"health_dice": monster.monster_data.health_dice,
+			"flags": monster.monster_data.flags,
+		}
+		var desc: String = DescriptionGenerator.generate_monster_description(desc_data, effective_tier)
+		lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc)
 
 	# Health (if known)
 	if info.health_known:

@@ -107,10 +107,12 @@ func _update_info() -> void:
 		for item in items:
 			lines.append("  - %s" % item.get_display_name())
 
-	# Terrain info
-	var tile = level.get_tile(look_cursor)
+	# Terrain info with procedural description
+	var tile: int = level.get_tile(look_cursor)
 	lines.append("")
 	lines.append("[color=gray]Terrain: %s[/color]" % _get_terrain_name(tile))
+	var terrain_desc: String = DescriptionGenerator.generate_terrain_description(tile)
+	lines.append("[color=#7D7668][i]%s[/i][/color]" % terrain_desc)
 
 	info_label.bbcode_enabled = true
 	info_label.text = "\n".join(lines)
@@ -232,6 +234,40 @@ func _get_terrain_name(tile: int) -> String:
 			return "Rubble"
 		Level.Tile.FORGE:
 			return "Forge"
+		Level.Tile.TRAP:
+			return "Trap"
+		Level.Tile.TRAP_TRIGGERED:
+			return "Triggered Trap"
+		Level.Tile.DOOR_LOCKED:
+			return "Locked Door"
+		Level.Tile.DOOR_JAMMED:
+			return "Jammed Door"
+		Level.Tile.DOOR_SECRET:
+			return "Secret Door"
+		Level.Tile.WATER:
+			return "Water"
+		Level.Tile.LAVA:
+			return "Lava"
+		Level.Tile.VINE_FLOOR:
+			return "Vine Floor"
+		Level.Tile.POISON_STREAM:
+			return "Poison Stream"
+		Level.Tile.WEB:
+			return "Spider Web"
+		Level.Tile.DARK_POOL:
+			return "Dark Pool"
+		Level.Tile.MORGUL_RUNE:
+			return "Morgul Rune"
+		Level.Tile.SHADOW_BRAZIER:
+			return "Shadow Brazier"
+		Level.Tile.GLYPH_OF_WARDING:
+			return "Glyph of Warding"
+		Level.Tile.BONE_PILE:
+			return "Bone Pile"
+		Level.Tile.SHADOW_FLOOR:
+			return "Shadow Floor"
+		Level.Tile.THRONE_DAIS:
+			return "Throne Dais"
 	return "Unknown"
 
 func _input(event: InputEvent) -> void:

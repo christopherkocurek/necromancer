@@ -34,6 +34,13 @@ var minimap: Minimap = null
 # --- Stealth meter ---
 var stealth_meter: ColorRect = null
 
+# --- Ability Hotbar (1-4 quick-cast) ---
+var hotbar_container: HBoxContainer = null
+var hotbar_slots: Array[PanelContainer] = []
+var _hotbar_ability_labels: Array[Label] = []
+var _hotbar_cost_labels: Array[Label] = []
+var _ability_system_ref: Node = null  # Set by main.gd for hotbar updates
+
 # --- Low HP peril warning ---
 var _last_hp_pct: float = 1.0
 var _peril_shown: bool = false
@@ -63,6 +70,7 @@ var _voice_material: ShaderMaterial = null
 func _ready() -> void:
 	layer = 10
 	_build_action_bar()
+	_build_ability_hotbar()
 	_build_floating_message_log()
 	_build_minimap()
 	_build_stealth_meter()
@@ -260,7 +268,9 @@ func _build_orb(is_health: bool) -> Control:
 	# Orb frame overlay
 	var frame := TextureRect.new()
 	frame.custom_minimum_size = Vector2(ORB_FRAME_SIZE, ORB_FRAME_SIZE)
-	var frame_tex: Texture2D = ThemeColors.get_texture("orb_frame")
+	var frame_tex: Texture2D = ThemeColors.get_texture("orb_frame_watcher")
+	if not frame_tex:
+		frame_tex = ThemeColors.get_texture("orb_frame")
 	if frame_tex:
 		frame.texture = frame_tex
 		frame.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
@@ -292,6 +302,170 @@ func _build_orb(is_health: bool) -> Control:
 		voice_label.text = "10"
 
 	return container
+
+# ============================================================================
+# BUILD: ABILITY HOTBAR (1-4 quick-cast slots)
+# ============================================================================
+
+func _build_ability_hotbar() -> void:
+	hotbar_container = HBoxContainer.new()
+	hotbar_container.name = "AbilityHotbar"
+	hotbar_container.add_theme_constant_override("separation", 4)
+
+	# Position above the action bar, left-aligned
+	hotbar_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	hotbar_container.offset_left = 12
+	hotbar_container.offset_top = -(ACTION_BAR_HEIGHT + 58)
+	hotbar_container.offset_bottom = -(ACTION_BAR_HEIGHT + 4)
+	hotbar_container.offset_right = 232  # 4 slots x 54px + gaps
+
+	hotbar_slots.clear()
+	_hotbar_ability_labels.clear()
+	_hotbar_cost_labels.clear()
+
+	for i in range(4):
+		var slot: PanelContainer = PanelContainer.new()
+		slot.name = "HotbarSlot_%d" % (i + 1)
+		slot.custom_minimum_size = Vector2(52, 50)
+
+		# Empty slot styling
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+				ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+			))
+
+		var vbox: VBoxContainer = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 0)
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+		# Number label (1-4)
+		var num_label: Label = Label.new()
+		num_label.text = str(i + 1)
+		num_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ThemeColors.apply_body_font(num_label, ThemeColors.FONT_SIZE_HINT)
+		num_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		vbox.add_child(num_label)
+
+		# Ability abbreviation
+		var ability_label: Label = Label.new()
+		ability_label.name = "AbilityName"
+		ability_label.text = "---"
+		ability_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ThemeColors.apply_body_font(ability_label, ThemeColors.FONT_SIZE_HINT)
+		ability_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+		vbox.add_child(ability_label)
+		_hotbar_ability_labels.append(ability_label)
+
+		# Voice cost
+		var cost_label: Label = Label.new()
+		cost_label.name = "CostLabel"
+		cost_label.text = ""
+		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ThemeColors.apply_body_font(cost_label, ThemeColors.FONT_SIZE_HINT)
+		cost_label.add_theme_color_override("font_color", ThemeColors.SPIRIT_BRIGHT)
+		vbox.add_child(cost_label)
+		_hotbar_cost_labels.append(cost_label)
+
+		slot.add_child(vbox)
+		hotbar_container.add_child(slot)
+		hotbar_slots.append(slot)
+
+	add_child(hotbar_container)
+
+func update_hotbar(player_ref: Player, ability_sys: Node) -> void:
+	if not hotbar_container or hotbar_slots.is_empty():
+		return
+	if not player_ref:
+		return
+
+	# Check if player has any abilities hotkeyed - hide hotbar if all empty
+	var any_bound: bool = false
+	for slot_id: int in player_ref.ability_hotkeys:
+		if slot_id >= 0:
+			any_bound = true
+			break
+	hotbar_container.visible = any_bound
+
+	if not any_bound:
+		return
+
+	for i in range(4):
+		if i >= hotbar_slots.size():
+			break
+		var ability_id: int = player_ref.ability_hotkeys[i]
+		var slot: PanelContainer = hotbar_slots[i]
+		var ab_label: Label = _hotbar_ability_labels[i]
+		var cost_label: Label = _hotbar_cost_labels[i]
+
+		if ability_id < 0:
+			# Empty slot
+			ab_label.text = "---"
+			ab_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+			cost_label.text = ""
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+			else:
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+					ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+				))
+			slot.tooltip_text = "Slot %d: empty (V menu, Shift+%d to bind)" % [i + 1, i + 1]
+		else:
+			# Bound ability
+			var ab_name: String = _get_hotbar_ability_name(ability_id)
+			var abbr: String = ab_name.substr(0, 4) if ab_name.length() > 4 else ab_name
+			ab_label.text = abbr
+
+			var cost: int = 0
+			var can_use: bool = false
+			if ability_sys and ability_sys.has_method("get_effective_voice_cost"):
+				cost = ability_sys.get_effective_voice_cost(ability_id)
+			if ability_sys and ability_sys.has_method("can_use_ability"):
+				var check: Dictionary = ability_sys.can_use_ability(ability_id)
+				can_use = check.can_use
+
+			cost_label.text = "%dv" % cost if cost > 0 else ""
+
+			if can_use:
+				ab_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
+				if ThemeColors.has_textures():
+					slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("selected"))
+				else:
+					slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+						ThemeColors.IRON_MID, ThemeColors.GOLD_DIM
+					))
+			else:
+				ab_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+				if ThemeColors.has_textures():
+					slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+				else:
+					slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+						ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+					))
+
+			slot.tooltip_text = "%s (%d voice)" % [ab_name, cost] if cost > 0 else ab_name
+
+## Get a short display name for ability in hotbar
+func _get_hotbar_ability_name(ability_id: int) -> String:
+	# Match the ability IDs from AbilitySystem.LoreAbility
+	match ability_id:
+		140: return "Cmd"    # Word of Command
+		141: return "Btl"    # Lore of Battle
+		142: return "Mem"    # Deep Memory
+		143: return "Open"   # Word of Opening
+		144: return "Slnc"   # Lore of Silence
+		145: return "Herb"   # Herbcraft
+		146: return "Shut"   # Word of Shutting
+		147: return "Lght"   # Inner Light
+		148: return "Ddly"   # Deadly Lore
+		149: return "Endr"   # Lore of Endurance
+		150: return "Slp"    # Lore of Sleep
+		151: return "Mstr"   # Word of Mastery
+		152: return "Dev"    # Device Mastery
+		153: return "Grce"   # Grace
+		154: return "Bnsh"   # Song of Banishment
+		_: return "???"
 
 # ============================================================================
 # BUILD: FLOATING MESSAGE LOG
@@ -452,6 +626,9 @@ func update_player_stats(player: Player) -> void:
 	# Equipment quick-view
 	_update_equip_icons(player)
 
+	# Ability hotbar
+	update_hotbar(player, _ability_system_ref)
+
 func _update_equip_icons(player: Player) -> void:
 	if not quick_slots_container:
 		return
@@ -603,24 +780,68 @@ func _show_peril_warning() -> void:
 		return
 	_peril_shown = true
 
-	# Red flash
+	# Depth-based peril tiers
+	var depth: int = GameManager.current_depth
+	var message: String
+	var color: Color
+	var font_size: int
+	var flash_intensity: float
+
+	if depth <= 6:
+		message = "A malevolent presence watches from below..."
+		color = Color(0.6, 0.6, 0.6)  # gray
+		font_size = 28
+		flash_intensity = 0.1
+	elif depth <= 12:
+		message = "A dark power stirs in the deep..."
+		color = Color(0.6, 0.2, 0.8)  # purple
+		font_size = 30
+		flash_intensity = 0.2
+	elif depth <= 15:
+		message = "The Necromancer senses your weakness..."
+		color = Color(1.0, 0.6, 0.2)  # orange
+		font_size = 32
+		flash_intensity = 0.3
+	elif depth <= 18:
+		message = "SAURON SENSES YOUR PERIL!"
+		color = Color(1.0, 0.2, 0.1)  # red
+		font_size = 36
+		flash_intensity = 0.4
+	else:  # depth 19-20
+		message = "THE DARK LORD'S GAZE FALLS UPON YOU!"
+		color = Color(1.0, 0.85, 0.2)  # gold
+		font_size = 40
+		flash_intensity = 0.5
+
+	# Flash overlay with depth-scaled intensity
 	peril_flash.visible = true
+	peril_flash.color = Color(color.r, color.g, color.b, 0.0)
 	var flash_tween: Tween = create_tween()
-	flash_tween.tween_property(peril_flash, "color:a", 0.35, 0.15)
+	flash_tween.tween_property(peril_flash, "color:a", flash_intensity, 0.15)
 	flash_tween.tween_property(peril_flash, "color:a", 0.0, 1.0)
 	flash_tween.tween_callback(func(): peril_flash.visible = false)
 
-	# Label
+	# Label with depth-based styling
+	peril_label.text = message
+	peril_label.add_theme_font_size_override("font_size", font_size)
+	peril_label.add_theme_color_override("font_color", color)
 	peril_label.visible = true
 	peril_label.modulate.a = 0.0
 	var label_tween: Tween = create_tween()
 	label_tween.tween_property(peril_label, "modulate:a", 1.0, 0.2)
 	label_tween.tween_interval(1.5)
+
+	# Depth 19-20: pulsing gold effect before fade
+	if depth >= 19:
+		for i in range(3):
+			label_tween.tween_property(peril_label, "modulate:a", 0.6, 0.3).set_ease(Tween.EASE_IN_OUT)
+			label_tween.tween_property(peril_label, "modulate:a", 1.0, 0.3).set_ease(Tween.EASE_IN_OUT)
+
 	label_tween.tween_property(peril_label, "modulate:a", 0.0, 1.0)
 	label_tween.tween_callback(func(): peril_label.visible = false)
 
 	# Log message
-	EventBus.message_logged.emit("SAURON SENSES YOUR PERIL...", ThemeColors.COMBAT_CRIT)
+	EventBus.message_logged.emit(message, color)
 
 # ============================================================================
 # BOTTOM BAR EXPAND/COLLAPSE

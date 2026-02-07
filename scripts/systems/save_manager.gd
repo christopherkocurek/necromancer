@@ -235,6 +235,8 @@ func _serialize_player(player: Player) -> Dictionary:
 		"status_effects": player.status_effects.duplicate(),
 		# Run stats
 		"run_stats": player.run_stats.to_dict(),
+		# Ability hotkeys
+		"ability_hotkeys": player.ability_hotkeys.duplicate(),
 	}
 	return data
 
@@ -462,6 +464,12 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 	# Run stats
 	if "run_stats" in data:
 		player.run_stats = RunStats.from_dict(data.run_stats)
+
+	# Ability hotkeys
+	if "ability_hotkeys" in data:
+		var loaded_hotkeys: Array = data.ability_hotkeys
+		for i in range(mini(loaded_hotkeys.size(), 4)):
+			player.ability_hotkeys[i] = int(loaded_hotkeys[i])
 
 func _apply_level_state(level: Level, data: Dictionary) -> void:
 	# Apply explored tiles (Level uses flat array: index = y * width + x)

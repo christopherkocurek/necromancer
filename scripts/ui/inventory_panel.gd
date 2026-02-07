@@ -809,10 +809,15 @@ func _input(event: InputEvent) -> void:
 			_try_equip_item(selected_item, item_slot)
 		get_viewport().set_input_as_handled()
 
-	# Drop with 'd' - now shows confirm dialog
+	# Drop with Shift+D - now shows confirm dialog
+	# macOS keycode fallback for Shift+D (physical_keycode unreliable for symbol keys)
 	if event.is_action_pressed("drop") and selected_item != null:
 		_request_drop()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and event.shift_pressed:
+		if event.keycode == KEY_D and selected_item != null:
+			_request_drop()
+			get_viewport().set_input_as_handled()
 
 	# Unequip with 'r'
 	if event.is_action_pressed("unequip") and selected_equipment_slot >= 0:
