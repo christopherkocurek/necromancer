@@ -27,6 +27,9 @@ var flavor_names: Dictionary = {}  # "tval:sval" -> String
 # Artifact tracking - each artifact can only spawn once per game
 var spawned_artifacts: Array[int] = []  # artifact indices that have been spawned
 
+# Greater vault tracking - each greater vault can only appear once per run
+var used_greater_vaults: Array[int] = []
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -37,6 +40,7 @@ func start_new_game() -> void:
 	current_state = GameState.PLAYING
 	identified_types.clear()
 	spawned_artifacts.clear()
+	used_greater_vaults.clear()
 	_randomize_flavor_names()
 	EventBus.game_started.emit()
 
@@ -50,6 +54,7 @@ func reset_game() -> void:
 	identified_types.clear()
 	flavor_names.clear()
 	spawned_artifacts.clear()
+	used_greater_vaults.clear()
 	is_player_turn = true
 	current_state = GameState.MAIN_MENU
 	current_zoom_index = 1

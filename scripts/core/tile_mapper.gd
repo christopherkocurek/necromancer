@@ -123,7 +123,9 @@ func _load_terrain_coords() -> void:
 	# enum Tile { VOID=0, FLOOR=1, WALL=2, DOOR_CLOSED=3, DOOR_OPEN=4,
 	#   STAIRS_DOWN=5, STAIRS_UP=6, CHASM=7, RUBBLE=8, FORGE=9, TRAP=10,
 	#   TRAP_TRIGGERED=11, DOOR_LOCKED=12, DOOR_JAMMED=13, DOOR_SECRET=14,
-	#   WATER=15, LAVA=16, VINE_FLOOR=17, POISON_STREAM=18 }
+	#   WATER=15, LAVA=16, VINE_FLOOR=17, POISON_STREAM=18,
+	#   WEB=19, DARK_POOL=20, MORGUL_RUNE=21, SHADOW_BRAZIER=22,
+	#   GLYPH_OF_WARDING=23, BONE_PILE=24, SHADOW_FLOOR=25, THRONE_DAIS=26 }
 	# VOID(0) -> darkness(0) already correct at (0,0)/(1,0)
 	# FLOOR(1) -> open floor(1) already correct at (2,0)/(3,0)
 	terrain_coords[2] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # WALL ->  (terrain 11)
@@ -143,6 +145,16 @@ func _load_terrain_coords() -> void:
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
 	terrain_coords[17] = {"light": Vector2i(12, 5), "dark": Vector2i(13, 5)}    # VINE_FLOOR ->  (terrain 86)
 	terrain_coords[18] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # POISON_STREAM -> reuse water coords (terrain 51)
+	# Stream D: New layer terrain types (row 18)
+	# These use placeholder coords until DALL-E sprites are generated
+	terrain_coords[19] = {"light": Vector2i(0, 18), "dark": Vector2i(1, 18)}    # WEB
+	terrain_coords[20] = {"light": Vector2i(2, 18), "dark": Vector2i(3, 18)}    # DARK_POOL
+	terrain_coords[21] = {"light": Vector2i(4, 18), "dark": Vector2i(5, 18)}    # MORGUL_RUNE
+	terrain_coords[22] = {"light": Vector2i(6, 18), "dark": Vector2i(7, 18)}    # SHADOW_BRAZIER
+	terrain_coords[23] = {"light": Vector2i(8, 18), "dark": Vector2i(9, 18)}    # GLYPH_OF_WARDING
+	terrain_coords[24] = {"light": Vector2i(10, 18), "dark": Vector2i(11, 18)}  # BONE_PILE
+	terrain_coords[25] = {"light": Vector2i(12, 18), "dark": Vector2i(13, 18)}  # SHADOW_FLOOR
+	terrain_coords[26] = {"light": Vector2i(14, 18), "dark": Vector2i(15, 18)}  # THRONE_DAIS
 
 func _load_monster_coords() -> void:
 	# === Tier 1: Outer Pits ===

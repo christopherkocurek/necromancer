@@ -157,6 +157,148 @@ const LAYERS = {
 	}
 }
 
+# Monster spawn tables per layer - category weights (sum to ~100)
+# Categories: spider, orc, troll, undead, shadow, vampire, warg, human_enemy, wight, flier, vermin, elite
+const LAYER_MONSTER_TABLES: Dictionary = {
+	"outer_pits": {
+		"spider": 30, "vermin": 30, "flier": 15, "warg": 15, "orc": 10
+	},
+	"lower_halls": {
+		"orc": 50, "warg": 25, "troll": 10, "spider": 10, "vermin": 5
+	},
+	"dark_halls": {
+		"human_enemy": 40, "undead": 20, "troll": 15, "orc": 15, "shadow": 10
+	},
+	"necropolis": {
+		"undead": 35, "wight": 20, "human_enemy": 20, "shadow": 15, "vampire": 10
+	},
+	"pits_of_despair": {
+		"shadow": 30, "vampire": 15, "human_enemy": 25, "undead": 15, "elite": 15
+	},
+	"inner_sanctum": {
+		"human_enemy": 40, "undead": 25, "elite": 15, "shadow": 10, "vampire": 10
+	},
+	"throne_room": {
+		"elite": 40, "shadow": 25, "human_enemy": 20, "undead": 15
+	}
+}
+
+# Item type (tval) weights per layer - controls what items drop/spawn
+# Common tvals: 80=food/herb, 75=potion, 55=scroll, 23=sword, 31=bow, 36=armor,
+# 34=shield, 37=cloak, 33=helm, 30=gloves, 35=boots, 40=light, 45=ring, 46=amulet
+const LAYER_ITEM_TVALS: Dictionary = {
+	"outer_pits": {
+		"80": 35,   # herbs/food heavy
+		"75": 20,   # potions
+		"23": 15,   # swords
+		"31": 10,   # bows
+		"55": 10,   # scrolls
+		"40": 10    # light sources
+	},
+	"lower_halls": {
+		"23": 25,   # swords
+		"36": 20,   # armor
+		"75": 15,   # potions
+		"34": 10,   # shields
+		"80": 10,   # food
+		"31": 10,   # bows
+		"55": 10    # scrolls
+	},
+	"dark_halls": {
+		"75": 25,   # potions
+		"55": 20,   # scrolls
+		"36": 15,   # armor
+		"23": 15,   # swords
+		"40": 15,   # light sources (important in dark)
+		"80": 10    # food
+	},
+	"necropolis": {
+		"75": 25,   # potions
+		"55": 20,   # scrolls
+		"45": 15,   # rings start appearing
+		"36": 15,   # armor
+		"40": 15,   # light sources
+		"23": 10    # swords
+	},
+	"pits_of_despair": {
+		"45": 25,   # rings
+		"46": 15,   # amulets
+		"75": 20,   # potions
+		"55": 15,   # scrolls
+		"36": 15,   # armor
+		"23": 10    # swords
+	},
+	"inner_sanctum": {
+		"45": 30,   # rings heavy
+		"46": 20,   # amulets
+		"75": 15,   # potions
+		"55": 15,   # scrolls
+		"36": 10,   # armor
+		"23": 10    # swords
+	},
+	"throne_room": {
+		"45": 30,   # rings
+		"46": 25,   # amulets
+		"75": 20,   # potions
+		"55": 15,   # scrolls
+		"36": 10    # armor
+	}
+}
+
+# Layer decoration parameters - controls themed room and scatter generation
+const DECORATION_PARAMS: Dictionary = {
+	"outer_pits": {
+		"themed_room_chance": 0.60,   # 60% of rooms get decoration
+		"scatter_density": 0.05,      # 5% scatter density
+		"chasm_count_min": 0,
+		"chasm_count_max": 0,
+		"web_chance": 0.15,           # 15% web on empty floor
+		"decorators": ["forest", "tower", "web_cluster"]
+	},
+	"lower_halls": {
+		"themed_room_chance": 0.50,
+		"scatter_density": 0.08,
+		"chasm_count_min": 0,
+		"chasm_count_max": 0,
+		"decorators": ["barracks", "armory", "kennel"]
+	},
+	"dark_halls": {
+		"themed_room_chance": 0.55,
+		"scatter_density": 0.10,
+		"chasm_count_min": 0,
+		"chasm_count_max": 1,
+		"decorators": ["ritual_chamber", "torture_room", "rune_corridor"]
+	},
+	"necropolis": {
+		"themed_room_chance": 0.65,
+		"scatter_density": 0.12,
+		"chasm_count_min": 1,
+		"chasm_count_max": 3,
+		"decorators": ["crypt", "bone_chamber", "ritual_circle"]
+	},
+	"pits_of_despair": {
+		"themed_room_chance": 0.70,
+		"scatter_density": 0.15,
+		"chasm_count_min": 3,
+		"chasm_count_max": 8,
+		"decorators": ["void_chamber", "shadow_gallery", "chasm_bridge"]
+	},
+	"inner_sanctum": {
+		"themed_room_chance": 0.80,
+		"scatter_density": 0.12,
+		"chasm_count_min": 3,
+		"chasm_count_max": 8,
+		"decorators": ["grand_hall", "guard_post", "lava_chamber"]
+	},
+	"throne_room": {
+		"themed_room_chance": 1.0,    # All rooms decorated
+		"scatter_density": 0.10,
+		"chasm_count_min": 5,
+		"chasm_count_max": 12,
+		"decorators": ["throne_chamber", "antechamber", "lava_moat"]
+	}
+}
+
 # Cached layer lookup by depth
 static var _depth_to_layer_cache: Dictionary = {}
 
@@ -260,3 +402,24 @@ static func get_boss_type(depth: int) -> String:
 		18: return "nazgul"
 		20: return "necromancer"
 		_: return ""
+
+## Get monster table for a specific depth
+static func get_monster_table(depth: int) -> Dictionary:
+	var layer_name: String = get_layer_name(depth)
+	if layer_name in LAYER_MONSTER_TABLES:
+		return LAYER_MONSTER_TABLES[layer_name]
+	return {}
+
+## Get item tval table for a specific depth
+static func get_item_tval_table(depth: int) -> Dictionary:
+	var layer_name: String = get_layer_name(depth)
+	if layer_name in LAYER_ITEM_TVALS:
+		return LAYER_ITEM_TVALS[layer_name]
+	return {}
+
+## Get decoration parameters for a specific depth
+static func get_decoration_params(depth: int) -> Dictionary:
+	var layer_name: String = get_layer_name(depth)
+	if layer_name in DECORATION_PARAMS:
+		return DECORATION_PARAMS[layer_name]
+	return {"themed_room_chance": 0.0, "scatter_density": 0.0, "chasm_count_min": 0, "chasm_count_max": 0, "decorators": []}

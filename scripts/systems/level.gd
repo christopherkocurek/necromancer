@@ -44,6 +44,15 @@ enum Tile {
 	LAVA = 16,           # Lava - passable but deals fire damage on step
 	VINE_FLOOR = 17,     # Thick vines (depths 1-3) - passable, slows movement
 	POISON_STREAM = 18,  # Poison stream (depths 1-3) - passable, 1d4 damage + 3-turn poison
+	# New terrain types for layer decoration (Stream D)
+	WEB = 19,            # Spider webs - 1.5x movement, slow 3 turns (spiders immune)
+	DARK_POOL = 20,      # Dark water pools - 2x movement, 1d6 cold damage, 20% blind 2 turns
+	MORGUL_RUNE = 21,    # Morgul runes - 1x movement, 1d4 dark damage to non-undead
+	SHADOW_BRAZIER = 22, # Shadow brazier - blocks movement, emits anti-light radius 2
+	GLYPH_OF_WARDING = 23, # Warding glyph - 1x movement, 2d6 damage to undead monsters
+	BONE_PILE = 24,      # Bone piles - 1x movement, flavor text only
+	SHADOW_FLOOR = 25,   # Shadow floor - 1x movement, 1d4 damage if tile is lit
+	THRONE_DAIS = 26,    # Throne dais - 1x movement, flavor text only
 }
 
 # Track which traps have been triggered (to avoid re-triggering)
@@ -158,7 +167,7 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS:
 			return true
 		_:
 			return false
@@ -172,6 +181,10 @@ func get_movement_cost(pos: Vector2i) -> int:
 		return int(Constants.ACTION_COST * 1.5)  # 150 energy instead of 100
 	if tile == Tile.POISON_STREAM:
 		return Constants.ACTION_COST * 2  # 200 energy to wade through poison
+	if tile == Tile.WEB:
+		return int(Constants.ACTION_COST * 1.5)  # 1.5x for webs
+	if tile == Tile.DARK_POOL:
+		return Constants.ACTION_COST * 2  # 2x for dark pools
 	return Constants.ACTION_COST
 
 ## Called when an entity steps on a tile. Returns true if something happened.
@@ -193,6 +206,27 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	if tile == Tile.POISON_STREAM:
 		return _poison_stream_damage(entity, pos)
 
+	if tile == Tile.WEB:
+		return _web_effect(entity, pos)
+
+	if tile == Tile.DARK_POOL:
+		return _dark_pool_effect(entity, pos)
+
+	if tile == Tile.MORGUL_RUNE:
+		return _morgul_rune_effect(entity, pos)
+
+	if tile == Tile.GLYPH_OF_WARDING:
+		return _glyph_of_warding_effect(entity, pos)
+
+	if tile == Tile.BONE_PILE and entity is Player:
+		EventBus.message_logged.emit("You crunch through a pile of old bones.", ThemeColors.TEXT_MUTED)
+
+	if tile == Tile.SHADOW_FLOOR:
+		return _shadow_floor_effect(entity, pos)
+
+	if tile == Tile.THRONE_DAIS and entity is Player:
+		EventBus.message_logged.emit("You stand upon the dais. Dark power radiates from the stone.", ThemeColors.MSG_WARNING)
+
 	return false
 
 ## Get a display name for the terrain at a position (for HUD / look mode)
@@ -203,6 +237,14 @@ func get_terrain_name(pos: Vector2i) -> String:
 		Tile.LAVA: return "Lava"
 		Tile.FORGE: return "Forge"
 		Tile.POISON_STREAM: return "Poison Stream"
+		Tile.WEB: return "Spider Web"
+		Tile.DARK_POOL: return "Dark Pool"
+		Tile.MORGUL_RUNE: return "Morgul Rune"
+		Tile.SHADOW_BRAZIER: return "Shadow Brazier"
+		Tile.GLYPH_OF_WARDING: return "Glyph of Warding"
+		Tile.BONE_PILE: return "Bone Pile"
+		Tile.SHADOW_FLOOR: return "Shadow Floor"
+		Tile.THRONE_DAIS: return "Throne Dais"
 		_: return ""
 
 func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
@@ -301,10 +343,73 @@ func _poison_stream_damage(entity: Entity, _pos: Vector2i) -> bool:
 	GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 	return true
 
+func _web_effect(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	# Spiders are immune to web effects
+	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("SPIDER"):
+		return false
+	entity.apply_status("slow", 3)
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "get" if entity == GameManager.player else "gets"
+	GameManager.log_message("%s %s tangled in thick webs!" % [entity_name, verb], ThemeColors.MSG_WARNING)
+	return true
+
+func _dark_pool_effect(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	var dmg: int = randi_range(1, 6)  # 1d6 cold damage
+	entity.take_damage(dmg, "cold", null)
+	# 20% chance of blindness
+	if randf() < 0.20:
+		entity.apply_status("blind", 2)
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "wade" if entity == GameManager.player else "wades"
+	GameManager.log_message("%s %s through a dark, freezing pool! (%d cold damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	return true
+
+func _morgul_rune_effect(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	# Undead are immune
+	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("UNDEAD"):
+		return false
+	var dmg: int = randi_range(1, 4)  # 1d4 dark damage
+	entity.take_damage(dmg, "dark", null)
+	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+	var verb: String = "step" if entity == GameManager.player else "steps"
+	GameManager.log_message("%s %s on a Morgul rune! (%d dark damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	return true
+
+func _glyph_of_warding_effect(entity: Entity, _pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	# Only damages undead monsters
+	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("UNDEAD"):
+		var dmg: int = randi_range(2, 12)  # 2d6 damage to undead
+		entity.take_damage(dmg, "holy", null)
+		GameManager.log_message("The glyph of warding flares! (%d holy damage to %s)" % [dmg, entity.entity_name], ThemeColors.ABILITY_LEARNED)
+		return true
+	if entity is Player:
+		EventBus.message_logged.emit("You feel the protective ward beneath your feet.", ThemeColors.ABILITY_LEARNED)
+	return false
+
+func _shadow_floor_effect(entity: Entity, pos: Vector2i) -> bool:
+	if not is_instance_valid(entity):
+		return false
+	# Only deals damage if the tile is lit
+	if is_tile_lit(pos):
+		var dmg: int = randi_range(1, 4)  # 1d4 shadow damage
+		entity.take_damage(dmg, "dark", null)
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		GameManager.log_message("Light disturbs the shadows, lashing out at %s! (%d damage)" % [entity_name.to_lower(), dmg], ThemeColors.MSG_ERROR)
+		return true
+	return false
+
 func is_transparent(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.WALL, Tile.DOOR_CLOSED, Tile.DOOR_LOCKED, Tile.DOOR_JAMMED, Tile.DOOR_SECRET:
+		Tile.WALL, Tile.DOOR_CLOSED, Tile.DOOR_LOCKED, Tile.DOOR_JAMMED, Tile.DOOR_SECRET, Tile.SHADOW_BRAZIER:
 			return false
 		_:
 			return true
@@ -527,6 +632,9 @@ func apply_lighting(center: Vector2i, player_light_radius: int) -> void:
 	# Step 3: Glowing items on the ground emit light (radius 2)
 	_apply_glowing_item_light()
 
+	# Step 4: Shadow Brazier anti-light — suppresses light within radius 2
+	_apply_shadow_brazier_darkness()
+
 ## Refresh the glowing_items list from current ground items
 func refresh_glowing_items() -> void:
 	glowing_items.clear()
@@ -567,6 +675,26 @@ func _apply_glowing_item_light() -> void:
 					tile_lit[idx] = true
 					tile_visibility[idx] = true
 					explored[idx] = true
+
+## Shadow braziers suppress light within radius 2
+func _apply_shadow_brazier_darkness() -> void:
+	for y in range(height):
+		for x in range(width):
+			if terrain[y * width + x] == Tile.SHADOW_BRAZIER:
+				var brazier_pos := Vector2i(x, y)
+				for dy in range(-2, 3):
+					for dx in range(-2, 3):
+						var pos: Vector2i = brazier_pos + Vector2i(dx, dy)
+						if not is_in_bounds(pos):
+							continue
+						var dist: int = maxi(absi(dx), absi(dy))
+						if dist > 2:
+							continue
+						var idx: int = pos.y * width + pos.x
+						# Don't suppress room glow, only player torch light
+						if tile_lit[idx] and not room_lit[idx]:
+							tile_lit[idx] = false
+							tile_visibility[idx] = false
 
 ## Get the darkness modifier for this level's depth
 func get_darkness_modifier() -> int:

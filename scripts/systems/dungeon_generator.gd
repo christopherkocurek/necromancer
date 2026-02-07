@@ -9,6 +9,16 @@ const DEFAULT_MAX_ROOM_SIZE := 12
 const DEFAULT_MAX_ROOMS := 30
 const ROOM_PLACEMENT_ATTEMPTS := 100
 
+enum RoomType {
+	STANDARD = 0,
+	CROSS = 1,
+	L_SHAPE = 2,
+	CIRCULAR = 3,
+	VAULT_INTERESTING = 6,
+	VAULT_LESSER = 7,
+	VAULT_GREATER = 8,
+}
+
 # Layer-based generation parameters (set per level)
 var min_room_size := DEFAULT_MIN_ROOM_SIZE
 var max_room_size := DEFAULT_MAX_ROOM_SIZE
@@ -18,10 +28,14 @@ var vault_chance := 0.1
 
 var level: Level
 var rooms: Array[Rect2i] = []
+var _vault_connection_points: Array[Vector2i] = []
 
 class Room:
 	var rect: Rect2i
 	var is_connected: bool = false
+	var room_type: int = RoomType.STANDARD
+	var vault_data: DataManager.VaultData = null
+	var tiles: Array[Vector2i] = []
 
 	func _init(r: Rect2i) -> void:
 		rect = r
@@ -37,23 +51,62 @@ class Room:
 		)
 		return expanded.intersects(other.rect)
 
+func _select_room_type(depth: int) -> int:
+	# Depth-weighted room type selection (mirrors C version logic)
+	var r: int = randi_range(1, depth + 5) + randi_range(0, 4)
+	if r < 5:
+		return RoomType.STANDARD
+	elif r < 8:
+		return RoomType.CROSS
+	elif r < 10:
+		if randf() < 0.5:
+			return RoomType.L_SHAPE
+		return RoomType.CIRCULAR
+	elif r < 13:
+		return RoomType.VAULT_INTERESTING
+	elif r < 18:
+		return RoomType.VAULT_LESSER
+	else:
+		return RoomType.VAULT_GREATER
+
 func generate(target_level: Level, depth: int) -> void:
 	level = target_level
 	rooms.clear()
+	_vault_connection_points.clear()
+
+	# Special levels override normal generation
+	if depth == 20:
+		_generate_throne_room_level(depth)
+		return
 
 	# Get layer-specific generation parameters
 	_apply_layer_params(depth)
 
-	# Fill with walls
-	for y in range(level.height):
-		for x in range(level.width):
-			level.set_tile(Vector2i(x, y), Level.Tile.WALL)
+	# Retry generation if connectivity fails (up to 10 attempts)
+	var generation_valid: bool = false
+	for _gen_attempt in range(10):
+		rooms.clear()
+		_vault_connection_points.clear()
 
-	# Generate rooms
-	_generate_rooms()
+		# Fill with walls
+		for y in range(level.height):
+			for x in range(level.width):
+				level.set_tile(Vector2i(x, y), Level.Tile.WALL)
 
-	# Connect rooms with corridors
-	_connect_rooms()
+		# Generate rooms
+		_generate_rooms()
+
+		# Connect rooms with corridors
+		_connect_rooms()
+
+		if _validate_connectivity():
+			generation_valid = true
+			break
+		else:
+			print("Generation attempt %d failed connectivity check, retrying..." % [_gen_attempt + 1])
+
+	if not generation_valid:
+		print("WARNING: Could not generate fully connected level after 10 attempts")
 
 	# Assign room lighting data (must be after rooms exist, before vaults)
 	_assign_room_data(depth)
@@ -61,20 +114,26 @@ func generate(target_level: Level, depth: int) -> void:
 	# Try to place vaults (special pre-designed rooms)
 	_try_place_vaults(depth)
 
+	# Force-place transition vaults at layer boundaries
+	_try_place_transition_vault(depth)
+
+	# Connect vault corridor points
+	_connect_vault_corridor_points()
+
 	# Place stairs
 	_place_stairs(depth)
 
 	# Add features based on depth
 	_add_features(depth)
 
-	# Apply forest terrain (vine floor) for shallow depths
-	_apply_forest_terrain(level, depth)
+	# Place themed guards near doors
+	_place_door_guards(depth)
 
-	# Apply themed room decorations for depths 1-3
-	_apply_themed_rooms(depth)
+	# Ensure forges on appropriate levels
+	_ensure_forges(depth)
 
-	# Generate poison streams for depths 1-3
-	_generate_poison_streams(depth)
+	# Apply layer-specific decoration
+	_apply_layer_decoration(depth)
 
 	# Spawn monsters
 	_spawn_monsters(depth)
@@ -105,27 +164,68 @@ func _apply_layer_params(depth: int) -> void:
 
 func _generate_rooms() -> void:
 	var room_list: Array[Room] = []
+	var greater_vault_placed: bool = false
 
 	for _attempt in range(ROOM_PLACEMENT_ATTEMPTS):
 		if room_list.size() >= max_rooms:
 			break
 
-		var room_width := randi_range(min_room_size, max_room_size)
-		var room_height := randi_range(min_room_size, max_room_size)
-		var room_x := randi_range(1, level.width - room_width - 1)
-		var room_y := randi_range(1, level.height - room_height - 1)
+		var room_type: int = _select_room_type(level.depth if level else 1)
 
-		var new_room := Room.new(Rect2i(room_x, room_y, room_width, room_height))
+		# Greater vaults: max 1 per floor, check uniqueness
+		if room_type == RoomType.VAULT_GREATER:
+			if greater_vault_placed:
+				room_type = RoomType.STANDARD
+
+		# For vault types, try to place a vault room
+		if room_type >= RoomType.VAULT_INTERESTING:
+			var vault_room: Room = _try_place_vault_room(room_type, level.depth if level else 1)
+			if vault_room:
+				# Check overlap with existing rooms
+				var overlaps: bool = false
+				for existing in room_list:
+					if vault_room.intersects(existing, 2):
+						overlaps = true
+						break
+				if not overlaps:
+					room_list.append(vault_room)
+					rooms.append(vault_room.rect)
+					if room_type == RoomType.VAULT_GREATER:
+						greater_vault_placed = true
+			continue
+
+		# Standard shape generation
+		var room_width: int = randi_range(min_room_size, max_room_size)
+		var room_height: int = randi_range(min_room_size, max_room_size)
+		var room_x: int = randi_range(1, level.width - room_width - 1)
+		var room_y: int = randi_range(1, level.height - room_height - 1)
+
+		var new_room: Room
+		match room_type:
+			RoomType.CROSS:
+				var cx: int = room_x + room_width / 2
+				var cy: int = room_y + room_height / 2
+				new_room = _generate_cross_room(cx, cy)
+			RoomType.L_SHAPE:
+				new_room = _generate_l_room(room_x, room_y)
+			RoomType.CIRCULAR:
+				var cx2: int = room_x + room_width / 2
+				var cy2: int = room_y + room_height / 2
+				new_room = _generate_circular_room(cx2, cy2)
+			_:  # STANDARD
+				new_room = Room.new(Rect2i(room_x, room_y, room_width, room_height))
 
 		# Check for overlap
-		var overlaps := false
+		var overlaps: bool = false
 		for existing in room_list:
 			if new_room.intersects(existing, 2):
 				overlaps = true
 				break
 
 		if not overlaps:
-			_carve_room(new_room)
+			if room_type == RoomType.STANDARD or room_type == RoomType.L_SHAPE:
+				_carve_room(new_room)
+			# Cross and circular rooms are carved during generation
 			room_list.append(new_room)
 			rooms.append(new_room.rect)
 
@@ -134,9 +234,114 @@ func _carve_room(room: Room) -> void:
 		for x in range(room.rect.position.x, room.rect.position.x + room.rect.size.x):
 			level.set_tile(Vector2i(x, y), Level.Tile.FLOOR)
 
+## Generate a cross-shaped room (two overlapping rectangles)
+func _generate_cross_room(center_x: int, center_y: int) -> Room:
+	# Horizontal bar
+	var h_width: int = randi_range(max_room_size / 2, max_room_size)
+	var h_height: int = randi_range(min_room_size, min_room_size + 2)
+	# Vertical bar
+	var v_width: int = randi_range(min_room_size, min_room_size + 2)
+	var v_height: int = randi_range(max_room_size / 2, max_room_size)
+
+	# Bounding rect
+	var bw: int = maxi(h_width, v_width)
+	var bh: int = maxi(h_height, v_height)
+	var bx: int = center_x - bw / 2
+	var by: int = center_y - bh / 2
+
+	var room := Room.new(Rect2i(bx, by, bw, bh))
+	room.room_type = RoomType.CROSS
+
+	# Carve horizontal bar
+	var hx: int = center_x - h_width / 2
+	var hy: int = center_y - h_height / 2
+	for y in range(hy, hy + h_height):
+		for x in range(hx, hx + h_width):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.FLOOR)
+				room.tiles.append(pos)
+
+	# Carve vertical bar
+	var vx: int = center_x - v_width / 2
+	var vy: int = center_y - v_height / 2
+	for y in range(vy, vy + v_height):
+		for x in range(vx, vx + v_width):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos) and level.get_tile(pos) != Level.Tile.FLOOR:
+				level.set_tile(pos, Level.Tile.FLOOR)
+				room.tiles.append(pos)
+
+	return room
+
+## Generate an L-shaped room (rectangle with corner cut out)
+func _generate_l_room(pos_x: int, pos_y: int) -> Room:
+	var full_w: int = randi_range(min_room_size + 2, max_room_size)
+	var full_h: int = randi_range(min_room_size + 2, max_room_size)
+
+	var room := Room.new(Rect2i(pos_x, pos_y, full_w, full_h))
+	room.room_type = RoomType.L_SHAPE
+
+	# Carve full rectangle first
+	for y in range(pos_y, pos_y + full_h):
+		for x in range(pos_x, pos_x + full_w):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.FLOOR)
+				room.tiles.append(pos)
+
+	# Cut out a corner quadrant (random corner)
+	var cut_w: int = full_w / 2
+	var cut_h: int = full_h / 2
+	var corner: int = randi() % 4
+	var cut_x: int = pos_x
+	var cut_y: int = pos_y
+	match corner:
+		0: pass  # top-left (default)
+		1: cut_x = pos_x + full_w - cut_w  # top-right
+		2: cut_y = pos_y + full_h - cut_h  # bottom-left
+		3:  # bottom-right
+			cut_x = pos_x + full_w - cut_w
+			cut_y = pos_y + full_h - cut_h
+
+	for y in range(cut_y, cut_y + cut_h):
+		for x in range(cut_x, cut_x + cut_w):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.WALL)
+				room.tiles.erase(pos)
+
+	return room
+
+## Generate a circular room using midpoint circle algorithm
+func _generate_circular_room(center_x: int, center_y: int) -> Room:
+	var radius: int = randi_range(min_room_size / 2, max_room_size / 2)
+	radius = maxi(radius, 3)  # Minimum radius of 3
+
+	var bx: int = center_x - radius
+	var by: int = center_y - radius
+	var room := Room.new(Rect2i(bx, by, radius * 2, radius * 2))
+	room.room_type = RoomType.CIRCULAR
+
+	# Fill circle using distance check
+	for y in range(center_y - radius, center_y + radius + 1):
+		for x in range(center_x - radius, center_x + radius + 1):
+			var dx: float = float(x - center_x)
+			var dy: float = float(y - center_y)
+			if dx * dx + dy * dy <= float(radius * radius):
+				var pos := Vector2i(x, y)
+				if level.is_in_bounds(pos):
+					level.set_tile(pos, Level.Tile.FLOOR)
+					room.tiles.append(pos)
+
+	return room
+
 func _connect_rooms() -> void:
 	if rooms.size() < 2:
 		return
+
+	var current_depth: int = level.depth if level else 1
+	var winding_chance: float = 0.20 if current_depth >= 5 else 0.0
 
 	# Connect each room to the next one
 	for i in range(rooms.size() - 1):
@@ -148,8 +353,9 @@ func _connect_rooms() -> void:
 		var center_b := Vector2i(room_b.position.x + room_b.size.x / 2,
 								room_b.position.y + room_b.size.y / 2)
 
-		# Randomly choose horizontal-first or vertical-first
-		if randf() < 0.5:
+		if winding_chance > 0.0 and randf() < winding_chance:
+			_carve_winding_corridor(center_a, center_b)
+		elif randf() < 0.5:
 			_carve_h_corridor(center_a.x, center_b.x, center_a.y)
 			_carve_v_corridor(center_a.y, center_b.y, center_b.x)
 		else:
@@ -169,7 +375,9 @@ func _connect_rooms() -> void:
 			var center_b := Vector2i(room_b.position.x + room_b.size.x / 2,
 									room_b.position.y + room_b.size.y / 2)
 
-			if randf() < 0.5:
+			if winding_chance > 0.0 and randf() < winding_chance:
+				_carve_winding_corridor(center_a, center_b)
+			elif randf() < 0.5:
 				_carve_h_corridor(center_a.x, center_b.x, center_a.y)
 				_carve_v_corridor(center_a.y, center_b.y, center_b.x)
 			else:
@@ -432,7 +640,7 @@ func _add_boss_room(depth: int) -> void:
 
 	# Spawn a stronger monster
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
-	var boss_data := DataManager.get_random_monster_for_depth(depth + 3)
+	var boss_data := DataManager.get_themed_monster_for_depth(depth + 3)
 	if boss_data:
 		var boss_pos := Vector2i(
 			boss_room.position.x + boss_room.size.x / 2,
@@ -450,7 +658,7 @@ func _add_boss_room(depth: int) -> void:
 
 			# Add some treasure near the boss
 			var item_scene := preload("res://scenes/entities/item.tscn")
-			var item_data := DataManager.get_random_item_for_depth(depth + 2)
+			var item_data := DataManager.get_themed_item_for_depth(depth + 2)
 			if item_data:
 				var item_pos := Vector2i(boss_pos.x + 1, boss_pos.y)
 				if level.is_in_bounds(item_pos) and level.get_tile(item_pos) == Level.Tile.FLOOR:
@@ -477,6 +685,63 @@ func _is_door_candidate(pos: Vector2i) -> bool:
 		return true
 
 	return false
+
+## Try to place a vault room of the specified type. Returns Room or null.
+func _try_place_vault_room(room_type: int, depth: int) -> Room:
+	# Get all vaults valid for this depth
+	var matching: Array[DataManager.VaultData] = DataManager.get_vaults_for_depth(depth)
+	if matching.is_empty():
+		return null
+
+	# Weighted random selection by inverse rarity
+	var total_weight: float = 0.0
+	var weights: Array[float] = []
+	for v: DataManager.VaultData in matching:
+		var w: float = 1.0 / maxf(float(v.rarity), 1.0)
+		weights.append(w)
+		total_weight += w
+
+	if total_weight <= 0.0:
+		return null
+
+	var roll: float = randf() * total_weight
+	var cumulative: float = 0.0
+	var vault: DataManager.VaultData = matching[0]
+	for i in range(matching.size()):
+		cumulative += weights[i]
+		if roll <= cumulative:
+			vault = matching[i]
+			break
+
+	if vault.map_lines.is_empty():
+		return null
+
+	# Check uniqueness for greater vaults
+	if room_type == RoomType.VAULT_GREATER:
+		if vault.index in GameManager.used_greater_vaults:
+			return null
+
+	# Try to find placement position
+	for _attempt in range(20):
+		var start_x: int = randi_range(2, level.width - vault.width - 2)
+		var start_y: int = randi_range(2, level.height - vault.height - 2)
+		var pos := Vector2i(start_x, start_y)
+
+		if _can_place_vault_at(pos, vault):
+			var room := Room.new(Rect2i(pos.x, pos.y, vault.width, vault.height))
+			room.room_type = room_type
+			room.vault_data = vault
+
+			# Carve the vault
+			_carve_vault(pos, vault, depth)
+
+			# Track greater vaults
+			if room_type == RoomType.VAULT_GREATER:
+				GameManager.used_greater_vaults.append(vault.index)
+
+			return room
+
+	return null
 
 func _try_place_vaults(depth: int) -> void:
 	# Use layer-configured vault chance
@@ -514,16 +779,22 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var item_scene := preload("res://scenes/entities/item.tscn")
 
-	for y in range(vault.map_lines.size()):
-		if y >= vault.height:
-			break
-		var line: String = vault.map_lines[y]
-		for x in range(line.length()):
-			if x >= vault.width:
-				break
+	# Apply random rotation/flipping
+	var transformed_lines: Array[String] = _transform_vault(vault)
 
+	# Recalculate dimensions after transformation
+	var actual_height: int = transformed_lines.size()
+	var actual_width: int = 0
+	for line in transformed_lines:
+		actual_width = maxi(actual_width, line.length())
+
+	for y in range(transformed_lines.size()):
+		var line: String = transformed_lines[y]
+		for x in range(line.length()):
 			var ch: String = line[x]
 			var tile_pos := Vector2i(pos.x + x, pos.y + y)
+			if not level.is_in_bounds(tile_pos):
+				continue
 
 			# Parse vault symbol
 			match ch:
@@ -540,10 +811,73 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 				"^":
 					# Trap - triggers when stepped on
 					level.set_tile(tile_pos, Level.Tile.TRAP)
+				"s":
+					# Secret door
+					level.set_tile(tile_pos, Level.Tile.DOOR_SECRET)
+					level.secret_doors[tile_pos] = true
+				"0":
+					# Forge
+					level.set_tile(tile_pos, Level.Tile.FORGE)
+				"7":
+					# Chasm
+					level.set_tile(tile_pos, Level.Tile.CHASM)
+				":":
+					# Rubble
+					level.set_tile(tile_pos, Level.Tile.RUBBLE)
+				";":
+					# Glyph of warding
+					level.set_tile(tile_pos, Level.Tile.GLYPH_OF_WARDING)
+				",":
+					# Sunlit floor (permanently lit)
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					# Mark as lit if level supports it
+					if level.is_in_bounds(tile_pos):
+						var idx: int = tile_pos.y * level.width + tile_pos.x
+						if idx < level.room_lit.size():
+							level.room_lit[idx] = true
+				"=":
+					# Poison stream
+					level.set_tile(tile_pos, Level.Tile.POISON_STREAM)
+				"-":
+					# Vine floor
+					level.set_tile(tile_pos, Level.Tile.VINE_FLOOR)
+				"|":
+					# Tangled roots (vine floor variant)
+					level.set_tile(tile_pos, Level.Tile.VINE_FLOOR)
+				"_":
+					# Forest floor
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+				"~":
+					# Water
+					level.set_tile(tile_pos, Level.Tile.WATER)
+				"%":
+					# Quartz wall (treated as wall)
+					level.set_tile(tile_pos, Level.Tile.WALL)
+				"$":
+					# Corridor connection point - track for later connection
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					_vault_connection_points.append(tile_pos)
+				"?":
+					# Random monster or item (50/50)
+					level.set_tile(tile_pos, Level.Tile.FLOOR)
+					if randf() < 0.5:
+						var m_data := DataManager.get_themed_monster_for_depth(depth)
+						if m_data:
+							var m: Monster = monster_scene.instantiate()
+							m.grid_position = tile_pos
+							m.initialize_from_data(m_data)
+							level.add_entity(m)
+					else:
+						var i_data := DataManager.get_themed_item_for_depth(depth)
+						if i_data:
+							var itm: Item = item_scene.instantiate()
+							itm.grid_position = tile_pos
+							itm.initialize_from_item_data(i_data)
+							level.add_item(itm)
 				"*":
 					# Treasure
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
-					var item_data := DataManager.get_random_item_for_depth(depth)
+					var item_data := DataManager.get_themed_item_for_depth(depth)
 					if item_data:
 						var item: Item = item_scene.instantiate()
 						item.grid_position = tile_pos
@@ -552,7 +886,7 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 				"&":
 					# Good treasure (higher depth items)
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
-					var item_data := DataManager.get_random_item_for_depth(depth + 3)
+					var item_data := DataManager.get_themed_item_for_depth(depth + 3)
 					if item_data:
 						var item: Item = item_scene.instantiate()
 						item.grid_position = tile_pos
@@ -561,8 +895,8 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 				"1", "2", "3", "4":
 					# Monster at depth + N
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
-					var monster_depth := depth + int(ch)
-					var monster_data := DataManager.get_random_monster_for_depth(monster_depth)
+					var monster_depth: int = depth + int(ch)
+					var monster_data := DataManager.get_themed_monster_for_depth(monster_depth)
 					if monster_data:
 						var monster: Monster = monster_scene.instantiate()
 						monster.grid_position = tile_pos
@@ -593,29 +927,222 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
 
 	# Track this as a room
-	rooms.append(Rect2i(pos.x, pos.y, vault.width, vault.height))
+	rooms.append(Rect2i(pos.x, pos.y, actual_width, actual_height))
+
+	# Apply vault flags
+	var vault_rect := Rect2i(pos.x, pos.y, actual_width, actual_height)
+	_apply_vault_flags(vault, vault_rect)
+
+## Rotate vault map lines 90 degrees clockwise
+func _rotate_vault_90(map_lines: Array[String]) -> Array[String]:
+	if map_lines.is_empty():
+		return map_lines
+	var h: int = map_lines.size()
+	var w: int = 0
+	for line in map_lines:
+		w = maxi(w, line.length())
+
+	var rotated: Array[String] = []
+	for x in range(w):
+		var new_line: String = ""
+		for y in range(h - 1, -1, -1):
+			if x < map_lines[y].length():
+				new_line += map_lines[y][x]
+			else:
+				new_line += " "
+		rotated.append(new_line)
+	return rotated
+
+## Flip vault map lines horizontally (mirror left-right)
+func _flip_vault_h(map_lines: Array[String]) -> Array[String]:
+	var flipped: Array[String] = []
+	for line in map_lines:
+		var reversed: String = ""
+		for i in range(line.length() - 1, -1, -1):
+			reversed += line[i]
+		flipped.append(reversed)
+	return flipped
+
+## Flip vault map lines vertically (mirror top-bottom)
+func _flip_vault_v(map_lines: Array[String]) -> Array[String]:
+	var flipped: Array[String] = []
+	for i in range(map_lines.size() - 1, -1, -1):
+		flipped.append(map_lines[i])
+	return flipped
+
+## Apply random transformations to vault map lines (respects NO_ROTATION flag)
+func _transform_vault(vault: DataManager.VaultData) -> Array[String]:
+	var lines: Array[String] = vault.map_lines.duplicate()
+
+	# Skip rotation if NO_ROTATION flag is set
+	if not vault.has_flag("NO_ROTATION"):
+		# 33% chance of 90-degree rotation
+		if randf() < 0.33:
+			lines = _rotate_vault_90(lines)
+
+	# 50% chance horizontal flip
+	if randf() < 0.5:
+		lines = _flip_vault_h(lines)
+
+	# 50% chance vertical flip
+	if randf() < 0.5:
+		lines = _flip_vault_v(lines)
+
+	return lines
+
+## Apply vault flags after carving
+func _apply_vault_flags(vault: DataManager.VaultData, vault_rect: Rect2i) -> void:
+	if vault.has_flag("WEBS"):
+		# 5% web terrain on empty floor squares
+		for y in range(vault_rect.position.y, vault_rect.end.y):
+			for x in range(vault_rect.position.x, vault_rect.end.x):
+				var pos := Vector2i(x, y)
+				if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+					if randf() < 0.05:
+						level.set_tile(pos, Level.Tile.WEB)
+
+	if vault.has_flag("TRAPS"):
+		# Double trap density in vault area
+		var trap_count: int = randi_range(2, 6)
+		for _i in range(trap_count):
+			var tx: int = randi_range(vault_rect.position.x, vault_rect.end.x - 1)
+			var ty: int = randi_range(vault_rect.position.y, vault_rect.end.y - 1)
+			var tpos := Vector2i(tx, ty)
+			if level.is_in_bounds(tpos) and level.get_tile(tpos) == Level.Tile.FLOOR:
+				level.place_trap(tpos, Level.TrapType.BASIC)
+
+	if vault.has_flag("LIGHT"):
+		# Permanently lit room
+		for y in range(vault_rect.position.y, vault_rect.end.y):
+			for x in range(vault_rect.position.x, vault_rect.end.x):
+				var pos := Vector2i(x, y)
+				if level.is_in_bounds(pos):
+					var idx: int = pos.y * level.width + pos.x
+					if idx < level.room_lit.size():
+						level.room_lit[idx] = true
+
+## Validate that all walkable tiles are reachable from the first floor tile via BFS
+func _validate_connectivity() -> bool:
+	# Find first floor tile
+	var start: Vector2i = Vector2i(-1, -1)
+	for y in range(level.height):
+		for x in range(level.width):
+			if level.is_passable(Vector2i(x, y)):
+				start = Vector2i(x, y)
+				break
+		if start != Vector2i(-1, -1):
+			break
+
+	if start == Vector2i(-1, -1):
+		return false
+
+	# BFS flood fill
+	var visited: Dictionary = {}
+	var queue: Array[Vector2i] = [start]
+	visited[start] = true
+
+	while not queue.is_empty():
+		var current: Vector2i = queue.pop_front()
+		var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+		for dir: Vector2i in dirs:
+			var next: Vector2i = current + dir
+			if level.is_in_bounds(next) and level.is_passable(next) and not visited.has(next):
+				visited[next] = true
+				queue.append(next)
+
+	# Count total passable tiles
+	var total_passable: int = 0
+	for y in range(level.height):
+		for x in range(level.width):
+			if level.is_passable(Vector2i(x, y)):
+				total_passable += 1
+
+	# Allow small discrepancy (isolated 1-2 tile areas from decoration)
+	var reachable: int = visited.size()
+	if total_passable - reachable > 2:
+		print("Connectivity check failed: %d reachable of %d passable" % [reachable, total_passable])
+		return false
+	return true
+
+## Ensure at least one forge exists on levels where smithing is expected
+func _ensure_forges(depth: int) -> void:
+	# Forges should appear every 2-4 levels
+	if depth % 3 != 0 and depth % 4 != 0:
+		return
+
+	# Check if a forge already exists
+	for y in range(level.height):
+		for x in range(level.width):
+			if level.get_tile(Vector2i(x, y)) == Level.Tile.FORGE:
+				return  # Already have one
+
+	# Place forge in middle room
+	if rooms.size() < 3:
+		return
+	var middle_room: Rect2i = rooms[rooms.size() / 2]
+	var forge_pos := Vector2i(
+		middle_room.position.x + middle_room.size.x / 2,
+		middle_room.position.y + middle_room.size.y / 2
+	)
+	if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
+		level.set_tile(forge_pos, Level.Tile.FORGE)
+		print("Placed guaranteed forge at depth %d, pos %s" % [depth, forge_pos])
+
+## Connect vault corridor points ($) to nearest room centers
+func _connect_vault_corridor_points() -> void:
+	if _vault_connection_points.is_empty():
+		return
+
+	for point: Vector2i in _vault_connection_points:
+		# Find nearest room center
+		var best_dist: float = INF
+		var best_target: Vector2i = point
+		for room_rect: Rect2i in rooms:
+			var center := Vector2i(room_rect.position.x + room_rect.size.x / 2,
+								   room_rect.position.y + room_rect.size.y / 2)
+			var dist: float = float(abs(center.x - point.x) + abs(center.y - point.y))
+			if dist > 2.0 and dist < best_dist:
+				best_dist = dist
+				best_target = center
+
+		# Carve corridor from connection point to nearest room
+		if best_target != point:
+			if randf() < 0.5:
+				_carve_h_corridor(point.x, best_target.x, point.y)
+				_carve_v_corridor(point.y, best_target.y, best_target.x)
+			else:
+				_carve_v_corridor(point.y, best_target.y, point.x)
+				_carve_h_corridor(point.x, best_target.x, best_target.y)
+
+	_vault_connection_points.clear()
 
 func _spawn_monsters(depth: int) -> void:
-	# Number of monsters scales with depth
-	var monster_count := randi_range(3 + depth, 5 + depth * 2)
-	monster_count = mini(monster_count, 20)  # Cap
+	# Themed spawning: count based on room density + depth
+	var target_count: int = (rooms.size() + randi_range(1, maxi(1, rooms.size()))) / 2 + depth / 3
+	target_count = mini(target_count, 25)
 
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
-	var spawned := 0
+	var spawned: int = 0
+	var stairs_up: Vector2i = level.find_stairs_up()
 
-	for _i in range(monster_count):
-		var spawn_pos := level.find_random_floor()
+	for _i in range(target_count):
+		var spawn_pos: Vector2i = level.find_random_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		# Don't spawn too close to stairs up
-		var stairs_up := level.find_stairs_up()
+		# Don't spawn too close to stairs up (5-tile buffer)
 		if stairs_up != Vector2i(-1, -1):
 			var dist: int = max(abs(spawn_pos.x - stairs_up.x), abs(spawn_pos.y - stairs_up.y))
 			if dist < 5:
 				continue
 
-		var monster_data := DataManager.get_random_monster_for_depth(depth)
+		# 70% themed, 30% random
+		var monster_data: DataManager.MonsterData = null
+		if randf() < 0.70:
+			monster_data = DataManager.get_themed_monster_for_depth(depth)
+		else:
+			monster_data = DataManager.get_random_monster_for_depth(depth)
+
 		if monster_data:
 			var monster: Monster = monster_scene.instantiate()
 			monster.grid_position = spawn_pos
@@ -629,7 +1156,7 @@ func _spawn_monsters(depth: int) -> void:
 
 			# Escort spawning (ESCORT flag): spawn 1-2 weaker escorts
 			if monster_data.has_flag("ESCORT") or monster_data.has_flag("ESCORTS"):
-				var escort_data := DataManager.get_random_monster_for_depth(maxi(1, depth - 2))
+				var escort_data: DataManager.MonsterData = DataManager.get_random_monster_for_depth(maxi(1, depth - 2))
 				if escort_data:
 					spawned += _spawn_group(monster_scene, spawn_pos, escort_data, randi_range(1, 2))
 
@@ -654,19 +1181,25 @@ func _spawn_group(monster_scene: PackedScene, center: Vector2i, data: DataManage
 	return spawned
 
 func _spawn_items(depth: int) -> void:
-	# Number of items scales with depth (fewer items than monsters)
-	var item_count := randi_range(2 + depth / 2, 4 + depth)
-	item_count = mini(item_count, 15)
+	# Item count: 75% of monster target formula, capped at 15
+	var monster_target: int = (rooms.size() + randi_range(1, maxi(1, rooms.size()))) / 2 + depth / 3
+	var item_count: int = mini(int(monster_target * 0.75), 15)
 
 	var item_scene := preload("res://scenes/entities/item.tscn")
-	var spawned := 0
+	var spawned: int = 0
 
 	for _i in range(item_count):
-		var spawn_pos := level.find_random_floor()
+		var spawn_pos: Vector2i = level.find_random_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		var item_data := DataManager.get_random_item_for_depth(depth)
+		# 70% themed, 30% random
+		var item_data: DataManager.ItemData = null
+		if randf() < 0.70:
+			item_data = DataManager.get_themed_item_for_depth(depth)
+		else:
+			item_data = DataManager.get_random_item_for_depth(depth)
+
 		if item_data:
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
@@ -674,8 +1207,8 @@ func _spawn_items(depth: int) -> void:
 			level.add_item(item)
 			spawned += 1
 
-	# Spawn additional food items (more on upper levels, fewer deeper)
-	# Upper levels (1-5): 2-3 food items, mid (6-10): 1-2, deep (11+): 0-1
+	# Spawn additional food items (depth-scaled, separate)
+	# Upper levels (1-5): 2-3, mid (6-10): 1-2, deep (11+): 0-1
 	var food_count: int = 0
 	if depth <= 5:
 		food_count = randi_range(2, 3)
@@ -685,11 +1218,11 @@ func _spawn_items(depth: int) -> void:
 		food_count = randi_range(0, 1)
 
 	for _i in range(food_count):
-		var spawn_pos := level.find_random_floor()
+		var spawn_pos: Vector2i = level.find_random_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		var food_data := DataManager.get_random_food_for_depth(depth)
+		var food_data: DataManager.ItemData = DataManager.get_random_food_for_depth(depth)
 		if food_data:
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
@@ -699,114 +1232,223 @@ func _spawn_items(depth: int) -> void:
 
 	print("Spawned %d items at depth %d" % [spawned, depth])
 
-# ============================================================================
-# FOREST TERRAIN (Vine Floor)
-# ============================================================================
+## Place themed guards adjacent to doors.
+## Chance scales with depth: (15 + 2*depth)%, capped at 50%. Max 4 per level.
+func _place_door_guards(depth: int) -> void:
+	var guard_chance: float = minf(0.15 + 0.02 * depth, 0.50)
+	var monster_scene := preload("res://scenes/entities/monster.tscn")
+	var guards_placed: int = 0
+	var cardinal_dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
-## Apply vine floor terrain to shallow depths (1-3), replacing some floor tiles.
-func _apply_forest_terrain(level_node: Level, depth: int) -> void:
-	if depth > 3:
-		return  # Only depths 1-3
-
-	var vine_chance: int = 25 - (depth * 5)  # 20%, 15%, 10%
-
-	var vine_count: int = 0
-	for y in range(1, level_node.height - 1):
-		for x in range(1, level_node.width - 1):
+	for y in range(1, level.height - 1):
+		if guards_placed >= 4:
+			break
+		for x in range(1, level.width - 1):
+			if guards_placed >= 4:
+				break
 			var pos := Vector2i(x, y)
-			if level_node.get_tile(pos) == Level.Tile.FLOOR:
-				if randi() % 100 < vine_chance:
-					level_node.set_tile(pos, Level.Tile.VINE_FLOOR)
-					vine_count += 1
+			var tile: int = level.get_tile(pos)
+			if tile != Level.Tile.DOOR_CLOSED and tile != Level.Tile.DOOR_LOCKED and tile != Level.Tile.DOOR_JAMMED:
+				continue
+			if randf() > guard_chance:
+				continue
 
-	if vine_count > 0:
-		print("Applied %d vine floor tiles at depth %d" % [vine_count, depth])
+			# Find adjacent floor tile for the guard
+			var placed: bool = false
+			var shuffled_dirs: Array[Vector2i] = cardinal_dirs.duplicate()
+			shuffled_dirs.shuffle()
+			for dir: Vector2i in shuffled_dirs:
+				var guard_pos: Vector2i = pos + dir
+				if level.is_in_bounds(guard_pos) and level.get_tile(guard_pos) == Level.Tile.FLOOR and level.get_entity_at(guard_pos) == null:
+					var guard_data: DataManager.MonsterData = DataManager.get_themed_monster_for_depth(depth)
+					if guard_data:
+						var guard: Monster = monster_scene.instantiate()
+						guard.grid_position = guard_pos
+						guard.initialize_from_data(guard_data)
+						level.add_entity(guard)
+						guards_placed += 1
+						placed = true
+					break
+
+	if guards_placed > 0:
+		print("Placed %d door guards at depth %d" % [guards_placed, depth])
 
 # ============================================================================
-# THEMED ROOM DECORATIONS (Depths 1-3)
+# LAYER DECORATION SYSTEM
 # ============================================================================
 
-## Apply themed room decorations: forest rooms, tower rooms, or standard.
-## Distribution by depth:
-##   Depth 1: 70% forest / 20% tower / 10% standard
-##   Depth 2: 40% forest / 40% tower / 20% standard
-##   Depth 3: 15% forest / 65% tower / 20% standard
-func _apply_themed_rooms(depth: int) -> void:
-	if depth < 1 or depth > 3:
+## Unified layer decoration dispatcher. Replaces _apply_forest_terrain,
+## _apply_themed_rooms, and _generate_poison_streams with a per-layer system.
+func _apply_layer_decoration(depth: int) -> void:
+	var params: Dictionary = LayerConfig.get_decoration_params(depth)
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+
+	# Dispatch to per-layer decorator
+	match layer_name:
+		"outer_pits":
+			_decorate_outer_pits(params)
+		"lower_halls":
+			_decorate_orc_warrens(params)
+		"dark_halls":
+			_decorate_torture_halls(params)
+		"necropolis":
+			_decorate_necropolis(params)
+		"pits_of_despair":
+			_decorate_wraith_domain(params)
+		"inner_sanctum":
+			_decorate_inner_sanctum(params)
+		"throne_room":
+			_decorate_throne_room(params)
+
+	# Scatter layer-themed terrain features on floor tiles
+	_scatter_terrain(depth, params)
+
+	# Generate chasms if the layer supports them
+	var chasm_min: int = params.get("chasm_count_min", 0)
+	var chasm_max: int = params.get("chasm_count_max", 0)
+	if chasm_max > 0:
+		_generate_chasms(depth, chasm_min, chasm_max)
+
+	print("Applied %s decorations at depth %d" % [layer_name, depth])
+
+## Scatter density-based terrain features on random floor tiles.
+func _scatter_terrain(depth: int, params: Dictionary) -> void:
+	var density: float = params.get("scatter_density", 0.0)
+	if density <= 0.0:
 		return
 
-	# Themed distribution by depth
-	var forest_pct: float
-	var tower_pct: float
-	match depth:
-		1:
-			forest_pct = 0.70
-			tower_pct = 0.20
-		2:
-			forest_pct = 0.40
-			tower_pct = 0.40
-		_:  # depth 3
-			forest_pct = 0.15
-			tower_pct = 0.65
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	var scatter_tile: int = _get_scatter_tile_for_layer(layer_name)
+	var scattered: int = 0
 
-	var forest_count: int = 0
-	var tower_count: int = 0
+	for y in range(1, level.height - 1):
+		for x in range(1, level.width - 1):
+			var pos := Vector2i(x, y)
+			if level.get_tile(pos) == Level.Tile.FLOOR and randf() < density:
+				level.set_tile(pos, scatter_tile)
+				scattered += 1
 
-	for room_rect: Rect2i in rooms:
-		# Skip very small rooms (< 4x4)
-		if room_rect.size.x < 4 or room_rect.size.y < 4:
+	if scattered > 0:
+		print("Scattered %d terrain tiles at depth %d" % [scattered, depth])
+
+## Get the scatter terrain tile type for a layer.
+func _get_scatter_tile_for_layer(layer_name: String) -> int:
+	match layer_name:
+		"outer_pits": return Level.Tile.VINE_FLOOR
+		"lower_halls": return Level.Tile.RUBBLE
+		"dark_halls": return Level.Tile.MORGUL_RUNE
+		"necropolis": return Level.Tile.BONE_PILE
+		"pits_of_despair": return Level.Tile.SHADOW_FLOOR
+		"inner_sanctum": return Level.Tile.SHADOW_FLOOR
+		"throne_room": return Level.Tile.SHADOW_FLOOR
+		_: return Level.Tile.RUBBLE
+
+## Generate chasms using random walk algorithm.
+## Safety: only place chasm if 2+ adjacent passable tiles remain.
+func _generate_chasms(_depth: int, count_min: int, count_max: int) -> void:
+	var chasm_count: int = randi_range(count_min, count_max)
+	var total_tiles: int = 0
+	var cardinal_dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+
+	for _c in range(chasm_count):
+		var start: Vector2i = level.find_random_floor()
+		if start == Vector2i(-1, -1):
 			continue
 
-		var roll: float = randf()
-		if roll < forest_pct:
-			_decorate_forest_room(room_rect)
-			forest_count += 1
-		elif roll < forest_pct + tower_pct:
-			_decorate_tower_room(room_rect)
-			tower_count += 1
-		# else: standard room, no decoration
+		var walk_len: int = randi_range(4, 10)
+		var pos: Vector2i = start
+		var walk_dir: Vector2i = cardinal_dirs[randi() % cardinal_dirs.size()]
 
-	if forest_count + tower_count > 0:
-		print("Themed rooms at depth %d: %d forest, %d tower" % [depth, forest_count, tower_count])
+		for _step in range(walk_len):
+			if not level.is_in_bounds(pos):
+				break
+			if level.get_tile(pos) != Level.Tile.FLOOR:
+				break
+
+			# Safety check: ensure 2+ adjacent tiles remain passable after placement
+			var adj_passable: int = 0
+			for dir: Vector2i in cardinal_dirs:
+				var adj: Vector2i = pos + dir
+				if level.is_in_bounds(adj) and level.is_passable(adj) and adj != pos:
+					adj_passable += 1
+			if adj_passable < 2:
+				break
+
+			level.set_tile(pos, Level.Tile.CHASM)
+			total_tiles += 1
+
+			# 30% chance to change direction
+			if randf() < 0.30:
+				walk_dir = cardinal_dirs[randi() % cardinal_dirs.size()]
+			pos += walk_dir
+
+	if total_tiles > 0:
+		print("Generated %d chasm tiles" % total_tiles)
+
+## Helper: check if a tile is safe to overwrite (floor only, not stairs/doors).
+func _is_safe_floor(pos: Vector2i) -> bool:
+	if not level.is_in_bounds(pos):
+		return false
+	var tile: int = level.get_tile(pos)
+	return tile == Level.Tile.FLOOR
+
+# ============================================================================
+# LAYER DECORATORS
+# ============================================================================
+
+## Outer Pits (depths 1-3): Forest rooms, tower rooms, web clusters, poison streams.
+func _decorate_outer_pits(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.60)
+	var web_chance: float = params.get("web_chance", 0.15)
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 4 or room_rect.size.y < 4:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		# Pick decoration: 40% forest, 30% tower, 30% web cluster
+		var roll: float = randf()
+		if roll < 0.40:
+			_decorate_forest_room(room_rect)
+		elif roll < 0.70:
+			_decorate_tower_room(room_rect)
+		else:
+			# Web cluster: place 3-6 WEB tiles in a cluster
+			_place_web_cluster(room_rect)
+
+	# Scatter poison streams (1-2 winding streams)
+	_scatter_poison_streams()
 
 ## Forest room: scatter tree pillars (wall tiles) inside, convert 40% floor to vine floor.
 func _decorate_forest_room(room_rect: Rect2i) -> void:
-	# Scatter tree pillars (wall tiles) inside the room — 1 per ~12 tiles
 	var area: int = room_rect.size.x * room_rect.size.y
 	var tree_count: int = maxi(1, area / 12)
 
 	for _i in range(tree_count):
-		# Place trees away from edges (at least 1 tile inside)
 		var tx: int = randi_range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 2)
 		var ty: int = randi_range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 2)
 		var tpos := Vector2i(tx, ty)
-		if level.get_tile(tpos) == Level.Tile.FLOOR:
-			# Don't block stairs
-			if level.get_tile(tpos) != Level.Tile.STAIRS_DOWN and level.get_tile(tpos) != Level.Tile.STAIRS_UP:
-				level.set_tile(tpos, Level.Tile.WALL)
+		if _is_safe_floor(tpos):
+			level.set_tile(tpos, Level.Tile.WALL)
 
-	# Convert 40% of remaining floor tiles to vine floor
 	for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
 		for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
 			var pos := Vector2i(x, y)
-			if level.get_tile(pos) == Level.Tile.FLOOR:
-				if randf() < 0.40:
-					level.set_tile(pos, Level.Tile.VINE_FLOOR)
+			if level.get_tile(pos) == Level.Tile.FLOOR and randf() < 0.40:
+				level.set_tile(pos, Level.Tile.VINE_FLOOR)
 
 ## Tower room: stone pillar grid (every 3rd tile), rubble near walls.
 func _decorate_tower_room(room_rect: Rect2i) -> void:
-	# Place stone pillars on a 3-tile grid inside the room
 	for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
 		for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
-			# Pillar every 3 tiles (offset from room origin)
 			var local_x: int = x - room_rect.position.x
 			var local_y: int = y - room_rect.position.y
 			if local_x % 3 == 0 and local_y % 3 == 0:
 				var pos := Vector2i(x, y)
-				if level.get_tile(pos) == Level.Tile.FLOOR:
+				if _is_safe_floor(pos):
 					level.set_tile(pos, Level.Tile.WALL)
 
-	# Scatter rubble near walls (1 tile inside each edge)
 	for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
 		for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
 			var local_x: int = x - room_rect.position.x
@@ -815,60 +1457,402 @@ func _decorate_tower_room(room_rect: Rect2i) -> void:
 								   local_y <= 1 or local_y >= room_rect.size.y - 2)
 			if near_edge:
 				var pos := Vector2i(x, y)
-				if level.get_tile(pos) == Level.Tile.FLOOR and randf() < 0.25:
+				if _is_safe_floor(pos) and randf() < 0.25:
 					level.set_tile(pos, Level.Tile.RUBBLE)
 
-# ============================================================================
-# POISON STREAM GENERATION (Depths 1-3)
-# ============================================================================
+## Place a cluster of 3-6 WEB tiles in a room.
+func _place_web_cluster(room_rect: Rect2i) -> void:
+	var center := Vector2i(
+		randi_range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 2),
+		randi_range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 2)
+	)
+	var count: int = randi_range(3, 6)
+	var placed: int = 0
+	if _is_safe_floor(center):
+		level.set_tile(center, Level.Tile.WEB)
+		placed += 1
 
-## Generate 1-2 winding poison streams per level at depths 1-3.
-## Uses random walk to create 1-tile-wide winding paths through rooms.
-func _generate_poison_streams(depth: int) -> void:
-	if depth < 1 or depth > 3:
+	var offsets: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)
+	]
+	offsets.shuffle()
+	for i in range(mini(count - 1, offsets.size())):
+		var web_pos: Vector2i = center + offsets[i]
+		if _is_safe_floor(web_pos):
+			level.set_tile(web_pos, Level.Tile.WEB)
+			placed += 1
+
+## Scatter 1-2 winding poison streams through rooms.
+func _scatter_poison_streams() -> void:
+	if rooms.is_empty():
 		return
-
 	var stream_count: int = randi_range(1, 2)
-	var total_tiles: int = 0
+	var cardinal_dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 	for _s in range(stream_count):
-		if rooms.is_empty():
-			break
-
-		# Pick a random room to start the stream
 		var start_room: Rect2i = rooms[randi() % rooms.size()]
-		# Start at a random position inside the room
 		var pos := Vector2i(
 			randi_range(start_room.position.x + 1, start_room.position.x + start_room.size.x - 2),
 			randi_range(start_room.position.y + 1, start_room.position.y + start_room.size.y - 2)
 		)
-
 		if not level.is_in_bounds(pos):
 			continue
 
-		# Random walk for 8-15 tiles
 		var walk_length: int = randi_range(8, 15)
-		var directions: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-		var current_dir: Vector2i = directions[randi() % directions.size()]
+		var current_dir: Vector2i = cardinal_dirs[randi() % cardinal_dirs.size()]
 
 		for _step in range(walk_length):
 			if not level.is_in_bounds(pos):
 				break
-
 			var tile: int = level.get_tile(pos)
-			# Only place on floor or vine floor (don't overwrite stairs, walls, doors)
 			if tile == Level.Tile.FLOOR or tile == Level.Tile.VINE_FLOOR:
 				level.set_tile(pos, Level.Tile.POISON_STREAM)
-				total_tiles += 1
-
-			# Winding: 60% continue same direction, 40% turn
 			if randf() < 0.40:
-				current_dir = directions[randi() % directions.size()]
-
+				current_dir = cardinal_dirs[randi() % cardinal_dirs.size()]
 			pos += current_dir
 
-	if total_tiles > 0:
-		print("Generated %d poison stream tiles at depth %d" % [total_tiles, depth])
+## Orc Warrens (depths 4-6): Barracks, armories, kennels.
+func _decorate_orc_warrens(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.50)
+	var subtypes: Array[String] = ["barracks", "armory", "kennel"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 4 or room_rect.size.y < 4:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		match subtype:
+			"barracks":
+				# Rubble bunk rows along walls
+				for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var local_x: int = x - room_rect.position.x
+						if local_x <= 1 or local_x >= room_rect.size.x - 2:
+							var pos := Vector2i(x, y)
+							if _is_safe_floor(pos) and randf() < 0.50:
+								level.set_tile(pos, Level.Tile.RUBBLE)
+			"armory":
+				# Central forge + rubble corner racks
+				var cx: int = room_rect.position.x + room_rect.size.x / 2
+				var cy: int = room_rect.position.y + room_rect.size.y / 2
+				var forge_pos := Vector2i(cx, cy)
+				if _is_safe_floor(forge_pos):
+					level.set_tile(forge_pos, Level.Tile.FORGE)
+				# Rubble in corners
+				var corners: Array[Vector2i] = [
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + room_rect.size.y - 2),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + room_rect.size.y - 2)
+				]
+				for corner: Vector2i in corners:
+					if _is_safe_floor(corner):
+						level.set_tile(corner, Level.Tile.RUBBLE)
+			"kennel":
+				# Water tiles in center + bone piles around edges
+				var cx: int = room_rect.position.x + room_rect.size.x / 2
+				var cy: int = room_rect.position.y + room_rect.size.y / 2
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						var wpos := Vector2i(cx + dx, cy + dy)
+						if _is_safe_floor(wpos):
+							level.set_tile(wpos, Level.Tile.WATER)
+				# Bone piles near edges
+				for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						var near_edge: bool = (local_x == 0 or local_x == room_rect.size.x - 1 or
+											   local_y == 0 or local_y == room_rect.size.y - 1)
+						if near_edge:
+							var pos := Vector2i(x, y)
+							if _is_safe_floor(pos) and randf() < 0.30:
+								level.set_tile(pos, Level.Tile.BONE_PILE)
+
+## Torture Halls (depths 7-9): Ritual chambers, torture rooms, rune corridors.
+func _decorate_torture_halls(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.55)
+	var subtypes: Array[String] = ["ritual_chamber", "torture_room", "rune_corridor"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 4 or room_rect.size.y < 4:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		var cx: int = room_rect.position.x + room_rect.size.x / 2
+		var cy: int = room_rect.position.y + room_rect.size.y / 2
+		match subtype:
+			"ritual_chamber":
+				# Dark pool center
+				if _is_safe_floor(Vector2i(cx, cy)):
+					level.set_tile(Vector2i(cx, cy), Level.Tile.DARK_POOL)
+				# Morgul rune ring (cross pattern around center)
+				var rune_offsets: Array[Vector2i] = [Vector2i(0, -2), Vector2i(0, 2), Vector2i(-2, 0), Vector2i(2, 0)]
+				for off: Vector2i in rune_offsets:
+					var rpos := Vector2i(cx + off.x, cy + off.y)
+					if _is_safe_floor(rpos):
+						level.set_tile(rpos, Level.Tile.MORGUL_RUNE)
+				# Shadow braziers in corners
+				var corners: Array[Vector2i] = [
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + room_rect.size.y - 2),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + room_rect.size.y - 2)
+				]
+				for corner: Vector2i in corners:
+					if _is_safe_floor(corner):
+						level.set_tile(corner, Level.Tile.SHADOW_BRAZIER)
+			"torture_room":
+				# Scattered rubble + dark pools
+				for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var pos := Vector2i(x, y)
+						if _is_safe_floor(pos):
+							if randf() < 0.15:
+								level.set_tile(pos, Level.Tile.RUBBLE)
+							elif randf() < 0.08:
+								level.set_tile(pos, Level.Tile.DARK_POOL)
+			"rune_corridor":
+				# Morgul runes along corridor tiles every 3rd tile
+				for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						if (local_x % 3 == 0 or local_y % 3 == 0) and (local_x % 3 == 0 and local_y % 3 == 0):
+							var pos := Vector2i(x, y)
+							if _is_safe_floor(pos):
+								level.set_tile(pos, Level.Tile.MORGUL_RUNE)
+
+## Necropolis (depths 10-12): Crypts, bone chambers, ritual circles.
+func _decorate_necropolis(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.65)
+	var subtypes: Array[String] = ["crypt", "bone_chamber", "ritual_circle"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 4 or room_rect.size.y < 4:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		var cx: int = room_rect.position.x + room_rect.size.x / 2
+		var cy: int = room_rect.position.y + room_rect.size.y / 2
+		match subtype:
+			"crypt":
+				# Pillar grid (every 3 tiles) + bone piles between pillars
+				for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+					for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						var pos := Vector2i(x, y)
+						if local_x % 3 == 0 and local_y % 3 == 0:
+							if _is_safe_floor(pos):
+								level.set_tile(pos, Level.Tile.WALL)
+						elif _is_safe_floor(pos) and randf() < 0.20:
+							level.set_tile(pos, Level.Tile.BONE_PILE)
+			"bone_chamber":
+				# 40% of floor becomes bone pile tiles
+				for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var pos := Vector2i(x, y)
+						if _is_safe_floor(pos) and randf() < 0.40:
+							level.set_tile(pos, Level.Tile.BONE_PILE)
+			"ritual_circle":
+				# Glyph of warding tiles in a diamond pattern in room center
+				var radius: int = mini(room_rect.size.x, room_rect.size.y) / 3
+				radius = maxi(radius, 2)
+				for dy in range(-radius, radius + 1):
+					for dx in range(-radius, radius + 1):
+						if abs(dx) + abs(dy) == radius:
+							var gpos := Vector2i(cx + dx, cy + dy)
+							if _is_safe_floor(gpos):
+								level.set_tile(gpos, Level.Tile.GLYPH_OF_WARDING)
+
+## Wraith Domain / Pits of Despair (depths 13-15): Void chambers, shadow galleries, chasm bridges.
+func _decorate_wraith_domain(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.70)
+	var subtypes: Array[String] = ["void_chamber", "shadow_gallery", "chasm_bridge"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 5 or room_rect.size.y < 5:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		var cx: int = room_rect.position.x + room_rect.size.x / 2
+		var cy: int = room_rect.position.y + room_rect.size.y / 2
+		match subtype:
+			"void_chamber":
+				# Chasm ring around room edges + shadow floor inside
+				for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
+					for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						var pos := Vector2i(x, y)
+						var is_edge: bool = (local_x == 1 or local_x == room_rect.size.x - 2 or
+											 local_y == 1 or local_y == room_rect.size.y - 2)
+						var is_inner: bool = (local_x > 1 and local_x < room_rect.size.x - 2 and
+											  local_y > 1 and local_y < room_rect.size.y - 2)
+						if is_edge and _is_safe_floor(pos):
+							level.set_tile(pos, Level.Tile.CHASM)
+						elif is_inner and _is_safe_floor(pos):
+							level.set_tile(pos, Level.Tile.SHADOW_FLOOR)
+			"shadow_gallery":
+				# Shadow brazier rows + dark pools between them
+				_place_shadow_gallery(room_rect)
+			"chasm_bridge":
+				# Chasm across room with 1-tile-wide floor bridge
+				var bridge_y: int = cy
+				for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+					for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+						var pos := Vector2i(x, y)
+						if y != bridge_y and _is_safe_floor(pos):
+							level.set_tile(pos, Level.Tile.CHASM)
+
+## Helper: place shadow gallery pattern (brazier rows + dark pools between).
+func _place_shadow_gallery(room_rect: Rect2i) -> void:
+	for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+		for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+			var local_x: int = x - room_rect.position.x
+			var local_y: int = y - room_rect.position.y
+			var pos := Vector2i(x, y)
+			if local_x % 4 == 0 and local_y % 3 == 0:
+				if _is_safe_floor(pos):
+					level.set_tile(pos, Level.Tile.SHADOW_BRAZIER)
+			elif local_x % 4 == 2 and _is_safe_floor(pos) and randf() < 0.30:
+				level.set_tile(pos, Level.Tile.DARK_POOL)
+
+## Inner Sanctum (depths 16-18): Grand halls, guard posts, lava chambers.
+func _decorate_inner_sanctum(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 0.80)
+	var subtypes: Array[String] = ["grand_hall", "guard_post", "lava_chamber"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 5 or room_rect.size.y < 5:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		var cx: int = room_rect.position.x + room_rect.size.x / 2
+		var cy: int = room_rect.position.y + room_rect.size.y / 2
+		match subtype:
+			"grand_hall":
+				# Symmetric pillars (wall tiles) + dark pool center + shadow braziers at corners
+				for y in range(room_rect.position.y + 2, room_rect.position.y + room_rect.size.y - 2):
+					for x in range(room_rect.position.x + 2, room_rect.position.x + room_rect.size.x - 2):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						var pos := Vector2i(x, y)
+						if local_x % 4 == 2 and (local_y == 2 or local_y == room_rect.size.y - 3):
+							if _is_safe_floor(pos):
+								level.set_tile(pos, Level.Tile.WALL)
+				# Dark pool center
+				if _is_safe_floor(Vector2i(cx, cy)):
+					level.set_tile(Vector2i(cx, cy), Level.Tile.DARK_POOL)
+				# Shadow braziers at corners
+				var corners: Array[Vector2i] = [
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + room_rect.size.y - 2),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + room_rect.size.y - 2)
+				]
+				for corner: Vector2i in corners:
+					if _is_safe_floor(corner):
+						level.set_tile(corner, Level.Tile.SHADOW_BRAZIER)
+			"guard_post":
+				# Rubble barricade near door + lava accents in corners
+				# Barricade: rubble row across the room's narrower axis
+				var barricade_y: int = cy - 1
+				for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+					var pos := Vector2i(x, barricade_y)
+					if _is_safe_floor(pos) and randf() < 0.60:
+						level.set_tile(pos, Level.Tile.RUBBLE)
+				# Lava in corners
+				var corners: Array[Vector2i] = [
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + 1),
+					Vector2i(room_rect.position.x + 1, room_rect.position.y + room_rect.size.y - 2),
+					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + room_rect.size.y - 2)
+				]
+				for corner: Vector2i in corners:
+					if _is_safe_floor(corner):
+						level.set_tile(corner, Level.Tile.LAVA)
+			"lava_chamber":
+				# Lava pool center with rubble ring
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						var lpos := Vector2i(cx + dx, cy + dy)
+						if _is_safe_floor(lpos):
+							level.set_tile(lpos, Level.Tile.LAVA)
+				# Rubble ring around lava
+				for dy in range(-2, 3):
+					for dx in range(-2, 3):
+						if abs(dx) == 2 or abs(dy) == 2:
+							var rpos := Vector2i(cx + dx, cy + dy)
+							if _is_safe_floor(rpos):
+								level.set_tile(rpos, Level.Tile.RUBBLE)
+
+## Throne Room (depths 19-20): Throne chambers, antechambers, lava moats.
+func _decorate_throne_room(params: Dictionary) -> void:
+	var themed_chance: float = params.get("themed_room_chance", 1.0)
+	var subtypes: Array[String] = ["throne_chamber", "antechamber", "lava_moat"]
+
+	for room_rect: Rect2i in rooms:
+		if room_rect.size.x < 5 or room_rect.size.y < 5:
+			continue
+		if randf() > themed_chance:
+			continue
+
+		var subtype: String = subtypes[randi() % subtypes.size()]
+		var cx: int = room_rect.position.x + room_rect.size.x / 2
+		var cy: int = room_rect.position.y + room_rect.size.y / 2
+		match subtype:
+			"throne_chamber":
+				# 3x3 throne dais center
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						var dpos := Vector2i(cx + dx, cy + dy)
+						if _is_safe_floor(dpos):
+							level.set_tile(dpos, Level.Tile.THRONE_DAIS)
+				# Lava moat ring (2 tiles out from center)
+				for dy in range(-3, 4):
+					for dx in range(-3, 4):
+						if (abs(dx) == 3 or abs(dy) == 3) and abs(dx) <= 3 and abs(dy) <= 3:
+							var mpos := Vector2i(cx + dx, cy + dy)
+							if _is_safe_floor(mpos):
+								level.set_tile(mpos, Level.Tile.LAVA)
+				# Pillar rows flanking (2 columns of pillars)
+				for y in range(room_rect.position.y + 2, room_rect.position.y + room_rect.size.y - 2):
+					var local_y: int = y - room_rect.position.y
+					if local_y % 3 == 0:
+						var left_pos := Vector2i(room_rect.position.x + 2, y)
+						var right_pos := Vector2i(room_rect.position.x + room_rect.size.x - 3, y)
+						if _is_safe_floor(left_pos):
+							level.set_tile(left_pos, Level.Tile.WALL)
+						if _is_safe_floor(right_pos):
+							level.set_tile(right_pos, Level.Tile.WALL)
+			"antechamber":
+				# Reuse shadow gallery pattern
+				_place_shadow_gallery(room_rect)
+			"lava_moat":
+				# Lava ring around room perimeter (1 tile in from walls)
+				for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
+					for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
+						var local_x: int = x - room_rect.position.x
+						var local_y: int = y - room_rect.position.y
+						var is_moat: bool = (local_x == 1 or local_x == room_rect.size.x - 2 or
+											 local_y == 1 or local_y == room_rect.size.y - 2)
+						if is_moat:
+							var pos := Vector2i(x, y)
+							if _is_safe_floor(pos):
+								level.set_tile(pos, Level.Tile.LAVA)
 
 # ============================================================================
 # LORE OBJECT SPAWNING
@@ -1060,3 +2044,182 @@ func _find_floor_in_room(room_rect: Rect2i) -> Vector2i:
 			if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
 				return pos
 	return Vector2i(-1, -1)
+
+# ============================================================================
+# SPECIAL LEVELS (Stream F)
+# ============================================================================
+
+## Generate the Throne Room level (depth 20) — Sauron's final chamber.
+## Attempts to place a special throne vault; falls back to normal generation.
+func _generate_throne_room_level(depth: int) -> void:
+	_apply_layer_params(depth)
+
+	# Fill with walls
+	for y in range(level.height):
+		for x in range(level.width):
+			level.set_tile(Vector2i(x, y), Level.Tile.WALL)
+
+	# Try to find Sauron's throne vault (index 450, or vault_type 9)
+	var throne_vault: DataManager.VaultData = null
+	for vault: DataManager.VaultData in DataManager.vaults:
+		if vault.index == 450:
+			throne_vault = vault
+			break
+
+	# Fallback: search by vault_type 9
+	if throne_vault == null:
+		for vault: DataManager.VaultData in DataManager.vaults:
+			if vault.vault_type == 9:
+				throne_vault = vault
+				break
+
+	if throne_vault != null and not throne_vault.map_lines.is_empty():
+		# Place vault centered in the map
+		var vx: int = level.width / 2 - throne_vault.width / 2
+		var vy: int = level.height / 2 - throne_vault.height / 2
+		var vault_pos := Vector2i(vx, vy)
+
+		if _can_place_vault_at(vault_pos, throne_vault):
+			_carve_vault(vault_pos, throne_vault, depth)
+			print("Placed Sauron's throne vault at depth %d" % depth)
+		else:
+			# Vault doesn't fit — fall through to normal generation
+			_fallback_throne_room(depth)
+	else:
+		# No throne vault found — generate a basic large room
+		_fallback_throne_room(depth)
+
+	# Place stairs up in a corner — no stairs down on the final level
+	var up_pos := Vector2i(2, 2)
+	# Find a floor tile near corner
+	for y in range(1, level.height / 4):
+		for x in range(1, level.width / 4):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+				up_pos = pos
+				break
+		if level.get_tile(up_pos) == Level.Tile.FLOOR:
+			break
+
+	if level.is_in_bounds(up_pos):
+		level.set_tile(up_pos, Level.Tile.FLOOR)
+		level.set_tile(up_pos, Level.Tile.STAIRS_UP)
+
+	# Assign room data
+	_assign_room_data(depth)
+
+	# Apply decoration
+	_apply_layer_decoration(depth)
+
+	# Spawn themed content
+	_spawn_monsters(depth)
+	_spawn_items(depth)
+	_spawn_artifacts(depth)
+	_spawn_lore_objects(depth)
+
+	level.generation_complete.emit(level.width, level.height)
+
+## Fallback throne room when no vault is available.
+func _fallback_throne_room(depth: int) -> void:
+	# Create one large room in the center
+	var room_w: int = mini(30, level.width - 4)
+	var room_h: int = mini(20, level.height - 4)
+	var room_x: int = (level.width - room_w) / 2
+	var room_y: int = (level.height - room_h) / 2
+
+	for y in range(room_y, room_y + room_h):
+		for x in range(room_x, room_x + room_w):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.FLOOR)
+
+	rooms.append(Rect2i(room_x, room_y, room_w, room_h))
+	print("Generated fallback throne room at depth %d" % depth)
+
+## Force-place transition vaults at layer boundaries.
+## Boundary depths map to specific vault indices.
+func _try_place_transition_vault(depth: int) -> void:
+	var transition_vaults: Dictionary = {
+		3: 200, 6: 201, 9: 202, 12: 203, 15: 204, 18: 205
+	}
+
+	if depth not in transition_vaults:
+		return
+
+	# 50% chance to place
+	if randf() > 0.50:
+		return
+
+	var vault_index: int = transition_vaults[depth]
+
+	# Find vault by index
+	var vault: DataManager.VaultData = null
+	for v: DataManager.VaultData in DataManager.vaults:
+		if v.index == vault_index:
+			vault = v
+			break
+
+	if vault == null or vault.map_lines.is_empty():
+		return
+
+	# Try to place at random position (20 attempts)
+	for _attempt in range(20):
+		var start_x: int = randi_range(2, level.width - vault.width - 2)
+		var start_y: int = randi_range(2, level.height - vault.height - 2)
+		var pos := Vector2i(start_x, start_y)
+
+		if _can_place_vault_at(pos, vault):
+			_carve_vault(pos, vault, depth)
+			rooms.append(Rect2i(pos.x, pos.y, vault.width, vault.height))
+			print("Placed transition vault %d at depth %d" % [vault_index, depth])
+			return
+
+# ============================================================================
+# WINDING CORRIDORS (Stream F)
+# ============================================================================
+
+## Carve a winding corridor from one point to another using random walk
+## with drift toward the target. 30% perpendicular deviation chance.
+func _carve_winding_corridor(from: Vector2i, to: Vector2i) -> void:
+	var pos: Vector2i = from
+	var max_steps: int = abs(to.x - from.x) + abs(to.y - from.y) + 20  # budget
+	var half_width: int = corridor_width / 2
+
+	for _step in range(max_steps):
+		# Carve at current position (with corridor width)
+		for dy in range(-half_width, half_width + 1):
+			for dx in range(-half_width, half_width + 1):
+				var carve_pos := Vector2i(pos.x + dx, pos.y + dy)
+				if level.is_in_bounds(carve_pos):
+					level.set_tile(carve_pos, Level.Tile.FLOOR)
+
+		# Check if we've reached the target
+		if pos == to:
+			break
+
+		# Determine preferred direction toward target
+		var diff: Vector2i = to - pos
+		var move: Vector2i = Vector2i.ZERO
+
+		if randf() < 0.30:
+			# Perpendicular deviation
+			if abs(diff.x) >= abs(diff.y):
+				# Moving mostly horizontally — deviate vertically
+				move = Vector2i(0, 1 if randf() < 0.5 else -1)
+			else:
+				# Moving mostly vertically — deviate horizontally
+				move = Vector2i(1 if randf() < 0.5 else -1, 0)
+		else:
+			# Move toward target
+			if abs(diff.x) > abs(diff.y):
+				move = Vector2i(1 if diff.x > 0 else -1, 0)
+			elif abs(diff.y) > 0:
+				move = Vector2i(0, 1 if diff.y > 0 else -1)
+			else:
+				break  # Already at target
+
+		pos += move
+
+		# Safety: don't go out of bounds
+		pos.x = clampi(pos.x, 1, level.width - 2)
+		pos.y = clampi(pos.y, 1, level.height - 2)

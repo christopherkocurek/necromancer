@@ -741,6 +741,7 @@ func load_vaults() -> void:
 			match key:
 				"N":
 					if current_vault and current_vault.name != "":
+						current_vault.compute_dimensions()
 						vaults.append(current_vault)
 					current_vault = VaultData.new()
 					reading_map = false
@@ -757,9 +758,14 @@ func load_vaults() -> void:
 						if x_parts.size() >= 2:
 							current_vault.rating = int(x_parts[1])
 						if x_parts.size() >= 3:
-							current_vault.height = int(x_parts[2])
-						if x_parts.size() >= 4:
-							current_vault.width = int(x_parts[3])
+							current_vault.rarity = int(x_parts[2])
+				"F":
+					if current_vault:
+						var flag_list := value.split("|")
+						for flag in flag_list:
+							var f := flag.strip_edges()
+							if f != "":
+								current_vault.flags.append(f)
 				"D":
 					reading_map = true
 					if current_vault:
@@ -768,6 +774,7 @@ func load_vaults() -> void:
 			current_vault.map_lines.append(stripped)
 
 	if current_vault and current_vault.name != "":
+		current_vault.compute_dimensions()
 		vaults.append(current_vault)
 
 # ============================================================================
@@ -918,26 +925,228 @@ func get_random_vault_for_depth(depth: int) -> VaultData:
 		return null
 	return valid.pick_random()
 
+## Get vaults matching a specific type that are valid for the given depth
+func get_vaults_by_type_for_depth(type: int, depth: int) -> Array[VaultData]:
+	var result: Array[VaultData] = []
+	for vault in vaults:
+		if vault.vault_type == type and vault.rating <= depth:
+			result.append(vault)
+	return result
+
+## Get a weighted random vault of a specific type for depth (weight = 1/rarity)
+func get_weighted_vault(type: int, depth: int) -> VaultData:
+	var candidates: Array[VaultData] = get_vaults_by_type_for_depth(type, depth)
+	if candidates.is_empty():
+		return null
+
+	var total_weight: float = 0.0
+	var weights: Array[float] = []
+	for v in candidates:
+		var w: float = 1.0 / maxf(float(v.rarity), 1.0)
+		weights.append(w)
+		total_weight += w
+
+	if total_weight <= 0.0:
+		return candidates.pick_random()
+
+	var roll: float = randf() * total_weight
+	var cumulative: float = 0.0
+	for i in range(candidates.size()):
+		cumulative += weights[i]
+		if roll <= cumulative:
+			return candidates[i]
+	return candidates[candidates.size() - 1]
+
+## Get a themed monster for the current depth using layer-specific tables
+## Falls back to get_random_monster_for_depth() if LayerConfig tables unavailable
+func get_themed_monster_for_depth(depth: int) -> MonsterData:
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	# Check if LayerConfig has LAYER_MONSTER_TABLES (added by Stream E)
+	if "LAYER_MONSTER_TABLES" in LayerConfig and layer_name in LayerConfig.LAYER_MONSTER_TABLES:
+		var table: Dictionary = LayerConfig.LAYER_MONSTER_TABLES[layer_name]
+		# Weighted selection from table entries: {category: weight}
+		var total_weight: float = 0.0
+		var entries: Array = []
+		for category: String in table:
+			var weight: float = float(table[category])
+			entries.append({"category": category, "weight": weight})
+			total_weight += weight
+
+		if total_weight > 0.0:
+			var roll: float = randf() * total_weight
+			var cumul: float = 0.0
+			for entry: Dictionary in entries:
+				cumul += entry.weight
+				if roll <= cumul:
+					var picked: MonsterData = _pick_monster_by_category(entry.category, depth)
+					if picked:
+						return picked
+					break
+
+	# Fallback
+	return get_random_monster_for_depth(depth)
+
+## Get a themed item for the current depth using layer-specific tval tables
+func get_themed_item_for_depth(depth: int) -> ItemData:
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	if "LAYER_ITEM_TVALS" in LayerConfig and layer_name in LayerConfig.LAYER_ITEM_TVALS:
+		var table: Dictionary = LayerConfig.LAYER_ITEM_TVALS[layer_name]
+		var total_weight: float = 0.0
+		var entries: Array = []
+		for tval_str: String in table:
+			var weight: float = float(table[tval_str])
+			entries.append({"tval": int(tval_str), "weight": weight})
+			total_weight += weight
+
+		if total_weight > 0.0:
+			var roll: float = randf() * total_weight
+			var cumul: float = 0.0
+			for entry: Dictionary in entries:
+				cumul += entry.weight
+				if roll <= cumul:
+					var picked: ItemData = _pick_item_by_tval(entry.tval, depth)
+					if picked:
+						return picked
+					break
+
+	return get_random_item_for_depth(depth)
+
+func _pick_item_by_tval(tval: int, depth: int) -> ItemData:
+	var candidates: Array[ItemData] = []
+	for i in items.values():
+		if i.tval == tval and i.depth <= depth and "INSTA_ART" not in i.flags:
+			candidates.append(i)
+	if candidates.is_empty():
+		return null
+	return candidates.pick_random()
+
+func _pick_monster_by_category(category: String, depth: int) -> MonsterData:
+	match category:
+		"spider": return _pick_spider_for_depth(depth)
+		"orc": return _pick_orc_for_depth(depth)
+		"troll": return _pick_troll_for_depth(depth)
+		"undead": return _pick_undead_for_depth(depth)
+		"shadow": return _pick_shadow_for_depth(depth)
+		"vampire": return _pick_vampire_for_depth(depth)
+		"warg": return _pick_warg_for_depth(depth)
+		"human_enemy": return _pick_human_enemy_for_depth(depth)
+		"wight": return _pick_wight_for_depth(depth)
+		"orc_leader": return _pick_orc_leader_for_depth(depth)
+		"flier": return _pick_flier_for_depth(depth)
+		"vermin": return _pick_vermin_for_depth(depth)
+		"elite": return _pick_elite_for_depth(depth)
+	return get_random_monster_for_depth(depth)
+
+func _pick_spider_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "S" or m.has_flag("SPIDER") or "spider" in m.name.to_lower() or "Spider" in m.name)
+
+func _pick_orc_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "o" or "Orc" in m.name or "orc" in m.name.to_lower())
+
+func _pick_troll_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "T" or "Troll" in m.name or "troll" in m.name.to_lower())
+
+func _pick_undead_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.has_flag("UNDEAD") or "Skeleton" in m.name or "Zombie" in m.name or "Wight" in m.name or "Ghost" in m.name or "Wraith" in m.name)
+
+func _pick_shadow_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "G" or "Shadow" in m.name or "Wraith" in m.name or "Phantom" in m.name)
+
+func _pick_vampire_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "V" or "Vampire" in m.name or "vampire" in m.name.to_lower())
+
+func _pick_warg_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "w" or "Warg" in m.name or "Wolf" in m.name)
+
+func _pick_human_enemy_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return "Easterling" in m.name or "Numenorean" in m.name or "Sorcerer" in m.name or "Necromancer" in m.name or m.display_char == "p")
+
+func _pick_wight_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return "Wight" in m.name or "wight" in m.name.to_lower())
+
+func _pick_orc_leader_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return "captain" in m.name.to_lower() or "chief" in m.name.to_lower() or m.display_char == "O")
+
+func _pick_flier_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "B" or "Bat" in m.name or "Crebain" in m.name or m.has_flag("FLY"))
+
+func _pick_vermin_for_depth(depth: int) -> MonsterData:
+	return _pick_monster_matching(depth, func(m: MonsterData) -> bool:
+		return m.display_char == "r" or m.display_char == "I" or "Rat" in m.name or "Centipede" in m.name)
+
+func _pick_elite_for_depth(depth: int) -> MonsterData:
+	# Elite: any monster at depth+2 for extra challenge
+	return get_random_monster_for_depth(mini(depth + 2, 20))
+
+## Generic helper: pick a random monster matching a predicate at depth
+func _pick_monster_matching(depth: int, predicate: Callable) -> MonsterData:
+	var candidates: Array[MonsterData] = []
+	for m in monsters.values():
+		if m.depth <= depth and m.depth >= maxi(1, depth - 4):
+			if predicate.call(m):
+				candidates.append(m)
+	if candidates.is_empty():
+		# Broaden search
+		for m in monsters.values():
+			if m.depth <= depth:
+				if predicate.call(m):
+					candidates.append(m)
+	if candidates.is_empty():
+		return get_random_monster_for_depth(depth)
+	return candidates.pick_random()
+
 func get_monster_by_char(ch: String, depth: int) -> MonsterData:
-	# Map single characters to monster types for vault spawning
-	var char_to_monster: Dictionary = {
-		"o": "Orc",
-		"O": "Orc captain",
-		"T": "Troll",
-		"V": "Morgoth, Lord of Darkness",  # Sauron equivalent
-		"g": "Goblin",
-		"w": "Warg",
-		"s": "Spider",
-		"S": "Mirkwood Spider",
-		"d": "Young dragon",
-		"D": "Dragon",
-		"W": "Werewolf",
-		"k": "Kobold",
-	}
-	var monster_name: String = char_to_monster.get(ch, "")
-	if monster_name and monsters.has(monster_name):
-		return monsters[monster_name]
-	# Fallback to random monster for depth
+	# Full vault symbol alphabet for monster spawning
+	match ch:
+		# Lowercase = common creature types
+		"a": return _pick_vermin_for_depth(depth)       # ant/vermin
+		"b": return _pick_flier_for_depth(depth)        # bat
+		"c": return _pick_vermin_for_depth(depth)       # centipede
+		"d": return _pick_warg_for_depth(depth)         # dog/warg pup
+		"f": return _pick_spider_for_depth(depth)       # feline/spider variant
+		"g": return _pick_orc_for_depth(depth)          # goblin
+		"h": return _pick_human_enemy_for_depth(depth)  # human
+		"i": return _pick_vermin_for_depth(depth)       # insect
+		"k": return _pick_orc_for_depth(depth)          # kobold
+		"m": return _pick_undead_for_depth(depth)       # mummy
+		"o": return _pick_orc_for_depth(depth)          # orc
+		"p": return _pick_human_enemy_for_depth(depth)  # person
+		"r": return _pick_vermin_for_depth(depth)       # rodent
+		"s": return _pick_spider_for_depth(depth)       # spider
+		"t": return _pick_troll_for_depth(depth)        # troll (small)
+		"v": return _pick_vampire_for_depth(depth)      # vampire bat
+		"w": return _pick_warg_for_depth(depth)         # warg/wolf
+		"z": return _pick_undead_for_depth(depth)       # zombie
+
+		# Uppercase = elite/boss/named types
+		"B": return _pick_flier_for_depth(depth)        # Bat Lord
+		"C": return _pick_spider_for_depth(depth)       # Crebain
+		"D": return _pick_shadow_for_depth(depth)       # Dragon/Demon
+		"G": return _pick_shadow_for_depth(depth)       # Ghost
+		"H": return _pick_human_enemy_for_depth(depth)  # Human leader
+		"L": return _pick_undead_for_depth(depth)       # Lich
+		"M": return _pick_undead_for_depth(depth)       # Mummy lord
+		"N": return _pick_human_enemy_for_depth(depth)  # Necromancer
+		"O": return _pick_orc_leader_for_depth(depth)   # Orc captain
+		"P": return _pick_human_enemy_for_depth(depth)  # Person (strong)
+		"S": return _pick_spider_for_depth(depth)       # Spider (big)
+		"T": return _pick_troll_for_depth(depth)        # Troll (big)
+		"V": return _pick_vampire_for_depth(depth)      # Vampire
+		"W": return _pick_warg_for_depth(depth)         # Werewolf/Warg alpha
+		"Z": return _pick_undead_for_depth(depth)       # Zombie lord
+
+	# Fallback for unrecognized characters
 	return get_random_monster_for_depth(depth)
 
 func roll_dice(dice_string: String) -> int:
@@ -1162,4 +1371,17 @@ class VaultData:
 	var rating: int = 0
 	var height: int = 0
 	var width: int = 0
+	var rarity: int = 1          # From X: field[2]
+	var flags: Array[String] = [] # From F: lines
 	var map_lines: Array[String] = []
+
+	func has_flag(flag_name: String) -> bool:
+		return flag_name in flags
+
+	func compute_dimensions() -> void:
+		if map_lines.is_empty():
+			return
+		height = map_lines.size()
+		width = 0
+		for line in map_lines:
+			width = maxi(width, line.length())
