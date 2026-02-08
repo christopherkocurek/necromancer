@@ -293,10 +293,18 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	# Connect player death signal
 	player.player_died.connect(_on_player_died)
 
-	# Find starting position (stairs up or random floor)
+	# Find starting position (stairs up, or first room center on floor 1)
 	var start_pos := current_level.find_stairs_up()
 	if start_pos == Vector2i(-1, -1):
-		start_pos = current_level.find_random_floor()
+		# Floor 1: spawn in first room center (matches monster exclusion zone)
+		if not current_level.rooms.is_empty():
+			var first_room: Rect2i = current_level.rooms[0]
+			start_pos = Vector2i(
+				first_room.position.x + first_room.size.x / 2,
+				first_room.position.y + first_room.size.y / 2
+			)
+		else:
+			start_pos = current_level.find_random_floor()
 
 	player.grid_position = start_pos
 	current_level.add_entity(player)
@@ -682,6 +690,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				player.record_action(player.direction_to_action(diag_dir))
 				if player.try_move(diag_dir):
 					var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
+					if player.stealth_mode:
+						move_cost *= Constants.STEALTH_MODE_SPEED_MULTIPLIER
 					player.consume_energy(move_cost)
 					turn_system._after_player_action()
 				get_viewport().set_input_as_handled()
@@ -790,7 +800,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
 		if event.keycode == KEY_D:
 			if player and player.is_alive and GameManager.is_player_turn and current_level:
-				var hunting_skill: int = player.get_skill("hunting")
+				var hunting_skill: int = player.get_effective_perception()
 				var result: Dictionary = current_level.disarm_trap(player.grid_position, hunting_skill)
 				if result.success:
 					player.gain_experience(5, "disarm")
@@ -1312,6 +1322,8 @@ func _process_auto_explore_step() -> void:
 	if player.try_move(direction):
 		player.record_action(player.direction_to_action(direction))
 		var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
+		if player.stealth_mode:
+			move_cost *= Constants.STEALTH_MODE_SPEED_MULTIPLIER
 		player.consume_energy(move_cost)
 		auto_explore.confirm_step_taken()
 

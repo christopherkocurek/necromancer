@@ -1906,6 +1906,13 @@ func get_stealth_score() -> int:
 	score -= effective_noise
 	return score
 
+## Get effective perception/hunting skill (enhanced by stealth mode awareness)
+func get_effective_perception() -> int:
+	var base: int = get_skill("hunting")
+	if stealth_mode:
+		base += Constants.STEALTH_MODE_PERCEPTION_BONUS
+	return base
+
 ## Get combat noise bonus for monster perception (canon section 2.4)
 func get_combat_noise() -> int:
 	var noise: int = 0
@@ -1926,7 +1933,7 @@ func add_noise(amount: int) -> void:
 func toggle_stealth_mode() -> void:
 	stealth_mode = not stealth_mode
 	if stealth_mode:
-		GameManager.log_message("You enter stealth mode.", ThemeColors.MSG_STEALTH)
+		GameManager.log_message("You enter stealth mode. (Moving at half speed)", ThemeColors.MSG_STEALTH)
 	else:
 		GameManager.log_message("You leave stealth mode.", ThemeColors.MSG_SYSTEM)
 

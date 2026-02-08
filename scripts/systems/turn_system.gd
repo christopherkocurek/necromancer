@@ -103,7 +103,10 @@ func _handle_player_input() -> void:
 		# Player took an action - consume energy
 		# Movement actions pay terrain-based cost; non-movement actions pay standard cost
 		if player.moved_this_turn and current_level:
-			player.consume_energy(current_level.get_movement_cost(player.grid_position))
+			var move_cost: int = current_level.get_movement_cost(player.grid_position)
+			if player.stealth_mode:
+				move_cost *= Constants.STEALTH_MODE_SPEED_MULTIPLIER
+			player.consume_energy(move_cost)
 		else:
 			player.consume_energy()
 		_after_player_action()

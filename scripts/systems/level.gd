@@ -289,7 +289,7 @@ func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
 	# Check for Hunting skill to potentially spot and avoid (50% + Hunting*5%)
 	var avoid_chance: int = 50
 	if is_instance_valid(entity) and entity.has_method("get_skill"):
-		var hunting: int = entity.get_skill("hunting")
+		var hunting: int = entity.get_effective_perception() if entity.has_method("get_effective_perception") else entity.get_skill("hunting")
 		avoid_chance += hunting * 5
 
 	# Roll to avoid — trap stays active if avoided
@@ -319,46 +319,64 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 			var dmg: int = randi_range(1, 4) + depth / 3
 			entity.take_damage(dmg, "physical", null)
 			GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.PIT:
 			var dmg: int = randi_range(2, 8)  # 2d4
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("stunned", 1)
 			GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], ThemeColors.MSG_ERROR)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.DART:
 			var dmg: int = randi_range(1, 6)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("poisoned", 5 + randi_range(1, 5))
 			GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.GAS:
 			entity.apply_status("confused", 3 + randi_range(0, 2))
 			GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), ThemeColors.STATUS_CONFUSED)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.ALARM:
 			add_floor_noise(15)
 			GameManager.log_message("An alarm sounds! The dungeon stirs...", ThemeColors.COMBAT_CRIT)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.TELEPORT:
 			var new_pos: Vector2i = find_random_floor()
 			if new_pos != Vector2i(-1, -1) and entity.has_method("teleport_to"):
 				entity.teleport_to(new_pos)
 				GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_INFO)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.FLASH:
 			entity.apply_status("blind", 3 + randi_range(0, 2))
 			GameManager.log_message("A blinding flash of light!", ThemeColors.MSG_WARNING)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.CALTROPS:
 			var dmg: int = randi_range(1, 4)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("slow", 3)
 			GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], ThemeColors.MSG_ERROR)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.WEB:
 			entity.apply_status("slow", 5)
 			GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_WARNING)
+			if entity.has_method("add_noise"):
+				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 	if not is_instance_valid(entity):
