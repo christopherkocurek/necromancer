@@ -372,7 +372,7 @@ func learn_ability(skill: int, ability: int) -> void:
 
 	# Smithing: Grace — permanent +1 GRA when learned (Task 15)
 	if skill == Constants.Skill.S_SMT and ability == Constants.SmithingAbility.SMT_GRACE:
-		base_grace += 1
+		grace += 1
 		GameManager.log_message("Your grace increases by 1!", ThemeColors.ABILITY_LEARNED)
 
 func abilities_in_skill(skill_type: int) -> int:
@@ -747,6 +747,26 @@ func _apply_equipment_flags() -> void:
 				# Brand flags
 				"BRAND_FIRE", "BRAND_COLD", "BRAND_POIS":
 					equip_flags[flag] = true
+				# Slay flags (boolean)
+				"SLAY_ORC", "SLAY_TROLL", "SLAY_SPIDER", "SLAY_WOLF", \
+				"SLAY_UNDEAD", "SLAY_RAUKO", "SLAY_DRAGON", "SLAY_MAN_OR_ELF":
+					equip_flags[flag] = true
+				# Defensive utility flags
+				"STAND_FAST", "AVOID_TRAPS", "ACCURATE", "SHARPNESS", \
+				"VAMPIRIC", "TUNNEL", "RADIANCE", "RES_BLIND", "RES_BLEED":
+					equip_flags[flag] = true
+				# Negative stat flags (scaled by pval)
+				"NEG_STR":
+					_equip_str_bonus -= pval
+				"NEG_DEX":
+					_equip_dex_bonus -= pval
+				"NEG_CON":
+					_equip_con_bonus -= pval
+				"NEG_GRA":
+					_equip_gra_bonus -= pval
+				# Skill flags (SONG flag maps to lore skill bonus)
+				"SONG":
+					equip_skill_bonuses["lore"] += pval
 
 	# Apply granted abilities from B: lines
 	for slot in equipment:
@@ -780,6 +800,24 @@ func get_effective_grace() -> int:
 
 func get_effective_skill(skill_name: String) -> int:
 	return skills.get(skill_name, 0) + equip_skill_bonuses.get(skill_name, 0)
+
+## Try to drain a stat, blocked by SUST_* flags. Returns actual drain amount.
+func try_drain_stat(stat_name: String, drain_amount: int) -> int:
+	var sust_flag: String = "SUST_" + stat_name.to_upper()
+	if has_equip_flag(sust_flag):
+		GameManager.log_message("Your equipment sustains your %s!" % stat_name, ThemeColors.PRIMARY)
+		return 0
+	match stat_name:
+		"str", "strength":
+			strength = maxi(-5, strength - drain_amount)
+		"dex", "dexterity":
+			dexterity = maxi(-5, dexterity - drain_amount)
+		"con", "constitution":
+			constitution = maxi(-5, constitution - drain_amount)
+		"gra", "grace":
+			grace = maxi(-5, grace - drain_amount)
+	_recalculate_stats()
+	return drain_amount
 
 func _recalculate_protection() -> void:
 	# Sum up protection dice from all armor pieces
@@ -1301,6 +1339,10 @@ func get_total_attack(target: Entity) -> int:
 	if active_song_id == 157:  # SONG_OF_AULE
 		att += 2
 
+	# ACCURATE equipment flag: +3 attack
+	if has_equip_flag("ACCURATE"):
+		att += 3
+
 	# Blind: halve attack
 	if status_fx and status_fx.is_blind():
 		att = att / 2
@@ -1397,6 +1439,58 @@ func _get_bonus_damage_dice() -> int:
 		return 1
 	return 0
 
+## Get slay bonus damage dice vs target based on equipped SLAY_* flags
+func _get_slay_bonus_dice(target: Entity) -> int:
+	if not is_instance_valid(target) or not target is Monster:
+		return 0
+	var mon: Monster = target as Monster
+	if not mon.monster_data:
+		return 0
+	var bonus: int = 0
+	# Each matching slay = +1 bonus weapon die
+	if has_equip_flag("SLAY_ORC") and mon.monster_data.has_flag("ORC"):
+		bonus += 1
+	if has_equip_flag("SLAY_TROLL") and mon.monster_data.has_flag("TROLL"):
+		bonus += 1
+	if has_equip_flag("SLAY_SPIDER") and mon.monster_data.has_flag("SPIDER"):
+		bonus += 1
+	if has_equip_flag("SLAY_WOLF") and mon.monster_data.has_flag("WOLF"):
+		bonus += 1
+	if has_equip_flag("SLAY_UNDEAD") and mon.monster_data.has_flag("UNDEAD"):
+		bonus += 1
+	if has_equip_flag("SLAY_RAUKO") and mon.monster_data.has_flag("RAUKO"):
+		bonus += 1
+	if has_equip_flag("SLAY_DRAGON") and mon.monster_data.has_flag("DRAGON"):
+		bonus += 1
+	if has_equip_flag("SLAY_MAN_OR_ELF") and (mon.monster_data.has_flag("MAN") or mon.monster_data.has_flag("ELF")):
+		bonus += 1
+	return bonus
+
+## Get brand bonus damage vs target based on equipped BRAND_* flags
+func _get_brand_bonus_damage(target: Entity) -> int:
+	if not is_instance_valid(target) or not target is Monster:
+		return 0
+	var mon: Monster = target as Monster
+	var bonus: int = 0
+	var dmg_dice: String = get_weapon_damage_dice()
+	# Each brand = +1 weapon die, halved if target has matching resistance
+	if has_equip_flag("BRAND_FIRE"):
+		var brand_dmg: int = DataManager.roll_dice(dmg_dice)
+		if mon.monster_data and mon.monster_data.has_flag("RES_FIRE"):
+			brand_dmg = maxi(1, brand_dmg / 2)
+		bonus += brand_dmg
+	if has_equip_flag("BRAND_COLD"):
+		var brand_dmg: int = DataManager.roll_dice(dmg_dice)
+		if mon.monster_data and mon.monster_data.has_flag("RES_COLD"):
+			brand_dmg = maxi(1, brand_dmg / 2)
+		bonus += brand_dmg
+	if has_equip_flag("BRAND_POIS"):
+		var brand_dmg: int = DataManager.roll_dice(dmg_dice)
+		if mon.monster_data and mon.monster_data.has_flag("RES_POIS"):
+			brand_dmg = maxi(1, brand_dmg / 2)
+		bonus += brand_dmg
+	return bonus
+
 ## Post-hit ability hooks: Knock Back, Mighty Blow, Follow-Through, Opening Strike tracking
 func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 	# Patient Stalker: double damage on ambush attack after 3+ stealth turns
@@ -1490,6 +1584,13 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 				target.take_damage(1, "holy", self)
 				GameManager.log_message("Your Numenorean blood sears %s! (+1)" % target.entity_name, ThemeColors.PRIMARY)
 
+	# Vampiric: heal for damage/2 (min 1) when dealing damage
+	if has_equip_flag("VAMPIRIC") and damage > 0:
+		var heal_amount: int = maxi(1, damage / 2)
+		current_health = mini(current_health + heal_amount, max_health)
+		GameManager.log_message("Your weapon drains life! (+%d HP)" % heal_amount, ThemeColors.MSG_HEAL)
+		vfx_floater("+%d" % heal_amount, ThemeColors.DMG_HEAL, 14)
+
 func _try_knock_back(target: Entity) -> void:
 	if not is_instance_valid(target) or not GameManager.current_level:
 		return
@@ -1500,6 +1601,21 @@ func _try_knock_back(target: Entity) -> void:
 	if GameManager.current_level.is_in_bounds(dest) and GameManager.current_level.is_passable(dest) and GameManager.current_level.get_entity_at(dest) == null:
 		target.move_to(dest, false)
 		GameManager.log_message("You knock %s back!" % target.entity_name, ThemeColors.MSG_WARNING)
+
+## Receive knockback from an external source. STAND_FAST blocks displacement.
+## Returns true if knockback was resisted.
+func receive_knockback(push_dir: Vector2i, _distance: int = 1) -> bool:
+	# STAND_FAST blocks knockback displacement
+	if has_equip_flag("STAND_FAST"):
+		GameManager.log_message("You stand fast!", ThemeColors.PRIMARY)
+		return true
+	if not GameManager.current_level:
+		return false
+	var dest: Vector2i = grid_position + push_dir
+	if GameManager.current_level.is_in_bounds(dest) and GameManager.current_level.is_passable(dest) and GameManager.current_level.get_entity_at(dest) == null:
+		move_to(dest, false)
+		GameManager.log_message("You are knocked back!", ThemeColors.MSG_WARNING)
+	return false
 
 func _try_follow_through(dead_pos: Vector2i) -> void:
 	if _in_follow_through:
@@ -2346,6 +2462,11 @@ func _interact_with_npc(npc: Entity) -> void:
 	EventBus.npc_interacted.emit(self, npc)
 
 func apply_status(status_name: String, duration: int, data: Variant = null) -> void:
+	# FREE_ACT blocks paralysis and entrance
+	if status_name in ["paralyze", "paralysis", "entrance", "entranced"] and has_equip_flag("FREE_ACT"):
+		GameManager.log_message("You resist the effect!", ThemeColors.PRIMARY)
+		return
+
 	# Blood of Numenor: immune to entrancement
 	if trait_effect_id == "blood_of_numenor" and status_name == "entranced":
 		GameManager.log_message("Your Numenorean blood resists!", ThemeColors.PRIMARY)
@@ -2378,6 +2499,17 @@ func apply_status(status_name: String, duration: int, data: Variant = null) -> v
 
 func take_damage(amount: int, damage_type: String = "physical", source: Entity = null) -> void:
 	was_attacked_this_turn = true
+
+	# Elemental resistance: halve matching damage types
+	if damage_type == "fire" and has_equip_flag("RES_FIRE"):
+		amount = maxi(1, amount / 2)
+		GameManager.log_message("Your fire resistance absorbs the heat!", ThemeColors.PRIMARY)
+	elif damage_type == "cold" and has_equip_flag("RES_COLD"):
+		amount = maxi(1, amount / 2)
+		GameManager.log_message("Your cold resistance wards off the chill!", ThemeColors.PRIMARY)
+	elif damage_type == "poison" and has_equip_flag("RES_POIS"):
+		amount = maxi(1, amount / 2)
+		GameManager.log_message("Your poison resistance filters the venom!", ThemeColors.PRIMARY)
 
 	# Vengeance: track that we were hit for +2 attack next turn
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_VENGEANCE):

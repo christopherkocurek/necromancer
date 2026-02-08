@@ -475,6 +475,19 @@ func attack_entity(target: Entity) -> void:
 	for i in range(bonus_dice):
 		damage += DataManager.roll_dice(dmg_dice)
 
+	# Slay bonus dice (Player only, via virtual override)
+	var slay_dice: int = _get_slay_bonus_dice(target)
+	for i in range(slay_dice):
+		damage += DataManager.roll_dice(dmg_dice)
+	if slay_dice > 0:
+		GameManager.log_message("Your weapon's power is deadly! (+%d dice)" % slay_dice, ThemeColors.COMBAT_CRIT)
+
+	# Brand bonus damage (Player only, via virtual override)
+	var brand_damage: int = _get_brand_bonus_damage(target)
+	if brand_damage > 0:
+		damage += brand_damage
+		GameManager.log_message("Your weapon burns with elemental power! (+%d)" % brand_damage, ThemeColors.COMBAT_CRIT)
+
 	# Log the hit
 	if crit_dice > 0:
 		GameManager.log_message("%s CRITS %s! (%d vs %d, +%d dice = %d dmg)" % [
@@ -527,6 +540,14 @@ func _get_crit_threshold() -> int:
 
 ## Get bonus damage dice from abilities. Override in Player.
 func _get_bonus_damage_dice() -> int:
+	return 0
+
+## Get slay bonus dice vs target (override in Player)
+func _get_slay_bonus_dice(_target: Entity) -> int:
+	return 0
+
+## Get brand bonus damage vs target (override in Player)
+func _get_brand_bonus_damage(_target: Entity) -> int:
 	return 0
 
 ## Apply target's crit resistance (RES_CRIT halves, NO_CRIT zeroes).
