@@ -235,6 +235,10 @@ func _get_terrain_name(tile: int) -> String:
 			return "Rubble"
 		Level.Tile.FORGE:
 			return "Forge"
+		Level.Tile.FORGE_ENCHANTED:
+			return "Enchanted Forge"
+		Level.Tile.FORGE_UNIQUE:
+			return "Unique Forge"
 		Level.Tile.TRAP:
 			return "Trap"
 		Level.Tile.TRAP_TRIGGERED:

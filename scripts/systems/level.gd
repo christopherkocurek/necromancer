@@ -59,10 +59,15 @@ enum Tile {
 	SHADOW_FLOOR = 25,   # Shadow floor - 1x movement, 1d4 damage if tile is lit
 	THRONE_DAIS = 26,    # Throne dais - 1x movement, flavor text only
 	INSCRIPTION = 27,    # Inscribed floor - 1x movement, readable lore marker (no combat effect)
+	FORGE_ENCHANTED = 28, # Enchanted forge - +3 smithing bonus, 3-4 uses
+	FORGE_UNIQUE = 29,    # Unique forge - +7 smithing bonus, 3 uses (max 1 per game)
 }
 
 # Track which traps have been triggered (to avoid re-triggering)
 var triggered_traps: Dictionary = {}  # Vector2i -> bool
+
+# Forge use tracking — each forge has limited uses
+var forge_uses: Dictionary = {}  # Vector2i -> int
 
 # Trap types stored per position
 enum TrapType {
@@ -179,7 +184,7 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.FORGE_ENCHANTED, Tile.FORGE_UNIQUE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
 			return true
 		_:
 			return false
@@ -267,12 +272,48 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	return false
 
 ## Get a display name for the terrain at a position (for HUD / look mode)
+# ============================================================================
+# FORGE HELPERS
+# ============================================================================
+
+func is_forge_tile(pos: Vector2i) -> bool:
+	var tile := get_tile(pos)
+	return tile == Tile.FORGE or tile == Tile.FORGE_ENCHANTED or tile == Tile.FORGE_UNIQUE
+
+func get_forge_type(pos: Vector2i) -> Tile:
+	return get_tile(pos)
+
+func get_forge_bonus(pos: Vector2i) -> int:
+	match get_tile(pos):
+		Tile.FORGE: return 0
+		Tile.FORGE_ENCHANTED: return 3
+		Tile.FORGE_UNIQUE: return 7
+	return 0
+
+func init_forge_uses(pos: Vector2i, uses: int) -> void:
+	forge_uses[pos] = uses
+
+func get_forge_uses(pos: Vector2i) -> int:
+	return forge_uses.get(pos, 0)
+
+func consume_forge_use(pos: Vector2i) -> int:
+	if pos not in forge_uses:
+		return 0
+	forge_uses[pos] -= 1
+	var remaining: int = forge_uses[pos]
+	if remaining <= 0:
+		forge_uses.erase(pos)
+		set_tile(pos, Tile.FLOOR)
+	return remaining
+
 func get_terrain_name(pos: Vector2i) -> String:
 	match get_tile(pos):
 		Tile.VINE_FLOOR: return "Vines"
 		Tile.WATER: return "Water"
 		Tile.LAVA: return "Lava"
 		Tile.FORGE: return "Forge"
+		Tile.FORGE_ENCHANTED: return "Enchanted Forge"
+		Tile.FORGE_UNIQUE: return "Unique Forge"
 		Tile.POISON_STREAM: return "Poison Stream"
 		Tile.WEB: return "Spider Web"
 		Tile.DARK_POOL: return "Dark Pool"

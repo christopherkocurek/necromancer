@@ -913,6 +913,60 @@ func get_random_item_for_depth(depth: int) -> ItemData:
 		return null
 	return valid_items.pick_random()
 
+## Get a random item filtered by tval category for smithing Reforge output
+func get_random_item_by_tvals(tvals: Array[int], depth: int) -> ItemData:
+	var valid_items: Array[ItemData] = []
+	for i in items.values():
+		if i.tval not in tvals:
+			continue
+		if "INSTA_ART" in i.flags or "NO_SMITHING" in i.flags or "DAMAGED" in i.flags:
+			continue
+		if i.depth <= depth + 2 and i.depth >= maxi(1, depth - 3):
+			valid_items.append(i)
+	if valid_items.is_empty():
+		# Fallback: any item of that type at or below depth
+		for i in items.values():
+			if i.tval not in tvals:
+				continue
+			if "INSTA_ART" in i.flags or "NO_SMITHING" in i.flags or "DAMAGED" in i.flags:
+				continue
+			if i.depth <= depth + 2:
+				valid_items.append(i)
+	if valid_items.is_empty():
+		return null
+	return duplicate_item_data(valid_items.pick_random())
+
+## Get a random artifact filtered by tval category for smithing Reclaim output
+func get_random_artifact_by_tvals(tvals: Array[int]) -> ArtifactData:
+	var valid: Array[ArtifactData] = []
+	for a in artifacts.values():
+		if a.tval in tvals:
+			valid.append(a)
+	if valid.is_empty():
+		return null
+	return valid.pick_random()
+
+## Get multiple random artifacts by tval category (for Reclaim Mastery — pick from 3)
+func get_random_artifacts_by_tvals(tvals: Array[int], count: int) -> Array[ArtifactData]:
+	var valid: Array[ArtifactData] = []
+	for a in artifacts.values():
+		if a.tval in tvals:
+			valid.append(a)
+	valid.shuffle()
+	var result: Array[ArtifactData] = []
+	for i in range(mini(count, valid.size())):
+		result.append(valid[i])
+	return result
+
+## Get the highest-depth artifact of a given type (for Masterwork — best tier)
+func get_best_artifact_by_tvals(tvals: Array[int]) -> ArtifactData:
+	var best: ArtifactData = null
+	for a in artifacts.values():
+		if a.tval in tvals:
+			if best == null or a.depth > best.depth:
+				best = a
+	return best
+
 ## Get a random food item (tval 80) appropriate for depth (any food or herb)
 func get_random_food_for_depth(depth: int) -> ItemData:
 	var food_items: Array[ItemData] = []

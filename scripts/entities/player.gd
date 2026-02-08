@@ -370,6 +370,11 @@ func learn_ability(skill: int, ability: int) -> void:
 	active_ability[skill][ability] = true
 	have_ability[skill][ability] = true
 
+	# Smithing: Grace — permanent +1 GRA when learned (Task 15)
+	if skill == Constants.Skill.S_SMT and ability == Constants.SmithingAbility.SMT_GRACE:
+		base_grace += 1
+		GameManager.log_message("Your grace increases by 1!", ThemeColors.ABILITY_LEARNED)
+
 func abilities_in_skill(skill_type: int) -> int:
 	if skill_type < 0 or skill_type >= Constants.S_MAX:
 		return 0

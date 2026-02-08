@@ -965,7 +965,7 @@ func _is_on_forge() -> bool:
 	## Check if player is standing on a forge tile.
 	if not _level:
 		return false
-	return _level.get_tile(_player.grid_position) == Level.Tile.FORGE
+	return _level.is_forge_tile(_player.grid_position)
 
 func _get_chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
 	return maxi(absi(a.x - b.x), absi(a.y - b.y))
@@ -1977,7 +1977,7 @@ func _try_seek_forge() -> bool:
 	for y in range(_level.height):
 		for x in range(_level.width):
 			var pos := Vector2i(x, y)
-			if _level.get_tile(pos) == Level.Tile.FORGE:
+			if _level.is_forge_tile(pos):
 				if _level.is_explored(pos):
 					var dist: int = _get_chebyshev_distance(pp, pos)
 					if dist < best_dist:

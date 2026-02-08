@@ -180,7 +180,7 @@ func _check_stop_conditions() -> bool:
 		return true
 
 	# 4. Player on forge
-	if tile == Level.Tile.FORGE:
+	if tile == Level.Tile.FORGE or tile == Level.Tile.FORGE_ENCHANTED or tile == Level.Tile.FORGE_UNIQUE:
 		stop_explore("Found forge")
 		return true
 

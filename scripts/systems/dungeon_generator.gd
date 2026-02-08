@@ -1509,8 +1509,28 @@ func _ensure_forges(depth: int) -> void:
 	# Check if a forge already exists (placed by vaults or decoration)
 	for y in range(level.height):
 		for x in range(level.width):
-			if level.get_tile(Vector2i(x, y)) == Level.Tile.FORGE:
+			var tile: int = level.get_tile(Vector2i(x, y))
+			if tile == Level.Tile.FORGE or tile == Level.Tile.FORGE_ENCHANTED or tile == Level.Tile.FORGE_UNIQUE:
 				return  # Already have one
+
+	# Determine forge type (Task 7)
+	var forge_tile: int = Level.Tile.FORGE
+	var forge_uses: int = randi_range(2, 4)
+	var roll: int = randi_range(0, 999)
+	if roll >= 1000:
+		# Unique forge — extremely rare, max 1 per game
+		forge_tile = Level.Tile.FORGE_UNIQUE
+		forge_uses = 3
+	elif roll >= 990:
+		# Enchanted forge — rare
+		forge_tile = Level.Tile.FORGE_ENCHANTED
+		forge_uses = randi_range(3, 4)
+	else:
+		# Normal forge
+		forge_tile = Level.Tile.FORGE
+		forge_uses = randi_range(2, 4)
+		if depth <= 4:
+			forge_uses = 3  # Guaranteed 3 uses early
 
 	# Place forge - try rooms in random order until successful
 	if rooms.is_empty():
@@ -1524,30 +1544,33 @@ func _ensure_forges(depth: int) -> void:
 			room.position.y + room.size.y / 2
 		)
 		if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
-			level.set_tile(forge_pos, Level.Tile.FORGE)
+			level.set_tile(forge_pos, forge_tile)
+			level.init_forge_uses(forge_pos, forge_uses)
 			return
 
 ## Spawn 1-3 smithing materials within 3 tiles of each forge (Sil-Q forge_item_placement)
 ## Depth determines material type: Mithril on all floors, Broken Glowing mid+, Broken Strange deep
 func _spawn_forge_materials(depth: int) -> void:
-	# Find all forge positions
+	# Find all forge positions (any forge type)
 	var forge_positions: Array[Vector2i] = []
 	for y in range(level.height):
 		for x in range(level.width):
-			if level.get_tile(Vector2i(x, y)) == Level.Tile.FORGE:
-				forge_positions.append(Vector2i(x, y))
+			var pos := Vector2i(x, y)
+			if level.is_forge_tile(pos):
+				forge_positions.append(pos)
 
 	if forge_positions.is_empty():
 		return
 
 	var item_scene := preload("res://scenes/entities/item.tscn")
 
-	# Build pool of smithing material names based on depth
+	# Build pool of smithing material names based on depth (Task 16: lowered thresholds)
 	var material_pool: Array[String] = ["Piece of Mithril"]
-	if depth >= 3:
+	if depth >= 2:
 		material_pool.append("Broken Glowing Weapon")
-	if depth >= 4:
 		material_pool.append("Shattered Elven Mail")
+	if depth >= 5:
+		material_pool.append("Broken Glowing Ring")
 	if depth >= 8:
 		material_pool.append("Broken Strange Weapon")
 	if depth >= 10:

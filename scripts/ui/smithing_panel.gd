@@ -1,8 +1,8 @@
 extends Control
 class_name SmithingPanel
 ## UI for the smithing system - displays when player is on a forge tile.
-## Supports CREATE (Mithril → item), REFORGE (2 Broken Glowing → enchanted),
-## and RECLAIM (2 Broken Strange → artifact).
+## Supports CREATE, REFORGE, RECLAIM, and MASTERWORK recipes.
+## Handles Reforge Mastery (reject/reroll) and Reclaim Mastery (pick from 3).
 
 const SmithingSystemScript := preload("res://scripts/systems/smithing_system.gd")
 
@@ -16,7 +16,12 @@ var smithing_system: RefCounted = null  # SmithingSystem
 # Selected state
 var selected_recipe: RefCounted = null  # SmithingSystem.Recipe
 var selected_template: Variant = null   # For CREATE: the item template to forge
-var selected_materials: Array = []      # Materials chosen (1 for create, 2 for reforge/reclaim)
+var selected_materials: Array = []      # Materials chosen
+
+# Mastery state
+var _mastery_reforge_items: Array = []   # [item1, item2] for Reforge Mastery
+var _mastery_reclaim_artifacts: Array = [] # [art1, art2, art3] for Reclaim Mastery
+var _in_mastery_mode: bool = false
 
 # Cached lists for index mapping
 var _current_templates: Array = []
@@ -57,6 +62,9 @@ func _ready() -> void:
 func open(player_ref: Player, level_ref: Level) -> void:
 	player = player_ref
 	level = level_ref
+	_in_mastery_mode = false
+	_mastery_reforge_items.clear()
+	_mastery_reclaim_artifacts.clear()
 	PanelTransition.open_panel(self)
 
 	_refresh_ui()
@@ -68,17 +76,25 @@ func close() -> void:
 	selected_materials.clear()
 	_current_templates.clear()
 	_current_materials.clear()
+	_in_mastery_mode = false
+	_mastery_reforge_items.clear()
+	_mastery_reclaim_artifacts.clear()
 	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _refresh_ui() -> void:
 	if not player:
 		return
 
-	title_label.text = "Forge"
+	# Show forge type in title
+	var forge_name: String = "Forge"
+	if level:
+		forge_name = level.get_terrain_name(player.grid_position)
+		if forge_name.is_empty():
+			forge_name = "Forge"
+	title_label.text = forge_name
 
-	# Update success chance display
-	var chance: int = smithing_system.get_success_chance(player)
-	success_label.text = "Success Chance: %d%%" % chance
+	# Update success chance display (varies by recipe type now)
+	_update_success_display()
 
 	# Populate recipe list (available + locked)
 	_populate_recipes()
@@ -91,6 +107,19 @@ func _refresh_ui() -> void:
 
 	_update_forge_button()
 	_update_info()
+
+func _update_success_display() -> void:
+	if not selected_recipe:
+		var base_chance: int = smithing_system.get_success_chance(player)
+		success_label.text = "Base Success: %d%%" % base_chance
+		return
+
+	var forge_bonus: int = 0
+	if level:
+		forge_bonus = level.get_forge_bonus(player.grid_position)
+	var chance: int = smithing_system.get_success_chance(player, selected_recipe.type, forge_bonus)
+	var uses: int = level.get_forge_uses(player.grid_position) if level else 0
+	success_label.text = "Success: %d%% | Forge Uses: %d" % [chance, uses]
 
 func _populate_recipes() -> void:
 	recipe_list.clear()
@@ -119,7 +148,9 @@ func _on_recipe_selected(index: int) -> void:
 
 	selected_template = null
 	selected_materials.clear()
+	_in_mastery_mode = false
 	_populate_items_for_recipe()
+	_update_success_display()
 	_update_info()
 	_update_forge_button()
 
@@ -150,7 +181,8 @@ func _populate_items_for_recipe() -> void:
 				item_list.add_item(display)
 
 		SmithingSystemScript.RecipeType.REFORGE, \
-		SmithingSystemScript.RecipeType.RECLAIM:
+		SmithingSystemScript.RecipeType.RECLAIM, \
+		SmithingSystemScript.RecipeType.MASTERWORK:
 			# No template selection — materials only
 			pass
 
@@ -172,6 +204,11 @@ func _on_item_selected(index: int) -> void:
 	if not selected_recipe:
 		return
 
+	# Handle mastery pick-from-list
+	if _in_mastery_mode:
+		_handle_mastery_selection(index)
+		return
+
 	if index < _current_templates.size():
 		selected_template = _current_templates[index]
 	else:
@@ -184,14 +221,19 @@ func _on_material_selected(index: int) -> void:
 	if not selected_recipe:
 		return
 
-	# For recipes needing 2 materials, toggle selection
+	# Determine needed count (Master Smith reduces Masterwork to 2)
+	var needed: int = selected_recipe.material_count
+	if selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
+		needed = 2
+
+	# For recipes needing multiple materials, toggle selection
 	if index < _current_materials.size():
 		var mat = _current_materials[index]
 		if mat in selected_materials:
 			selected_materials.erase(mat)
 			material_list.set_item_custom_fg_color(index, Color.WHITE)
 		else:
-			if selected_materials.size() >= selected_recipe.material_count:
+			if selected_materials.size() >= needed:
 				# Deselect oldest
 				var oldest = selected_materials.pop_front()
 				var oldest_idx: int = _current_materials.find(oldest)
@@ -206,12 +248,52 @@ func _on_material_selected(index: int) -> void:
 func _update_info() -> void:
 	var lines: Array[String] = []
 
+	# Mastery mode info
+	if _in_mastery_mode:
+		_update_mastery_info(lines)
+		info_label.bbcode_enabled = true
+		info_label.text = "\n".join(lines)
+		return
+
 	if selected_recipe:
 		lines.append("[b]%s[/b]" % selected_recipe.name)
 		lines.append(selected_recipe.description)
 		lines.append("")
 		lines.append("Required Skill: Smithing %d" % selected_recipe.required_skill)
-		lines.append("Materials needed: %d" % selected_recipe.material_count)
+
+		# Show material count (adjusted for Master Smith)
+		var needed: int = selected_recipe.material_count
+		if selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
+			needed = 2
+			lines.append("Materials needed: %d (Master Smith)" % needed)
+		else:
+			lines.append("Materials needed: %d" % needed)
+
+		# Show XP cost for applicable recipes
+		var forge_bonus: int = level.get_forge_bonus(player.grid_position) if level else 0
+		match selected_recipe.type:
+			SmithingSystemScript.RecipeType.REFORGE:
+				var cost: int = smithing_system.get_reforge_xp_cost(player)
+				lines.append("XP Cost: %d (have %d)" % [cost, player.xp_available])
+			SmithingSystemScript.RecipeType.RECLAIM:
+				lines.append("XP Cost: artifact depth x %d" % SmithingSystemScript.RECLAIM_XP_MULTIPLIER)
+				if smithing_system._get_expertise_discount(player) < 1.0:
+					lines.append("(Expertise discount applied)")
+			SmithingSystemScript.RecipeType.MASTERWORK:
+				lines.append("XP Cost: artifact depth x %d" % SmithingSystemScript.MASTERWORK_XP_MULTIPLIER)
+				if smithing_system._get_expertise_discount(player) < 1.0:
+					lines.append("(Expertise discount applied)")
+
+		# Show forge bonus
+		if forge_bonus > 0:
+			lines.append("Forge Bonus: +%d" % forge_bonus)
+
+		# Show mastery info
+		if selected_recipe.type == SmithingSystemScript.RecipeType.REFORGE and smithing_system.has_reforge_mastery(player):
+			lines.append("[color=cyan]Reforge Mastery: You may reject and reroll once.[/color]")
+		if selected_recipe.type == SmithingSystemScript.RecipeType.RECLAIM and smithing_system.has_reclaim_mastery(player):
+			lines.append("[color=cyan]Reclaim Mastery: Choose from 3 artifacts.[/color]")
+
 		lines.append("")
 
 	if selected_template:
@@ -225,7 +307,10 @@ func _update_info() -> void:
 		lines.append("")
 
 	if not selected_materials.is_empty():
-		lines.append("[b]Materials (%d/%d):[/b]" % [selected_materials.size(), selected_recipe.material_count if selected_recipe else 1])
+		var needed: int = selected_recipe.material_count if selected_recipe else 1
+		if selected_recipe and selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
+			needed = 2
+		lines.append("[b]Materials (%d/%d):[/b]" % [selected_materials.size(), needed])
 		for mat in selected_materials:
 			lines.append("  - %s" % _get_item_display_name(mat))
 
@@ -233,15 +318,37 @@ func _update_info() -> void:
 		lines.append("Select a recipe to begin smithing.")
 		lines.append("")
 		lines.append("Your Smithing skill: %d" % player.skills.get("smithing", 0))
+		if level:
+			var uses: int = level.get_forge_uses(player.grid_position)
+			lines.append("Forge uses remaining: %d" % uses)
 
 	info_label.bbcode_enabled = true
 	info_label.text = "\n".join(lines)
 
+func _update_mastery_info(lines: Array[String]) -> void:
+	if not _mastery_reforge_items.is_empty():
+		lines.append("[b]Reforge Mastery — Choose an item:[/b]")
+		lines.append("Select from the item list above.")
+		lines.append("You may reject the first item for a second chance.")
+	elif not _mastery_reclaim_artifacts.is_empty():
+		lines.append("[b]Reclaim Mastery — Choose an artifact:[/b]")
+		lines.append("Select from the item list above.")
+		for i in range(_mastery_reclaim_artifacts.size()):
+			var a = _mastery_reclaim_artifacts[i]
+			lines.append("%d. %s (depth %d)" % [i + 1, a.name, a.depth])
+
 func _update_forge_button() -> void:
 	var can_forge: bool = false
 
+	if _in_mastery_mode:
+		forge_button.disabled = true
+		return
+
 	if selected_recipe:
-		var has_enough_materials: bool = selected_materials.size() >= selected_recipe.material_count
+		var needed: int = selected_recipe.material_count
+		if selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
+			needed = 2
+		var has_enough_materials: bool = selected_materials.size() >= needed
 		match selected_recipe.type:
 			SmithingSystemScript.RecipeType.CREATE_WEAPON, \
 			SmithingSystemScript.RecipeType.CREATE_ARMOR, \
@@ -251,6 +358,8 @@ func _update_forge_button() -> void:
 				can_forge = has_enough_materials
 			SmithingSystemScript.RecipeType.RECLAIM:
 				can_forge = has_enough_materials
+			SmithingSystemScript.RecipeType.MASTERWORK:
+				can_forge = has_enough_materials
 
 	forge_button.disabled = not can_forge
 
@@ -259,26 +368,113 @@ func _on_forge_pressed() -> void:
 		return
 
 	var depth: int = level.depth if level else 5
+	var forge_bonus: int = level.get_forge_bonus(player.grid_position) if level else 0
+
+	# Consume forge use (Task 5)
+	if level:
+		var remaining: int = level.consume_forge_use(player.grid_position)
+		smithing_system.forge_used.emit(remaining)
 
 	match selected_recipe.type:
 		SmithingSystemScript.RecipeType.CREATE_WEAPON, \
 		SmithingSystemScript.RecipeType.CREATE_ARMOR, \
 		SmithingSystemScript.RecipeType.CREATE_JEWELRY:
 			if selected_template and not selected_materials.is_empty():
-				smithing_system.create_item(player, selected_template, selected_materials[0])
+				smithing_system.create_item(player, selected_template, selected_materials[0], forge_bonus)
 
 		SmithingSystemScript.RecipeType.REFORGE:
 			if selected_materials.size() >= 2:
-				smithing_system.reforge(player, selected_materials[0], selected_materials[1], depth)
+				if smithing_system.has_reforge_mastery(player):
+					_start_reforge_mastery(depth, forge_bonus)
+				else:
+					smithing_system.reforge(player, selected_materials[0], selected_materials[1], depth, forge_bonus)
 
 		SmithingSystemScript.RecipeType.RECLAIM:
 			if selected_materials.size() >= 2:
-				smithing_system.reclaim(player, selected_materials[0], selected_materials[1], depth)
+				if smithing_system.has_reclaim_mastery(player):
+					_start_reclaim_mastery(depth, forge_bonus)
+				else:
+					smithing_system.reclaim(player, selected_materials[0], selected_materials[1], depth, forge_bonus)
+
+		SmithingSystemScript.RecipeType.MASTERWORK:
+			if selected_materials.size() >= 2:  # 2 with Master Smith, 4 without
+				smithing_system.masterwork(player, selected_materials, depth, forge_bonus)
 
 	# Reset state and refresh
+	if not _in_mastery_mode:
+		selected_template = null
+		selected_materials.clear()
+		_refresh_ui()
+
+# ============================================================================
+# MASTERY FLOWS
+# ============================================================================
+
+func _start_reforge_mastery(depth: int, forge_bonus: int) -> void:
+	_mastery_reforge_items = smithing_system.reforge_with_mastery(
+		player, selected_materials[0], selected_materials[1], depth, forge_bonus
+	)
+	if _mastery_reforge_items.is_empty():
+		# Forge failed — already handled by smithing_system
+		selected_materials.clear()
+		_refresh_ui()
+		return
+
+	_in_mastery_mode = true
+	# Show items in item_list for player to pick
+	item_list.clear()
+	for item in _mastery_reforge_items:
+		var display: String = _get_item_display_name(item)
+		if "damage_dice" in item and item.damage_dice != "":
+			display += " (%s)" % item.damage_dice
+		elif "protection_dice" in item and item.protection_dice != "":
+			display += " [%s]" % item.protection_dice
+		item_list.add_item(display)
+
+	forge_button.disabled = true
+	_update_info()
+
+func _start_reclaim_mastery(depth: int, forge_bonus: int) -> void:
+	_mastery_reclaim_artifacts = smithing_system.reclaim_with_mastery(
+		player, selected_materials[0], selected_materials[1], depth, forge_bonus
+	)
+	if _mastery_reclaim_artifacts.is_empty():
+		selected_materials.clear()
+		_refresh_ui()
+		return
+
+	_in_mastery_mode = true
+	# Show artifacts in item_list for player to pick
+	item_list.clear()
+	for artifact in _mastery_reclaim_artifacts:
+		item_list.add_item("%s (depth %d)" % [artifact.name, artifact.depth])
+
+	forge_button.disabled = true
+	_update_info()
+
+func _handle_mastery_selection(index: int) -> void:
+	if not _mastery_reforge_items.is_empty():
+		# Reforge Mastery: accept selected item
+		if index < _mastery_reforge_items.size():
+			var chosen = _mastery_reforge_items[index]
+			smithing_system.accept_reforge_mastery_item(player, chosen)
+	elif not _mastery_reclaim_artifacts.is_empty():
+		# Reclaim Mastery: accept selected artifact
+		if index < _mastery_reclaim_artifacts.size():
+			var chosen = _mastery_reclaim_artifacts[index]
+			smithing_system.accept_reclaim_mastery_artifact(player, chosen)
+
+	# Exit mastery mode
+	_in_mastery_mode = false
+	_mastery_reforge_items.clear()
+	_mastery_reclaim_artifacts.clear()
 	selected_template = null
 	selected_materials.clear()
 	_refresh_ui()
+
+# ============================================================================
+# CALLBACKS
+# ============================================================================
 
 func _on_item_forged(item: Variant, _result: String) -> void:
 	if item != null and GameManager.needs_identification(item):

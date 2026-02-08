@@ -159,6 +159,9 @@ func _load_terrain_coords() -> void:
 	terrain_coords[25] = {"light": Vector2i(12, 18), "dark": Vector2i(13, 18)}  # SHADOW_FLOOR
 	terrain_coords[26] = {"light": Vector2i(14, 18), "dark": Vector2i(15, 18)}  # THRONE_DAIS
 	terrain_coords[27] = {"light": Vector2i(10, 18), "dark": Vector2i(11, 18)}  # INSCRIPTION -> row 18 slot (was BONE_PILE placeholder)
+	# Forge types — enchanted uses shadow forge sprite, unique uses Angdur forge
+	terrain_coords[28] = {"light": Vector2i(6, 4), "dark": Vector2i(7, 4)}    # FORGE_ENCHANTED -> (terrain 71, shadow forge)
+	terrain_coords[29] = {"light": Vector2i(10, 4), "dark": Vector2i(11, 4)}  # FORGE_UNIQUE -> (terrain 77, angdur forge)
 
 func _load_monster_coords() -> void:
 	# === Tier 1: Outer Pits ===
@@ -473,6 +476,7 @@ func _load_item_coords() -> void:
 	item_coords[493] = Vector2i(17, 16)  # Broken Strange Weapon
 	item_coords[494] = Vector2i(18, 16)  # Twisted Shadow-plate
 	item_coords[495] = Vector2i(19, 16)  # Broken Strange Jewelry
+	item_coords[496] = Vector2i(20, 16)  # Broken Glowing Ring (jewelry)
 	item_coords[500] = Vector2i(20, 16)  # Thráin's Memory
 	item_coords[510] = Vector2i(21, 16)  # Shadow Fragment
 	item_coords[520] = Vector2i(22, 16)  # Ancient Glyph

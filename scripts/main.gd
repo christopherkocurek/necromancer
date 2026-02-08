@@ -1161,7 +1161,7 @@ func _try_use_forge() -> void:
 		return
 
 	var tile: int = current_level.get_tile(player.grid_position)
-	if tile != Level.Tile.FORGE:
+	if not current_level.is_forge_tile(player.grid_position):
 		GameManager.log_message("You need to be standing on a forge to use it.", ThemeColors.MSG_WARNING)
 		return
 

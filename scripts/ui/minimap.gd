@@ -124,7 +124,7 @@ func _tile_color(tile: int, is_visible: bool) -> Color:
 			return COL_WATER
 		Level.Tile.LAVA:
 			return COL_LAVA
-		Level.Tile.FORGE:
+		Level.Tile.FORGE, Level.Tile.FORGE_ENCHANTED, Level.Tile.FORGE_UNIQUE:
 			return COL_FORGE
 		Level.Tile.TRAP:
 			return COL_TRAP if is_visible else COL_FLOOR_EXPLORED
