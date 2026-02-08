@@ -832,6 +832,33 @@ func get_artifact_by_index(idx: int) -> ArtifactData:
 			return a
 	return null
 
+## Get a random artifact (for smithing reclaim)
+func get_random_artifact() -> ArtifactData:
+	var all_artifacts: Array = artifacts.values()
+	if all_artifacts.is_empty():
+		return null
+	return all_artifacts.pick_random()
+
+## Deep-copy an ArtifactData into an ItemData (for smithing — artifacts become inventory items)
+func duplicate_artifact_as_item(source: ArtifactData) -> ItemData:
+	var copy := ItemData.new()
+	copy.index = source.index
+	copy.name = source.name
+	copy.tval = source.tval
+	copy.sval = source.sval
+	copy.pval = source.pval
+	copy.depth = source.depth
+	copy.rarity = source.rarity
+	copy.weight = source.weight
+	copy.attack_bonus = source.attack_bonus
+	copy.damage_dice = source.damage_dice
+	copy.evasion_bonus = source.evasion_bonus
+	copy.protection_dice = source.protection_dice
+	copy.flags = source.flags.duplicate()
+	copy.description = source.description
+	copy.identified = true  # Reclaimed artifacts are always identified
+	return copy
+
 func get_ability(name: String) -> AbilityData:
 	return abilities.get(name)
 

@@ -1317,10 +1317,11 @@ func get_total_evasion(attacker: Entity) -> int:
 		if adjacent_hostiles > 1:
 			evn -= (adjacent_hostiles - 1)
 
-	# Parry: +Evasion/4 when wielding a melee weapon (active defense)
+	# Parry: double weapon's evasion contribution (Sil-Q: skill_equip_mod[S_EVN] += o_ptr->evn)
 	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
-		if equipment.get("weapon") != null:
-			evn += get_skill("evasion") / 4
+		var weapon = equipment.get("weapon")
+		if weapon != null and "evasion_bonus" in weapon:
+			evn += weapon.evasion_bonus  # Add weapon evn again (first add is in recalculate_stats)
 
 	# Heavy Armour Use: remove heavy armor evasion penalty
 	# (The base evasion_bonus already includes armor penalty; this adds back the penalty amount)

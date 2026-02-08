@@ -132,8 +132,17 @@ func generate(target_level: Level, depth: int) -> void:
 	# Ensure forges on appropriate levels
 	_ensure_forges(depth)
 
+	# Spawn smithing materials near forges (Sil-Q: 1-3 items within 3 tiles)
+	_spawn_forge_materials(depth)
+
 	# Apply layer-specific decoration
 	_apply_layer_decoration(depth)
+
+	# Post-decoration: ensure stairs remain connected (decoration can break paths)
+	_ensure_stairs_connectivity(depth)
+
+	# Post-decoration: relocate any vault-placed entities stranded on non-passable tiles
+	_relocate_stranded_entities()
 
 	# Spawn monsters
 	_spawn_monsters(depth)
@@ -1145,6 +1154,121 @@ func _validate_connectivity() -> bool:
 		return false
 	return true
 
+## Post-decoration connectivity repair: ensure stairs_down is BFS-reachable from stairs_up.
+## Decoration passes (chasms, scatter terrain, themed rooms) can overwrite FLOOR tiles and
+## sever the path between stairs. If stairs are disconnected, carve a 1-wide rescue corridor.
+func _ensure_stairs_connectivity(depth: int) -> void:
+	var stairs_up: Vector2i = level.find_stairs_up()
+	var stairs_down: Vector2i = level.find_stairs_down()
+
+	# Depth 1 has no stairs_up; depth 20 may have no stairs_down
+	if stairs_up == Vector2i(-1, -1) and depth == 1:
+		# Use first passable tile as start
+		for y in range(level.height):
+			for x in range(level.width):
+				if level.is_passable(Vector2i(x, y)):
+					stairs_up = Vector2i(x, y)
+					break
+			if stairs_up != Vector2i(-1, -1):
+				break
+
+	if stairs_up == Vector2i(-1, -1) or stairs_down == Vector2i(-1, -1):
+		return
+
+	# BFS from stairs_up to check if stairs_down is reachable
+	var visited: Dictionary = {}
+	var queue: Array[Vector2i] = [stairs_up]
+	visited[stairs_up] = true
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+
+	while not queue.is_empty():
+		var current: Vector2i = queue.pop_front()
+		if current == stairs_down:
+			return  # Already connected, nothing to do
+		for dir: Vector2i in dirs:
+			var next: Vector2i = current + dir
+			if level.is_in_bounds(next) and level.is_passable(next) and not visited.has(next):
+				visited[next] = true
+				queue.append(next)
+
+	# stairs_down is NOT reachable — carve a rescue corridor
+	# Use BFS through ALL tiles (including walls) to find the shortest path
+	var parent: Dictionary = {}
+	var repair_queue: Array[Vector2i] = [stairs_up]
+	parent[stairs_up] = stairs_up
+
+	while not repair_queue.is_empty():
+		var current: Vector2i = repair_queue.pop_front()
+		if current == stairs_down:
+			break
+		for dir: Vector2i in dirs:
+			var next: Vector2i = current + dir
+			if level.is_in_bounds(next) and not parent.has(next):
+				parent[next] = current
+				repair_queue.append(next)
+
+	# Trace path back from stairs_down and carve FLOOR tiles
+	if parent.has(stairs_down):
+		var carve_count: int = 0
+		var pos: Vector2i = stairs_down
+		while pos != stairs_up:
+			if not level.is_passable(pos) and level.get_tile(pos) != Level.Tile.STAIRS_DOWN:
+				level.set_tile(pos, Level.Tile.FLOOR)
+				carve_count += 1
+			pos = parent[pos]
+		if carve_count > 0:
+			print("Post-decoration: carved %d-tile rescue corridor at depth %d" % [carve_count, depth])
+
+## Relocate vault-placed entities that ended up on non-passable tiles after decoration.
+## Vault carving places items/monsters during _carve_vault(), but decoration passes can
+## overwrite the FLOOR tile underneath. Move stranded entities to the nearest passable tile.
+func _relocate_stranded_entities() -> void:
+	var relocated_monsters: int = 0
+	var relocated_items: int = 0
+
+	# Relocate stranded monsters
+	for entity in level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if not level.is_passable(entity.grid_position):
+			var new_pos: Vector2i = _find_nearest_passable(entity.grid_position)
+			if new_pos != Vector2i(-1, -1):
+				entity.grid_position = new_pos
+				relocated_monsters += 1
+
+	# Relocate stranded items
+	for item in level.items:
+		if not is_instance_valid(item):
+			continue
+		if not level.is_passable(item.grid_position):
+			var new_pos: Vector2i = _find_nearest_passable(item.grid_position)
+			if new_pos != Vector2i(-1, -1):
+				item.grid_position = new_pos
+				relocated_items += 1
+
+	if relocated_monsters > 0 or relocated_items > 0:
+		print("Post-decoration: relocated %d monsters, %d items from non-passable tiles" % [
+			relocated_monsters, relocated_items])
+
+## Find the nearest passable tile to a given position using BFS.
+func _find_nearest_passable(from: Vector2i) -> Vector2i:
+	var visited: Dictionary = {}
+	var queue: Array[Vector2i] = [from]
+	visited[from] = true
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+
+	while not queue.is_empty():
+		var current: Vector2i = queue.pop_front()
+		if current != from and level.is_passable(current) and level.get_entity_at(current) == null:
+			return current
+		for dir: Vector2i in dirs:
+			var next: Vector2i = current + dir
+			if level.is_in_bounds(next) and not visited.has(next):
+				visited[next] = true
+				queue.append(next)
+
+	return Vector2i(-1, -1)
+
 ## Guarantee forges every 2 floors up to depth 10 (Sil-Q style).
 ## After depth 10, forges appear with 25% chance per floor.
 func _ensure_forges(depth: int) -> void:
@@ -1177,6 +1301,63 @@ func _ensure_forges(depth: int) -> void:
 		if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
 			level.set_tile(forge_pos, Level.Tile.FORGE)
 			return
+
+## Spawn 1-3 smithing materials within 3 tiles of each forge (Sil-Q forge_item_placement)
+## Depth determines material type: Mithril on all floors, Broken Glowing mid+, Broken Strange deep
+func _spawn_forge_materials(depth: int) -> void:
+	# Find all forge positions
+	var forge_positions: Array[Vector2i] = []
+	for y in range(level.height):
+		for x in range(level.width):
+			if level.get_tile(Vector2i(x, y)) == Level.Tile.FORGE:
+				forge_positions.append(Vector2i(x, y))
+
+	if forge_positions.is_empty():
+		return
+
+	var item_scene := preload("res://scenes/entities/item.tscn")
+
+	# Build pool of smithing material names based on depth
+	var material_pool: Array[String] = ["Piece of Mithril"]
+	if depth >= 3:
+		material_pool.append("Broken Glowing Weapon")
+	if depth >= 4:
+		material_pool.append("Shattered Elven Mail")
+	if depth >= 8:
+		material_pool.append("Broken Strange Weapon")
+	if depth >= 10:
+		material_pool.append("Twisted Shadow-plate")
+	if depth >= 12:
+		material_pool.append("Broken Strange Jewelry")
+
+	for forge_pos: Vector2i in forge_positions:
+		var mat_count: int = randi_range(1, 3)
+		var spawned: int = 0
+
+		# Collect valid floor tiles within 3 tiles of forge
+		var nearby_floors: Array[Vector2i] = []
+		for dy in range(-3, 4):
+			for dx in range(-3, 4):
+				var pos := Vector2i(forge_pos.x + dx, forge_pos.y + dy)
+				if pos == forge_pos:
+					continue
+				if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+					nearby_floors.append(pos)
+
+		nearby_floors.shuffle()
+
+		for i in range(mini(mat_count, nearby_floors.size())):
+			var mat_name: String = material_pool.pick_random()
+			var mat_template: DataManager.ItemData = DataManager.get_item(mat_name)
+			if mat_template == null:
+				continue
+
+			var mat_copy: DataManager.ItemData = DataManager.duplicate_item_data(mat_template)
+			var mat_item: Item = item_scene.instantiate()
+			mat_item.grid_position = nearby_floors[i]
+			mat_item.initialize_from_item_data(mat_copy)
+			level.add_item(mat_item)
+			spawned += 1
 
 ## Connect vault corridor points ($) to nearest room centers
 func _connect_vault_corridor_points() -> void:

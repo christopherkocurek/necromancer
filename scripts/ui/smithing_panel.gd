@@ -1,7 +1,8 @@
 extends Control
 class_name SmithingPanel
 ## UI for the smithing system - displays when player is on a forge tile.
-## Note: Using preload for SmithingSystem to avoid class_name resolution issues.
+## Supports CREATE (Mithril → item), REFORGE (2 Broken Glowing → enchanted),
+## and RECLAIM (2 Broken Strange → artifact).
 
 const SmithingSystemScript := preload("res://scripts/systems/smithing_system.gd")
 
@@ -10,12 +11,16 @@ signal item_forged(item: Variant)
 
 var player: Player = null
 var level: Level = null
-var smithing_system: RefCounted = null  # SmithingSystem - using RefCounted to avoid type resolution
+var smithing_system: RefCounted = null  # SmithingSystem
 
-# Selected items
-var selected_item: Variant = null
-var selected_material: Variant = null
+# Selected state
 var selected_recipe: RefCounted = null  # SmithingSystem.Recipe
+var selected_template: Variant = null   # For CREATE: the item template to forge
+var selected_materials: Array = []      # Materials chosen (1 for create, 2 for reforge/reclaim)
+
+# Cached lists for index mapping
+var _current_templates: Array = []
+var _current_materials: Array = []
 
 # UI References
 @onready var title_label: Label = $Panel/VBox/TitleLabel
@@ -39,7 +44,7 @@ func _ready() -> void:
 	material_list.item_selected.connect(_on_material_selected)
 
 	# Connect smithing system signals
-	smithing_system.item_enhanced.connect(_on_item_enhanced)
+	smithing_system.item_forged.connect(_on_item_forged)
 	smithing_system.smithing_failed.connect(_on_smithing_failed)
 
 	# Style smithing panel with iron theme
@@ -58,81 +63,95 @@ func open(player_ref: Player, level_ref: Level) -> void:
 	grab_focus()
 
 func close() -> void:
-	selected_item = null
-	selected_material = null
 	selected_recipe = null
+	selected_template = null
+	selected_materials.clear()
+	_current_templates.clear()
+	_current_materials.clear()
 	PanelTransition.close_panel(self, func(): closed.emit())
 
 func _refresh_ui() -> void:
 	if not player:
 		return
 
-	# Update title with forge info
 	title_label.text = "Forge"
 
 	# Update success chance display
 	var chance: int = smithing_system.get_success_chance(player)
 	success_label.text = "Success Chance: %d%%" % chance
 
-	# Populate recipe list
+	# Populate recipe list (available + locked)
 	_populate_recipes()
 
-	# Clear item lists initially
+	# Clear item/material lists
 	item_list.clear()
 	material_list.clear()
+	_current_templates.clear()
+	_current_materials.clear()
 
-	# Update forge button state
 	_update_forge_button()
-
-	# Clear info
 	_update_info()
 
 func _populate_recipes() -> void:
 	recipe_list.clear()
 
-	var recipes: Array = smithing_system.get_available_recipes(player)
-	for recipe in recipes:
-		recipe_list.add_item(recipe.name)
-
-	# Add unavailable recipes (grayed out) for reference
-	var smithing_skill: int = player.skills.get("smithing", 0)
-	for recipe in smithing_system.recipes:
-		if smithing_skill < recipe.required_skill:
-			var idx: int = recipe_list.add_item("%s (Requires Smithing %d)" % [recipe.name, recipe.required_skill])
+	var statuses: Array[Dictionary] = smithing_system.get_all_recipes_with_status(player)
+	for status in statuses:
+		var recipe = status.recipe
+		if status.available:
+			recipe_list.add_item(recipe.name)
+		else:
+			var idx: int = recipe_list.add_item("%s (%s)" % [recipe.name, status.reason])
 			recipe_list.set_item_disabled(idx, true)
 
 func _on_recipe_selected(index: int) -> void:
-	var recipes: Array = smithing_system.get_available_recipes(player)
-	if index < recipes.size():
-		selected_recipe = recipes[index]
-		_populate_items_for_recipe()
-		_update_info()
-	else:
-		selected_recipe = null
+	# Map the index back to available recipes only
+	var statuses: Array[Dictionary] = smithing_system.get_all_recipes_with_status(player)
+	var available_idx: int = 0
+	selected_recipe = null
 
+	for status in statuses:
+		if status.available:
+			if available_idx == index:
+				selected_recipe = status.recipe
+				break
+			available_idx += 1
+
+	selected_template = null
+	selected_materials.clear()
+	_populate_items_for_recipe()
+	_update_info()
 	_update_forge_button()
 
 func _populate_items_for_recipe() -> void:
 	item_list.clear()
 	material_list.clear()
-	selected_item = null
-	selected_material = null
+	_current_templates.clear()
+	_current_materials.clear()
+	selected_template = null
+	selected_materials.clear()
 
 	if not selected_recipe:
 		return
 
-	# Populate item list based on recipe type
 	match selected_recipe.type:
-		SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT:
-			var weapons: Array = smithing_system.get_enhanceable_weapons(player)
-			for weapon in weapons:
-				item_list.add_item(_get_item_display_name(weapon))
-		SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-			var armor: Array = smithing_system.get_enhanceable_armor(player)
-			for armor_piece in armor:
-				item_list.add_item(_get_item_display_name(armor_piece))
-		SmithingSystemScript.RecipeType.REFORGE:
-			# For reforge, just need salvage materials
+		SmithingSystemScript.RecipeType.CREATE_WEAPON, \
+		SmithingSystemScript.RecipeType.CREATE_ARMOR, \
+		SmithingSystemScript.RecipeType.CREATE_JEWELRY:
+			# Show creatable item templates in the item list
+			var depth: int = level.depth if level else 5
+			_current_templates = smithing_system.get_creatable_items(selected_recipe.type, depth)
+			for template in _current_templates:
+				var display: String = _get_item_display_name(template)
+				if "damage_dice" in template and template.damage_dice != "":
+					display += " (%s)" % template.damage_dice
+				elif "protection_dice" in template and template.protection_dice != "":
+					display += " [%s]" % template.protection_dice
+				item_list.add_item(display)
+
+		SmithingSystemScript.RecipeType.REFORGE, \
+		SmithingSystemScript.RecipeType.RECLAIM:
+			# No template selection — materials only
 			pass
 
 	# Populate material list
@@ -140,69 +159,46 @@ func _populate_items_for_recipe() -> void:
 
 func _populate_materials() -> void:
 	material_list.clear()
+	_current_materials.clear()
 
 	if not selected_recipe:
 		return
 
-	# Search for materials by name since we might not have exact TVAL match
-	var material_names: Array[String] = []
-	match selected_recipe.type:
-		SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT, SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-			material_names = ["mithril", "fragment", "ore", "metal"]
-		SmithingSystemScript.RecipeType.REFORGE:
-			material_names = ["salvage", "shard", "remnant"]
-
-	for item in player.inventory:
-		if not "name" in item:
-			continue
-		var item_name: String = item.name.to_lower()
-		for mat_name in material_names:
-			if item_name.contains(mat_name):
-				material_list.add_item(_get_item_display_name(item))
-				break
+	_current_materials = smithing_system.get_materials_for_recipe(player, selected_recipe.type)
+	for mat in _current_materials:
+		material_list.add_item(_get_item_display_name(mat))
 
 func _on_item_selected(index: int) -> void:
 	if not selected_recipe:
 		return
 
-	var items: Array = []
-	match selected_recipe.type:
-		SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT:
-			items = smithing_system.get_enhanceable_weapons(player)
-		SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-			items = smithing_system.get_enhanceable_armor(player)
-
-	if index < items.size():
-		selected_item = items[index]
+	if index < _current_templates.size():
+		selected_template = _current_templates[index]
 	else:
-		selected_item = null
+		selected_template = null
 
 	_update_info()
 	_update_forge_button()
 
 func _on_material_selected(index: int) -> void:
-	# Find the actual material item
-	var material_names: Array[String] = []
-	match selected_recipe.type:
-		SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT, SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-			material_names = ["mithril", "fragment", "ore", "metal"]
-		SmithingSystemScript.RecipeType.REFORGE:
-			material_names = ["salvage", "shard", "remnant"]
+	if not selected_recipe:
+		return
 
-	var found_materials: Array = []
-	for item in player.inventory:
-		if not "name" in item:
-			continue
-		var item_name: String = item.name.to_lower()
-		for mat_name in material_names:
-			if item_name.contains(mat_name):
-				found_materials.append(item)
-				break
-
-	if index < found_materials.size():
-		selected_material = found_materials[index]
-	else:
-		selected_material = null
+	# For recipes needing 2 materials, toggle selection
+	if index < _current_materials.size():
+		var mat = _current_materials[index]
+		if mat in selected_materials:
+			selected_materials.erase(mat)
+			material_list.set_item_custom_fg_color(index, Color.WHITE)
+		else:
+			if selected_materials.size() >= selected_recipe.material_count:
+				# Deselect oldest
+				var oldest = selected_materials.pop_front()
+				var oldest_idx: int = _current_materials.find(oldest)
+				if oldest_idx >= 0:
+					material_list.set_item_custom_fg_color(oldest_idx, Color.WHITE)
+			selected_materials.append(mat)
+			material_list.set_item_custom_fg_color(index, ThemeColors.ABILITY_LEARNED)
 
 	_update_info()
 	_update_forge_button()
@@ -215,20 +211,23 @@ func _update_info() -> void:
 		lines.append(selected_recipe.description)
 		lines.append("")
 		lines.append("Required Skill: Smithing %d" % selected_recipe.required_skill)
+		lines.append("Materials needed: %d" % selected_recipe.material_count)
 		lines.append("")
 
-	if selected_item:
-		lines.append("[b]Selected Item:[/b]")
-		lines.append(_get_item_display_name(selected_item))
-		if "damage_dice" in selected_item and selected_item.damage_dice != "":
-			lines.append("Current Damage: %s" % selected_item.damage_dice)
-		if "protection_dice" in selected_item and selected_item.protection_dice != "":
-			lines.append("Current Protection: %s" % selected_item.protection_dice)
+	if selected_template:
+		lines.append("[b]Forge:[/b] %s" % _get_item_display_name(selected_template))
+		if "damage_dice" in selected_template and selected_template.damage_dice != "":
+			lines.append("Damage: %s" % selected_template.damage_dice)
+		if "protection_dice" in selected_template and selected_template.protection_dice != "":
+			lines.append("Protection: %s" % selected_template.protection_dice)
+		if "evasion_bonus" in selected_template and selected_template.evasion_bonus != 0:
+			lines.append("Evasion: %+d" % selected_template.evasion_bonus)
 		lines.append("")
 
-	if selected_material:
-		lines.append("[b]Selected Material:[/b]")
-		lines.append(_get_item_display_name(selected_material))
+	if not selected_materials.is_empty():
+		lines.append("[b]Materials (%d/%d):[/b]" % [selected_materials.size(), selected_recipe.material_count if selected_recipe else 1])
+		for mat in selected_materials:
+			lines.append("  - %s" % _get_item_display_name(mat))
 
 	if lines.is_empty():
 		lines.append("Select a recipe to begin smithing.")
@@ -239,17 +238,19 @@ func _update_info() -> void:
 	info_label.text = "\n".join(lines)
 
 func _update_forge_button() -> void:
-	# Enable forge button only when we have valid selections
 	var can_forge: bool = false
 
 	if selected_recipe:
+		var has_enough_materials: bool = selected_materials.size() >= selected_recipe.material_count
 		match selected_recipe.type:
-			SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT:
-				can_forge = selected_item != null and selected_material != null
-			SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-				can_forge = selected_item != null and selected_material != null
+			SmithingSystemScript.RecipeType.CREATE_WEAPON, \
+			SmithingSystemScript.RecipeType.CREATE_ARMOR, \
+			SmithingSystemScript.RecipeType.CREATE_JEWELRY:
+				can_forge = selected_template != null and has_enough_materials
 			SmithingSystemScript.RecipeType.REFORGE:
-				can_forge = selected_material != null
+				can_forge = has_enough_materials
+			SmithingSystemScript.RecipeType.RECLAIM:
+				can_forge = has_enough_materials
 
 	forge_button.disabled = not can_forge
 
@@ -257,34 +258,34 @@ func _on_forge_pressed() -> void:
 	if not selected_recipe:
 		return
 
-	var success: bool = false
+	var depth: int = level.depth if level else 5
 
 	match selected_recipe.type:
-		SmithingSystemScript.RecipeType.WEAPON_ENHANCEMENT:
-			if selected_item and selected_material:
-				success = smithing_system.enhance_weapon(player, selected_item, selected_material)
-		SmithingSystemScript.RecipeType.ARMOR_ENHANCEMENT:
-			if selected_item and selected_material:
-				success = smithing_system.enhance_armor(player, selected_item, selected_material)
-		SmithingSystemScript.RecipeType.REFORGE:
-			if selected_material and level:
-				var new_item = smithing_system.reforge_salvage(player, selected_material, level.depth)
-				success = new_item != null
+		SmithingSystemScript.RecipeType.CREATE_WEAPON, \
+		SmithingSystemScript.RecipeType.CREATE_ARMOR, \
+		SmithingSystemScript.RecipeType.CREATE_JEWELRY:
+			if selected_template and not selected_materials.is_empty():
+				smithing_system.create_item(player, selected_template, selected_materials[0])
 
-	# Refresh UI after forging
-	selected_item = null
-	selected_material = null
+		SmithingSystemScript.RecipeType.REFORGE:
+			if selected_materials.size() >= 2:
+				smithing_system.reforge(player, selected_materials[0], selected_materials[1], depth)
+
+		SmithingSystemScript.RecipeType.RECLAIM:
+			if selected_materials.size() >= 2:
+				smithing_system.reclaim(player, selected_materials[0], selected_materials[1], depth)
+
+	# Reset state and refresh
+	selected_template = null
+	selected_materials.clear()
 	_refresh_ui()
 
-func _on_item_enhanced(item: Variant, result: String) -> void:
-	# Auto-identify items that are smithed
+func _on_item_forged(item: Variant, _result: String) -> void:
 	if item != null and GameManager.needs_identification(item):
 		GameManager.identify_item(item)
 	item_forged.emit(item)
-	# UI refresh happens in _on_forge_pressed
 
-func _on_smithing_failed(item: Variant, reason: String) -> void:
-	# UI refresh happens in _on_forge_pressed
+func _on_smithing_failed(_item: Variant, _reason: String) -> void:
 	pass
 
 func _get_item_display_name(item: Variant) -> String:

@@ -20,6 +20,9 @@ var rooms: Array[Rect2i] = []        # Room rectangles from generation
 var tile_in_fov: Array[bool] = []    # Geometric line of sight (FOV only, before lighting)
 var tile_lit: Array[bool] = []       # Has light (player torch + room glow)
 
+# Isolated RNG for floor-finding (immune to external seed() calls)
+var _floor_rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
 # Entities
 var entities: Array[Entity] = []
 var items: Array = []  # Item nodes on the ground
@@ -96,6 +99,8 @@ func _ready() -> void:
 	_apply_layer_tint_shader()
 
 func _initialize_arrays() -> void:
+	# Reseed the isolated floor RNG from OS time (immune to external seed() calls)
+	_floor_rng.seed = Time.get_ticks_usec()
 	var size := width * height
 	terrain.resize(size)
 	terrain.fill(Tile.VOID)
@@ -911,9 +916,11 @@ func find_stairs_up() -> Vector2i:
 	return Vector2i(-1, -1)
 
 func find_random_floor() -> Vector2i:
+	# Uses isolated RNG to prevent external seed() calls from poisoning floor selection.
+	# The _floor_rng is seeded from system time on creation, not from the global RNG.
 	var attempts := 1000
 	while attempts > 0:
-		var pos := Vector2i(randi_range(1, width - 2), randi_range(1, height - 2))
+		var pos := Vector2i(_floor_rng.randi_range(1, width - 2), _floor_rng.randi_range(1, height - 2))
 		if get_tile(pos) == Tile.FLOOR and get_entity_at(pos) == null:
 			return pos
 		attempts -= 1
