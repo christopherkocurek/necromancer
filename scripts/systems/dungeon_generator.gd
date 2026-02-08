@@ -14,6 +14,8 @@ enum RoomType {
 	CROSS = 1,
 	L_SHAPE = 2,
 	CIRCULAR = 3,
+	CAVE = 4,         # Cellular automata irregular shape (Outer Pits)
+	ALCOVE = 5,       # Rectangle with wall alcoves (Necropolis)
 	VAULT_INTERESTING = 6,
 	VAULT_LESSER = 7,
 	VAULT_GREATER = 8,
@@ -52,7 +54,25 @@ class Room:
 		return expanded.intersects(other.rect)
 
 func _select_room_type(depth: int) -> int:
-	# Depth-weighted room type selection (mirrors C version logic)
+	# Layer-weighted room type selection
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+
+	# Layer-specific room shape preferences (checked first)
+	match layer_name:
+		"outer_pits":
+			# 30% chance of natural cave rooms
+			if randf() < 0.30:
+				return RoomType.CAVE
+		"necropolis":
+			# 25% chance of alcove/crypt rooms
+			if randf() < 0.25:
+				return RoomType.ALCOVE
+		"pits_of_despair":
+			# 15% cave rooms (irregular chasms)
+			if randf() < 0.15:
+				return RoomType.CAVE
+
+	# Standard depth-weighted selection (C version logic)
 	var r: int = randi_range(1, depth + 5) + randi_range(0, 4)
 	if r < 5:
 		return RoomType.STANDARD
@@ -138,6 +158,9 @@ func generate(target_level: Level, depth: int) -> void:
 	# Apply layer-specific decoration
 	_apply_layer_decoration(depth)
 
+	# Scatter environmental storytelling (flavor messages on tiles)
+	_scatter_storytelling(depth)
+
 	# Post-decoration: ensure stairs remain connected (decoration can break paths)
 	_ensure_stairs_connectivity(depth)
 
@@ -221,6 +244,10 @@ func _generate_rooms() -> void:
 				var cx2: int = room_x + room_width / 2
 				var cy2: int = room_y + room_height / 2
 				new_room = _generate_circular_room(cx2, cy2)
+			RoomType.CAVE:
+				new_room = _generate_cave_room(room_x, room_y, room_width, room_height)
+			RoomType.ALCOVE:
+				new_room = _generate_alcove_room(room_x, room_y, room_width, room_height)
 			_:  # STANDARD
 				new_room = Room.new(Rect2i(room_x, room_y, room_width, room_height))
 
@@ -234,7 +261,7 @@ func _generate_rooms() -> void:
 		if not overlaps:
 			if room_type == RoomType.STANDARD or room_type == RoomType.L_SHAPE:
 				_carve_room(new_room)
-			# Cross and circular rooms are carved during generation
+			# Cross, circular, cave, and alcove rooms are carved during generation
 			room_list.append(new_room)
 			rooms.append(new_room.rect)
 
@@ -344,6 +371,139 @@ func _generate_circular_room(center_x: int, center_y: int) -> Room:
 					room.tiles.append(pos)
 
 	return room
+
+## Generate a cave room using cellular automata (natural irregular shapes).
+## Used primarily in Outer Pits for organic cave feeling.
+func _generate_cave_room(pos_x: int, pos_y: int, w: int, h: int) -> Room:
+	# Ensure minimum size for cellular automata to produce interesting shapes
+	w = maxi(w, 6)
+	h = maxi(h, 6)
+
+	# Clamp to level bounds
+	if pos_x + w >= level.width - 1:
+		w = level.width - pos_x - 2
+	if pos_y + h >= level.height - 1:
+		h = level.height - pos_y - 2
+
+	var room := Room.new(Rect2i(pos_x, pos_y, w, h))
+	room.room_type = RoomType.CAVE
+
+	# Step 1: Random fill — 45% chance each cell starts as floor
+	var grid: Array[bool] = []  # true = floor, false = wall
+	grid.resize(w * h)
+	for i in range(w * h):
+		grid[i] = randf() < 0.45
+
+	# Ensure edges are walls
+	for x in range(w):
+		grid[x] = false              # top row
+		grid[(h - 1) * w + x] = false  # bottom row
+	for y in range(h):
+		grid[y * w] = false              # left column
+		grid[y * w + (w - 1)] = false    # right column
+
+	# Step 2: Cellular automata smoothing (4 iterations, 4-5 rule)
+	for _iteration in range(4):
+		var new_grid: Array[bool] = grid.duplicate()
+		for y in range(1, h - 1):
+			for x in range(1, w - 1):
+				var wall_neighbors: int = 0
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						if dx == 0 and dy == 0:
+							continue
+						var nx: int = x + dx
+						var ny: int = y + dy
+						if nx < 0 or nx >= w or ny < 0 or ny >= h or not grid[ny * w + nx]:
+							wall_neighbors += 1
+				# 4-5 rule: become wall if 5+ wall neighbors, floor if <4
+				if wall_neighbors >= 5:
+					new_grid[y * w + x] = false
+				elif wall_neighbors < 4:
+					new_grid[y * w + x] = true
+		grid = new_grid
+
+	# Step 3: Ensure center is always floor (connectivity anchor)
+	var center_x: int = w / 2
+	var center_y: int = h / 2
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var ci: int = (center_y + dy) * w + (center_x + dx)
+			if ci >= 0 and ci < grid.size():
+				grid[ci] = true
+
+	# Step 4: Carve the result into the level
+	for y in range(h):
+		for x in range(w):
+			if grid[y * w + x]:
+				var pos := Vector2i(pos_x + x, pos_y + y)
+				if level.is_in_bounds(pos):
+					level.set_tile(pos, Level.Tile.FLOOR)
+					room.tiles.append(pos)
+
+	return room
+
+## Generate a room with wall alcoves (crypt-like recesses).
+## Used primarily in the Necropolis layer.
+func _generate_alcove_room(pos_x: int, pos_y: int, w: int, h: int) -> Room:
+	w = maxi(w, 6)
+	h = maxi(h, 6)
+
+	# Clamp to level bounds
+	if pos_x + w >= level.width - 1:
+		w = level.width - pos_x - 2
+	if pos_y + h >= level.height - 1:
+		h = level.height - pos_y - 2
+
+	var room := Room.new(Rect2i(pos_x, pos_y, w, h))
+	room.room_type = RoomType.ALCOVE
+
+	# Carve the base rectangle
+	for y in range(pos_y, pos_y + h):
+		for x in range(pos_x, pos_x + w):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.FLOOR)
+				room.tiles.append(pos)
+
+	# Add 2-4 alcoves jutting outward from walls
+	var alcove_count: int = randi_range(2, 4)
+	var sides: Array[int] = [0, 1, 2, 3]  # top, right, bottom, left
+	sides.shuffle()
+
+	for i in range(mini(alcove_count, sides.size())):
+		var side: int = sides[i]
+		var alcove_depth: int = randi_range(2, 3)
+		var alcove_width: int = randi_range(2, 3)
+
+		match side:
+			0:  # Top alcove
+				var ax: int = pos_x + randi_range(2, w - alcove_width - 2)
+				var ay: int = pos_y - alcove_depth
+				_carve_alcove(room, ax, ay, alcove_width, alcove_depth)
+			1:  # Right alcove
+				var ax: int = pos_x + w
+				var ay: int = pos_y + randi_range(2, h - alcove_width - 2)
+				_carve_alcove(room, ax, ay, alcove_depth, alcove_width)
+			2:  # Bottom alcove
+				var ax: int = pos_x + randi_range(2, w - alcove_width - 2)
+				var ay: int = pos_y + h
+				_carve_alcove(room, ax, ay, alcove_width, alcove_depth)
+			3:  # Left alcove
+				var ax: int = pos_x - alcove_depth
+				var ay: int = pos_y + randi_range(2, h - alcove_width - 2)
+				_carve_alcove(room, ax, ay, alcove_depth, alcove_width)
+
+	return room
+
+## Helper: carve a small alcove rectangle into the level.
+func _carve_alcove(room: Room, ax: int, ay: int, aw: int, ah: int) -> void:
+	for y in range(ay, ay + ah):
+		for x in range(ax, ax + aw):
+			var pos := Vector2i(x, y)
+			if level.is_in_bounds(pos):
+				level.set_tile(pos, Level.Tile.FLOOR)
+				room.tiles.append(pos)
 
 func _connect_rooms() -> void:
 	if rooms.size() < 2:
@@ -2213,6 +2373,114 @@ func _decorate_throne_room(params: Dictionary) -> void:
 							var pos := Vector2i(x, y)
 							if _is_safe_floor(pos):
 								level.set_tile(pos, Level.Tile.LAVA)
+
+# ============================================================================
+# ENVIRONMENTAL STORYTELLING
+# ============================================================================
+
+## Per-layer flavor messages for environmental storytelling.
+## Each message is displayed once when the player steps on the tile.
+const STORYTELLING_MESSAGES: Dictionary = {
+	"outer_pits": [
+		"Crude orc scratches on the wall: three slashes. A warning.",
+		"A broken elven arrow juts from the stone, ancient and forgotten.",
+		"You notice boot prints in the dust — they lead deeper.",
+		"A faded carving reads: 'Beware the pits below.'",
+		"Claw marks gouge the wall at shoulder height.",
+		"A crude map is scratched into the floor. Most paths end in skulls.",
+		"You find a torn scrap of cloth caught on a jagged stone.",
+		"The faint smell of old campfires lingers here.",
+	],
+	"lower_halls": [
+		"Orcish graffiti covers this wall: crude boasts and kill counts.",
+		"A rusted weapon rack stands empty, its contents long looted.",
+		"You notice orc banners hanging in tatters from iron hooks.",
+		"A crude trophy — bones wired together — hangs from the ceiling.",
+		"The stone here is worn smooth by countless marching feet.",
+		"Old bloodstains darken the floor in a wide arc.",
+		"A discarded whetstone lies amid metal shavings.",
+		"The walls are scarred with practice sword cuts.",
+	],
+	"dark_halls": [
+		"Elvish script, barely legible: 'Turn back, mortal.'",
+		"Strange symbols pulse faintly in the stone, then fade.",
+		"A circle of melted candles surrounds a dark stain on the floor.",
+		"The air here tastes of iron and old magic.",
+		"You feel a chill that has nothing to do with temperature.",
+		"Faint screams echo from somewhere far below — or is it the wind?",
+		"A shattered crystal lies in a perfect circle of scorched stone.",
+		"The walls here seem to breathe. You tell yourself it's a draft.",
+	],
+	"necropolis": [
+		"An inscription reads: 'Here lies one who sought the Ring.'",
+		"Empty sarcophagi line the walls, their lids cast aside.",
+		"You notice fingernail scratches on the inside of a stone coffin.",
+		"A withered funeral wreath crumbles at your touch.",
+		"Names are carved into every surface — hundreds of the dead.",
+		"Cold breath seems to exhale from the walls themselves.",
+		"A half-open tomb reveals nothing but dust and shadow.",
+		"The air reeks of embalming spices and ancient decay.",
+	],
+	"pits_of_despair": [
+		"Chains hang from the ceiling, still swaying slightly.",
+		"A desperate message carved with bare fingers: 'NO ESCAPE.'",
+		"The stone is warm to the touch. Something burns below.",
+		"You hear weeping from the depths — distant, inconsolable.",
+		"Scorch marks in the shape of a hand are burned into the wall.",
+		"A pile of shattered shackles lies discarded in the corner.",
+		"The shadows here seem to reach toward you, then retreat.",
+		"A faint red glow pulses from cracks in the floor.",
+	],
+	"inner_sanctum": [
+		"Gold-inlaid script reads: 'All who enter serve the Necromancer.'",
+		"An ancient mural depicts the fall of a great elven city.",
+		"The stone here is black as night and cold as winter.",
+		"You sense a vast intelligence pressing against your thoughts.",
+		"A shattered mirror reflects a face that is not your own.",
+		"Dark flames flicker in wall sconces, casting no warmth.",
+		"The floor bears the sigil of Sauron, worn smooth by supplicants.",
+		"A whisper promises power beyond imagining. You ignore it.",
+	],
+	"throne_room": [
+		"The walls radiate malevolence. This is the heart of darkness.",
+		"Ancient script proclaims: 'The Lord of the Rings shall return.'",
+		"The air crackles with power barely contained.",
+		"Every shadow seems to watch. Every silence seems to listen.",
+	],
+}
+
+## Scatter environmental storytelling flavor messages across the level.
+## Places 2-5 messages per floor on random walkable tiles.
+func _scatter_storytelling(depth: int) -> void:
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	if layer_name not in STORYTELLING_MESSAGES:
+		return
+
+	var messages: Array = STORYTELLING_MESSAGES[layer_name]
+	if messages.is_empty():
+		return
+
+	# Scale message count with depth: 2-3 shallow, 3-5 deep
+	var msg_count: int = randi_range(2, 3)
+	if depth >= 7:
+		msg_count = randi_range(3, 4)
+	if depth >= 13:
+		msg_count = randi_range(3, 5)
+
+	# Shuffle messages and pick unique ones
+	var available: Array = messages.duplicate()
+	available.shuffle()
+
+	var placed: int = 0
+	for i in range(mini(msg_count, available.size())):
+		var pos: Vector2i = level.find_random_floor()
+		if pos == Vector2i(-1, -1):
+			continue
+		level.flavor_messages[pos] = available[i]
+		placed += 1
+
+	if placed > 0:
+		print("Placed %d storytelling messages at depth %d" % [placed, depth])
 
 # ============================================================================
 # LORE OBJECT SPAWNING

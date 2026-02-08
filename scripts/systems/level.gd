@@ -88,6 +88,10 @@ var glowing_items: Array[Vector2i] = []
 # Floor-wide alertness (Phase B: Stealth)
 var floor_alertness: int = 0  # 0-50+, rises with noise, decays over time
 
+# Environmental storytelling: position -> flavor message (displayed once when player steps on tile)
+var flavor_messages: Dictionary = {}  # Vector2i -> String
+var _seen_flavor_positions: Dictionary = {}  # Vector2i -> bool (already displayed)
+
 # Child nodes
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
 @onready var entity_container: Node2D = $Entities
@@ -251,6 +255,11 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 
 	if tile == Tile.THRONE_DAIS and entity is Player:
 		EventBus.message_logged.emit("You stand upon the dais. Dark power radiates from the stone.", ThemeColors.MSG_WARNING)
+
+	# Environmental storytelling — one-time flavor messages
+	if entity is Player and pos in flavor_messages and pos not in _seen_flavor_positions:
+		_seen_flavor_positions[pos] = true
+		EventBus.message_logged.emit(flavor_messages[pos], ThemeColors.MSG_INFO)
 
 	return false
 
