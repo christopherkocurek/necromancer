@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# run_harness.sh — Orchestrate 120 bot playthroughs (6 archetypes × 20 runs)
-# Uses xargs -P for 4-way parallelism with per-run timeout.
+# run_harness.sh — Orchestrate bot playthroughs with configurable archetypes.
+# Uses xargs -P for parallel execution with per-run timeout.
 #
 # Usage: bash scripts/analysis/run_harness.sh [PARALLELISM] [RUNS_PER_ARCHETYPE]
-# Defaults: 4 parallel, 20 runs each
+# Env vars:
+#   BOT_ARCHETYPES="STEALTH_PURE STEALTH_ASSASSIN"  # Override archetype list
+#   GODOT_PATH=/path/to/godot                        # Godot binary
+#   BOT_RESULTS_DIR=/path/to/results                 # Output directory
+# Defaults: 4 parallel, 20 runs each, all 10 archetypes
 
 set -euo pipefail
 
@@ -16,7 +20,7 @@ TIMEOUT_SECS=300
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 GODOT="${GODOT_PATH:-/opt/homebrew/bin/godot}"
-RESULTS_DIR="$PROJECT_DIR/bot_results"
+RESULTS_DIR="${BOT_RESULTS_DIR:-$PROJECT_DIR/bot_results}"
 LOG_DIR="$RESULTS_DIR/logs"
 
 # Verify Godot
@@ -29,8 +33,12 @@ fi
 # Setup output dirs
 mkdir -p "$RESULTS_DIR" "$LOG_DIR"
 
-# Archetypes
-ARCHETYPES=(WARRIOR STEALTH LORE_MAGE RANGER TANK SMITH)
+# Archetypes — configurable via BOT_ARCHETYPES env var
+if [[ -n "${BOT_ARCHETYPES:-}" ]]; then
+    read -ra ARCHETYPES <<< "$BOT_ARCHETYPES"
+else
+    ARCHETYPES=(WARRIOR STEALTH LORE_MAGE RANGER TANK SMITH STEALTH_PURE STEALTH_ASSASSIN RANGER_MARKSMAN RANGER_STEALTH_ARCHER)
+fi
 
 echo "============================================================"
 echo "  NECROMANCER BOT HARNESS"

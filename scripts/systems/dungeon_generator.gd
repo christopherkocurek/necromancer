@@ -1757,7 +1757,51 @@ func _spawn_items(depth: int) -> void:
 			level.add_item(item)
 			spawned += 1
 
+	# Guaranteed bow + arrows on floor 1 (archers need starting equipment)
+	if depth == 1:
+		var bow_data: DataManager.ItemData = DataManager.get_item_by_tval_sval(19, 12)  # Silvan Bow
+		var arrow_data: DataManager.ItemData = DataManager.get_item_by_tval_sval(17, 1)  # Arrow
+		var stairs_up_pos: Vector2i = level.find_stairs_up()
+		if stairs_up_pos == Vector2i(-1, -1):
+			stairs_up_pos = level.find_random_floor()
+
+		if bow_data:
+			var bow_copy: DataManager.ItemData = DataManager.duplicate_item_data(bow_data)
+			var bow_pos: Vector2i = _find_floor_near(stairs_up_pos, 3)
+			var bow_item: Item = item_scene.instantiate()
+			bow_item.grid_position = bow_pos
+			bow_item.initialize_from_item_data(bow_copy)
+			level.add_item(bow_item)
+			spawned += 1
+
+		if arrow_data:
+			var arrow_copy: DataManager.ItemData = DataManager.duplicate_item_data(arrow_data)
+			if "pval" in arrow_copy:
+				arrow_copy.pval = 20  # 20 arrows
+			elif "stack_count" in arrow_copy:
+				arrow_copy.stack_count = 20
+			var arrow_pos: Vector2i = _find_floor_near(stairs_up_pos, 3)
+			var arrow_item: Item = item_scene.instantiate()
+			arrow_item.grid_position = arrow_pos
+			arrow_item.initialize_from_item_data(arrow_copy)
+			level.add_item(arrow_item)
+			spawned += 1
+
 	print("Spawned %d items at depth %d" % [spawned, depth])
+
+## Find a passable floor tile near the given position within max_radius.
+func _find_floor_near(center: Vector2i, max_radius: int) -> Vector2i:
+	for radius in range(1, max_radius + 1):
+		for dy in range(-radius, radius + 1):
+			for dx in range(-radius, radius + 1):
+				var pos := Vector2i(center.x + dx, center.y + dy)
+				if level.is_in_bounds(pos) and level.is_passable(pos):
+					if level.get_entity_at(pos) == null:
+						# Check no item already here
+						var items_here: Array[Item] = level.get_items_at(pos)
+						if items_here.is_empty():
+							return pos
+	return level.find_random_floor()
 
 ## Place themed guards adjacent to doors.
 ## Chance scales with depth: (15 + 2*depth)%, capped at 50%. Max 4 per level.

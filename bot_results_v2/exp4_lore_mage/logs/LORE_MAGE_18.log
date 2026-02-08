@@ -1,0 +1,460 @@
+Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org
+
+
+======================================================================
+  NECROMANCER GODOT - TEST RUNNER
+======================================================================
+
+Mode: Survival bot only
+
+DataManager: Loading game data...
+=== DataManager Validation ===
+Loaded 88 monsters, 214 items, 104 artifacts, 93 abilities
+Loaded 5 races, 12 houses, 20 traits, 96 vaults
+WARNING: DataManager: Missing key monster: Morgoth, Lord of Darkness
+     at: push_warning (core/variant/variant_utility.cpp:1034)
+     GDScript backtrace (most recent call first):
+         [0] _validate_data (res://scripts/core/data_manager.gd:994)
+         [1] load_all_data (res://scripts/core/data_manager.gd:33)
+         [2] _ready (res://scripts/core/data_manager.gd:20)
+WARNING: DataManager: Missing key monster: Orc
+     at: push_warning (core/variant/variant_utility.cpp:1034)
+     GDScript backtrace (most recent call first):
+         [0] _validate_data (res://scripts/core/data_manager.gd:994)
+         [1] load_all_data (res://scripts/core/data_manager.gd:33)
+         [2] _ready (res://scripts/core/data_manager.gd:20)
+WARNING: DataManager: Missing key monster: Troll
+     at: push_warning (core/variant/variant_utility.cpp:1034)
+     GDScript backtrace (most recent call first):
+         [0] _validate_data (res://scripts/core/data_manager.gd:994)
+         [1] load_all_data (res://scripts/core/data_manager.gd:33)
+         [2] _ready (res://scripts/core/data_manager.gd:20)
+WARNING: DataManager: Missing key monster: Spider
+     at: push_warning (core/variant/variant_utility.cpp:1034)
+     GDScript backtrace (most recent call first):
+         [0] _validate_data (res://scripts/core/data_manager.gd:994)
+         [1] load_all_data (res://scripts/core/data_manager.gd:33)
+         [2] _ready (res://scripts/core/data_manager.gd:20)
+Validation completed with 4 warnings
+==============================
+=== TileMapper Initialized (DALL-E Terrain + DCSS Entities) ===
+Grid: 32x32, Tile size: 64x64
+Total tiles loaded: 459
+Layer tile kits: 7 layers
+──────────────────────────────────────────────────────────────────────
+  SURVIVAL BOT
+──────────────────────────────────────────────────────────────────────
+
+[SURVIVAL BOT] Archetype: LORE_MAGE | Run: 18 | Seed: 2596123203
+
+============================================================
+[SURVIVAL BOT] Starting intelligent 20-floor auto-play...
+[SURVIVAL BOT] Archetype: LORE_MAGE | Run: 18 | Seed: 2596123203
+============================================================
+
+[SURVIVAL BOT] Running full 20-floor playthrough... (will exit when complete)
+
+[SURVIVAL BOT] Found Main node: Main
+[SURVIVAL BOT] Bypassing character creation with: SurvivalBot-LoreMage (Elf Of Lothlorien)
+Generating outer_pits (depth 1): rooms=12, size=4-10, corridors=1
+set_tile: pos=(0, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(1, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(2, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(3, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(4, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(5, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(6, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(7, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(8, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(9, 0) tile=WALL atlas=(22, 0)
+Connectivity check failed: 899 reachable of 929 passable
+Generation attempt 1 failed connectivity check, retrying...
+Connectivity check failed: 1013 reachable of 1022 passable
+Generation attempt 2 failed connectivity check, retrying...
+Connectivity check failed: 1051 reachable of 1060 passable
+Generation attempt 3 failed connectivity check, retrying...
+Connectivity check failed: 1151 reachable of 1160 passable
+Generation attempt 4 failed connectivity check, retrying...
+Connectivity check failed: 1244 reachable of 1327 passable
+Generation attempt 5 failed connectivity check, retrying...
+Connectivity check failed: 9 reachable of 854 passable
+Generation attempt 6 failed connectivity check, retrying...
+Connectivity check failed: 1217 reachable of 1240 passable
+Generation attempt 7 failed connectivity check, retrying...
+Placed 1 door guards at depth 1
+Scattered 52 terrain tiles at depth 1
+Applied outer_pits decorations at depth 1
+Placed 3 storytelling messages at depth 1
+Post-decoration: carved 8-tile rescue corridor at depth 1
+Spawned 25 monsters at depth 1
+Spawned 10 items at depth 1
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1116)
+       [1] _grant_starting_equipment (res://scripts/main.gd:367)
+       [2] _spawn_player (res://scripts/main.gd:305)
+       [3] _start_new_game (res://scripts/main.gd:209)
+       [4] _on_character_created (res://scripts/main.gd:194)
+       [5] _bypass_character_creation (res://tests/bot/survival_bot.gd:225)
+       [6] _ready (res://tests/bot/survival_bot.gd:147)
+[SURVIVAL BOT] Game started. Player: Necromancer | Depth: 1 | HP: 41/41 | Voice: 71/71
+[SURVIVAL BOT] AbilitySystem: FOUND | Skills: ["lore", "will", "evasion", "stealth"]
+
+[SURVIVAL BOT] === FLOOR 1 ===
+[SURVIVAL BOT] Learned ability: Word of Command (-0 XP)
+[SURVIVAL BOT] Learned ability: Deep Memory (-500 XP)
+[SURVIVAL BOT] Learned ability: Song of Freedom (-1000 XP)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _pickup_item (res://tests/bot/survival_bot.gd:952)
+       [2] _decide_and_act (res://tests/bot/survival_bot.gd:569)
+       [3] _run_floor_loop (res://tests/bot/survival_bot.gd:431)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _pickup_item (res://tests/bot/survival_bot.gd:952)
+       [2] _decide_and_act (res://tests/bot/survival_bot.gd:569)
+       [3] _run_floor_loop (res://tests/bot/survival_bot.gd:431)
+[SURVIVAL BOT] Learned ability: Curse Breaking (-500 XP)
+ERROR: Error calling from signal 'item_picked_up' to callable: 'Node(audio_manager.gd)::_on_item_picked_up': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] pick_up_item (res://scripts/entities/player.gd:1127)
+       [1] _pickup_item (res://tests/bot/survival_bot.gd:952)
+       [2] _decide_and_act (res://tests/bot/survival_bot.gd:569)
+       [3] _run_floor_loop (res://tests/bot/survival_bot.gd:431)
+ERROR: Error calling from signal 'item_equipped' to callable: 'Node(audio_manager.gd)::_on_item_equipped': Cannot convert argument 2 from Object to Object.
+   at: emit_signalp (core/object/object.cpp:1406)
+   GDScript backtrace (most recent call first):
+       [0] equip_item (res://scripts/entities/player.gd:1188)
+       [1] _try_auto_equip (res://tests/bot/survival_bot.gd:1978)
+       [2] _pickup_item (res://tests/bot/survival_bot.gd:959)
+       [3] _decide_and_act (res://tests/bot/survival_bot.gd:569)
+       [4] _run_floor_loop (res://tests/bot/survival_bot.gd:431)
+[SURVIVAL BOT] Stuck for 40 turns. Aborting floor.
+[SURVIVAL BOT] Descending stairs at depth 1...
+Generating outer_pits (depth 2): rooms=8, size=4-10, corridors=1
+set_tile: pos=(0, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(1, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(2, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(3, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(4, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(5, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(6, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(7, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(8, 0) tile=WALL atlas=(22, 0)
+set_tile: pos=(9, 0) tile=WALL atlas=(22, 0)
+Placed 3 door guards at depth 2
+Scattered 35 terrain tiles at depth 2
+Applied outer_pits decorations at depth 2
+Placed 2 storytelling messages at depth 2
+Post-decoration: carved 27-tile rescue corridor at depth 2
+Spawned 9 monsters at depth 2
+Spawned 3 items at depth 2
+[FLOOR 1] Turns: 46 | Kills: 1 | Items: 3 | Damage: 9 | Healed: 4 | Errors: 1
+  [ERROR] Stuck abort after 40 turns
+
+[SURVIVAL BOT] === FLOOR 2 ===
+[SURVIVAL BOT] Stuck for 40 turns. Aborting floor.
+ERROR: Infinite loop detected. Check set_loops() description for more info.
+   at: step (scene/animation/tween.cpp:406)
+ERROR: Infinite loop detected. Check set_loops() description for more info.
+   at: step (scene/animation/tween.cpp:406)
+ERROR: Infinite loop detected. Check set_loops() description for more info.
+   at: step (scene/animation/tween.cpp:406)
+ERROR: Infinite loop detected. Check set_loops() description for more info.
+   at: step (scene/animation/tween.cpp:406)
+ERROR: Infinite loop detected. Check set_loops() description for more info.
+   at: step (scene/animation/tween.cpp:406)
+[FLOOR 2] Turns: 40 | Kills: 4 | Items: 0 | Damage: 25 | Healed: 0 | Errors: 1
+  [ERROR] Stuck abort after 40 turns
+
+[SURVIVAL BOT] === FLOOR 2 ===
+[SURVIVAL BOT] Turn limit reached on floor 2. Attempting emergency descent.
+[FLOOR 2] Turns: 325 | Kills: 0 | Items: 0 | Damage: 8 | Healed: 74 | Errors: 0
+JSON_RESULT:{"archetype":"LORE_MAGE","deepest_floor":2,"outcome":"DEATH","per_floor_stats":[{"abilities_used":0,"auto_explore_uses":0,"damage_taken":9,"depth":1,"errors":["Stuck abort after 40 turns"],"healing_done":4,"items_equipped":0,"items_found":3,"monsters_killed":1,"ranged_attacks":0,"turns_taken":46},{"abilities_used":0,"auto_explore_uses":0,"damage_taken":25,"depth":2,"errors":["Stuck abort after 40 turns"],"healing_done":0,"items_equipped":0,"items_found":0,"monsters_killed":4,"ranged_attacks":0,"turns_taken":40},{"abilities_used":0,"auto_explore_uses":0,"damage_taken":8,"depth":2,"errors":[],"healing_done":74,"items_equipped":0,"items_found":0,"monsters_killed":0,"ranged_attacks":0,"turns_taken":325}],"run_index":18,"seed":2596123203,"timestamp":"2026-02-08T16:38:53","total_abilities_learned":4,"total_abilities_used":35,"total_combats_avoided":0,"total_consumables_used":0,"total_damage_taken":42,"total_deep_memory":34,"total_detections":0,"total_errors":2,"total_flee_attempts":0,"total_forge_successes":0,"total_forges_used":0,"total_forges_visited":0,"total_healing_done":78,"total_items":3,"total_items_equipped":1,"total_items_sought":6,"total_kills":5,"total_kite_attempts":0,"total_kite_shots":0,"total_lore_of_sleep":0,"total_ranged_attacks":0,"total_rest_turns":316,"total_skills_bought":11,"total_songs_started":1,"total_stealth_kills":0,"total_stealth_toggles":5,"total_turns":510,"total_word_of_command":0}
+
+============================================================
+=== SURVIVAL BOT RUN COMPLETE ===
+============================================================
+Floors cleared: 1/20
+Deepest floor reached: 2
+Total turns: 510
+Total kills: 5
+Total items: 3
+Total damage taken: 42
+Total healing done: 78
+Abilities used: 35 | Ranged: 0 | Equipped: 1 | Forged: 0
+Stealth toggles: 5 | Skills bought: 11 | Abilities learned: 4 | Songs: 1
+Flee attempts: 0 | Consumables: 0 | Items sought: 6 | Kite shots: 0
+Combats avoided: 0 | Stealth kills: 0 | Detections: 0 | Rest turns: 316
+WoC: 0 | Sleep: 0 | Deep Memory: 34 | Forges visited: 0
+Cause of end: DEATH
+Errors encountered: 2
+
+--- Per-Floor Breakdown ---
+  Floor  1:  46 turns,  1 kills,  3 items,   9 dmg,   4 heal [1 errors]
+  Floor  2:  40 turns,  4 kills,  0 items,  25 dmg,   0 heal [1 errors]
+  Floor  2: 325 turns,  0 kills,  0 items,   8 dmg,  74 heal
+============================================================
+
+WARNING: 4 RIDs of type "CanvasItem" were leaked.
+     at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2692)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2641)
+ERROR: 8 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:810)

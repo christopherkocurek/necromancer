@@ -69,6 +69,46 @@ const ARCHETYPES: Dictionary = {
 		# Cost: 6+1+6+0 = 13. Final with Dwarf(+1/-1/+3/0) + Erebor(0/0/+1/0): STR4 DEX0 CON7 GRA0
 		"base_stats": {"str": 3, "dex": 1, "con": 3, "gra": 0},
 	},
+	"STEALTH_PURE": {
+		"archetype_id": "STEALTH_PURE",
+		"name": "SurvivalBot-StealthPure",
+		"race": "Hobbit",
+		"house": "Of the Tooks",
+		"trait": "Shadow Walker",
+		"gender": "female",
+		# Cost: -1+10+1+3 = 13. Final with Hobbit(-2/+2/0/+2) + Tooks(0/+1/0/0): STR-1 DEX8 CON2 GRA5
+		"base_stats": {"str": 1, "dex": 5, "con": 2, "gra": 3},
+	},
+	"STEALTH_ASSASSIN": {
+		"archetype_id": "STEALTH_ASSASSIN",
+		"name": "SurvivalBot-StealthAssassin",
+		"race": "Hobbit",
+		"house": "Of the Tooks",
+		"trait": "Nimble Striker",
+		"gender": "male",
+		# Cost: 3+6+1+3 = 13. Final with Hobbit(-2/+2/0/+2) + Tooks(0/+1/0/0): STR1 DEX7 CON2 GRA4
+		"base_stats": {"str": 3, "dex": 4, "con": 2, "gra": 2},
+	},
+	"RANGER_MARKSMAN": {
+		"archetype_id": "RANGER_MARKSMAN",
+		"name": "SurvivalBot-RangerMarksman",
+		"race": "Man",
+		"house": "Dunedain",
+		"trait": "Wayfarer's Instinct",
+		"gender": "male",
+		# Cost: 3+6+3+1 = 13. Final with Man(+1/0/+1/0) + Dunedain(0/+1/0/+1): STR4 DEX5 CON3 GRA2
+		"base_stats": {"str": 3, "dex": 4, "con": 2, "gra": 1},
+	},
+	"RANGER_STEALTH_ARCHER": {
+		"archetype_id": "RANGER_STEALTH_ARCHER",
+		"name": "SurvivalBot-RangerStealthArcher",
+		"race": "Man",
+		"house": "Dunedain",
+		"trait": "Wayfarer's Instinct",
+		"gender": "female",
+		# Cost: 1+6+1+6 = 14 -- adjusted: 0+6+1+6 = 13. Final with Man(+1/0/+1/0) + Dunedain(0/+1/0/+1): STR1 DEX5 CON3 GRA4
+		"base_stats": {"str": 0, "dex": 4, "con": 2, "gra": 3},
+	},
 }
 
 

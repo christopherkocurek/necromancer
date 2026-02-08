@@ -49,6 +49,13 @@ def write_csv(results):
         "total_abilities_used", "total_ranged_attacks", "total_items_equipped",
         "total_forges_used", "total_stealth_toggles", "total_skills_bought",
         "total_abilities_learned", "total_songs_started",
+        # v2 fields
+        "total_flee_attempts", "total_consumables_used", "total_items_sought",
+        "total_kite_attempts", "total_kite_shots",
+        "total_combats_avoided", "total_stealth_kills", "total_detections",
+        "total_forges_visited", "total_forge_successes",
+        "total_word_of_command", "total_lore_of_sleep", "total_deep_memory",
+        "total_rest_turns",
         "timestamp", "_file"
     ]
     os.makedirs(CSV_OUTPUT.parent, exist_ok=True)
@@ -89,6 +96,22 @@ def compute_stats(results):
         abilities_learned = [r.get("total_abilities_learned", 0) for r in runs]
         songs = [r.get("total_songs_started", 0) for r in runs]
 
+        # v2 metrics
+        flee_attempts = [r.get("total_flee_attempts", 0) for r in runs]
+        consumables = [r.get("total_consumables_used", 0) for r in runs]
+        items_sought = [r.get("total_items_sought", 0) for r in runs]
+        kite_attempts = [r.get("total_kite_attempts", 0) for r in runs]
+        kite_shots = [r.get("total_kite_shots", 0) for r in runs]
+        combats_avoided = [r.get("total_combats_avoided", 0) for r in runs]
+        stealth_kills_list = [r.get("total_stealth_kills", 0) for r in runs]
+        detections = [r.get("total_detections", 0) for r in runs]
+        forges_visited = [r.get("total_forges_visited", 0) for r in runs]
+        forge_successes = [r.get("total_forge_successes", 0) for r in runs]
+        woc = [r.get("total_word_of_command", 0) for r in runs]
+        sleep = [r.get("total_lore_of_sleep", 0) for r in runs]
+        deep_mem = [r.get("total_deep_memory", 0) for r in runs]
+        rest_turns = [r.get("total_rest_turns", 0) for r in runs]
+
         stats[arch] = {
             "n": n,
             "wins": wins,
@@ -112,6 +135,21 @@ def compute_stats(results):
             "avg_skills_bought": sum(skills_bought) / max(n, 1),
             "avg_abilities_learned": sum(abilities_learned) / max(n, 1),
             "avg_songs": sum(songs) / max(n, 1),
+            # v2
+            "avg_flee": sum(flee_attempts) / max(n, 1),
+            "avg_consumables": sum(consumables) / max(n, 1),
+            "avg_items_sought": sum(items_sought) / max(n, 1),
+            "avg_kite_attempts": sum(kite_attempts) / max(n, 1),
+            "avg_kite_shots": sum(kite_shots) / max(n, 1),
+            "avg_combats_avoided": sum(combats_avoided) / max(n, 1),
+            "avg_stealth_kills": sum(stealth_kills_list) / max(n, 1),
+            "avg_detections": sum(detections) / max(n, 1),
+            "avg_forges_visited": sum(forges_visited) / max(n, 1),
+            "avg_forge_successes": sum(forge_successes) / max(n, 1),
+            "avg_woc": sum(woc) / max(n, 1),
+            "avg_sleep": sum(sleep) / max(n, 1),
+            "avg_deep_memory": sum(deep_mem) / max(n, 1),
+            "avg_rest_turns": sum(rest_turns) / max(n, 1),
             "depths": depths,
             "runs": runs,
         }
@@ -198,9 +236,11 @@ def generate_report(results, stats):
 
     race_map = {
         "WARRIOR": "Man", "STEALTH": "Hobbit", "LORE_MAGE": "Elf",
-        "RANGER": "Man", "TANK": "Dwarf", "SMITH": "Dwarf"
+        "RANGER": "Man", "TANK": "Dwarf", "SMITH": "Dwarf",
+        "STEALTH_PURE": "Hobbit", "STEALTH_ASSASSIN": "Hobbit",
+        "RANGER_MARKSMAN": "Man", "RANGER_STEALTH_ARCHER": "Man",
     }
-    for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+    for arch in sorted(stats.keys()):
         s = stats.get(arch)
         if not s:
             continue
@@ -226,7 +266,7 @@ def generate_report(results, stats):
     lines.append("")
     header = "| Floor |"
     sep = "|-------|"
-    for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+    for arch in sorted(stats.keys()):
         if arch in curves:
             header += f" {arch} |"
             sep += "--------|"
@@ -234,7 +274,7 @@ def generate_report(results, stats):
     lines.append(sep)
     for floor in range(1, 21):
         row = f"| {floor:2d}    |"
-        for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+        for arch in sorted(stats.keys()):
             if arch in curves:
                 pct = curves[arch].get(floor, 0)
                 row += f" {pct:5.1f}% |"
@@ -244,7 +284,7 @@ def generate_report(results, stats):
     # Death floor distribution
     lines.append("## Death Floor Distribution")
     lines.append("")
-    for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+    for arch in sorted(stats.keys()):
         if arch not in death_dist or not death_dist[arch]:
             continue
         lines.append(f"### {arch}")
@@ -261,7 +301,7 @@ def generate_report(results, stats):
     lines.append("")
     lines.append("| Archetype | Avg Items | Avg Damage Taken | Avg Healing | Items/Damage Ratio |")
     lines.append("|-----------|-----------|------------------|-------------|-------------------|")
-    for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+    for arch in sorted(stats.keys()):
         s = stats.get(arch)
         if not s:
             continue
@@ -275,13 +315,72 @@ def generate_report(results, stats):
     lines.append("")
     lines.append("| Archetype | Avg Skills | Avg Abilities | Avg Equipped | Avg Abilities Used | Avg Ranged | Avg Songs | Avg Forged | Avg Stealth |")
     lines.append("|-----------|-----------|--------------|-------------|-------------------|-----------|----------|-----------|------------|")
-    for arch in ["WARRIOR", "STEALTH", "LORE_MAGE", "RANGER", "TANK", "SMITH"]:
+    for arch in sorted(stats.keys()):
         s = stats.get(arch)
         if not s:
             continue
         lines.append(f"| {arch} | {s['avg_skills_bought']:.1f} | {s['avg_abilities_learned']:.1f} | "
                      f"{s['avg_equipped']:.1f} | {s['avg_abilities']:.1f} | {s['avg_ranged']:.1f} | "
                      f"{s['avg_songs']:.1f} | {s['avg_forged']:.1f} | {s['avg_stealth']:.0f} |")
+    lines.append("")
+
+    # v2 Stealth analysis
+    stealth_archetypes = [a for a in stats if a in ("STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "RANGER_STEALTH_ARCHER")]
+    if stealth_archetypes:
+        lines.append("## Stealth Analysis")
+        lines.append("")
+        lines.append("| Archetype | Avg Combats Avoided | Avg Stealth Kills | Avg Detections | Avg Flee |")
+        lines.append("|-----------|--------------------|--------------------|---------------|----------|")
+        for arch in sorted(stealth_archetypes):
+            s = stats[arch]
+            lines.append(f"| {arch} | {s['avg_combats_avoided']:.1f} | {s['avg_stealth_kills']:.1f} | "
+                         f"{s['avg_detections']:.1f} | {s['avg_flee']:.1f} |")
+        lines.append("")
+
+    # v2 Ranged/Kiting analysis
+    ranged_archetypes = [a for a in stats if a in ("RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER")]
+    if ranged_archetypes:
+        lines.append("## Ranged & Kiting Analysis")
+        lines.append("")
+        lines.append("| Archetype | Avg Ranged Shots | Avg Kite Attempts | Avg Kite Shots | Avg Kills |")
+        lines.append("|-----------|-----------------|-------------------|----------------|-----------|")
+        for arch in sorted(ranged_archetypes):
+            s = stats[arch]
+            lines.append(f"| {arch} | {s['avg_ranged']:.1f} | {s['avg_kite_attempts']:.1f} | "
+                         f"{s['avg_kite_shots']:.1f} | {s['avg_kills']:.1f} |")
+        lines.append("")
+
+    # v2 Smith/Forge analysis
+    if "SMITH" in stats:
+        lines.append("## Smith & Forge Analysis")
+        lines.append("")
+        s = stats["SMITH"]
+        lines.append(f"- **Forges visited:** {s['avg_forges_visited']:.1f} avg per run")
+        lines.append(f"- **Forge successes:** {s['avg_forge_successes']:.1f} avg per run")
+        lines.append(f"- **Items forged:** {s['avg_forged']:.1f} avg per run")
+        lines.append("")
+
+    # v2 Lore Mage ability breakdown
+    if "LORE_MAGE" in stats:
+        lines.append("## Lore Mage Ability Breakdown")
+        lines.append("")
+        s = stats["LORE_MAGE"]
+        lines.append(f"- **Word of Command:** {s['avg_woc']:.1f} avg uses per run")
+        lines.append(f"- **Lore of Sleep:** {s['avg_sleep']:.1f} avg uses per run")
+        lines.append(f"- **Deep Memory:** {s['avg_deep_memory']:.1f} avg uses per run")
+        lines.append(f"- **Total abilities used:** {s['avg_abilities']:.1f} avg per run")
+        lines.append(f"- **Rest turns for voice:** {s['avg_rest_turns']:.0f} avg per run")
+        lines.append("")
+
+    # v2 Survival improvements
+    lines.append("## Survival Behavior (v2 Upgrades)")
+    lines.append("")
+    lines.append("| Archetype | Avg Flee | Avg Consumables | Avg Items Sought | Avg Rest Turns |")
+    lines.append("|-----------|---------|-----------------|------------------|---------------|")
+    for arch in sorted(stats.keys()):
+        s = stats[arch]
+        lines.append(f"| {arch} | {s['avg_flee']:.1f} | {s['avg_consumables']:.1f} | "
+                     f"{s['avg_items_sought']:.1f} | {s['avg_rest_turns']:.0f} |")
     lines.append("")
 
     # Balance recommendations

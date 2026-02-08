@@ -15,12 +15,23 @@ const MAX_TURNS_PER_FLOOR: int = 200
 const MAX_TOTAL_TURNS: int = 5000
 const STUCK_THRESHOLD: int = 20       ## Abort floor if no position change for this many turns
 const RANDOM_MOVE_THRESHOLD: int = 30 ## Try random movement after this many stuck turns
-const HP_CRITICAL_PCT: float = 0.10   ## Below 10% HP: flee
+const HP_CRITICAL_PCT: float = 0.10   ## Below 10% HP: flee (legacy, see FLEE_HP_PCT)
 const HP_LOW_PCT: float = 0.25        ## Below 25% HP: try healing urgently
 const HP_HEAL_PCT: float = 0.50       ## Below 50% HP: quaff potion if available
 const HP_REST_PCT: float = 0.75       ## Below 75% HP: rest if safe
 const TARGET_DEPTH: int = 20          ## Goal: descend to floor 20
 const TICK_DELAY: float = 0.05        ## Seconds between bot ticks (let engine process)
+
+# --- v2 upgrades ---
+const FLEE_HP_PCT: float = 0.30        ## Flee at 30% HP (was 10%)
+const FLEE_DISTANCE: int = 4           ## Multi-step flee: move 4 tiles away from threats
+const REST_TARGET_HP_PCT: float = 0.80 ## Rest until 80% HP (was 50 turn cap)
+const REST_TARGET_VOICE_PCT: float = 0.50  ## Casters rest until 50% voice
+const FLOOR_EXPLORE_PCT: float = 0.70  ## Explore 70% of floor before descending
+const ITEM_SEEK_RANGE: int = 5         ## Pathfind to visible items within 5 tiles
+const KITE_OPTIMAL_RANGE: int = 4      ## Optimal range for ranged kiting
+const KITE_MIN_RANGE: int = 3          ## Minimum range before retreating
+const VOICE_EMERGENCY_RESERVE: float = 0.30  ## Reserve 30% voice for emergencies
 
 # ============================================================================
 # NODE REFERENCES
@@ -79,6 +90,24 @@ var _total_stealth_toggles: int = 0
 var _total_skills_bought: int = 0
 var _total_abilities_learned: int = 0
 var _total_songs_started: int = 0
+
+# v2 telemetry — detailed tracking
+var _total_flee_attempts: int = 0
+var _total_consumables_used: int = 0
+var _total_items_sought: int = 0
+var _total_kite_attempts: int = 0
+var _total_kite_shots: int = 0
+var _total_combats_avoided: int = 0       ## Stealth: fights skipped
+var _total_stealth_kills: int = 0          ## Assassin: surprise kills
+var _total_detections: int = 0             ## Times stealth was broken
+var _total_forges_visited: int = 0         ## Distinct forge tiles visited
+var _total_forge_successes: int = 0        ## Successful forges
+var _total_word_of_command: int = 0        ## Specific ability counts
+var _total_lore_of_sleep: int = 0
+var _total_deep_memory: int = 0
+var _total_rest_turns: int = 0             ## Total turns spent resting
+var _explored_tiles: int = 0               ## Floor exploration tracking
+var _total_tiles: int = 0
 
 # ============================================================================
 # ENHANCED BOT — SKILL SYSTEM REFERENCES
@@ -244,51 +273,68 @@ func _init_archetype_strategy() -> void:
 		"WARRIOR":
 			_skill_priorities = ["melee", "evasion", "will", "stealth"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},          # MEL_POWER
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
-				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},         # MEL_FINESSE
-				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},        # EVN_BLOCKING
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
 			]
-		"STEALTH":
-			_skill_priorities = ["stealth", "evasion", "lore", "melee"]
+		"STEALTH", "STEALTH_PURE":
+			_skill_priorities = ["stealth", "evasion", "will", "lore"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},        # STL_DISGUISE
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
-				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},   # STL_ASSASSINATION
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of the Trees"}, # SONG_OF_THE_TREES
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of the Trees"},
+			]
+		"STEALTH_ASSASSIN":
+			_skill_priorities = ["stealth", "melee", "evasion", "will"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		"LORE_MAGE":
 			_skill_priorities = ["lore", "will", "evasion", "stealth"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"}, # WORD_OF_COMMAND
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"}, # SONG_OF_FREEDOM
-				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},     # DEEP_MEMORY
-				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},  # LORE_OF_SLEEP
-				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},  # WIL_CURSE_BREAKING
+				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"},
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"},
+				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
+				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
 			]
-		"RANGER":
+		"RANGER", "RANGER_MARKSMAN":
 			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},       # ARC_FLETCHERY
-				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},     # ARC_POINT_BLANK
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
-				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},  # PER_NATURAL_TALENT
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+			]
+		"RANGER_STEALTH_ARCHER":
+			_skill_priorities = ["archery", "stealth", "evasion", "hunting"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		"TANK":
 			_skill_priorities = ["evasion", "melee", "will", "smithing"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
-				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},        # EVN_BLOCKING
-				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},           # MEL_POWER
-				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},  # WIL_CURSE_BREAKING
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
 			]
 		"SMITH":
 			_skill_priorities = ["smithing", "melee", "evasion", "will"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},     # SMT_WEAPONSMITH
-				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},     # SMT_ARMOURSMITH
-				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},           # MEL_POWER
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
+				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Aule"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		_:
 			_skill_priorities = ["melee", "evasion", "will", "stealth"]
@@ -434,93 +480,144 @@ func _decide_and_act() -> bool:
 	_try_equip_from_inventory()  # Auto-equip better gear
 
 	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+	var voice_pct: float = float(_player.voice_charges) / float(maxi(_player.max_voice, 1))
 	var adj_count: int = _count_adjacent_monsters()
 	var vis_count: int = _count_visible_monsters()
+
+	# --- STEALTH_PURE: avoid all combat, pathfind around monsters ---
+	if _archetype_id == "STEALTH_PURE":
+		return await _stealth_pure_decide(hp_pct, adj_count, vis_count)
+
+	# --- STEALTH_ASSASSIN: hunt unwary targets from stealth ---
+	if _archetype_id == "STEALTH_ASSASSIN":
+		return await _stealth_assassin_decide(hp_pct, adj_count, vis_count)
 
 	# Priority 0: EMERGENCY — overwhelmed by multiple adjacent enemies
 	if adj_count >= 2:
 		if _try_emergency_ability():
 			return true
 
-	# Priority 1: CRITICAL HP — heal, use ability, or flee
-	if hp_pct < HP_CRITICAL_PCT:
+	# Priority 1: FLEE at 30% HP (upgraded from 10%)
+	if hp_pct < FLEE_HP_PCT:
+		# Use consumables in combat first
+		if adj_count > 0 and hp_pct < HP_HEAL_PCT:
+			if _try_use_consumable():
+				return true
 		if _try_heal():
 			return true
 		if _try_emergency_ability():
 			return true
-		if _try_flee_from_monster():
+		if _try_multi_step_flee():
+			_total_flee_attempts += 1
 			return true
 		if not _has_adjacent_monster() and not _has_visible_monster():
 			return await _do_rest()
+		# Cornered — fight
+		if _has_adjacent_monster():
+			_try_start_combat_song()
+			return _attack_adjacent_monster()
 		return _do_random_move()
 
-	# Priority 2: LOW HP — heal urgently, fight if cornered
+	# Priority 2: LOW HP — heal urgently, use consumables
 	if hp_pct < HP_LOW_PCT:
+		if _try_use_consumable():
+			return true
 		if _try_heal():
 			return true
 		if _has_adjacent_monster():
-			# Start combat song before fighting
 			_try_start_combat_song()
 			return _attack_adjacent_monster()
 		if not _has_visible_monster():
 			return await _do_rest()
 
-	# Priority 3: RANGED ATTACK — shoot visible monsters at range
+	# Priority 3: LORE_MAGE proactive abilities (before combat starts)
+	if _archetype_id == "LORE_MAGE" and vis_count > 0 and not _has_adjacent_monster():
+		if _try_proactive_lore_abilities(vis_count, voice_pct):
+			return true
+
+	# Priority 4: KITING — ranged archetypes maintain distance and fire
+	if _is_ranged_archetype() and not _has_adjacent_monster() and vis_count > 0:
+		if _try_kite_and_shoot():
+			return true
+
+	# Priority 5: RANGED ATTACK — shoot visible monsters at range
 	if not _has_adjacent_monster() and vis_count > 0:
 		if _try_ranged_attack():
 			return true
 
-	# Priority 4: VOICE OFFENSIVE — use abilities on visible threats
+	# Priority 6: VOICE OFFENSIVE — use abilities on visible threats
 	if vis_count > 0 and not _has_adjacent_monster():
 		if _try_offensive_ability():
 			return true
 
-	# Priority 5: COMBAT — fight adjacent monsters
+	# Priority 7: COMBAT — fight adjacent monsters
 	if _has_adjacent_monster():
-		# Start combat song before melee
+		# Use consumable mid-combat if HP < 50%
+		if hp_pct < HP_HEAL_PCT:
+			if _try_use_consumable():
+				return true
 		_try_start_combat_song()
 		return _attack_adjacent_monster()
 
-	# Priority 6: HEAL if moderately wounded and safe
+	# Priority 8: HEAL if moderately wounded and safe
 	if hp_pct < HP_HEAL_PCT and not _has_visible_monster():
 		if _try_heal():
 			return true
 
-	# Priority 7: LOOT — pick up items on ground (auto-equips upgrades)
+	# Priority 9: LOOT — pick up items on ground
 	if _has_items_on_ground():
 		return _pickup_item()
 
-	# Priority 8: FORGE — use forge if standing on one
+	# Priority 10: SEEK ITEMS — pathfind to visible items when safe
+	if not _has_visible_monster() and _try_seek_nearby_item():
+		return true
+
+	# Priority 11: FORGE — use forge if standing on one
 	if _is_on_forge() and _try_use_forge():
 		return true
 
-	# Priority 9: EXPLORATION SONG — start if safe and not singing
+	# Priority 12: SMITH forge-seeking — pathfind to forge tiles
+	if _archetype_id == "SMITH" and not _has_visible_monster():
+		if _try_seek_forge():
+			return true
+
+	# Priority 13: LORE_MAGE — Deep Memory when stairs not found
+	if _archetype_id == "LORE_MAGE" and not _has_visible_monster():
+		if _try_use_deep_memory():
+			return true
+
+	# Priority 14: EXPLORATION SONG — start if safe and not singing
 	if not _has_visible_monster() and not _has_adjacent_monster():
 		if _try_start_exploration_song():
 			return true
 
-	# Priority 10: ON STAIRS — descend
+	# Priority 15: ON STAIRS — descend (with floor clearing logic)
 	if _is_on_stairs_down():
-		return await _do_descend()
+		if _should_descend():
+			return await _do_descend()
 
-	# Priority 11: REST if wounded and safe
-	if hp_pct < HP_REST_PCT and not _has_visible_monster():
-		if not _has_adjacent_monster():
+	# Priority 16: REST if wounded or low voice (casters) and safe
+	if not _has_visible_monster() and not _has_adjacent_monster():
+		if hp_pct < REST_TARGET_HP_PCT:
+			return await _do_rest()
+		# Casters rest for voice too
+		if _is_caster_archetype() and voice_pct < REST_TARGET_VOICE_PCT:
 			return await _do_rest()
 
-	# Priority 12: EXPLORE — find stairs (SMITH may prefer forges)
+	# Priority 17: EXPLORE — find stairs or continue exploring
 	var stairs_pos: Vector2i = _level.find_stairs_down()
 	if stairs_pos != Vector2i(-1, -1) and _level.is_explored(stairs_pos):
-		var path_to_stairs: Array[Vector2i] = _level.find_path_through_doors(
-			_player.grid_position, stairs_pos
-		)
-		if path_to_stairs.size() > 1:
-			var next_step: Vector2i = path_to_stairs[1] if path_to_stairs[0] == _player.grid_position else path_to_stairs[0]
-			return _move_to_position(next_step)
-		elif path_to_stairs.size() == 1:
-			var next_step: Vector2i = path_to_stairs[0]
-			if next_step != _player.grid_position:
+		if _should_descend():
+			var path_to_stairs: Array[Vector2i] = _level.find_path_through_doors(
+				_player.grid_position, stairs_pos
+			)
+			if path_to_stairs.size() > 1:
+				var next_step: Vector2i = path_to_stairs[1] if path_to_stairs[0] == _player.grid_position else path_to_stairs[0]
 				return _move_to_position(next_step)
+			elif path_to_stairs.size() == 1:
+				var next_step: Vector2i = path_to_stairs[0]
+				if next_step != _player.grid_position:
+					return _move_to_position(next_step)
 
 	# Auto-explore to find stairs (or explore the map)
 	if _stuck_counter < RANDOM_MOVE_THRESHOLD:
@@ -780,23 +877,39 @@ func _use_consumable_item(item: Variant) -> void:
 			_turn_system._after_player_action()
 
 func _try_flee_from_monster() -> bool:
-	## Move away from the nearest visible monster.
+	## Move away from the nearest visible monster (single step).
+	return _flee_one_step()
+
+func _try_multi_step_flee() -> bool:
+	## Flee multiple tiles away from nearest threat. Returns true if at least one step taken.
 	var monster: Monster = _get_nearest_visible_monster()
 	if not monster:
 		return false
 
 	var pp: Vector2i = _player.grid_position
 	var mp: Vector2i = monster.grid_position
-	var flee_dir: Vector2i = pp - mp  # Direction away from monster
+	var dist: int = _get_chebyshev_distance(pp, mp)
 
-	# Normalize to unit direction
+	# Already far enough
+	if dist >= FLEE_DISTANCE:
+		return false
+
+	return _flee_one_step()
+
+func _flee_one_step() -> bool:
+	## Move one step away from the nearest visible monster.
+	var monster: Monster = _get_nearest_visible_monster()
+	if not monster:
+		return false
+
+	var pp: Vector2i = _player.grid_position
+	var mp: Vector2i = monster.grid_position
+	var flee_dir: Vector2i = pp - mp
+
 	flee_dir.x = clampi(flee_dir.x, -1, 1)
 	flee_dir.y = clampi(flee_dir.y, -1, 1)
 
-	# Try flee direction, then perpendicular alternatives
 	var directions: Array[Vector2i] = [flee_dir]
-
-	# Add perpendicular options
 	if flee_dir.x != 0 and flee_dir.y != 0:
 		directions.append(Vector2i(flee_dir.x, 0))
 		directions.append(Vector2i(0, flee_dir.y))
@@ -854,21 +967,26 @@ func _pickup_item() -> bool:
 	return false
 
 func _do_rest() -> bool:
-	## Rest for up to 50 turns, healing 1 HP per 4 turns (matches main.gd rest logic).
-	## Stops early if: monsters visible, took damage, or fully healed.
+	## Rest until HP >= 80% of max (or voice >= 50% for casters).
+	## Stops early if: monsters visible, took damage, or targets reached.
 	if _has_visible_monster():
 		return false
 
 	if not _player or not _player.is_alive:
 		return false
 
-	# Already at full HP and voice?
-	if _player.current_health >= _player.max_health:
+	var hp_target: int = int(_player.max_health * REST_TARGET_HP_PCT)
+	var voice_target: int = int(_player.max_voice * REST_TARGET_VOICE_PCT) if _is_caster_archetype() else 0
+
+	# Already at targets?
+	var hp_ok: bool = _player.current_health >= hp_target
+	var voice_ok: bool = not _is_caster_archetype() or _player.voice_charges >= voice_target
+	if hp_ok and voice_ok:
 		return false
 
 	var hp_before_rest: int = _player.current_health
 	var rest_turns: int = 0
-	var max_rest: int = 50
+	var max_rest: int = 150  # Allow longer rests to reach 80%
 
 	while rest_turns < max_rest:
 		# Interrupt conditions
@@ -876,13 +994,16 @@ func _do_rest() -> bool:
 			break
 		if not _is_player_alive():
 			break
-		if _player.current_health >= _player.max_health:
+
+		# Check targets
+		hp_ok = _player.current_health >= hp_target
+		voice_ok = not _is_caster_archetype() or _player.voice_charges >= voice_target
+		if hp_ok and voice_ok:
 			break
 
-		# Simulate one rest turn: HP regen + process game tick
 		rest_turns += 1
 
-		# HP regen during rest: +1 HP every 4 rest turns (same as main.gd)
+		# HP regen during rest: +1 HP every 4 rest turns
 		if rest_turns % 4 == 0 and _player.current_health < _player.max_health:
 			_player.current_health = mini(_player.current_health + 1, _player.max_health)
 
@@ -899,12 +1020,10 @@ func _do_rest() -> bool:
 		await get_tree().create_timer(TICK_DELAY).timeout
 
 	# Track healing
-	var total_healed: int = maxi(0, _player.current_health - (_floor_hp_at_start if rest_turns > 0 else _player.current_health))
-	if _player.current_health > hp_before_rest - rest_turns:
-		# Calculate actual healing done during rest
-		var heal_amount: int = rest_turns / 4  # Approximate
-		_floor_stats["healing_done"] += heal_amount
-		_total_healing_done += heal_amount
+	var heal_amount: int = rest_turns / 4
+	_floor_stats["healing_done"] += heal_amount
+	_total_healing_done += heal_amount
+	_total_rest_turns += rest_turns
 
 	# Count rest turns in floor total
 	_floor_turn += rest_turns
@@ -1119,21 +1238,493 @@ func _manage_stealth() -> void:
 
 	var should_stealth: bool = false
 
-	# Stealth-focused archetypes prefer stealth when safe
-	if _archetype_id in ["STEALTH", "RANGER"]:
-		# Stealth ON when: no adjacent monsters and exploring
-		should_stealth = not _has_adjacent_monster()
-	elif _archetype_id == "LORE_MAGE":
-		# Stealth ON when: no visible monsters (hide while exploring)
-		should_stealth = not _has_visible_monster()
-	else:
-		# Other archetypes: stealth when wounded and no adjacent threats
-		var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
-		should_stealth = hp_pct < HP_HEAL_PCT and not _has_adjacent_monster()
+	match _archetype_id:
+		"STEALTH_PURE":
+			# Always stealth — only drop for emergencies
+			should_stealth = true
+		"STEALTH_ASSASSIN":
+			# Stealth ON when exploring, OFF when adjacent and ready to strike
+			should_stealth = not _has_adjacent_monster()
+		"STEALTH", "RANGER_STEALTH_ARCHER":
+			# Stealth ON when: no adjacent monsters
+			should_stealth = not _has_adjacent_monster()
+		"LORE_MAGE":
+			# Stealth ON when: no visible monsters
+			should_stealth = not _has_visible_monster()
+		"RANGER", "RANGER_MARKSMAN":
+			# Stealth ON when exploring, OFF for ranged combat
+			should_stealth = not _has_visible_monster()
+		_:
+			# Other archetypes: stealth when wounded and no adjacent threats
+			var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+			should_stealth = hp_pct < HP_HEAL_PCT and not _has_adjacent_monster()
 
 	if _player.stealth_mode != should_stealth:
 		_player.toggle_stealth_mode()
 		_total_stealth_toggles += 1
+
+# ============================================================================
+# v2 — FLOOR CLEARING / DESCENT DECISION
+# ============================================================================
+
+func _should_descend() -> bool:
+	## Decide whether to descend stairs. Don't rush — clear the floor first.
+	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+
+	# Always descend if HP critically low (survival priority)
+	if hp_pct < FLEE_HP_PCT:
+		return true
+
+	# Always descend if stuck for too long
+	if _stuck_counter >= RANDOM_MOVE_THRESHOLD:
+		return true
+
+	# Always descend if floor turn limit is close
+	if _floor_turn >= MAX_TURNS_PER_FLOOR - 20:
+		return true
+
+	# Check floor exploration percentage
+	var explore_pct: float = _get_floor_explore_pct()
+	if explore_pct >= FLOOR_EXPLORE_PCT:
+		return true  # Floor sufficiently explored
+
+	# Not enough explored yet — keep exploring
+	return false
+
+func _get_floor_explore_pct() -> float:
+	## Estimate what percentage of the floor has been explored.
+	if not _level:
+		return 1.0
+	var explored: int = 0
+	var total_floor: int = 0
+	for y in range(_level.height):
+		for x in range(_level.width):
+			var pos := Vector2i(x, y)
+			if _level.is_passable(pos):
+				total_floor += 1
+				if _level.is_explored(pos):
+					explored += 1
+	_explored_tiles = explored
+	_total_tiles = total_floor
+	if total_floor == 0:
+		return 1.0
+	return float(explored) / float(total_floor)
+
+func _is_ranged_archetype() -> bool:
+	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER"]
+
+func _is_caster_archetype() -> bool:
+	return _archetype_id in ["LORE_MAGE"]
+
+func _is_stealth_archetype() -> bool:
+	return _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "RANGER_STEALTH_ARCHER"]
+
+# ============================================================================
+# v2 — CONSUMABLE USAGE
+# ============================================================================
+
+func _try_use_consumable() -> bool:
+	## Use a healing herb/potion when HP < 50% in combat.
+	if not _player:
+		return false
+	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+	if hp_pct >= HP_HEAL_PCT:
+		return false
+
+	# Try healing potions first (tval 75), then herbs (tval 80)
+	for tval_target in [75, 80]:
+		for item in _player.inventory:
+			if item != null and "tval" in item and item.tval == tval_target:
+				var hp_before: int = _player.current_health
+				_use_consumable_item(item)
+				var healed: int = maxi(0, _player.current_health - hp_before)
+				_floor_stats["healing_done"] += healed
+				_total_healing_done += healed
+				_total_consumables_used += 1
+				return true
+
+	return false
+
+# ============================================================================
+# v2 — ITEM SEEKING
+# ============================================================================
+
+func _try_seek_nearby_item() -> bool:
+	## Pathfind to visible items within ITEM_SEEK_RANGE when safe.
+	if not _level or not _player:
+		return false
+	if _has_visible_monster():
+		return false
+
+	var pp: Vector2i = _player.grid_position
+	var best_item: Item = null
+	var best_score: int = -1
+	var best_dist: int = 999
+
+	for item_node in _level.items:
+		if not is_instance_valid(item_node):
+			continue
+		var dist: int = _get_chebyshev_distance(pp, item_node.grid_position)
+		if dist > ITEM_SEEK_RANGE or dist == 0:
+			continue
+		if not _level.is_tile_visible(item_node.grid_position):
+			continue
+
+		# Score items: healing > equipment > ammo > other
+		var score: int = 1
+		var item_data: Variant = item_node.get_data() if item_node.has_method("get_data") else null
+		if item_data != null and "tval" in item_data:
+			if item_data.tval == 75 or item_data.tval == 80:  # Potions/herbs
+				score = 10
+			elif item_data.tval in [20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37]:
+				score = 5  # Equipment
+			elif item_data.tval == 17 or item_data.tval == 16:  # Ammo
+				score = 7
+
+		if score > best_score or (score == best_score and dist < best_dist):
+			best_score = score
+			best_dist = dist
+			best_item = item_node
+
+	if best_item:
+		_total_items_sought += 1
+		return _move_toward_target(best_item.grid_position)
+
+	return false
+
+# ============================================================================
+# v2 — STEALTH BEHAVIOR OVERHAUL
+# ============================================================================
+
+func _stealth_pure_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
+	## STEALTH_PURE: Avoid all combat. Pathfind around monsters. Only fight if cornered.
+	# Emergency: heal and flee if low HP
+	if hp_pct < FLEE_HP_PCT:
+		if _try_use_consumable():
+			return true
+		if _try_heal():
+			return true
+		if _try_multi_step_flee():
+			_total_flee_attempts += 1
+			return true
+		# Cornered, forced to fight
+		if adj_count > 0:
+			return _attack_adjacent_monster()
+		return _do_random_move()
+
+	# If adjacent monster, flee rather than fight
+	if adj_count > 0:
+		_total_flee_attempts += 1
+		if _try_multi_step_flee():
+			return true
+		# Truly cornered — fight
+		return _attack_adjacent_monster()
+
+	# Visible but not adjacent monsters — avoid them
+	if vis_count > 0:
+		_total_combats_avoided += 1
+		# Move away from visible monsters toward unexplored/stairs
+		return _move_avoiding_monsters()
+
+	# Safe — explore
+	if _has_items_on_ground():
+		return _pickup_item()
+	if not _has_visible_monster() and _try_seek_nearby_item():
+		return true
+
+	# Rest if needed
+	if hp_pct < REST_TARGET_HP_PCT:
+		return await _do_rest()
+
+	# Navigate to stairs avoiding monster LOS
+	if _is_on_stairs_down() and _should_descend():
+		return await _do_descend()
+
+	# Explore
+	if _stuck_counter < RANDOM_MOVE_THRESHOLD:
+		return _do_auto_explore_step()
+	return _do_random_move()
+
+func _stealth_assassin_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
+	## STEALTH_ASSASSIN: Hunt unwary monsters from stealth for surprise attacks.
+	# Emergency
+	if hp_pct < FLEE_HP_PCT:
+		if _try_use_consumable():
+			return true
+		if _try_heal():
+			return true
+		if _try_multi_step_flee():
+			_total_flee_attempts += 1
+			return true
+		if adj_count > 0:
+			return _attack_adjacent_monster()
+		return _do_random_move()
+
+	# Adjacent monster: finish it off
+	if adj_count > 0:
+		_try_start_combat_song()
+		var monster: Monster = _get_nearest_adjacent_monster()
+		if monster and not monster.is_alive:
+			pass
+		return _attack_adjacent_monster()
+
+	# Visible monster: approach while stealthed for surprise attack
+	if vis_count > 0 and _player.stealth_mode:
+		var target: Monster = _get_weakest_visible_monster()
+		if target:
+			var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
+			if dist <= 2:
+				# Close enough — move in for the kill
+				return _move_toward_target(target.grid_position)
+			elif dist <= 5:
+				# Approach stealthily
+				return _move_toward_target(target.grid_position)
+
+	# Visible monster but not stealthed — flee and re-stealth
+	if vis_count > 0 and not _player.stealth_mode:
+		if _try_multi_step_flee():
+			return true
+
+	# Safe — loot, heal, explore
+	if _has_items_on_ground():
+		return _pickup_item()
+	if not _has_visible_monster() and _try_seek_nearby_item():
+		return true
+	if hp_pct < REST_TARGET_HP_PCT:
+		return await _do_rest()
+	if _is_on_stairs_down() and _should_descend():
+		return await _do_descend()
+	if _stuck_counter < RANDOM_MOVE_THRESHOLD:
+		return _do_auto_explore_step()
+	return _do_random_move()
+
+func _get_weakest_visible_monster() -> Monster:
+	## Return the visible monster with lowest HP (best assassination target).
+	var monsters: Array[Monster] = _get_visible_monsters()
+	if monsters.is_empty():
+		return null
+	var weakest: Monster = monsters[0]
+	for m in monsters:
+		if m.current_health < weakest.current_health:
+			weakest = m
+	return weakest
+
+func _move_avoiding_monsters() -> bool:
+	## Move toward stairs or unexplored area while avoiding monster line of sight.
+	if not _level or not _player:
+		return _do_random_move()
+
+	var pp: Vector2i = _player.grid_position
+	var visible_monsters: Array[Monster] = _get_visible_monsters()
+
+	# Try each adjacent tile, pick the one farthest from all visible monsters
+	var best_dir: Vector2i = Vector2i.ZERO
+	var best_score: float = -999.0
+
+	var directions: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0),                   Vector2i(1, 0),
+		Vector2i(-1, 1),  Vector2i(0, 1),  Vector2i(1, 1),
+	]
+
+	for dir in directions:
+		var target: Vector2i = pp + dir
+		if not _level.is_passable(target):
+			continue
+		var entity_at: Entity = _level.get_entity_at(target)
+		if entity_at != null and entity_at != _player:
+			continue
+
+		# Score: sum of distances from all visible monsters (higher = safer)
+		var score: float = 0.0
+		for m in visible_monsters:
+			score += float(_get_chebyshev_distance(target, m.grid_position))
+
+		# Bonus for moving toward stairs
+		var stairs_pos: Vector2i = _level.find_stairs_down()
+		if stairs_pos != Vector2i(-1, -1):
+			var stairs_dist: int = _get_chebyshev_distance(target, stairs_pos)
+			score += (20.0 - float(stairs_dist)) * 0.5  # Slight pull toward stairs
+
+		# Bonus for unexplored tiles
+		if not _level.is_explored(target):
+			score += 2.0
+
+		if score > best_score:
+			best_score = score
+			best_dir = dir
+
+	if best_dir != Vector2i.ZERO:
+		return _move_in_direction(best_dir)
+	return _do_random_move()
+
+# ============================================================================
+# v2 — KITING LOGIC (Ranged Archetypes)
+# ============================================================================
+
+func _try_kite_and_shoot() -> bool:
+	## Kiting: fire ranged attack, then retreat to maintain optimal range.
+	if not _player or not _player.can_fire_ranged():
+		return false
+
+	var visible_monsters: Array[Monster] = _get_visible_monsters()
+	if visible_monsters.is_empty():
+		return false
+
+	var pp: Vector2i = _player.grid_position
+	var target: Monster = null
+	var target_dist: int = 0
+
+	# Find best target at range
+	for monster in visible_monsters:
+		var dist: int = _get_chebyshev_distance(pp, monster.grid_position)
+		if dist < 2 or dist > 8:
+			continue
+		if _level.has_los_to(pp, monster.grid_position):
+			target = monster
+			target_dist = dist
+			break
+
+	if not target:
+		return false
+
+	# If too close, retreat first (kite step)
+	if target_dist < KITE_MIN_RANGE:
+		_total_kite_attempts += 1
+		# Move away from target
+		var flee_dir: Vector2i = pp - target.grid_position
+		flee_dir.x = clampi(flee_dir.x, -1, 1)
+		flee_dir.y = clampi(flee_dir.y, -1, 1)
+		if flee_dir != Vector2i.ZERO:
+			var flee_target: Vector2i = pp + flee_dir
+			if _level.is_passable(flee_target):
+				var entity_at: Entity = _level.get_entity_at(flee_target)
+				if entity_at == null or entity_at == _player:
+					return _move_in_direction(flee_dir)
+
+	# In optimal range — fire
+	if _player.consume_arrow():
+		_player.attacked_this_turn = true
+		_player.ranged_attack(target, target_dist)
+		_player.consume_energy()
+		if _turn_system:
+			_turn_system._after_player_action()
+		_total_ranged_attacks += 1
+		_total_kite_shots += 1
+
+		if not is_instance_valid(target) or not target.is_alive:
+			_floor_stats["monsters_killed"] += 1
+			_total_kills += 1
+
+		_track_damage()
+		return true
+
+	return false
+
+# ============================================================================
+# v2 — SMITH FORGE-SEEKING
+# ============================================================================
+
+func _try_seek_forge() -> bool:
+	## SMITH archetype: pathfind to forge tiles when none nearby.
+	if not _level or not _player:
+		return false
+	if _archetype_id != "SMITH":
+		return false
+
+	# Scan for forge tiles
+	var pp: Vector2i = _player.grid_position
+	var best_forge: Vector2i = Vector2i(-1, -1)
+	var best_dist: int = 999
+
+	for y in range(_level.height):
+		for x in range(_level.width):
+			var pos := Vector2i(x, y)
+			if _level.get_tile(pos) == Level.Tile.FORGE:
+				if _level.is_explored(pos):
+					var dist: int = _get_chebyshev_distance(pp, pos)
+					if dist < best_dist:
+						best_dist = dist
+						best_forge = pos
+
+	if best_forge != Vector2i(-1, -1) and best_dist > 0:
+		_total_forges_visited += 1
+		return _move_toward_target(best_forge)
+
+	return false
+
+# ============================================================================
+# v2 — LORE MAGE PROACTIVE ABILITIES
+# ============================================================================
+
+func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
+	## Lore Mage: use abilities proactively before combat starts.
+	if not _ability_system or not _player:
+		return false
+
+	# Don't spend voice if below emergency reserve (unless many threats)
+	if voice_pct < VOICE_EMERGENCY_RESERVE and vis_count < 3:
+		return false
+
+	# Lore of Sleep on approaching monster BEFORE melee range
+	if vis_count >= 1 and _ability_system.has_ability(150):
+		var check: Dictionary = _ability_system.can_use_ability(150)
+		if check.get("can_use", false):
+			var visible_monsters: Array[Monster] = _get_visible_monsters()
+			if not visible_monsters.is_empty():
+				# Target strongest approaching monster
+				var target: Monster = visible_monsters[0]
+				for m in visible_monsters:
+					if m.max_health > target.max_health:
+						target = m
+				var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
+				if dist >= 2 and dist <= 5:  # Pre-emptive range
+					if _ability_system.activate_ability(150, target):
+						_total_abilities_used += 1
+						_total_lore_of_sleep += 1
+						_player.consume_energy()
+						if _turn_system:
+							_turn_system._after_player_action()
+						return true
+
+	# Word of Command when 2+ visible (pre-emptive AOE)
+	if vis_count >= 2 and _ability_system.has_ability(140):
+		var check: Dictionary = _ability_system.can_use_ability(140)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(140):
+				_total_abilities_used += 1
+				_total_word_of_command += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	return false
+
+func _try_use_deep_memory() -> bool:
+	## Use Deep Memory to reveal map when stairs haven't been found.
+	if not _ability_system or not _player:
+		return false
+	if not _ability_system.has_ability(142):
+		return false
+
+	var stairs_pos: Vector2i = _level.find_stairs_down()
+	if stairs_pos != Vector2i(-1, -1) and _level.is_explored(stairs_pos):
+		return false  # Already know where stairs are
+
+	var check: Dictionary = _ability_system.can_use_ability(142)
+	if not check.get("can_use", false):
+		return false
+
+	if _ability_system.activate_ability(142):
+		_total_abilities_used += 1
+		_total_deep_memory += 1
+		_player.consume_energy()
+		if _turn_system:
+			_turn_system._after_player_action()
+		return true
+
+	return false
 
 # ============================================================================
 # ENHANCED BOT — SONG MANAGEMENT
@@ -1186,7 +1777,7 @@ func _try_start_exploration_song() -> bool:
 		return false
 
 	# Song of the Trees (+5 stealth) — great for exploration
-	if _archetype_id in ["STEALTH", "LORE_MAGE", "RANGER"]:
+	if _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "LORE_MAGE", "RANGER", "RANGER_STEALTH_ARCHER"]:
 		if _ability_system.has_ability(156):  # SONG_OF_THE_TREES
 			var check: Dictionary = _ability_system.can_use_ability(156)
 			if check.get("can_use", false):
@@ -1704,6 +2295,21 @@ func _finish_run(cause: String) -> void:
 		"total_skills_bought": _total_skills_bought,
 		"total_abilities_learned": _total_abilities_learned,
 		"total_songs_started": _total_songs_started,
+		# v2 telemetry
+		"total_flee_attempts": _total_flee_attempts,
+		"total_consumables_used": _total_consumables_used,
+		"total_items_sought": _total_items_sought,
+		"total_kite_attempts": _total_kite_attempts,
+		"total_kite_shots": _total_kite_shots,
+		"total_combats_avoided": _total_combats_avoided,
+		"total_stealth_kills": _total_stealth_kills,
+		"total_detections": _total_detections,
+		"total_forges_visited": _total_forges_visited,
+		"total_forge_successes": _total_forge_successes,
+		"total_word_of_command": _total_word_of_command,
+		"total_lore_of_sleep": _total_lore_of_sleep,
+		"total_deep_memory": _total_deep_memory,
+		"total_rest_turns": _total_rest_turns,
 		"per_floor_stats": _all_floor_stats,
 		"timestamp": Time.get_datetime_string_from_system(),
 	}
@@ -1723,6 +2329,12 @@ func _finish_run(cause: String) -> void:
 		_total_abilities_used, _total_ranged_attacks, _total_items_equipped, _total_forges_used])
 	print("Stealth toggles: %d | Skills bought: %d | Abilities learned: %d | Songs: %d" % [
 		_total_stealth_toggles, _total_skills_bought, _total_abilities_learned, _total_songs_started])
+	print("Flee attempts: %d | Consumables: %d | Items sought: %d | Kite shots: %d" % [
+		_total_flee_attempts, _total_consumables_used, _total_items_sought, _total_kite_shots])
+	print("Combats avoided: %d | Stealth kills: %d | Detections: %d | Rest turns: %d" % [
+		_total_combats_avoided, _total_stealth_kills, _total_detections, _total_rest_turns])
+	print("WoC: %d | Sleep: %d | Deep Memory: %d | Forges visited: %d" % [
+		_total_word_of_command, _total_lore_of_sleep, _total_deep_memory, _total_forges_visited])
 	print("Cause of end: %s" % _cause_of_end)
 	print("Errors encountered: %d" % _total_errors)
 

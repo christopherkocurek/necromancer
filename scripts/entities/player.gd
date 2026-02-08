@@ -1681,7 +1681,7 @@ func _get_ranged_proficiency_bonus() -> int:
 
 ## Check if player can fire (has bow+arrows or sling+stones)
 func can_fire_ranged() -> bool:
-	var ranged_weapon = equipment.get("off_hand")
+	var ranged_weapon = equipment.get("bow")
 	if ranged_weapon == null or not "tval" in ranged_weapon:
 		return false
 	var weapon_tval: int = ranged_weapon.tval
@@ -1705,7 +1705,7 @@ func can_fire_ranged() -> bool:
 ## Consume one ammo (arrow/stone) from quiver/inventory. Returns true if available.
 func consume_arrow() -> bool:
 	# Determine ammo type from equipped ranged weapon
-	var ranged_weapon = equipment.get("off_hand")
+	var ranged_weapon = equipment.get("bow")
 	var ammo_tval: int = 17  # Default to arrows
 	var empty_msg: String = "Your quiver is empty!"
 	if ranged_weapon != null and "tval" in ranged_weapon and ranged_weapon.tval == 18:
