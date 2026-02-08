@@ -1621,12 +1621,20 @@ func _spawn_monsters(depth: int) -> void:
 	var spawned: int = 0
 	var stairs_up: Vector2i = level.find_stairs_up()
 
+	# On floor 1 there's no stairs_up — use first room center as safe zone
+	if stairs_up == Vector2i(-1, -1) and not rooms.is_empty():
+		var first_room: Rect2i = rooms[0]
+		stairs_up = Vector2i(
+			first_room.position.x + first_room.size.x / 2,
+			first_room.position.y + first_room.size.y / 2
+		)
+
 	for _i in range(target_count):
 		var spawn_pos: Vector2i = level.find_random_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		# Don't spawn too close to stairs up (5-tile buffer)
+		# Don't spawn too close to player start (5-tile buffer)
 		if stairs_up != Vector2i(-1, -1):
 			var dist: int = max(abs(spawn_pos.x - stairs_up.x), abs(spawn_pos.y - stairs_up.y))
 			if dist < 5:

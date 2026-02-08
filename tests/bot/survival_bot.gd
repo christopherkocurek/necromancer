@@ -997,6 +997,9 @@ func _attack_adjacent_monster() -> bool:
 
 	_player.try_move(direction)
 	var move_cost: int = _level.get_movement_cost(_player.grid_position) if _level else 100
+	# Stealth mode 2x movement cost (matches turn_system.gd and main.gd)
+	if _player.stealth_mode:
+		move_cost *= Constants.STEALTH_MODE_SPEED_MULTIPLIER
 	_player.consume_energy(move_cost)
 
 	if _turn_system:
@@ -1331,7 +1334,10 @@ func _move_in_direction(direction: Vector2i) -> bool:
 	var moved: bool = _player.try_move(direction)
 
 	# Consume energy regardless (opening door also costs energy)
+	# Stealth mode 2x movement cost (matches turn_system.gd and main.gd)
 	var cost: int = _level.get_movement_cost(_player.grid_position) if moved else 100
+	if _player.stealth_mode:
+		cost *= Constants.STEALTH_MODE_SPEED_MULTIPLIER
 	_player.consume_energy(cost)
 
 	if _turn_system:
@@ -1419,6 +1425,9 @@ func _attempt_emergency_descent() -> void:
 
 func _manage_stealth() -> void:
 	## Toggle stealth mode based on context. This is a FREE action (no turn cost).
+	## NOTE: Stealth mode applies 2x energy cost for movement (STEALTH_MODE_SPEED_MULTIPLIER).
+	## The bot accepts this tradeoff for stealth archetypes — slower movement in exchange
+	## for detection avoidance. The 2x cost is applied in _move_in_direction and _attack_adjacent_monster.
 	if not _player:
 		return
 
