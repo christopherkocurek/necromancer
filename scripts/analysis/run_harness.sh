@@ -102,7 +102,7 @@ export GODOT PROJECT_DIR RESULTS_DIR LOG_DIR TIMEOUT_SECS
 # Run all jobs with parallelism
 START_TIME=$(date +%s)
 
-generate_jobs | xargs -P "$PARALLELISM" -n 3 bash -c 'run_single "$@"' _
+generate_jobs | xargs -P "$PARALLELISM" -n 3 bash -c 'run_single "$@"' _ || true
 
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))

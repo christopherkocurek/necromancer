@@ -85,7 +85,7 @@ def compute_stats(results):
         wins = sum(1 for r in runs if r.get("outcome") == "COMPLETED")
         deaths = sum(1 for r in runs if r.get("outcome") == "DEATH")
         errors = sum(1 for r in runs if r.get("outcome") in ("HARNESS_ERROR", "SETUP_FAILURE"))
-        timeouts = sum(1 for r in runs if r.get("outcome") == "TOTAL_TIMEOUT")
+        timeouts = sum(1 for r in runs if r.get("outcome") in ("TOTAL_TIMEOUT", "STALLED"))
 
         depths = [r.get("deepest_floor", 0) for r in runs]
         turns = [r.get("total_turns", 0) for r in runs]

@@ -520,7 +520,10 @@ func _run_main_loop() -> void:
 
 	# Reached end of loop
 	if _is_player_alive():
-		_finish_run("COMPLETED")
+		if _current_depth >= TARGET_DEPTH:
+			_finish_run("COMPLETED")
+		else:
+			_finish_run("STALLED")  # Alive but couldn't descend further
 	else:
 		_finish_run("DEATH")
 
