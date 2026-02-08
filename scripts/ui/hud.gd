@@ -610,12 +610,8 @@ func update_player_stats(player: Player) -> void:
 	else:
 		prot_label.text = ""
 
-	# Stealth indicator
-	if player.stealth_mode:
-		stealth_label.text = "STEALTH"
-		stealth_label.add_theme_color_override("font_color", ThemeColors.MSG_STEALTH)
-	else:
-		stealth_label.text = ""
+	# Stealth / Detection eye indicator
+	_update_detection_indicator(player)
 
 	# Hunger indicator
 	_update_hunger_display(player)
@@ -713,6 +709,57 @@ func _update_hunger_display(player: Player) -> void:
 	if state != "starving" and hunger_label.has_meta("starving_blink"):
 		hunger_label.remove_meta("starving_blink")
 		hunger_label.modulate.a = 1.0
+
+# ============================================================================
+# DETECTION EYE INDICATOR
+# ============================================================================
+
+## Detection eye indicator — replaces simple "STEALTH" text
+## Shows: (.) HIDDEN, (-) CAUTIOUS, (O) DETECTED/COMBAT with color coding
+func _update_detection_indicator(player: Player) -> void:
+	if not stealth_label:
+		return
+
+	var max_alertness: int = Constants.ALERTNESS_MIN
+	var any_visible_monster: bool = false
+
+	if GameManager.current_level:
+		for entity in GameManager.current_level.entities:
+			if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+				continue
+			if not GameManager.current_level.is_tile_visible(entity.grid_position):
+				continue
+			any_visible_monster = true
+			if "alertness" in entity and entity.alertness > max_alertness:
+				max_alertness = entity.alertness
+
+	# Show indicator when in stealth mode OR when monsters are visible
+	if not player.stealth_mode and not any_visible_monster:
+		stealth_label.text = ""
+		return
+
+	# Determine eye state based on max alertness of visible monsters
+	var eye_text: String
+	var eye_color: Color
+
+	if max_alertness >= Constants.ALERTNESS_ALERT:
+		# DETECTED — enemy knows where you are
+		eye_text = "(O) DETECTED"
+		eye_color = ThemeColors.ALERT_DETECTED
+	elif max_alertness >= Constants.ALERTNESS_UNWARY:
+		# CAUTIOUS — enemy is searching
+		eye_text = "(-) CAUTIOUS"
+		eye_color = ThemeColors.ALERT_CAUTIOUS
+	else:
+		# HIDDEN — safe or stealth mode active
+		if player.stealth_mode:
+			eye_text = "(.) HIDDEN"
+		else:
+			eye_text = "(.) SAFE"
+		eye_color = ThemeColors.ALERT_SAFE
+
+	stealth_label.text = eye_text
+	stealth_label.add_theme_color_override("font_color", eye_color)
 
 # ============================================================================
 # MINIMAP
