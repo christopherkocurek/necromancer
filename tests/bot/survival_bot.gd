@@ -32,6 +32,14 @@ var _level: Level = null
 var _turn_system: TurnSystem = null
 
 # ============================================================================
+# ARCHETYPE CONFIGURATION (set externally by test_runner before _ready)
+# ============================================================================
+
+var archetype_config: Dictionary = {}   ## Set externally before _ready()
+var run_index: int = -1                  ## Run number within archetype
+var run_seed: int = -1                   ## Deterministic seed (-1 = random)
+
+# ============================================================================
 # RUN STATE
 # ============================================================================
 
@@ -67,8 +75,14 @@ var _total_errors: int = 0
 # ============================================================================
 
 func _ready() -> void:
+	# Apply deterministic seed if set
+	if run_seed >= 0:
+		seed(run_seed)
+
+	var archetype_label: String = archetype_config.get("archetype_id", "DEFAULT")
 	print("\n" + "=".repeat(60))
 	print("[SURVIVAL BOT] Starting intelligent 20-floor auto-play...")
+	print("[SURVIVAL BOT] Archetype: %s | Run: %d | Seed: %d" % [archetype_label, run_index, run_seed])
 	print("=".repeat(60) + "\n")
 
 	# Wait for the main scene to initialize
@@ -119,7 +133,7 @@ func _find_main_node() -> void:
 		print("[SURVIVAL BOT] Found Main node: %s" % _main.name)
 
 func _bypass_character_creation() -> void:
-	## Skip character creation and start a game with a default character.
+	## Skip character creation and start a game with a default or archetype character.
 	var default_char: Dictionary = {
 		"name": "SurvivalBot",
 		"race": "Man",
@@ -128,7 +142,20 @@ func _bypass_character_creation() -> void:
 		"gender": "male",
 		"base_stats": {"str": 4, "dex": 3, "con": 4, "gra": 2},
 	}
-	print("[SURVIVAL BOT] Bypassing character creation with default character...")
+
+	# Use archetype config if provided, otherwise fall back to default
+	if not archetype_config.is_empty():
+		default_char = {
+			"name": archetype_config.get("name", "SurvivalBot"),
+			"race": archetype_config.get("race", "Man"),
+			"house": archetype_config.get("house", "House of Beor"),
+			"trait": archetype_config.get("trait", "Resilient"),
+			"gender": archetype_config.get("gender", "male"),
+			"base_stats": archetype_config.get("base_stats", {"str": 4, "dex": 3, "con": 4, "gra": 2}),
+		}
+
+	print("[SURVIVAL BOT] Bypassing character creation with: %s (%s %s)" % [
+		default_char["name"], default_char["race"], default_char["house"]])
 
 	# Remove character creation screen if present
 	if _main.has_method("_on_character_created"):
@@ -975,6 +1002,24 @@ func _finish_run(cause: String) -> void:
 	_cause_of_end = cause
 	_run_active = false
 	_deepest_floor = maxi(_deepest_floor, GameManager.current_depth)
+
+	# Emit structured JSON result line for harness capture
+	var result_json: Dictionary = {
+		"archetype": archetype_config.get("archetype_id", "DEFAULT"),
+		"run_index": run_index,
+		"seed": run_seed,
+		"outcome": cause,
+		"deepest_floor": _deepest_floor,
+		"total_turns": _total_turns,
+		"total_kills": _total_kills,
+		"total_items": _total_items,
+		"total_damage_taken": _total_damage_taken,
+		"total_healing_done": _total_healing_done,
+		"total_errors": _total_errors,
+		"per_floor_stats": _all_floor_stats,
+		"timestamp": Time.get_datetime_string_from_system(),
+	}
+	print("JSON_RESULT:" + JSON.stringify(result_json))
 
 	print("\n" + "=".repeat(60))
 	print("=== SURVIVAL BOT RUN COMPLETE ===")

@@ -18,6 +18,11 @@ var _fuzz: bool = false
 var _survival: bool = false
 var _exit_code: int = 0
 
+# Archetype bot args
+var _archetype_name: String = ""
+var _run_index_val: int = -1
+var _seed_val: int = -1
+
 func _init():
 	# User args come after "--" separator in Godot 4.x
 	_args = OS.get_cmdline_user_args()
@@ -28,6 +33,26 @@ func _init():
 	_bot_only = "--bot-only" in _args or "--bot-only" in _all_args
 	_fuzz = "--fuzz" in _args or "--fuzz" in _all_args
 	_survival = "--survival" in _args or "--survival" in _all_args
+
+	# Parse archetype bot arguments from both arg sources
+	for arg in _args:
+		if arg.begins_with("--archetype="):
+			_archetype_name = arg.substr("--archetype=".length())
+		elif arg.begins_with("--run-index="):
+			_run_index_val = arg.substr("--run-index=".length()).to_int()
+		elif arg.begins_with("--seed="):
+			_seed_val = arg.substr("--seed=".length()).to_int()
+	for arg in _all_args:
+		if arg.begins_with("--archetype="):
+			_archetype_name = arg.substr("--archetype=".length())
+		elif arg.begins_with("--run-index="):
+			_run_index_val = arg.substr("--run-index=".length()).to_int()
+		elif arg.begins_with("--seed="):
+			_seed_val = arg.substr("--seed=".length()).to_int()
+
+	# If archetype specified, force survival mode
+	if _archetype_name != "":
+		_survival = true
 
 	print("\n" + "=".repeat(70))
 	print("  NECROMANCER GODOT - TEST RUNNER")
@@ -57,10 +82,13 @@ func _run_tests():
 
 	if _fuzz:
 		await _run_fuzz_bot()
+		return  # Bot calls get_tree().quit() when done
 	elif _survival:
 		await _run_survival_bot()
+		return  # Bot calls get_tree().quit() when done
 	elif _run_bot:
 		await _run_bot_playtest()
+		return  # Bot calls get_tree().quit() when done
 
 	_report_final()
 	quit(_exit_code)
@@ -201,6 +229,21 @@ func _run_survival_bot():
 	var bot: Node = Node.new()
 	bot.set_script(bot_script)
 	bot.name = "SurvivalBot"
+
+	# Inject archetype config if specified
+	if _archetype_name != "":
+		var configs_script = load("res://tests/bot/archetype_configs.gd")
+		var config: Dictionary = configs_script.get_archetype(_archetype_name)
+		if config.is_empty():
+			print("[ERROR] Unknown archetype: %s" % _archetype_name)
+			print("[INFO] Available: %s" % str(configs_script.get_all_archetype_names()))
+			_exit_code = 1
+			return
+		bot.archetype_config = config
+		bot.run_index = _run_index_val
+		bot.run_seed = _seed_val
+		print("[SURVIVAL BOT] Archetype: %s | Run: %d | Seed: %d" % [_archetype_name, _run_index_val, _seed_val])
+
 	main_instance.add_child(bot)
 
 	print("[SURVIVAL BOT] Running full 20-floor playthrough... (will exit when complete)\n")
