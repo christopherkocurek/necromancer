@@ -12,6 +12,7 @@ var houses: Dictionary = {}    # name -> HouseData
 var traits: Dictionary = {}    # name -> TraitData
 var terrain: Dictionary = {}   # char -> TerrainData
 var vaults: Array[VaultData] = []
+var egos: Dictionary = {}  # index -> EgoData
 
 # Data file paths
 const DATA_PATH := "res://data/"
@@ -24,6 +25,7 @@ func load_all_data() -> void:
 	load_terrain()
 	load_monsters()
 	load_items()
+	load_special()
 	load_artifacts()
 	load_abilities()
 	load_races()
@@ -286,6 +288,115 @@ func load_items() -> void:
 
 	if current_item and current_item.name != "":
 		items[current_item.name] = current_item
+
+# ============================================================================
+# SPECIAL (EGO) PARSING
+# ============================================================================
+
+const CURSED_FLAGS: Array[String] = [
+	"VUL_POIS", "VUL_FIRE", "VUL_COLD", "FEAR", "AGGRAVATE", "DARKNESS",
+	"HUNGER", "LIGHT_CURSE", "DANGER", "HAUNTED", "NEG_STR", "NEG_DEX",
+	"NEG_CON", "NEG_GRA", "CUMBERSOME"
+]
+
+func load_special() -> void:
+	var file := FileAccess.open(DATA_PATH + "special.txt", FileAccess.READ)
+	if not file:
+		push_error("Failed to load special.txt")
+		return
+
+	var current_ego: EgoData = null
+
+	while not file.eof_reached():
+		var line := file.get_line().strip_edges()
+		if line.is_empty() or line.begins_with("#") or line.begins_with("V:"):
+			continue
+
+		var parts := line.split(":")
+		if parts.size() < 2:
+			continue
+
+		var key := parts[0]
+		var value := ":".join(parts.slice(1))
+
+		match key:
+			"N":
+				if current_ego and current_ego.name != "":
+					# Derive is_cursed before storing
+					current_ego.is_cursed = _has_cursed_flag(current_ego.flags)
+					egos[current_ego.index] = current_ego
+				current_ego = EgoData.new()
+				var n_parts := value.split(":")
+				if n_parts.size() >= 1:
+					current_ego.index = int(n_parts[0])
+				if n_parts.size() >= 2:
+					current_ego.name = n_parts[1]
+			"W":
+				if current_ego:
+					var w_parts := value.split(":")
+					if w_parts.size() >= 1:
+						current_ego.depth = int(w_parts[0])
+					if w_parts.size() >= 2:
+						current_ego.rarity = int(w_parts[1])
+					if w_parts.size() >= 3:
+						current_ego.max_depth = int(w_parts[2])
+					if w_parts.size() >= 4:
+						current_ego.cost = int(w_parts[3])
+			"C":
+				if current_ego:
+					var c_parts := value.split(":")
+					if c_parts.size() >= 1:
+						current_ego.max_attack = int(c_parts[0])
+					if c_parts.size() >= 2:
+						current_ego.plus_damage_dice = int(c_parts[1])
+					if c_parts.size() >= 3:
+						current_ego.plus_damage_sides = int(c_parts[2])
+					if c_parts.size() >= 4:
+						current_ego.max_evasion = int(c_parts[3])
+					if c_parts.size() >= 5:
+						current_ego.plus_prot_dice = int(c_parts[4])
+					if c_parts.size() >= 6:
+						current_ego.plus_prot_sides = int(c_parts[5])
+					if c_parts.size() >= 7:
+						current_ego.pval = int(c_parts[6])
+			"T":
+				if current_ego:
+					var t_parts := value.split(":")
+					if t_parts.size() >= 3:
+						current_ego.tval_filters.append({
+							"tval": int(t_parts[0]),
+							"min_sval": int(t_parts[1]),
+							"max_sval": int(t_parts[2])
+						})
+			"F":
+				if current_ego:
+					var flags := value.split("|")
+					for flag in flags:
+						var f := flag.strip_edges()
+						if f != "":
+							current_ego.flags.append(f)
+			"B":
+				if current_ego:
+					var b_parts := value.split(":")
+					for b_entry in b_parts:
+						var ab_parts := b_entry.strip_edges().split("/")
+						if ab_parts.size() >= 2:
+							current_ego.granted_abilities.append(
+								[int(ab_parts[0]), int(ab_parts[1])]
+							)
+
+	# Don't forget the last entry
+	if current_ego and current_ego.name != "":
+		current_ego.is_cursed = _has_cursed_flag(current_ego.flags)
+		egos[current_ego.index] = current_ego
+
+	print("DataManager: Loaded %d ego types" % egos.size())
+
+func _has_cursed_flag(flags: Array[String]) -> bool:
+	for flag in flags:
+		if flag in CURSED_FLAGS:
+			return true
+	return false
 
 # ============================================================================
 # ARTIFACT PARSING
@@ -815,13 +926,103 @@ func duplicate_item_data(source: ItemData) -> ItemData:
 	copy.identified = source.identified
 	copy.fuel = source.fuel
 	copy.stack_count = source.stack_count
+	copy.ego_name = source.ego_name
+	copy.ego_index = source.ego_index
 	return copy
+
+## Get all valid egos for an item type at a given depth
+func get_egos_for_item(tval: int, sval: int, depth: int, exclude_cursed: bool = false) -> Array:
+	var result: Array = []
+	for ego in egos.values():
+		if not ego.matches_item(tval, sval):
+			continue
+		if not ego.valid_for_depth(depth):
+			continue
+		if exclude_cursed and ego.is_cursed:
+			continue
+		result.append(ego)
+	return result
+
+## Select a weighted random ego for an item (weight = 1/rarity)
+func select_ego_for_item(tval: int, sval: int, depth: int, exclude_cursed: bool = false) -> EgoData:
+	var candidates: Array = get_egos_for_item(tval, sval, depth, exclude_cursed)
+	if candidates.is_empty():
+		return null
+
+	var total_weight: float = 0.0
+	var weights: Array[float] = []
+	for ego in candidates:
+		var w: float = 1.0 / maxf(float(ego.rarity), 1.0)
+		weights.append(w)
+		total_weight += w
+
+	if total_weight <= 0.0:
+		return candidates.pick_random()
+
+	var roll: float = randf() * total_weight
+	var cumulative: float = 0.0
+	for i in range(candidates.size()):
+		cumulative += weights[i]
+		if roll <= cumulative:
+			return candidates[i]
+
+	return candidates[-1]
+
+## Apply an ego enchantment to an item — modifies name, stats, flags, abilities
+func apply_ego_to_item(item: ItemData, ego: EgoData) -> void:
+	# Set ego tracking fields
+	item.ego_name = ego.name
+	item.ego_index = ego.index
+
+	# Apply name: parenthetical egos like "(Poisoned)" or "(Balanced)" are prefixed
+	# Named egos like "of Gondolin" are suffixed
+	if ego.name.begins_with("("):
+		item.name = "%s %s" % [ego.name, item.name]
+	else:
+		item.name = "%s %s" % [item.name, ego.name]
+
+	# Apply C: line bonuses
+	item.attack_bonus += ego.max_attack
+	if ego.plus_damage_dice > 0 or ego.plus_damage_sides > 0:
+		if item.damage_dice != "":
+			var parts: PackedStringArray = item.damage_dice.split("d")
+			if parts.size() >= 2:
+				var dice: int = int(parts[0]) + ego.plus_damage_dice
+				var sides: int = int(parts[1]) + ego.plus_damage_sides
+				item.damage_dice = "%dd%d" % [dice, sides]
+	item.evasion_bonus += ego.max_evasion
+	if ego.plus_prot_dice > 0 or ego.plus_prot_sides > 0:
+		if item.protection_dice != "":
+			var parts: PackedStringArray = item.protection_dice.split("d")
+			if parts.size() >= 2:
+				var dice: int = int(parts[0]) + ego.plus_prot_dice
+				var sides: int = int(parts[1]) + ego.plus_prot_sides
+				item.protection_dice = "%dd%d" % [dice, sides]
+		elif ego.plus_prot_dice > 0:
+			item.protection_dice = "%dd%d" % [ego.plus_prot_dice, maxi(ego.plus_prot_sides, 1)]
+	if ego.pval != 0:
+		item.pval += ego.pval
+
+	# Merge flags
+	for flag in ego.flags:
+		if flag not in item.flags:
+			item.flags.append(flag)
+
+	# Merge granted abilities
+	for ability_ref in ego.granted_abilities:
+		item.granted_abilities.append(ability_ref)
 
 func get_monster(name: String) -> MonsterData:
 	return monsters.get(name)
 
 func get_item(name: String) -> ItemData:
 	return items.get(name)
+
+func get_item_by_index(idx: int) -> ItemData:
+	for item in items.values():
+		if item.index == idx:
+			return item
+	return null
 
 func get_artifact(name: String) -> ArtifactData:
 	return artifacts.get(name)
@@ -1422,10 +1623,52 @@ class ItemData:
 	var identified: bool = false     # Whether this specific item is identified
 	var fuel: int = -1               # Fuel for light sources (-1 = no fuel system)
 	var stack_count: int = 1         # Stacking: how many in this stack (1 = single item)
+	var ego_name: String = ""
+	var ego_index: int = -1
 
 	func _init() -> void:
 		flags = []
 		granted_abilities = []
+
+class EgoData:
+	var index: int = 0
+	var name: String = ""
+	var depth: int = 0
+	var rarity: int = 1
+	var max_depth: int = 0
+	var cost: int = 0
+	var max_attack: int = 0
+	var plus_damage_dice: int = 0
+	var plus_damage_sides: int = 0
+	var max_evasion: int = 0
+	var plus_prot_dice: int = 0
+	var plus_prot_sides: int = 0
+	var pval: int = 0
+	var tval_filters: Array = []   # Array of {tval: int, min_sval: int, max_sval: int}
+	var flags: Array[String] = []
+	var granted_abilities: Array = []  # Array of [skill_id, ability_id]
+	var is_cursed: bool = false  # Derived: true if any VUL_/FEAR/AGGRAVATE/DARKNESS/HUNGER/LIGHT_CURSE/DANGER/HAUNTED/NEG_STR/NEG_DEX/NEG_CON/NEG_GRA/CUMBERSOME
+
+	func _init() -> void:
+		tval_filters = []
+		flags = []
+		granted_abilities = []
+
+	func matches_item(tval: int, sval: int) -> bool:
+		if tval_filters.is_empty():
+			return true
+		for filter in tval_filters:
+			if filter.tval == tval:
+				if sval >= filter.min_sval and sval <= filter.max_sval:
+					return true
+		return false
+
+	func valid_for_depth(floor_depth: int) -> bool:
+		if floor_depth < depth:
+			return false
+		if max_depth > 0 and floor_depth > max_depth:
+			return false
+		return true
 
 class ArtifactData:
 	var index: int = 0

@@ -258,7 +258,7 @@ T:22:1:4
 T:23:10:21
 T:17:0:99
 T:23:28:30
-F:SLAY_ORC | SLAY_TROLL
+F:SLAY_ORC | SLAY_TROLL | LIGHT
 
 
 # Includes arrows
@@ -274,20 +274,20 @@ T:22:0:99
 T:23:10:21
 T:23:28:30
 T:17:0:99
-F:SLAY_SPIDER | SLAY_WOLF
+F:SLAY_SPIDER | SLAY_WOLF | LIGHT
 
 
 # Shortswords, longswords, bastard swords
 # Spears, great spears, glaives, mithril swords
 # REPLACED: Nargothrond → Dragon-bane (generic Third Age)
 
-N:23:of Dragon-bane
+N:23:of Wraith-bane
 W:9:4:0:2000
 C:0:0:0:0:0:0:0
 T:22:1:4
 T:23:10:21
 T:23:28:30
-F:SLAY_RAUKO | SLAY_DRAGON
+F:SLAY_UNDEAD | SEE_INVIS
 
 
 # All melee weapons save daggers, curved swords, quarterstaffs
@@ -937,3 +937,138 @@ W:0:1:11:0
 C:0:0:0:0:0:0:0
 T:39:1:1
 F:DARKNESS | LIGHT_CURSE
+
+
+# ============================================================================
+# NEW ENCHANTMENTS (Enchantment System v1)
+# ============================================================================
+
+
+# Armor: fire protection
+N:16:of the Flame-guard
+W:6:4:0:2000
+C:0:0:0:0:0:0:0
+T:36:0:99
+T:37:0:99
+T:34:0:99
+F:RES_FIRE | IGNORE_ALL
+
+
+# Armor: regeneration and endurance
+N:17:of Endurance
+W:4:4:0:1500
+C:0:0:0:0:0:0:0
+T:36:0:99
+T:37:0:99
+F:REGEN | SUST_CON
+
+
+# Weapons: fire brand
+N:50:of the Flame
+W:6:4:0:2000
+C:0:0:0:0:0:0:0
+T:23:4:30
+T:22:1:99
+F:BRAND_FIRE
+
+
+# Helms: mental protection
+N:55:of Warding
+W:4:4:0:2000
+C:0:0:0:0:0:0:0
+T:32:0:99
+F:RES_CONFU | RES_STUN | FREE_ACT
+
+
+# Shields: charge ability
+N:56:of the Vanguard
+W:6:6:0:2500
+C:0:0:0:0:0:0:0
+T:34:0:99
+B:0/4
+
+
+# Shields: stand fast and resist fear
+N:57:of the Citadel
+W:8:4:0:2500
+C:0:0:0:0:0:0:0
+T:34:0:99
+T:37:4:6
+F:STAND_FAST | RES_FEAR | WILL
+
+
+# Shields: zone of control + protection
+N:58:of the Sentinel
+W:10:6:0:3000
+C:0:0:0:0:0:1:0
+T:34:0:99
+B:0/9
+
+
+# Helms/cloaks: perception for Dunedain
+N:59:of the Dunedain
+W:6:6:0:2000
+C:0:0:0:0:0:0:2
+T:32:0:99
+T:35:0:99
+F:SEE_INVIS | PERCEPTION
+
+
+# Cloaks: stealth and see invisible
+N:85:of the Unseen
+W:4:4:0:2000
+C:0:0:0:0:0:0:2
+T:35:0:99
+F:SEE_INVIS | STEALTH
+
+
+# Boots: fade ability
+N:115:of the Shadow-stalker
+W:8:6:0:3000
+C:0:0:0:0:0:0:0
+T:30:1:1
+B:3/8
+
+
+# Boots: listen ability + stealth
+N:117:of the Scout
+W:6:6:0:2000
+C:0:0:0:0:0:0:1
+T:30:1:1
+F:STEALTH
+B:4/7
+
+
+# Gloves: flanking ability
+N:118:of Pursuit
+W:6:6:0:2000
+C:0:0:0:0:0:0:0
+T:31:0:99
+B:2/6
+
+
+# Gloves/daggers: assassination + stealth
+N:125:of the Silent Hand
+W:4:4:0:2000
+C:0:0:0:0:0:0:1
+T:31:0:99
+F:STEALTH
+B:3/1
+
+
+# Weapons: opening strike ability
+N:127:of Cunning
+W:4:4:0:2000
+C:0:0:0:0:0:0:0
+T:23:4:30
+T:22:1:99
+B:0/6
+
+
+# Gloves: pilfer + stealth (burglar theme)
+N:128:of the Burglar
+W:8:8:0:3000
+C:0:0:0:0:0:0:2
+T:31:0:99
+F:STEALTH
+B:3/9

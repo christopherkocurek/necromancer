@@ -944,7 +944,7 @@ D:A heavy stone amulet carved with ancient runes of resolve.
 N:143:Starlight
 G:":d
 I:40:11:1
-W:9:7:1:1500
+W:7:7:1:1500
 P:0:0d0:0:0d0
 A:9/7
 F:LIGHT | RES_DARK
@@ -1059,7 +1059,7 @@ D:It helps you hit your opponents.
 N:159:Free Action
 G:=:d
 I:45:9:0
-W:12:0:1:1500
+W:8:0:1:1500
 P:0:0d0:0:0d0
 A:12/3
 F:FREE_ACT | EASY_KNOW
