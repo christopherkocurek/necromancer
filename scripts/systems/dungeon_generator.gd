@@ -490,8 +490,8 @@ func _add_features(depth: int) -> void:
 	if depth > 2:
 		_add_secret_doors(depth)
 
-	# Boss room on certain depths
-	if depth > 0 and depth % 5 == 0:
+	# Boss room at layer transitions (every 3 floors) and final boss at 20
+	if depth in [3, 6, 9, 12, 15, 18, 20]:
 		_add_boss_room(depth)
 
 func _pick_door_type(depth: int) -> int:
@@ -624,8 +624,45 @@ func _add_secret_doors(depth: int) -> void:
 					level.secret_doors[wall_pos] = true
 					break
 
+## Boss pool: 3 named Tolkien bosses per layer transition, randomly selected each run
+## Boss names override the base monster name for flavor
+const BOSS_POOL: Dictionary = {
+	3: [  # Forest Breach → Orc Warrens
+		{"title": "Ungoliant's Broodmother", "hp_mult": 1.8, "xp_mult": 3},
+		{"title": "Shelob's Daughter", "hp_mult": 1.6, "xp_mult": 3},
+		{"title": "The Tanglethorn Ancient", "hp_mult": 2.0, "xp_mult": 3},
+	],
+	6: [  # Orc Warrens → Torture Halls
+		{"title": "Bolg, Son of Azog", "hp_mult": 1.8, "xp_mult": 3},
+		{"title": "Gothmog, Orc-captain", "hp_mult": 2.0, "xp_mult": 3},
+		{"title": "Shagrat the Tracker", "hp_mult": 1.6, "xp_mult": 3},
+	],
+	9: [  # Torture Halls → Necropolis
+		{"title": "The Mouth of Sauron", "hp_mult": 2.0, "xp_mult": 3},
+		{"title": "Karvag the Torturer", "hp_mult": 1.8, "xp_mult": 3},
+		{"title": "Herumor, Dark Sorcerer", "hp_mult": 1.7, "xp_mult": 3},
+	],
+	12: [  # Necropolis → Wraith Domain
+		{"title": "Grishnakh, Crypt Lord", "hp_mult": 2.0, "xp_mult": 3},
+		{"title": "The Barrow-wight King", "hp_mult": 2.2, "xp_mult": 3},
+		{"title": "Thuringwethil, Vampire", "hp_mult": 1.8, "xp_mult": 3},
+	],
+	15: [  # Wraith Domain → Inner Sanctum
+		{"title": "Uvatha the Horseman", "hp_mult": 2.0, "xp_mult": 3},
+		{"title": "Adunaphel, the Quiet", "hp_mult": 2.2, "xp_mult": 3},
+		{"title": "Dwar of Waw", "hp_mult": 1.8, "xp_mult": 3},
+	],
+	18: [  # Inner Sanctum → Throne Room
+		{"title": "Khamul, Shadow of the East", "hp_mult": 2.5, "xp_mult": 3},
+		{"title": "The Witch-king's Herald", "hp_mult": 2.2, "xp_mult": 3},
+		{"title": "Ren the Unclean", "hp_mult": 2.0, "xp_mult": 3},
+	],
+	20: [  # Final boss
+		{"title": "Sauron, the Necromancer", "hp_mult": 3.0, "xp_mult": 5},
+	],
+}
+
 func _add_boss_room(depth: int) -> void:
-	# Create a special room with a guaranteed boss monster
 	if rooms.size() < 3:
 		return
 
@@ -633,35 +670,59 @@ func _add_boss_room(depth: int) -> void:
 	var boss_room_idx: int = randi_range(1, rooms.size() - 2)
 	var boss_room: Rect2i = rooms[boss_room_idx]
 
-	# Spawn a stronger monster
+	# Get boss from pool
+	var pool: Array = BOSS_POOL.get(depth, [])
+	if pool.is_empty():
+		return
+	var boss_info: Dictionary = pool.pick_random()
+
+	# Spawn using themed monster for depth+3 as the base
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var boss_data := DataManager.get_themed_monster_for_depth(depth + 3)
-	if boss_data:
-		var boss_pos := Vector2i(
-			boss_room.position.x + boss_room.size.x / 2,
-			boss_room.position.y + boss_room.size.y / 2
-		)
-		if level.get_tile(boss_pos) == Level.Tile.FLOOR and level.get_entity_at(boss_pos) == null:
-			var boss: Monster = monster_scene.instantiate()
-			boss.grid_position = boss_pos
-			boss.initialize_from_data(boss_data)
-			# Make boss tougher
-			boss.max_health = int(boss.max_health * 1.5)
-			boss.current_health = boss.max_health
-			boss.experience_value = int(boss.experience_value * 2)
-			level.add_entity(boss)
+	if not boss_data:
+		boss_data = DataManager.get_random_monster_for_depth(depth + 2)
+	if not boss_data:
+		return
 
-			# Add some treasure near the boss
-			var item_scene := preload("res://scenes/entities/item.tscn")
-			var item_data := DataManager.get_themed_item_for_depth(depth + 2)
-			if item_data:
-				var boss_item_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
-				var item_pos := Vector2i(boss_pos.x + 1, boss_pos.y)
-				if level.is_in_bounds(item_pos) and level.get_tile(item_pos) == Level.Tile.FLOOR:
-					var item: Item = item_scene.instantiate()
-					item.grid_position = item_pos
-					item.initialize_from_item_data(boss_item_copy)
-					level.add_item(item)
+	var boss_pos := Vector2i(
+		boss_room.position.x + boss_room.size.x / 2,
+		boss_room.position.y + boss_room.size.y / 2
+	)
+	if not level.is_in_bounds(boss_pos) or level.get_tile(boss_pos) != Level.Tile.FLOOR:
+		return
+	if level.get_entity_at(boss_pos) != null:
+		return
+
+	var boss: Monster = monster_scene.instantiate()
+	boss.grid_position = boss_pos
+	boss.initialize_from_data(boss_data)
+
+	# Override with boss pool stats
+	boss.entity_name = boss_info.title
+	boss.max_health = int(boss.max_health * boss_info.hp_mult)
+	boss.current_health = boss.max_health
+	boss.experience_value = int(boss.experience_value * boss_info.xp_mult)
+	boss.is_unique = true
+	boss.is_brave = true
+	level.add_entity(boss)
+
+	# Guaranteed quality treasure near boss (2 items)
+	var item_scene := preload("res://scenes/entities/item.tscn")
+	for i in range(2):
+		var item_data := DataManager.get_random_item_for_depth(depth + 3)
+		if not item_data:
+			continue
+		var boss_item: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
+		# Boss drops are always ego quality
+		_apply_floor_ego(boss_item, depth + 5)
+
+		var offsets: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+		var item_pos: Vector2i = boss_pos + offsets[i % offsets.size()]
+		if level.is_in_bounds(item_pos) and level.get_tile(item_pos) == Level.Tile.FLOOR:
+			var item: Item = item_scene.instantiate()
+			item.grid_position = item_pos
+			item.initialize_from_item_data(boss_item)
+			level.add_item(item)
 
 func _is_door_candidate(pos: Vector2i) -> bool:
 	# A position is a door candidate if it connects two areas (walls on two opposite sides, floor on the other two)
