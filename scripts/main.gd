@@ -253,6 +253,7 @@ func _generate_level(depth: int) -> void:
 	# Create new level
 	current_level = LEVEL_SCENE.instantiate()
 	current_level.depth = depth
+	current_level.layer_name = LayerConfig.get_layer_name(depth)
 	level_container.add_child(current_level)
 
 	# Generate dungeon
@@ -678,6 +679,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_N: diag_dir = Vector2i(1, 1)    # down-right
 			if diag_dir != Vector2i.ZERO:
 				player.moved_this_turn = true
+				player.record_action(player.direction_to_action(diag_dir))
 				if player.try_move(diag_dir):
 					var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
 					player.consume_energy(move_cost)
@@ -1296,8 +1298,18 @@ func _process_auto_explore_step() -> void:
 	# Calculate direction
 	var direction: Vector2i = next_pos - player.grid_position
 
+	# Check if next tile is a closed door — open it (costs a turn, then continue next tick)
+	if current_level and current_level.get_tile(next_pos) == Level.Tile.DOOR_CLOSED:
+		current_level.set_tile(next_pos, Level.Tile.DOOR_OPEN)
+		GameManager.log_message("You open the door.", ThemeColors.TEXT_PRIMARY)
+		player.add_noise(Constants.NOISE_DOOR)
+		player.consume_energy()
+		turn_system._after_player_action()
+		return
+
 	# Move the player
 	if player.try_move(direction):
+		player.record_action(player.direction_to_action(direction))
 		var move_cost: int = current_level.get_movement_cost(player.grid_position) if current_level else Constants.ACTION_COST
 		player.consume_energy(move_cost)
 		auto_explore.confirm_step_taken()

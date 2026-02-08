@@ -8,6 +8,7 @@ signal generation_complete(width: int, height: int)
 @export var width: int = 80
 @export var height: int = 40
 @export var depth: int = 1
+var layer_name: String = ""  # Current dungeon layer (e.g. "outer_pits", "dark_halls")
 
 # Tile data
 var terrain: Array[int] = []  # Flat array, index = y * width + x
@@ -561,7 +562,9 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 	terrain_layer.set_cell(pos, 0, atlas_coords)
 
 func _get_atlas_coords_for_tile(tile: int, lit: bool = true) -> Vector2i:
-	# Use TileMapper to get atlas coordinates directly from tile enum
+	# Use layer-specific tile kits for base terrain types (wall/floor/door/stairs)
+	if not layer_name.is_empty():
+		return TileMapper.get_layer_terrain_coords(tile, layer_name, lit)
 	return TileMapper.get_terrain_coords(tile, lit)
 
 func rebuild_tilemap() -> void:
@@ -828,10 +831,44 @@ func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 
 	return []  # No path found
 
+func find_path_through_doors(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	# A* that can path through closed doors (for auto-explore)
+	var open_set: Array[Vector2i] = [start]
+	var came_from: Dictionary = {}
+	var g_score: Dictionary = {start: 0}
+	var f_score: Dictionary = {start: _heuristic(start, goal)}
+
+	while not open_set.is_empty():
+		var current := open_set[0]
+		var lowest_f: float = f_score.get(current, INF)
+		for node in open_set:
+			var f: float = f_score.get(node, INF)
+			if f < lowest_f:
+				current = node
+				lowest_f = f
+
+		if current == goal:
+			return _reconstruct_path(came_from, current)
+
+		open_set.erase(current)
+
+		for neighbor in _get_neighbors(current, true):
+			var tentative_g: float = g_score.get(current, INF) + 1
+
+			if tentative_g < g_score.get(neighbor, INF):
+				came_from[neighbor] = current
+				g_score[neighbor] = tentative_g
+				f_score[neighbor] = tentative_g + _heuristic(neighbor, goal)
+
+				if neighbor not in open_set:
+					open_set.append(neighbor)
+
+	return []
+
 func _heuristic(a: Vector2i, b: Vector2i) -> float:
 	return float(max(abs(a.x - b.x), abs(a.y - b.y)))
 
-func _get_neighbors(pos: Vector2i) -> Array[Vector2i]:
+func _get_neighbors(pos: Vector2i, include_doors: bool = false) -> Array[Vector2i]:
 	var neighbors: Array[Vector2i] = []
 	var directions := [
 		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
@@ -842,6 +879,8 @@ func _get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 	for dir in directions:
 		var neighbor: Vector2i = pos + dir
 		if is_passable(neighbor):
+			neighbors.append(neighbor)
+		elif include_doors and get_tile(neighbor) == Tile.DOOR_CLOSED:
 			neighbors.append(neighbor)
 
 	return neighbors

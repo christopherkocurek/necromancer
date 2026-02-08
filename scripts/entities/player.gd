@@ -1836,6 +1836,18 @@ func _action_to_direction(action: int) -> Vector2i:
 		Constants.ACTION_MOVE_NW: return Vector2i(-1, -1)
 	return Vector2i.ZERO
 
+func direction_to_action(dir: Vector2i) -> int:
+	match dir:
+		Vector2i(0, -1): return Constants.ACTION_MOVE_N
+		Vector2i(1, -1): return Constants.ACTION_MOVE_NE
+		Vector2i(1, 0): return Constants.ACTION_MOVE_E
+		Vector2i(1, 1): return Constants.ACTION_MOVE_SE
+		Vector2i(0, 1): return Constants.ACTION_MOVE_S
+		Vector2i(-1, 1): return Constants.ACTION_MOVE_SW
+		Vector2i(-1, 0): return Constants.ACTION_MOVE_W
+		Vector2i(-1, -1): return Constants.ACTION_MOVE_NW
+	return Constants.ACTION_NOTHING
+
 # ============================================================================
 # STEALTH SYSTEM (Phase B)
 # ============================================================================
@@ -2024,7 +2036,9 @@ func handle_input() -> bool:
 				for rdir: Vector2i in random_dirs:
 					if can_move_to(grid_position + rdir):
 						moved_this_turn = true
-						return try_move(rdir)
+						if try_move(rdir):
+							record_action(direction_to_action(rdir))
+						return true
 				return true  # Couldn't move anywhere, turn consumed
 			# 50% chance: normal action falls through
 
@@ -2036,13 +2050,18 @@ func handle_input() -> bool:
 			if flee_dir != Vector2i.ZERO:
 				GameManager.log_message("Terror drives you to flee!", ThemeColors.STATUS_AFRAID)
 				moved_this_turn = true
-				return try_move(flee_dir)
+				if try_move(flee_dir):
+					record_action(direction_to_action(flee_dir))
+				return true
 			# No flee direction available, allow normal movement
 
 	var direction := _get_movement_input()
 	if direction != Vector2i.ZERO:
 		moved_this_turn = true
-		return try_move(direction)
+		var did_move: bool = try_move(direction)
+		if did_move:
+			record_action(direction_to_action(direction))
+		return did_move or attacked_this_turn
 
 	if Input.is_action_just_pressed("wait"):
 		return true  # Skip turn

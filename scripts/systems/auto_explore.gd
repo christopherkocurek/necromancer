@@ -77,8 +77,8 @@ func get_next_step() -> Vector2i:
 	# Get next position from path
 	var next_pos: Vector2i = path[0]
 
-	# Validate the path is still clear
-	if not level.is_passable(next_pos):
+	# Validate the path is still clear (closed doors are handled by the movement code)
+	if not level.is_passable(next_pos) and level.get_tile(next_pos) != Level.Tile.DOOR_CLOSED:
 		# Path blocked, try to find new path
 		if not _find_new_path():
 			stop_explore("Path blocked")
@@ -241,8 +241,8 @@ func _find_new_path() -> bool:
 	if target == Vector2i(-1, -1):
 		return false
 
-	# Use level's A* pathfinding
-	var found_path: Array[Vector2i] = level.find_path(player.grid_position, target)
+	# Use level's A* pathfinding (through doors — auto-explore opens them)
+	var found_path: Array[Vector2i] = level.find_path_through_doors(player.grid_position, target)
 
 	if found_path.is_empty():
 		return false
@@ -290,14 +290,14 @@ func find_nearest_unexplored() -> Vector2i:
 			if not level.is_explored(neighbor):
 				# Make sure there's a path to current (which is adjacent)
 				# We want to go to the explored tile adjacent to unexplored
-				if level.is_passable(current) and current != start:
+				if (level.is_passable(current) or level.get_tile(current) == Level.Tile.DOOR_CLOSED) and current != start:
 					return current
 				# Or if the unexplored tile itself is passable, go there
-				if level.is_passable(neighbor):
+				if level.is_passable(neighbor) or level.get_tile(neighbor) == Level.Tile.DOOR_CLOSED:
 					return neighbor
 
-			# Add to queue if passable for further exploration
-			if level.is_passable(neighbor):
+			# Add to queue if passable for further exploration (including closed doors we can open)
+			if level.is_passable(neighbor) or level.get_tile(neighbor) == Level.Tile.DOOR_CLOSED:
 				queue.append(neighbor)
 
 	return Vector2i(-1, -1)

@@ -593,6 +593,20 @@ func _request_drop() -> void:
 	var item_name: String = _get_item_name(selected_item)
 	_confirm_dialog.show_confirm("Drop %s?" % item_name)
 
+func _do_direct_drop() -> void:
+	if selected_item == null or not player:
+		return
+	if player.drop_item(selected_item):
+		var item_name: String = _get_item_name(selected_item)
+		GameManager.log_message("Dropped %s." % item_name, ThemeColors.TEXT_PRIMARY)
+		item_dropped.emit(selected_item)
+		selected_item = null
+		selected_slot_index = -1
+		_refresh_inventory()
+		_update_item_info(null)
+	else:
+		GameManager.log_message("Cannot drop that here.", ThemeColors.MSG_WARNING)
+
 func _on_drop_confirmed() -> void:
 	if _pending_drop_item != null and player:
 		if player.drop_item(_pending_drop_item):
@@ -858,14 +872,10 @@ func _input(event: InputEvent) -> void:
 			_try_equip_item(selected_item, item_slot)
 		get_viewport().set_input_as_handled()
 
-	# Drop with 'd' or Shift+D - shows confirm dialog
-	# Lowercase 'd' (no shift) also triggers drop when inventory is open
-	if event.is_action_pressed("drop") and selected_item != null:
-		_request_drop()
-		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed:
-		if event.keycode == KEY_D and selected_item != null:
-			_request_drop()
+	# Drop with 'd' key — instant drop (roguelike standard, no confirmation)
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_D and not event.shift_pressed and selected_item != null:
+			_do_direct_drop()
 			get_viewport().set_input_as_handled()
 
 	# Unequip with 'r'

@@ -5,7 +5,7 @@ class_name Monster
 
 enum AIState { IDLE, WANDERING, HUNTING, FLEEING }
 
-@export var monster_data: Resource = null
+var monster_data: Variant = null  # DataManager.MonsterData (set in initialize_from_data)
 var ai_state: AIState = AIState.IDLE
 var target: Entity = null
 var home_position: Vector2i = Vector2i.ZERO
@@ -71,6 +71,7 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	if not data:
 		return
 
+	monster_data = data
 	entity_name = data.name
 	current_health = data.roll_health()
 	max_health = current_health

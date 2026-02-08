@@ -10,6 +10,7 @@ var item_coords: Dictionary = {}
 var artifact_coords: Dictionary = {}
 var player_coords: Dictionary = {}
 var effect_coords: Dictionary = {}
+var layer_tile_kits: Dictionary = {}  # layer_name -> tile_enum -> {"light": Vector2i, "dark": Vector2i}
 
 # Monster display char to ID mapping (for existing code compatibility)
 var char_to_monster_id: Dictionary = {}
@@ -22,9 +23,11 @@ func _ready() -> void:
 	_load_player_coords()
 	_load_effect_coords()
 	_load_char_mappings()
+	_load_layer_tile_kits()
 	print("=== TileMapper Initialized (DALL-E Terrain + DCSS Entities) ===")
 	print("Grid: 32x32, Tile size: 64x64")
 	print("Total tiles loaded: ", terrain_coords.size() + monster_coords.size() + item_coords.size())
+	print("Layer tile kits: ", layer_tile_kits.size(), " layers")
 
 func _load_terrain_coords() -> void:
 	# Format: terrain_coords[id] = {"light": Vector2i, "dark": Vector2i}
@@ -784,8 +787,72 @@ func _load_char_mappings() -> void:
 
 
 # ============================================================================
+# LAYER TILE KITS — per-layer wall/floor/door/stairs sprites (rows 20-23)
+# ============================================================================
+
+func _load_layer_tile_kits() -> void:
+	# Layer tile kit mapping: each layer overrides WALL, FLOOR, DOOR_CLOSED,
+	# DOOR_OPEN, STAIRS_DOWN, STAIRS_UP with unique themed sprites.
+	# Tile enum IDs: FLOOR=1, WALL=2, DOOR_CLOSED=3, DOOR_OPEN=4, STAIRS_DOWN=5, STAIRS_UP=6
+	# Also applies to: DOOR_LOCKED=12, DOOR_JAMMED=13 (use door_closed), DOOR_SECRET=14 (use wall)
+	#
+	# Tileset layout per 12-col block:
+	#   col+0/+1: wall L/D, col+2/+3: floor L/D, col+4/+5: door_closed L/D,
+	#   col+6/+7: door_open L/D, col+8/+9: stairs_down L/D, col+10/+11: stairs_up L/D
+	#
+	# Row 20: outer_pits (0-11) + lower_halls (12-23)
+	# Row 21: dark_halls (0-11) + necropolis (12-23)
+	# Row 22: pits_of_despair (0-11) + inner_sanctum (12-23)
+	# Row 23: throne_room (0-11)
+
+	var layouts: Array = [
+		{"name": "outer_pits",      "row": 20, "col": 0},
+		{"name": "lower_halls",     "row": 20, "col": 12},
+		{"name": "dark_halls",      "row": 21, "col": 0},
+		{"name": "necropolis",      "row": 21, "col": 12},
+		{"name": "pits_of_despair", "row": 22, "col": 0},
+		{"name": "inner_sanctum",   "row": 22, "col": 12},
+		{"name": "throne_room",     "row": 23, "col": 0},
+	]
+
+	# Tile type order within each 12-col block, mapped to Level.Tile enum IDs
+	var tile_types: Array = [
+		2,   # WALL
+		1,   # FLOOR
+		3,   # DOOR_CLOSED
+		4,   # DOOR_OPEN
+		5,   # STAIRS_DOWN
+		6,   # STAIRS_UP
+	]
+
+	for layout in layouts:
+		var kit: Dictionary = {}
+		var row: int = layout["row"]
+		var base_col: int = layout["col"]
+		for i in range(tile_types.size()):
+			var tile_id: int = tile_types[i]
+			var lc: int = base_col + i * 2
+			var dc: int = lc + 1
+			kit[tile_id] = {"light": Vector2i(lc, row), "dark": Vector2i(dc, row)}
+		# Also map locked/jammed doors to the layer's door_closed sprite
+		kit[12] = kit[3].duplicate()  # DOOR_LOCKED -> door_closed
+		kit[13] = kit[3].duplicate()  # DOOR_JAMMED -> door_closed
+		kit[14] = kit[2].duplicate()  # DOOR_SECRET -> wall (hidden)
+		layer_tile_kits[layout["name"]] = kit
+
+# ============================================================================
 # PUBLIC API
 # ============================================================================
+
+func get_layer_terrain_coords(terrain_id: int, layer_name: String, lit: bool = true) -> Vector2i:
+	## Get layer-specific terrain coords. Falls back to default if layer has no override.
+	if layer_name in layer_tile_kits:
+		var kit: Dictionary = layer_tile_kits[layer_name]
+		if terrain_id in kit:
+			var data: Dictionary = kit[terrain_id]
+			return data["light"] if lit else data["dark"]
+	# Fallback to default terrain coords
+	return get_terrain_coords(terrain_id, lit)
 
 func get_terrain_coords(terrain_id: int, lit: bool = true) -> Vector2i:
 	## Get terrain tile coordinates. lit=true for visible, false for remembered.
