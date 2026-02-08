@@ -117,6 +117,13 @@ var _total_threats_avoided: int = 0        ## Times bot fled from assessed-dange
 var _total_food_eaten: int = 0             ## Food items consumed for hunger
 var _total_last_stand_turns: int = 0       ## Turns in Last Stand zone
 var _total_materials_collected: int = 0    ## Smithing materials picked up
+var _total_reforge_attempts: int = 0       ## Reforge recipe attempts
+var _total_reforge_successes: int = 0      ## Successful reforges
+var _total_reclaim_attempts: int = 0       ## Reclaim recipe attempts
+var _total_reclaim_successes: int = 0      ## Successful reclaims
+var _total_masterwork_attempts: int = 0    ## Masterwork recipe attempts
+var _total_masterwork_successes: int = 0   ## Successful masterworks
+var _total_create_successes: int = 0       ## Successful CREATE forges
 var _total_assassination_attacks: int = 0  ## Attacks against unwary targets
 var _total_song_switches: int = 0          ## Times active song was changed
 var _total_voice_at_death: int = 0         ## Voice charges remaining when dying
@@ -383,10 +390,13 @@ func _init_archetype_strategy() -> void:
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
 				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
-				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_SMT, "ability": 3, "name": "Reforge"},
 				{"skill": Constants.Skill.S_SMT, "ability": 4, "name": "Expertise"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_SMT, "ability": 5, "name": "Reclaim"},
+				{"skill": Constants.Skill.S_SMT, "ability": 6, "name": "Masterwork"},
+				{"skill": Constants.Skill.S_SMT, "ability": 10, "name": "Reclaim Mastery"},
 			]
 		"POLEARM_MASTER":
 			_skill_priorities = ["melee", "evasion", "hunting", "will"]
@@ -403,10 +413,12 @@ func _init_archetype_strategy() -> void:
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
 				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
+				{"skill": Constants.Skill.S_SMT, "ability": 2, "name": "Jeweller"},
 				{"skill": Constants.Skill.S_LOR, "ability": 17, "name": "Song of Aule"},
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_SMT, "ability": 3, "name": "Reforge"},
 				{"skill": Constants.Skill.S_SMT, "ability": 4, "name": "Expertise"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_SMT, "ability": 5, "name": "Reclaim"},
 			]
 		"WILL_TANK":
 			_skill_priorities = ["will", "melee", "evasion", "hunting"]
@@ -1578,16 +1590,20 @@ func _try_seek_nearby_item() -> bool:
 		if not _level.is_tile_visible(item_node.grid_position):
 			continue
 
-		# Score items: healing > equipment > ammo > other
+		# Score items: smithing materials (for smiths) > healing > ammo > equipment > other
 		var score: int = 1
 		var item_data: Variant = item_node.get_data() if item_node.has_method("get_data") else null
-		if item_data != null and "tval" in item_data:
-			if item_data.tval == 75 or item_data.tval == 80:  # Potions/herbs
-				score = 10
-			elif item_data.tval in [20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37]:
-				score = 5  # Equipment
-			elif item_data.tval == 17 or item_data.tval == 16:  # Ammo
-				score = 7
+		if item_data != null:
+			# Smith archetypes prioritize smithing materials above all else
+			if _archetype_id in ["SMITH", "ELF_SMITH"] and _is_smithing_material(item_data):
+				score = 15
+			elif "tval" in item_data:
+				if item_data.tval == 75 or item_data.tval == 80:  # Potions/herbs
+					score = 10
+				elif item_data.tval in [20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37]:
+					score = 5  # Equipment
+				elif item_data.tval == 17 or item_data.tval == 16:  # Ammo
+					score = 7
 
 		if score > best_score or (score == best_score and dist < best_dist):
 			best_score = score
@@ -1963,13 +1979,13 @@ func _try_kite_and_shoot() -> bool:
 # ============================================================================
 
 func _try_seek_forge() -> bool:
-	## SMITH archetype: pathfind to forge tiles when none nearby.
+	## SMITH archetype: pathfind to forge tiles (materials are near forges).
 	if not _level or not _player:
 		return false
 	if _archetype_id not in ["SMITH", "ELF_SMITH"]:
 		return false
 
-	# Scan for forge tiles
+	# Scan for nearest explored forge tile with uses remaining
 	var pp: Vector2i = _player.grid_position
 	var best_forge: Vector2i = Vector2i(-1, -1)
 	var best_dist: int = 999
@@ -1988,6 +2004,42 @@ func _try_seek_forge() -> bool:
 		_total_forges_visited += 1
 		return _move_toward_target(best_forge)
 
+	return false
+
+func _smith_has_forgeable_materials() -> bool:
+	## Check if bot has materials for any smithing recipe.
+	var smithing_level: int = _player.skills.get("smithing", 0)
+	if smithing_level < 1:
+		return false
+	var mithril_count: int = 0
+	var glowing_count: int = 0
+	var strange_count: int = 0
+	for item in _player.inventory:
+		if item == null or not "index" in item:
+			continue
+		var idx: int = item.index
+		if idx == SmithingSystem.MITHRIL_ID:
+			mithril_count += 1
+		elif idx in [SmithingSystem.BROKEN_GLOWING_WEAPON_ID, SmithingSystem.BROKEN_GLOWING_ARMOR_ID, SmithingSystem.BROKEN_GLOWING_JEWELRY_ID]:
+			glowing_count += 1
+		elif idx in [SmithingSystem.BROKEN_STRANGE_WEAPON_ID, SmithingSystem.BROKEN_STRANGE_ARMOR_ID, SmithingSystem.BROKEN_STRANGE_JEWELRY_ID]:
+			strange_count += 1
+	# Check if any recipe is possible
+	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_WEAPONSMITH):
+		return true
+	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_ARMOURSMITH):
+		return true
+	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_JEWELLER):
+		return true
+	if glowing_count >= 2 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_REFORGE):
+		return true
+	if strange_count >= 2 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_RECLAIM):
+		return true
+	var masterwork_needed: int = 4
+	if _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_MASTER_SMITH):
+		masterwork_needed = 2
+	if strange_count >= masterwork_needed and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_MASTERWORK):
+		return true
 	return false
 
 # ============================================================================
@@ -2409,11 +2461,12 @@ func _equip_slot_key(slot_id: int) -> String:
 # ============================================================================
 
 func _try_use_forge() -> bool:
-	## Try to forge at the current forge tile. Costs a turn.
+	## Try to forge at the current forge tile using full recipe priority.
+	## Priority: MASTERWORK > RECLAIM > REFORGE > CREATE.
 	if not _player or not _is_on_forge():
 		return false
 
-	# Start Song of Aule if available (for +1 smithing bonus)
+	# Start Song of Aule if available (for +2 smithing bonus)
 	if _ability_system and _player.active_song_id != 157:
 		if _ability_system.has_ability(157):
 			var check: Dictionary = _ability_system.can_use_ability(157)
@@ -2430,41 +2483,151 @@ func _try_use_forge() -> bool:
 	if smithing_level < 1:
 		return false
 
-	var smithing_system: RefCounted = SmithingSystem.new() if ClassDB.class_exists("SmithingSystem") else null
-	if smithing_system == null:
-		# Try loading the script
-		var script: GDScript = load("res://scripts/systems/smithing_system.gd") as GDScript
-		if script:
-			smithing_system = script.new()
-	if smithing_system == null:
+	# Check forge has uses remaining
+	var forge_uses: int = _level.get_forge_uses(_player.grid_position)
+	if forge_uses <= 0:
 		return false
 
-	# Check for available recipes
-	var recipes: Array = smithing_system.get_available_recipes(_player)
-	if recipes.is_empty():
+	var smithing_system: SmithingSystem = SmithingSystem.new()
+	var forge_bonus: int = _level.get_forge_bonus(_player.grid_position)
+	var depth: int = GameManager.current_depth if GameManager else 1
+
+	# Get available recipes sorted by priority
+	var available: Array = smithing_system.get_available_recipes(_player)
+	if available.is_empty():
 		return false
 
-	# Try the first available recipe
-	var recipe: Variant = recipes[0]
-	var success: bool = false
+	# Sort by priority: MASTERWORK > RECLAIM > REFORGE > CREATE
+	var recipe_priority: Dictionary = {
+		SmithingSystem.RecipeType.MASTERWORK: 0,
+		SmithingSystem.RecipeType.RECLAIM: 1,
+		SmithingSystem.RecipeType.REFORGE: 2,
+		SmithingSystem.RecipeType.CREATE_WEAPON: 3,
+		SmithingSystem.RecipeType.CREATE_ARMOR: 4,
+		SmithingSystem.RecipeType.CREATE_JEWELRY: 5,
+	}
+	available.sort_custom(func(a: SmithingSystem.Recipe, b: SmithingSystem.Recipe) -> bool:
+		return recipe_priority.get(a.type, 99) < recipe_priority.get(b.type, 99)
+	)
 
-	# Get mithril materials
-	var mithril: Array = smithing_system.get_mithril_materials(_player)
-	if not mithril.is_empty() and recipe.has("type"):
-		var templates: Array = smithing_system.get_creatable_items(recipe.type, GameManager.current_depth)
-		if not templates.is_empty():
-			var result: Variant = smithing_system.create_item(_player, templates[0], mithril[0])
-			if result:
-				_total_forges_used += 1
-				success = true
-
-	if success:
-		_player.consume_energy()
-		if _turn_system:
-			_turn_system._after_player_action()
-		return true
+	for recipe: SmithingSystem.Recipe in available:
+		var success: bool = _try_execute_recipe(smithing_system, recipe, forge_bonus, depth)
+		if success:
+			_total_forges_used += 1
+			_total_forge_successes += 1
+			# Consume forge use
+			_level.consume_forge_use(_player.grid_position)
+			_player.consume_energy()
+			if _turn_system:
+				_turn_system._after_player_action()
+			return true
 
 	return false
+
+func _try_execute_recipe(ss: SmithingSystem, recipe: SmithingSystem.Recipe, forge_bonus: int, depth: int) -> bool:
+	## Execute a single smithing recipe. Returns true on success.
+	match recipe.type:
+		SmithingSystem.RecipeType.MASTERWORK:
+			return _bot_do_masterwork(ss, forge_bonus, depth)
+		SmithingSystem.RecipeType.RECLAIM:
+			return _bot_do_reclaim(ss, forge_bonus, depth)
+		SmithingSystem.RecipeType.REFORGE:
+			return _bot_do_reforge(ss, forge_bonus, depth)
+		SmithingSystem.RecipeType.CREATE_WEAPON, SmithingSystem.RecipeType.CREATE_ARMOR, SmithingSystem.RecipeType.CREATE_JEWELRY:
+			return _bot_do_create(ss, recipe.type, forge_bonus, depth)
+	return false
+
+func _bot_do_masterwork(ss: SmithingSystem, forge_bonus: int, depth: int) -> bool:
+	var materials: Array = ss.get_broken_strange_items(_player)
+	var required: int = 4
+	if _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_MASTER_SMITH):
+		required = 2
+	if materials.size() < required:
+		return false
+	_total_masterwork_attempts += 1
+	var result: Variant = ss.masterwork(_player, materials, depth, forge_bonus)
+	if result:
+		_total_masterwork_successes += 1
+		_try_auto_equip(result)
+		print("[SURVIVAL BOT] MASTERWORK success: %s" % (result.name if "name" in result else "item"))
+		return true
+	print("[SURVIVAL BOT] MASTERWORK failed (materials consumed)")
+	return true  # Turn was spent even on failure
+
+func _bot_do_reclaim(ss: SmithingSystem, forge_bonus: int, depth: int) -> bool:
+	var materials: Array = ss.get_broken_strange_items(_player)
+	if materials.size() < 2:
+		return false
+	_total_reclaim_attempts += 1
+	# Use mastery if available (pick highest-depth artifact)
+	if ss.has_reclaim_mastery(_player):
+		var candidates: Array[DataManager.ArtifactData] = ss.reclaim_with_mastery(
+			_player, materials[0], materials[1], depth, forge_bonus)
+		if candidates.is_empty():
+			return true  # Failed — turn spent
+		# Bot picks highest-depth artifact
+		var best: DataManager.ArtifactData = candidates[0]
+		for a: DataManager.ArtifactData in candidates:
+			if a.depth > best.depth:
+				best = a
+		var result: Variant = ss.accept_reclaim_mastery_artifact(_player, best)
+		if result:
+			_total_reclaim_successes += 1
+			_try_auto_equip(result)
+			print("[SURVIVAL BOT] RECLAIM (mastery) success: %s" % (result.name if "name" in result else "artifact"))
+		return true
+	# Standard reclaim
+	var result: Variant = ss.reclaim(_player, materials[0], materials[1], depth, forge_bonus)
+	if result:
+		_total_reclaim_successes += 1
+		_try_auto_equip(result)
+		print("[SURVIVAL BOT] RECLAIM success: %s" % (result.name if "name" in result else "artifact"))
+		return true
+	print("[SURVIVAL BOT] RECLAIM failed (materials consumed)")
+	return true  # Turn was spent
+
+func _bot_do_reforge(ss: SmithingSystem, forge_bonus: int, depth: int) -> bool:
+	var materials: Array = ss.get_broken_glowing_items(_player)
+	if materials.size() < 2:
+		return false
+	_total_reforge_attempts += 1
+	# Use mastery if available (bot always accepts first item)
+	if ss.has_reforge_mastery(_player):
+		var items: Array = ss.reforge_with_mastery(
+			_player, materials[0], materials[1], depth, forge_bonus)
+		if items.is_empty():
+			return true  # Failed — turn spent
+		# Bot accepts first item (no UI to compare)
+		if items.size() > 0 and items[0] != null:
+			ss.accept_reforge_mastery_item(_player, items[0])
+			_total_reforge_successes += 1
+			_try_auto_equip(items[0])
+			print("[SURVIVAL BOT] REFORGE (mastery) success: %s" % (items[0].name if "name" in items[0] else "item"))
+		return true
+	# Standard reforge
+	var result: Variant = ss.reforge(_player, materials[0], materials[1], depth, forge_bonus)
+	if result:
+		_total_reforge_successes += 1
+		_try_auto_equip(result)
+		print("[SURVIVAL BOT] REFORGE success: %s" % (result.name if "name" in result else "item"))
+		return true
+	print("[SURVIVAL BOT] REFORGE failed (materials consumed)")
+	return true  # Turn was spent
+
+func _bot_do_create(ss: SmithingSystem, recipe_type: SmithingSystem.RecipeType, forge_bonus: int, depth: int) -> bool:
+	var mithril: Array = ss.get_mithril_materials(_player)
+	if mithril.is_empty():
+		return false
+	var templates: Array = ss.get_creatable_items(recipe_type, depth)
+	if templates.is_empty():
+		return false
+	var result: Variant = ss.create_item(_player, templates[0], mithril[0], forge_bonus)
+	if result:
+		_total_create_successes += 1
+		_try_auto_equip(result)
+		print("[SURVIVAL BOT] CREATE success: %s" % (result.name if "name" in result else "item"))
+		return true
+	return true  # Turn was spent even on failure
 
 # ============================================================================
 # ENHANCED BOT — SKILL INVESTMENT
@@ -2824,21 +2987,47 @@ func _check_hunger() -> bool:
 
 func _smith_should_seek_materials() -> bool:
 	## Check if the smith needs more smithing materials.
+	## Seeks materials until we have enough for a recipe.
 	if _archetype_id not in ["SMITH", "ELF_SMITH"]:
 		return false
-	var material_count: int = 0
+	var mithril_count: int = 0
+	var glowing_count: int = 0
+	var strange_count: int = 0
 	for item in _player.inventory:
 		if item == null:
 			continue
-		if _is_smithing_material(item):
-			var stack: int = item.stack_count if "stack_count" in item else 1
-			material_count += stack
-	return material_count < 3  # Need at least 3 for reliable forging
+		if not "index" in item:
+			continue
+		var idx: int = item.index
+		if idx == SmithingSystem.MITHRIL_ID:
+			mithril_count += item.stack_count if "stack_count" in item else 1
+		elif idx in [SmithingSystem.BROKEN_GLOWING_WEAPON_ID, SmithingSystem.BROKEN_GLOWING_ARMOR_ID, SmithingSystem.BROKEN_GLOWING_JEWELRY_ID]:
+			glowing_count += item.stack_count if "stack_count" in item else 1
+		elif idx in [SmithingSystem.BROKEN_STRANGE_WEAPON_ID, SmithingSystem.BROKEN_STRANGE_ARMOR_ID, SmithingSystem.BROKEN_STRANGE_JEWELRY_ID]:
+			strange_count += item.stack_count if "stack_count" in item else 1
+	# Always want materials — seek if we can't do ANY recipe
+	var total: int = mithril_count + glowing_count + strange_count
+	if total < 2:
+		return true  # Always seek if we have less than 2 materials
+	# If we have 2+ glowing or 2+ strange or 1+ mithril, we can forge — don't seek
+	if mithril_count >= 1 or glowing_count >= 2 or strange_count >= 2:
+		return false
+	return true  # Need more to complete a recipe
 
 func _is_smithing_material(item: Variant) -> bool:
-	## Check if an item is a smithing material based on name keywords.
+	## Check if an item is a smithing material using SmithingSystem ID-based detection.
 	if item == null:
 		return false
+	# Check by item index (most reliable)
+	if "index" in item:
+		var idx: int = item.index
+		if idx in [SmithingSystem.MITHRIL_ID,
+				SmithingSystem.BROKEN_GLOWING_WEAPON_ID, SmithingSystem.BROKEN_GLOWING_ARMOR_ID,
+				SmithingSystem.BROKEN_GLOWING_JEWELRY_ID,
+				SmithingSystem.BROKEN_STRANGE_WEAPON_ID, SmithingSystem.BROKEN_STRANGE_ARMOR_ID,
+				SmithingSystem.BROKEN_STRANGE_JEWELRY_ID]:
+			return true
+	# Fallback: name-based detection
 	var item_name: String = ""
 	if "name" in item:
 		item_name = str(item.name).to_lower()
@@ -2846,9 +3035,9 @@ func _is_smithing_material(item: Variant) -> bool:
 		item_name = str(item.entity_name).to_lower()
 	if item_name.is_empty():
 		return false
-	return "mithril" in item_name or "fragment" in item_name or "ore" in item_name \
-		or "metal" in item_name or "salvage" in item_name or "shard" in item_name \
-		or "remnant" in item_name or "ingot" in item_name
+	return "mithril" in item_name or "broken glowing" in item_name \
+		or "broken strange" in item_name or "shattered elven" in item_name \
+		or "twisted shadow" in item_name
 
 func _try_seek_smithing_materials() -> bool:
 	## Smith: pathfind to visible smithing materials on the ground.
@@ -2857,25 +3046,19 @@ func _try_seek_smithing_materials() -> bool:
 	var pp: Vector2i = _player.grid_position
 	var best_pos: Vector2i = Vector2i(-1, -1)
 	var best_dist: int = 999
-	# Check visible item nodes on the ground
-	for child in _level.get_children():
-		if not is_instance_valid(child):
+	# Check item nodes on the ground (use _level.items, not get_children)
+	for item_node in _level.items:
+		if not is_instance_valid(item_node):
 			continue
-		if not child.has_method("get_data"):
-			continue
-		var item_data: Variant = child.get_data()
+		var item_data: Variant = item_node.get_data() if item_node.has_method("get_data") else null
 		if item_data == null:
 			continue
 		if _is_smithing_material(item_data):
-			var item_pos: Vector2i = Vector2i(-1, -1)
-			if "grid_position" in child:
-				item_pos = child.grid_position
-			elif "position" in child:
-				item_pos = Vector2i(int(child.position.x / 64), int(child.position.y / 64))
-			if item_pos == Vector2i(-1, -1):
+			var item_pos: Vector2i = item_node.grid_position
+			if not _level.is_tile_visible(item_pos):
 				continue
 			var dist: int = _get_chebyshev_distance(pp, item_pos)
-			if dist < best_dist and dist <= ITEM_SEEK_RANGE:
+			if dist < best_dist and dist <= ITEM_SEEK_RANGE * 2:  # Wider range for materials
 				best_dist = dist
 				best_pos = item_pos
 	if best_pos != Vector2i(-1, -1):
@@ -3015,6 +3198,13 @@ func _finish_run(cause: String) -> void:
 		"total_food_eaten": _total_food_eaten,
 		"total_last_stand_turns": _total_last_stand_turns,
 		"total_materials_collected": _total_materials_collected,
+		"total_reforge_attempts": _total_reforge_attempts,
+		"total_reforge_successes": _total_reforge_successes,
+		"total_reclaim_attempts": _total_reclaim_attempts,
+		"total_reclaim_successes": _total_reclaim_successes,
+		"total_masterwork_attempts": _total_masterwork_attempts,
+		"total_masterwork_successes": _total_masterwork_successes,
+		"total_create_successes": _total_create_successes,
 		"total_assassination_attacks": _total_assassination_attacks,
 		"total_song_switches": _total_song_switches,
 		"total_voice_at_death": _total_voice_at_death,
@@ -3048,6 +3238,12 @@ func _finish_run(cause: String) -> void:
 		_total_corridor_fights, _total_corridor_repositions, _total_doors_closed, _total_threats_avoided])
 	print("Assassinations: %d | Voice at death: %d | Materials: %d" % [
 		_total_assassination_attacks, _total_voice_at_death, _total_materials_collected])
+	if _total_forges_used > 0 or _total_reforge_attempts > 0 or _total_reclaim_attempts > 0:
+		print("Smithing: Create=%d | Reforge=%d/%d | Reclaim=%d/%d | Masterwork=%d/%d" % [
+			_total_create_successes,
+			_total_reforge_successes, _total_reforge_attempts,
+			_total_reclaim_successes, _total_reclaim_attempts,
+			_total_masterwork_successes, _total_masterwork_attempts])
 	print("Cause of end: %s" % _cause_of_end)
 	print("Errors encountered: %d" % _total_errors)
 
