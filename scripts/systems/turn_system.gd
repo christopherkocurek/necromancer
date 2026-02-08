@@ -112,6 +112,8 @@ func _after_player_action() -> void:
 	if current_level:
 		# Refresh glowing items before lighting pass
 		current_level.refresh_glowing_items()
+		# Reset newly-explored counter before FOV update
+		current_level.pop_newly_explored_count()
 		# Update FOV: geometry → lighting → entity visibility → tilemap
 		var fov_radius: int = current_level.get_fov_radius()
 		var light_radius: int = player.get_light_radius()
@@ -119,6 +121,11 @@ func _after_player_action() -> void:
 		current_level.apply_lighting(player.grid_position, light_radius)
 		current_level.update_entity_visibility()
 		current_level.apply_fov_to_tilemap()
+
+		# Award stealth exploration XP for newly revealed tiles
+		var new_tiles: int = current_level.pop_newly_explored_count()
+		if new_tiles > 0 and player:
+			player.award_stealth_exploration_xp(new_tiles)
 
 		# Light ecology: check light-sensitive monsters near player
 		_check_light_recoil()

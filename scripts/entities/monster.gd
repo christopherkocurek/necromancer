@@ -842,10 +842,11 @@ func die(killer: Entity = null) -> void:
 	# Check validity before using 'is' operator to avoid freed instance errors
 	if killer != null and is_instance_valid(killer) and killer is Player:
 		var was_silent := alertness < Constants.ALERTNESS_ALERT  # Monster wasn't fully aware
-		killer.gain_experience(experience_value, "kill")
+		var stealth_kill_xp: int = experience_value * 2 if was_silent else experience_value
+		killer.gain_experience(stealth_kill_xp, "kill")
 
 		# Track in run stats
-		killer.run_stats.record_kill(entity_name, experience_value, was_silent)
+		killer.run_stats.record_kill(entity_name, stealth_kill_xp, was_silent)
 		# Track kills by name for Bane ability
 		killer.kills_by_name[entity_name] = killer.kills_by_name.get(entity_name, 0) + 1
 
@@ -858,9 +859,9 @@ func die(killer: Entity = null) -> void:
 					memory.record_kill(monster_data.index)
 
 		if was_silent:
-			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, experience_value], ThemeColors.ABILITY_LEARNED)
+			GameManager.log_message("You silently dispatch the %s! (+%d XP, stealth bonus!)" % [entity_name, stealth_kill_xp], ThemeColors.ABILITY_LEARNED)
 		else:
-			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, experience_value], ThemeColors.ABILITY_LEARNED)
+			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, stealth_kill_xp], ThemeColors.ABILITY_LEARNED)
 
 		# Fade (Stealth ability): +10 stealth for 3 turns after kill
 		if killer.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_FADE):

@@ -19,6 +19,7 @@ var room_id: Array[int] = []         # Which room each tile belongs to (-1 = non
 var rooms: Array[Rect2i] = []        # Room rectangles from generation
 var tile_in_fov: Array[bool] = []    # Geometric line of sight (FOV only, before lighting)
 var tile_lit: Array[bool] = []       # Has light (player torch + room glow)
+var _newly_explored_count: int = 0   # Tiles explored this FOV update (for stealth XP)
 
 # Isolated RNG for floor-finding (immune to external seed() calls)
 var _floor_rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -463,7 +464,16 @@ func is_tile_visible(pos: Vector2i) -> bool:
 
 func set_explored(pos: Vector2i, value: bool = true) -> void:
 	if is_in_bounds(pos):
-		explored[pos.y * width + pos.x] = value
+		var idx: int = pos.y * width + pos.x
+		if value and not explored[idx]:
+			_newly_explored_count += 1
+		explored[idx] = value
+
+## Return the number of newly explored tiles since last call and reset counter.
+func pop_newly_explored_count() -> int:
+	var count: int = _newly_explored_count
+	_newly_explored_count = 0
+	return count
 
 func set_tile_visible(pos: Vector2i, value: bool) -> void:
 	if is_in_bounds(pos):

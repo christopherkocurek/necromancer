@@ -53,6 +53,7 @@ var kill_xp: int = 0
 var encounter_xp: int = 0
 var descent_xp: int = 0
 var identify_xp: int = 0
+var stealth_explore_xp: int = 0
 
 # Skills (0-20 scale)
 var skills: Dictionary = {
@@ -935,6 +936,7 @@ func gain_experience(amount: int, source: String = "misc") -> void:
 		"encounter": encounter_xp += boosted
 		"descent": descent_xp += boosted
 		"identify": identify_xp += boosted
+		"stealth_explore": stealth_explore_xp += boosted
 
 	total_xp_earned += boosted
 	xp_available += boosted
@@ -1927,6 +1929,11 @@ func toggle_stealth_mode() -> void:
 		GameManager.log_message("You enter stealth mode.", ThemeColors.MSG_STEALTH)
 	else:
 		GameManager.log_message("You leave stealth mode.", ThemeColors.MSG_SYSTEM)
+
+## Award 1 XP per newly explored tile while stealthed.
+func award_stealth_exploration_xp(new_tiles: int) -> void:
+	if stealth_mode and new_tiles > 0:
+		gain_experience(new_tiles, "stealth_explore")
 
 # ============================================================================
 # LIGHT SYSTEM (Phase C)
