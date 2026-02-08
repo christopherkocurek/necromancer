@@ -63,12 +63,14 @@ func show_death(player: Player, stats: RunStats) -> void:
 		AudioManager.play_music("death")
 
 func _store_player_data(player: Player) -> void:
+	var depth: int = GameManager.current_depth
 	player_data = {
 		"name": player.entity_name,
 		"race": player.race_name,
 		"house": player.house_name,
-		"depth": GameManager.current_depth,
+		"depth": depth,
 		"xp_earned": player.total_xp_earned,
+		"layer_name": LayerConfig.get_layer_name(depth),
 	}
 
 func _calculate_score(player: Player) -> void:
@@ -100,7 +102,11 @@ func _generate_highlights() -> void:
 func _prepare_display() -> void:
 	# Generate all text but hide everything initially
 	var epitaph: String = EpitaphGenerator.generate(run_stats)
-	_typewriter_text = '"%s"' % epitaph
+	var layer_death_msg: String = DescriptionGenerator.generate_death_message(player_data.get("layer_name", ""))
+	if not layer_death_msg.is_empty():
+		_typewriter_text = '%s\n\n"%s"' % [layer_death_msg, epitaph]
+	else:
+		_typewriter_text = '"%s"' % epitaph
 
 	# Character info
 	var house_str: String = " of %s" % player_data.house if not player_data.house.is_empty() else ""

@@ -30,6 +30,9 @@ var monster_names: Dictionary = {}  # monster_id -> name
 # This ensures the same individual always gets the same flavor text
 var _unit_flavor_cache: Dictionary = {}
 
+# Kill counter per monster type: monster_id -> kill_count
+var kill_counts: Dictionary = {}
+
 func _init() -> void:
 	pass
 
@@ -260,14 +263,32 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 		var monster_id: int = monster.monster_data.index
 		var effective_tier: int = get_effective_tier(monster_id, player_lore)
 
-		# Sil-Q style taxonomic description
-		var desc: String = DescriptionGenerator.generate_monster_description(desc_data, effective_tier)
-		lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc)
+		# Build context for state-aware descriptions
+		var context: Dictionary = {}
+		if monster.max_health > 0:
+			context["health_pct"] = float(monster.current_health) / float(monster.max_health)
+		context["stance"] = monster.stance
+		context["morale"] = monster.current_morale
+		# Get layer name from current depth
+		var current_depth: int = GameManager.current_depth if GameManager else 1
+		context["layer_name"] = LayerConfig.get_layer_name(current_depth)
+
+		# Contextual description (base + health + morale + layer overlay)
+		var desc_lines: Array[String] = DescriptionGenerator.generate_contextual_description(desc_data, effective_tier, context)
+		for desc_line: String in desc_lines:
+			lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc_line)
 
 		# DF-style per-unit procedural flavor (unique per monster instance)
 		var unit_flavor: String = _get_unit_flavor(monster)
 		if not unit_flavor.is_empty():
 			lines.append("[color=#8B7D6B][i]%s[/i][/color]" % unit_flavor)
+
+		# Kill history description
+		var kill_count: int = _get_kill_count_for_monster(monster_id)
+		if kill_count > 0:
+			var kill_desc: String = DescriptionGenerator.generate_kill_history_description(kill_count, monster.entity_name)
+			if not kill_desc.is_empty():
+				lines.append("[color=#6B8E6B][i]%s[/i][/color]" % kill_desc)
 
 	# At COMPLETE tier, show the D: line description instead of procedural
 	if info.description != "":
@@ -321,6 +342,14 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 
 	return lines
 
+## Record a kill of a monster type.
+func record_kill(monster_id: int) -> void:
+	kill_counts[monster_id] = kill_counts.get(monster_id, 0) + 1
+
+## Get kill count for a monster type.
+func _get_kill_count_for_monster(monster_id: int) -> int:
+	return kill_counts.get(monster_id, 0)
+
 ## Get or generate per-unit DF-style flavor text for a monster instance.
 ## Cached by instance ID so the same individual always shows the same text.
 func _get_unit_flavor(monster: Monster) -> String:
@@ -351,6 +380,7 @@ func to_dict() -> Dictionary:
 	return {
 		"seen_monsters": seen_monsters.duplicate(),
 		"monster_names": monster_names.duplicate(),
+		"kill_counts": kill_counts.duplicate(),
 	}
 
 func from_dict(data: Dictionary) -> void:
@@ -358,6 +388,8 @@ func from_dict(data: Dictionary) -> void:
 		seen_monsters = data.seen_monsters.duplicate()
 	if "monster_names" in data:
 		monster_names = data.monster_names.duplicate()
+	if "kill_counts" in data:
+		kill_counts = data.kill_counts.duplicate()
 
 ## Factory function to create MonsterMemory from saved data.
 static func create_from_dict(data: Dictionary) -> RefCounted:

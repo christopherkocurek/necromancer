@@ -834,6 +834,14 @@ func die(killer: Entity = null) -> void:
 		# Track kills by name for Bane ability
 		killer.kills_by_name[entity_name] = killer.kills_by_name.get(entity_name, 0) + 1
 
+		# Record kill in monster memory for description system
+		if monster_data:
+			var main_scene: Node = killer.get_tree().current_scene if killer.get_tree() else null
+			if main_scene and main_scene.has_method("get_monster_memory"):
+				var memory: RefCounted = main_scene.get_monster_memory()
+				if memory and memory.has_method("record_kill"):
+					memory.record_kill(monster_data.index)
+
 		if was_silent:
 			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, experience_value], ThemeColors.ABILITY_LEARNED)
 		else:

@@ -107,11 +107,12 @@ func _update_info() -> void:
 		for item in items:
 			lines.append("  - %s" % item.get_display_name())
 
-	# Terrain info with procedural description
+	# Terrain info with depth-scaled procedural description
 	var tile: int = level.get_tile(look_cursor)
 	lines.append("")
 	lines.append("[color=gray]Terrain: %s[/color]" % _get_terrain_name(tile))
-	var terrain_desc: String = DescriptionGenerator.generate_terrain_description(tile)
+	var current_depth: int = GameManager.current_depth if GameManager else 1
+	var terrain_desc: String = DescriptionGenerator.generate_terrain_description_for_depth(tile, current_depth)
 	lines.append("[color=#7D7668][i]%s[/i][/color]" % terrain_desc)
 
 	info_label.bbcode_enabled = true
