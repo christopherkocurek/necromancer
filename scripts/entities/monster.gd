@@ -77,7 +77,7 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	max_health = current_health
 	evasion_bonus = data.evasion
 	speed = data.speed
-	perception = data.alertness  # Data's alertness is actually perception stat
+	perception = data.perception  # Monster's perception stat (from A: line)
 	# Scale XP by depth/rarity if data file doesn't specify (default is 10)
 	if data.experience <= 10:
 		# Formula: depth * 5 + rarity * 10, minimum 10
@@ -88,12 +88,14 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	else:
 		experience_value = data.experience
 
-	# Initial alertness based on monster type
+	# Initial alertness based on monster type (Sil-Q model)
 	if data.has_flag("SLEEPING"):
 		alertness = Constants.ALERTNESS_MIN  # Deep sleep
 		is_sleeping = true
 	else:
-		alertness = Constants.ALERTNESS_UNWARY  # Start unwary — must detect player first
+		# Sleepiness determines starting unwaryness: high sleepiness = deeply unwary
+		# Warg (sleepiness 1) starts at -1 to 0; Orc Scout (sleepiness 10) starts at -10 to -1
+		alertness = Constants.ALERTNESS_ALERT - randi_range(1, data.alertness)
 
 	# Parse protection dice (e.g., "1d4" -> dice=1, sides=4)
 	if not data.protection_dice.is_empty():
@@ -264,22 +266,37 @@ func _update_ai_state() -> void:
 
 func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 	# Sil-Q alertness: continuous spectrum from -20 to +20
-	# Canon section 2.3: d10 opposed rolls, not d20
+	# New model: distance is direct penalty on monster side, terrain openness matters
+
+	# Faded state (after stealth kill): completely invisible
+	if player._fade_turns > 0:
+		# Decay alertness while player is faded
+		if alertness > Constants.ALERTNESS_UNWARY:
+			alertness -= 1
+		return
 
 	if has_los:
-		# Player visible — perception roll with LOS bonuses
+		# --- LOS detection roll ---
 		var m_per: int = perception
-		m_per += player.get_combat_noise()  # Combat noise bonus
-		if alertness > Constants.ALERTNESS_ALERT:
-			m_per += alertness  # Already alert = harder to hide
-		# Difficulty modifier: Hard/Ironman gives monsters +perception
+		# Distance is a direct penalty (uncapped)
+		m_per -= distance
+		# Terrain openness: open areas are harder to hide in
+		var openness: int = _count_open_squares(player.grid_position)
+		# Disguise halves terrain openness impact
+		if player.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
+			openness = openness / 2
+		m_per += openness
+		# Combat noise bonus
+		m_per += player.get_combat_noise()
+		# Alertness diminishing returns: already alert monsters lose focus
+		if alertness >= Constants.ALERTNESS_ALERT:
+			m_per -= alertness / 2
+		# Difficulty modifier
 		if GameManager:
 			m_per += GameManager.get_monster_perception_bonus()
-		var perception_roll: int = randi_range(1, 10) + m_per
 
+		var perception_roll: int = randi_range(1, 10) + m_per
 		var difficulty_roll: int = randi_range(1, 10) + player.get_stealth_score()
-		# Distance reduces stealth effectiveness (closer = easier to spot)
-		difficulty_roll += maxi(0, 4 - distance)  # Bonus at long range (closer = easier to spot)
 
 		var result: int = perception_roll - difficulty_roll
 		if result > 0:
@@ -291,13 +308,14 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		if is_sleeping and distance <= 2:
 			_wake_up()
 	else:
-		# No LOS — opposed perception vs stealth
-		var m_per: int = perception
+		# --- No-LOS detection (hearing/sensing) ---
+		var m_per: int = perception / 2  # Halved without line of sight
+		m_per -= distance
 		m_per += player.get_combat_noise()
-		if alertness > Constants.ALERTNESS_ALERT:
-			m_per += alertness / 2  # Reduced bonus without LOS
-		# Distance penalty for hearing
-		m_per -= distance / 2
+		# No terrain openness without sight
+		# Alertness diminishing returns
+		if alertness >= Constants.ALERTNESS_ALERT:
+			m_per -= alertness / 2
 
 		var perception_roll: int = randi_range(1, 10) + m_per
 		var difficulty_roll: int = randi_range(1, 10) + player.get_stealth_score()
@@ -311,6 +329,22 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 	# Decay alertness over time when no stimulus
 	if not has_los and alertness > Constants.ALERTNESS_ALERT:
 		alertness -= 1
+
+## Count walkable tiles in the 8 neighbors around a position (terrain openness)
+func _count_open_squares(pos: Vector2i) -> int:
+	var count: int = 0
+	if not GameManager.current_level:
+		return 0
+	var dirs: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+	for dir: Vector2i in dirs:
+		var check: Vector2i = pos + dir
+		if GameManager.current_level.is_in_bounds(check) and GameManager.current_level.is_passable(check):
+			count += 1
+	return count
 
 func _update_morale() -> void:
 	# Sil-Q morale calculation

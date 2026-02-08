@@ -357,10 +357,14 @@ const ACTION_COST: int = 100
 
 # Stealth
 const STEALTH_MODE_BONUS: int = 5  # Bonus to stealth score when in stealth mode
-const NOISE_DOOR: int = 5          # Noise from opening/closing doors
-const NOISE_SMITHING: int = 10     # Noise from smithing
+const STEALTH_MODE_SPEED_MULTIPLIER: int = 2  # Half speed in stealth mode (2x energy cost)
+const STEALTH_MODE_PERCEPTION_BONUS: int = 5  # +5 hunting (perception) while stealthed
+const NOISE_DOOR: int = 1          # Noise from opening/closing doors
+const NOISE_SMITHING: int = 5      # Noise from smithing
 const NOISE_DIGGING: int = 10      # Noise from tunnelling/digging
 const NOISE_BASH: int = 15         # Noise from bashing doors
+const NOISE_TRAP_FALL: int = 3     # Noise from falling into a trap
+const NOISE_TRAP_STEP: int = 1     # Noise from stepping on a minor trap
 
 # Energy gained per tick based on speed (0-7)
 # Speed 2 is normal (100 energy = 1 action per tick)
