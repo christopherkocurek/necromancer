@@ -147,13 +147,13 @@ D: trembles before their might.
 
 # - Hobbit:
 #   - The Halflings of the Shire
-#   - Stat modifiers -2 +2 +0 +2 (Total: +2)
+#   - Stat modifiers -2 +2 +2 +2 (Total: +4)
 #   - Sling proficiency = a bonus of 1 to archery when wielding slings
 #   - Small stature = +2 stealth, -2 att from large monsters, -2 non-proficiency melee
 #   - Hobbit luck = reroll lethal d20 once per floor
 
 N:4:Hobbit
-S:-2:2:0:2
+S:-2:2:2:2
 I:30:30:120
 H:42:3
 W:70:6

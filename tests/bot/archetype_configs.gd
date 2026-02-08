@@ -26,7 +26,7 @@ const ARCHETYPES: Dictionary = {
 		"house": "Of the Tooks",
 		"trait": "Nimble Striker",
 		"gender": "female",
-		# Cost: 0+6+1+6 = 13. Final with Hobbit(-2/+2/0/+2) + Tooks(0/+1/0/0): STR-2 DEX6 CON1 GRA5
+		# Cost: 0+6+1+6 = 13. Final with Hobbit(-2/+2/+2/+2) + Tooks(0/+1/0/0): STR-2 DEX6 CON3 GRA5
 		"base_stats": {"str": 0, "dex": 3, "con": 1, "gra": 3},
 	},
 	"LORE_MAGE": {
@@ -76,7 +76,7 @@ const ARCHETYPES: Dictionary = {
 		"house": "Of the Tooks",
 		"trait": "Shadow Walker",
 		"gender": "female",
-		# Cost: -1+10+1+3 = 13. Final with Hobbit(-2/+2/0/+2) + Tooks(0/+1/0/0): STR-1 DEX8 CON2 GRA5
+		# Cost: -1+10+1+3 = 13. Final with Hobbit(-2/+2/+2/+2) + Tooks(0/+1/0/0): STR-1 DEX8 CON4 GRA5
 		"base_stats": {"str": 1, "dex": 5, "con": 2, "gra": 3},
 	},
 	"STEALTH_ASSASSIN": {
@@ -86,7 +86,7 @@ const ARCHETYPES: Dictionary = {
 		"house": "Of the Tooks",
 		"trait": "Nimble Striker",
 		"gender": "male",
-		# Cost: 3+6+1+3 = 13. Final with Hobbit(-2/+2/0/+2) + Tooks(0/+1/0/0): STR1 DEX7 CON2 GRA4
+		# Cost: 3+6+1+3 = 13. Final with Hobbit(-2/+2/+2/+2) + Tooks(0/+1/0/0): STR1 DEX7 CON4 GRA4
 		"base_stats": {"str": 3, "dex": 4, "con": 2, "gra": 2},
 	},
 	"RANGER_MARKSMAN": {
@@ -149,7 +149,7 @@ const ARCHETYPES: Dictionary = {
 		"house": "Of the Shire",
 		"trait": "Steady Aim",
 		"gender": "male",
-		# Cost: 0+6+1+6 = 13. Final with Hobbit(-2/+2/0/+2) + Shire(0/0/+1/0): STR-2 DEX6 CON2 GRA5
+		# Cost: 0+6+1+6 = 13. Final with Hobbit(-2/+2/+2/+2) + Shire(0/0/+1/0): STR-2 DEX6 CON4 GRA5
 		"base_stats": {"str": 0, "dex": 4, "con": 1, "gra": 3},
 	},
 	"GREENWOOD_RANGER": {
@@ -169,7 +169,7 @@ const ARCHETYPES: Dictionary = {
 		"house": "Of the Gamgees",
 		"trait": "Shadow Step",
 		"gender": "male",
-		# Cost: 1+6+3+3 = 13. Final with Hobbit(-2/+2/0/+2) + Gamgees(+1/0/0/0): STR0 DEX6 CON2 GRA4
+		# Cost: 1+6+3+3 = 13. Final with Hobbit(-2/+2/+2/+2) + Gamgees(+1/0/0/0): STR0 DEX6 CON4 GRA4
 		"base_stats": {"str": 1, "dex": 4, "con": 2, "gra": 2},
 	},
 	"BANISHMENT_MAGE": {

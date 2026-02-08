@@ -279,7 +279,7 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 
 		var difficulty_roll: int = randi_range(1, 10) + player.get_stealth_score()
 		# Distance reduces stealth effectiveness (closer = easier to spot)
-		difficulty_roll += maxi(0, 6 - distance)  # Bonus at long range (closer = easier to spot)
+		difficulty_roll += maxi(0, 4 - distance)  # Bonus at long range (closer = easier to spot)
 
 		var result: int = perception_roll - difficulty_roll
 		if result > 0:
@@ -503,6 +503,10 @@ func _is_large_monster() -> bool:
 	return monster_data.has_flag("TROLL") or monster_data.has_flag("DRAGON") or \
 		monster_data.has_flag("RAUKO") or monster_data.has_flag("SERPENT") or \
 		monster_data.has_flag("WOLF")
+
+## Public accessor for large monster check (used by player Small Stature evasion bonus)
+func is_large() -> bool:
+	return _is_large_monster()
 
 func _grid_distance(a: Vector2i, b: Vector2i) -> int:
 	# Chebyshev distance (8-directional)

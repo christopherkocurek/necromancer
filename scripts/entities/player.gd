@@ -1352,6 +1352,12 @@ func get_total_evasion(attacker: Entity) -> int:
 	# Nimble Striker: evasion bonus from hit-and-run
 	evn += _nimble_evn_bonus
 
+	# Small Stature: +2 evasion vs large monsters (hard to hit small folk)
+	if has_racial_flag("SMALL_STATURE") and is_instance_valid(attacker) and attacker is Monster:
+		var mon: Monster = attacker as Monster
+		if mon.is_large():
+			evn += 2
+
 	# Blind: halve evasion
 	if status_fx and status_fx.is_blind():
 		evn = evn / 2
