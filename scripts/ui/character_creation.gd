@@ -8,7 +8,7 @@ const BackstoryGeneratorScript := preload("res://scripts/systems/backstory_gener
 signal creation_complete(character_data: Dictionary)
 signal creation_cancelled
 
-enum Stage { RACE, HOUSE, GENDER, TRAIT, STATS, NAME, CONFIRM }
+enum Stage { RACE, HOUSE, GENDER, TRAIT, STATS, NAME, DIFFICULTY, CONFIRM }
 
 var current_stage: Stage = Stage.RACE
 
@@ -21,6 +21,7 @@ var base_stats: Dictionary = {"str": 0, "dex": 0, "con": 0, "gra": 0}
 var character_name: String = ""
 var character_age: int = 0
 var character_history: String = ""
+var selected_difficulty: int = GameManager.Difficulty.NORMAL
 
 # UI References (set in _ready or via @onready)
 @onready var stage_label: Label = $VBoxContainer/StageLabel
@@ -232,6 +233,8 @@ func _populate_stage(stage: Stage) -> void:
 			_show_stat_allocation()
 		Stage.NAME:
 			_show_name_entry()
+		Stage.DIFFICULTY:
+			_show_difficulty_selection()
 		Stage.CONFIRM:
 			_show_confirmation()
 
@@ -1002,11 +1005,71 @@ func _get_character_summary() -> String:
 	var gender_text: String = selected_gender.capitalize() if not selected_gender.is_empty() else "?"
 	var age_text: String = str(character_age) if character_age > 0 else "?"
 
-	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
+	var diff_label: String = GameManager.DIFFICULTY_MODIFIERS.get(selected_difficulty, {}).get("label", "Normal")
+
+	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s | Difficulty: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
 		display_name, house_suffix, selected_race, selected_house,
-		gender_text, age_text, trait_text,
+		gender_text, age_text, trait_text, diff_label,
 		final_str, final_dex, final_con, final_gra, Player.STARTING_XP
 	]
+
+# ============================================================================
+# DIFFICULTY SELECTION
+# ============================================================================
+
+func _show_difficulty_selection() -> void:
+	stage_label.text = "Choose Difficulty"
+
+	var gold: String = ThemeColors.PRIMARY.to_html(false)
+	var muted: String = ThemeColors.TEXT_MUTED.to_html(false)
+
+	info_label.bbcode_enabled = true
+	info_label.text = "[color=#%s]Select the challenge level for your descent into Dol Guldur.[/color]" % muted
+
+	var difficulty_group := _get_or_create_button_group("difficulty")
+
+	var difficulties: Array[int] = [
+		GameManager.Difficulty.EASY,
+		GameManager.Difficulty.NORMAL,
+		GameManager.Difficulty.HARD,
+		GameManager.Difficulty.IRONMAN,
+	]
+
+	for diff: int in difficulties:
+		var mods: Dictionary = GameManager.DIFFICULTY_MODIFIERS.get(diff, {})
+		var label_text: String = mods.get("label", "Unknown")
+		var desc: String = mods.get("description", "")
+
+		var btn := Button.new()
+		btn.toggle_mode = true
+		btn.button_group = difficulty_group
+		btn.custom_minimum_size = Vector2(0, 60)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		# Style
+		var btn_style: StyleBoxFlat = ThemeColors.create_panel_stylebox(
+			ThemeColors.IRON_DARK, ThemeColors.IRON_HIGHLIGHT, 1, 6
+		)
+		btn.add_theme_stylebox_override("normal", btn_style)
+		var pressed_style: StyleBoxFlat = ThemeColors.create_panel_stylebox(
+			ThemeColors.GOLD_WARM * 0.3, ThemeColors.GOLD_WARM, 2, 6
+		)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+		btn.add_theme_color_override("font_pressed_color", ThemeColors.PRIMARY)
+
+		btn.text = "%s — %s" % [label_text, desc]
+
+		# Pre-select current difficulty
+		if diff == selected_difficulty:
+			btn.button_pressed = true
+
+		var captured_diff: int = diff
+		btn.pressed.connect(func() -> void:
+			selected_difficulty = captured_diff
+		)
+
+		content_container.add_child(btn)
 
 # ============================================================================
 # CONFIRMATION
@@ -1101,8 +1164,11 @@ func _update_navigation() -> void:
 			next_button.text = "Next"
 			next_button.disabled = false
 		Stage.NAME:
-			next_button.text = "Confirm"
+			next_button.text = "Next"
 			next_button.disabled = character_name.is_empty()
+		Stage.DIFFICULTY:
+			next_button.text = "Confirm"
+			next_button.disabled = false
 		Stage.CONFIRM:
 			next_button.text = "Start Game"
 			next_button.disabled = false
@@ -1120,6 +1186,10 @@ func _on_next_pressed() -> void:
 		_finish_creation()
 
 func _finish_creation() -> void:
+	# Apply difficulty setting to GameManager before game starts
+	if GameManager:
+		GameManager.set_difficulty(selected_difficulty)
+
 	var character_data := {
 		"race": selected_race,
 		"house": selected_house,
@@ -1129,6 +1199,7 @@ func _finish_creation() -> void:
 		"name": character_name,
 		"age": character_age,
 		"history": character_history,
+		"difficulty": selected_difficulty,
 	}
 	creation_complete.emit(character_data)
 

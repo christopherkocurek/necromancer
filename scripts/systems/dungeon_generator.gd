@@ -646,6 +646,10 @@ func _add_features(depth: int) -> void:
 	# Add traps with variety
 	_add_traps(depth)
 
+	# Easy mode: reveal all traps
+	if GameManager and GameManager.should_reveal_traps():
+		level.reveal_all_traps()
+
 	# Add secret doors (depth > 2)
 	if depth > 2:
 		_add_secret_doors(depth)
@@ -1675,7 +1679,10 @@ func _spawn_group(monster_scene: PackedScene, center: Vector2i, data: DataManage
 func _spawn_items(depth: int) -> void:
 	# Item count: 75% of monster target formula, capped at 15
 	var monster_target: int = (rooms.size() + randi_range(1, maxi(1, rooms.size()))) / 2 + depth / 3
-	var item_count: int = mini(int(monster_target * 0.75), 15)
+	var base_item_count: int = mini(int(monster_target * 0.75), 15)
+	# Apply difficulty item spawn multiplier
+	var spawn_mult: float = GameManager.get_item_spawn_multiplier() if GameManager else 1.0
+	var item_count: int = maxi(1, int(base_item_count * spawn_mult))
 
 	var item_scene := preload("res://scenes/entities/item.tscn")
 	var spawned: int = 0

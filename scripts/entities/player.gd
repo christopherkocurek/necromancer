@@ -925,8 +925,9 @@ func restore_hunger(amount: int) -> void:
 # ============================================================================
 
 func gain_experience(amount: int, source: String = "misc") -> void:
-	# Apply XP multiplier
-	var boosted: int = int(amount * XP_MULTIPLIER)
+	# Apply base XP multiplier + difficulty modifier
+	var difficulty_xp: float = GameManager.get_xp_multiplier() if GameManager else 1.0
+	var boosted: int = int(amount * XP_MULTIPLIER * difficulty_xp)
 
 	# Track by source
 	match source:

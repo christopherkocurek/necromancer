@@ -1229,8 +1229,9 @@ func _process_rest_step() -> void:
 	# Take a rest turn (equivalent to waiting)
 	_rest_turns_taken += 1
 
-	# HP regen during rest: +1 HP every 4 rest turns
-	if _rest_turns_taken % 4 == 0 and player.current_health < player.max_health:
+	# HP regen during rest: +1 HP every 4 rest turns (disabled on Ironman)
+	var rest_heal_allowed: bool = GameManager.allows_rest_healing() if GameManager else true
+	if rest_heal_allowed and _rest_turns_taken % 4 == 0 and player.current_health < player.max_health:
 		player.current_health = mini(player.current_health + 1, player.max_health)
 
 	# Simulate player consuming energy and processing the game tick

@@ -78,7 +78,15 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	evasion_bonus = data.evasion
 	speed = data.speed
 	perception = data.alertness  # Data's alertness is actually perception stat
-	experience_value = data.experience
+	# Scale XP by depth/rarity if data file doesn't specify (default is 10)
+	if data.experience <= 10:
+		# Formula: depth * 5 + rarity * 10, minimum 10
+		experience_value = maxi(10, data.depth * 5 + data.rarity * 10)
+		# Unique/boss monsters get 3x
+		if data.has_flag("UNIQUE"):
+			experience_value *= 3
+	else:
+		experience_value = data.experience
 
 	# Initial alertness based on monster type
 	if data.has_flag("SLEEPING"):
@@ -264,6 +272,9 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		m_per += player.get_combat_noise()  # Combat noise bonus
 		if alertness > Constants.ALERTNESS_ALERT:
 			m_per += alertness  # Already alert = harder to hide
+		# Difficulty modifier: Hard/Ironman gives monsters +perception
+		if GameManager:
+			m_per += GameManager.get_monster_perception_bonus()
 		var perception_roll: int = randi_range(1, 10) + m_per
 
 		var difficulty_roll: int = randi_range(1, 10) + player.get_stealth_score()

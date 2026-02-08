@@ -1010,6 +1010,16 @@ func place_trap(pos: Vector2i, trap_type: int) -> void:
 	set_tile(pos, Tile.TRAP)
 	trap_types[pos] = trap_type
 
+## Reveal all traps on the floor (used by Easy difficulty).
+## Changes TRAP tiles to TRAP_TRIGGERED visually but keeps them active via triggered_traps tracking.
+func reveal_all_traps() -> void:
+	for y in range(height):
+		for x in range(width):
+			var pos := Vector2i(x, y)
+			if get_tile(pos) == Tile.TRAP:
+				set_tile(pos, Tile.TRAP_TRIGGERED)
+				set_explored(pos, true)
+
 # ============================================================================
 # WAYFARER'S INSTINCT (Trait: reveal nearby traps, doors, stairs on floor entry)
 # ============================================================================

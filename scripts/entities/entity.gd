@@ -486,6 +486,12 @@ func attack_entity(target: Entity) -> void:
 			entity_name, target.entity_name, attack_score, evasion_score, damage
 		], ThemeColors.COMBAT_HIT)
 
+	# Apply difficulty-based monster damage modifier (monster attacking player only)
+	if self is Monster and target is Player and GameManager:
+		var dmg_mult: float = GameManager.get_monster_damage_multiplier()
+		if dmg_mult != 1.0:
+			damage = maxi(1, int(damage * dmg_mult))
+
 	target.take_damage(damage, "physical", self)
 
 	# Resolve attack effects (e.g., monster special attacks: FIRE, COLD, BLIND, etc.)

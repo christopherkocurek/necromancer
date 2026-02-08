@@ -4,10 +4,62 @@ extends Node
 
 enum GameState { MAIN_MENU, PLAYING, PAUSED, GAME_OVER, INVENTORY, DIALOGUE }
 
+enum Difficulty {
+	EASY = 0,     # +50% XP, -25% monster damage, +25% item spawns, traps revealed
+	NORMAL = 1,   # Standard balance
+	HARD = 2,     # -20% items, +25% monster perception, no pity spawns
+	IRONMAN = 3,  # Hard + no rest healing, faster hunger
+}
+
+# Difficulty modifier tables
+const DIFFICULTY_MODIFIERS: Dictionary = {
+	Difficulty.EASY: {
+		"xp_multiplier": 1.5,
+		"monster_damage_multiplier": 0.75,
+		"item_spawn_multiplier": 1.25,
+		"monster_perception_bonus": 0,
+		"reveal_traps": true,
+		"rest_healing": true,
+		"label": "Easy",
+		"description": "A gentler descent. More experience, weaker foes, and revealed traps.",
+	},
+	Difficulty.NORMAL: {
+		"xp_multiplier": 1.0,
+		"monster_damage_multiplier": 1.0,
+		"item_spawn_multiplier": 1.0,
+		"monster_perception_bonus": 0,
+		"reveal_traps": false,
+		"rest_healing": true,
+		"label": "Normal",
+		"description": "The standard challenge of Dol Guldur.",
+	},
+	Difficulty.HARD: {
+		"xp_multiplier": 1.0,
+		"monster_damage_multiplier": 1.0,
+		"item_spawn_multiplier": 0.80,
+		"monster_perception_bonus": 3,
+		"reveal_traps": false,
+		"rest_healing": true,
+		"label": "Hard",
+		"description": "Fewer supplies, sharper-eyed foes. True Sil-Q difficulty.",
+	},
+	Difficulty.IRONMAN: {
+		"xp_multiplier": 1.0,
+		"monster_damage_multiplier": 1.0,
+		"item_spawn_multiplier": 0.80,
+		"monster_perception_bonus": 3,
+		"reveal_traps": false,
+		"rest_healing": false,
+		"label": "Ironman",
+		"description": "Hard mode. No rest healing. Every wound matters.",
+	},
+}
+
 var current_state: GameState = GameState.MAIN_MENU
 var current_depth: int = 1
 var turn_count: int = 0
 var is_player_turn: bool = true
+var current_difficulty: int = Difficulty.NORMAL
 
 # References set during gameplay
 var player: Node = null
@@ -58,6 +110,48 @@ func reset_game() -> void:
 	is_player_turn = true
 	current_state = GameState.MAIN_MENU
 	current_zoom_index = 1
+	current_difficulty = Difficulty.NORMAL
+
+# ============================================================================
+# DIFFICULTY SYSTEM
+# ============================================================================
+
+func set_difficulty(diff: int) -> void:
+	current_difficulty = diff
+	var label: String = get_difficulty_label()
+	print("Difficulty set to: %s" % label)
+
+func get_difficulty_label() -> String:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("label", "Normal")
+
+func get_difficulty_description() -> String:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("description", "")
+
+func get_xp_multiplier() -> float:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("xp_multiplier", 1.0)
+
+func get_monster_damage_multiplier() -> float:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("monster_damage_multiplier", 1.0)
+
+func get_item_spawn_multiplier() -> float:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("item_spawn_multiplier", 1.0)
+
+func get_monster_perception_bonus() -> int:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("monster_perception_bonus", 0)
+
+func should_reveal_traps() -> bool:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("reveal_traps", false)
+
+func allows_rest_healing() -> bool:
+	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
+	return mods.get("rest_healing", true)
 
 func change_state(new_state: GameState) -> void:
 	var old_state := current_state
