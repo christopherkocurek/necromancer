@@ -657,10 +657,39 @@ func _update_item_info(item: Variant) -> void:
 	if "weight" in item:
 		stats_str += "Weight: %.1f lb\n" % (item.weight / 10.0)
 
+	# Flag descriptions
+	var flag_str: String = ""
+	if "flags" in item and item.flags.size() > 0:
+		var pval: int = item.pval if "pval" in item else 1
+		for flag in item.flags:
+			var desc: String = ""
+			if flag in TooltipManager.STAT_FLAG_DESCRIPTIONS:
+				var tier: int = clampi(pval - 1, 0, 2)
+				desc = TooltipManager.STAT_FLAG_DESCRIPTIONS[flag][tier]
+			elif flag in TooltipManager.SKILL_FLAG_DESCRIPTIONS:
+				var tier: int = clampi(pval - 1, 0, 1)
+				desc = TooltipManager.SKILL_FLAG_DESCRIPTIONS[flag][tier]
+			elif flag in TooltipManager.FLAG_DESCRIPTIONS:
+				desc = TooltipManager.FLAG_DESCRIPTIONS[flag]
+			if desc != "":
+				if flag in TooltipManager.NEGATIVE_FLAGS:
+					flag_str += "[color=#%s]%s[/color]\n" % [ThemeColors.HEALTH_LOW.to_html(false), desc]
+				else:
+					flag_str += "[color=#%s]%s[/color]\n" % [ThemeColors.TEXT_SECONDARY.to_html(false), desc]
+
+	# Ability grant descriptions
+	var ability_str: String = ""
+	if "granted_abilities" in item and item.granted_abilities.size() > 0:
+		for ability_ref in item.granted_abilities:
+			if ability_ref.size() >= 2:
+				var key: String = "%d/%d" % [ability_ref[0], ability_ref[1]]
+				if key in TooltipManager.ABILITY_GRANT_DESCRIPTIONS:
+					ability_str += "[color=#%s]%s[/color]\n" % [ThemeColors.ABILITY_LEARNED.to_html(false), TooltipManager.ABILITY_GRANT_DESCRIPTIONS[key]]
+
 	var desc_str: String = item.description if "description" in item else ""
 
-	item_info.text = "[color=#%s][b]%s[/b][/color]\n%s\n%s" % [
-		rarity_color.to_html(false), name_str, stats_str, desc_str
+	item_info.text = "[color=#%s][b]%s[/b][/color]\n%s\n%s%s%s" % [
+		rarity_color.to_html(false), name_str, stats_str, flag_str, ability_str, desc_str
 	]
 
 func _update_weight_display() -> void:
