@@ -75,6 +75,10 @@ var max_voice: int = 20
 var ability_hotkeys: Array[int] = [-1, -1, -1, -1]
 var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
+# Sustained song system (Sil-Q singing)
+var active_song_id: int = -1        # Currently sustained song ability ID (-1 = none)
+var song_voice_drain: int = 1       # Voice cost per turn while singing
+
 # Hunger system - soft pressure mechanic
 var hunger: int = 2000  # Current hunger (counts down per turn)
 const HUNGER_MAX: int = 2000       # Well-fed (starting value)
@@ -1285,6 +1289,10 @@ func get_total_attack(target: Entity) -> int:
 		if off_hand != null and "tval" in off_hand and off_hand.tval == 34:
 			att += 1
 
+	# Song of Aule: +2 melee while singing
+	if active_song_id == 157:  # SONG_OF_AULE
+		att += 2
+
 	# Blind: halve attack
 	if status_fx and status_fx.is_blind():
 		att = att / 2
@@ -1322,6 +1330,10 @@ func get_total_evasion(attacker: Entity) -> int:
 		var weapon = equipment.get("weapon")
 		if weapon != null and "evasion_bonus" in weapon:
 			evn += weapon.evasion_bonus  # Add weapon evn again (first add is in recalculate_stats)
+
+	# Song of Freedom: +3 evasion while singing
+	if active_song_id == 155:  # SONG_OF_FREEDOM
+		evn += 3
 
 	# Heavy Armour Use: remove heavy armor evasion penalty
 	# (The base evasion_bonus already includes armor penalty; this adds back the penalty amount)
@@ -1876,6 +1888,10 @@ func get_stealth_score() -> int:
 	# Patient Stalker: +3 stealth when stealthing with no adjacent alert enemies
 	if trait_effect_id == "patient_stalker" and stealth_mode and not _any_adjacent_alert_enemy():
 		score += 3
+
+	# Song of the Trees: +5 stealth while singing
+	if active_song_id == 156:  # SONG_OF_THE_TREES
+		score += 5
 
 	# Noise penalty
 	score -= effective_noise

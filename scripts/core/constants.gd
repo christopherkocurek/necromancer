@@ -202,6 +202,9 @@ enum LoreAbility {
 	LOR_DEVICE_MASTERY = 12,    # 152: +50% wand/staff charges
 	LOR_GRACE = 13,             # 153: Passive +1 Grace stat
 	LOR_SONG_OF_BANISHMENT = 14, # 154: AOE undead flee, ignores NO_FEAR, 1/floor
+	LOR_SONG_OF_FREEDOM = 15,   # 155: Sustained +3 evasion (toggle, 1 voice/turn)
+	LOR_SONG_OF_THE_TREES = 16, # 156: Sustained +5 stealth (toggle, 1 voice/turn)
+	LOR_SONG_OF_AULE = 17,      # 157: Sustained +2 melee (toggle, 2 voice/turn)
 }
 
 # ============================================================================

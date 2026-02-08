@@ -26,6 +26,10 @@ enum LoreAbility {
 	DEVICE_MASTERY = 152,
 	GRACE = 153,
 	SONG_OF_BANISHMENT = 154,
+	# Sustained songs — toggle on/off, drain voice per turn
+	SONG_OF_FREEDOM = 155,   # +3 evasion while singing
+	SONG_OF_THE_TREES = 156, # +5 stealth while singing
+	SONG_OF_AULE = 157,      # +2 melee, +1 smithing while singing
 }
 
 # Ability types
@@ -33,6 +37,7 @@ enum AbilityType {
 	PASSIVE,   # Always active when learned
 	ACTIVE,    # Requires activation, may cost voice charges
 	TRIGGERED, # Activates automatically on certain conditions
+	SUSTAINED, # Toggle: drains voice each turn while active
 }
 
 # Cooldowns: ability_id -> turns remaining
@@ -122,7 +127,10 @@ func _on_round_completed(_round: int) -> void:
 		cooldowns.erase(ability_id)
 		ability_cooldown_ended.emit(ability_id)
 
-	# Regenerate voice
+	# Tick sustained song (drain voice)
+	_tick_active_song()
+
+	# Regenerate voice (reduced while singing)
 	regenerate_voice()
 
 func _on_level_entered(_depth: int) -> void:
@@ -130,6 +138,91 @@ func _on_level_entered(_depth: int) -> void:
 	if cooldowns.has(LoreAbility.SONG_OF_BANISHMENT):
 		cooldowns.erase(LoreAbility.SONG_OF_BANISHMENT)
 		ability_cooldown_ended.emit(LoreAbility.SONG_OF_BANISHMENT)
+
+# ============================================================================
+# SUSTAINED SONG SYSTEM
+# ============================================================================
+
+## Toggle a sustained song on/off
+func _toggle_song(ability_id: int) -> bool:
+	if not player:
+		return false
+
+	# If same song is already active, stop it
+	if player.active_song_id == ability_id:
+		stop_song()
+		return true
+
+	# Check if player knows this ability
+	if not has_ability(ability_id):
+		GameManager.log_message("You don't know this song.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Need at least 1 voice charge to start
+	var cost: int = get_effective_voice_cost(ability_id)
+	if get_voice_charges() < cost:
+		GameManager.log_message("Not enough voice to sustain a song.", ThemeColors.MSG_ERROR)
+		return false
+
+	# Stop any current song first
+	if player.active_song_id >= 0:
+		stop_song()
+
+	# Start new song
+	player.active_song_id = ability_id
+	player.song_voice_drain = cost
+	var song_name: String = _get_ability_name(ability_id)
+	GameManager.log_message("You begin singing %s." % song_name, ThemeColors.MSG_INFO)
+	ability_activated.emit(ability_id, song_name)
+	return true
+
+## Stop the currently active sustained song
+func stop_song() -> void:
+	if not player or player.active_song_id < 0:
+		return
+	var song_name: String = _get_ability_name(player.active_song_id)
+	GameManager.log_message("You stop singing %s." % song_name, ThemeColors.TEXT_SECONDARY)
+	player.active_song_id = -1
+	player.song_voice_drain = 1
+
+## Tick the active song: drain voice, cancel if depleted
+func _tick_active_song() -> void:
+	if not player or player.active_song_id < 0:
+		return
+
+	# Drain voice
+	var cost: int = player.song_voice_drain
+	if player.voice_charges >= cost:
+		player.voice_charges -= cost
+		voice_charges_changed.emit(player.voice_charges, player.max_voice)
+	else:
+		# Out of voice — song ends
+		GameManager.log_message("Your voice falters and the song fades.", ThemeColors.MSG_WARNING)
+		stop_song()
+
+## Get song combat bonuses for the active song
+func get_song_evasion_bonus() -> int:
+	if not player or player.active_song_id != LoreAbility.SONG_OF_FREEDOM:
+		return 0
+	return 3  # +3 evasion from Song of Freedom
+
+func get_song_stealth_bonus() -> int:
+	if not player or player.active_song_id != LoreAbility.SONG_OF_THE_TREES:
+		return 0
+	return 5  # +5 stealth from Song of the Trees
+
+func get_song_melee_bonus() -> int:
+	if not player or player.active_song_id != LoreAbility.SONG_OF_AULE:
+		return 0
+	return 2  # +2 melee from Song of Aule
+
+func is_singing() -> bool:
+	return player != null and player.active_song_id >= 0
+
+func get_active_song_name() -> String:
+	if not player or player.active_song_id < 0:
+		return ""
+	return _get_ability_name(player.active_song_id)
 
 # ============================================================================
 # ABILITY CHECKS
@@ -181,6 +274,13 @@ func get_voice_cost(ability_id: int) -> int:
 			return 2
 		LoreAbility.INNER_LIGHT:
 			return 3
+		# Sustained songs: cost is per-turn drain (displayed as "X/turn")
+		LoreAbility.SONG_OF_FREEDOM:
+			return 1
+		LoreAbility.SONG_OF_THE_TREES:
+			return 1
+		LoreAbility.SONG_OF_AULE:
+			return 2
 		_:
 			return 0  # Passive or no cost
 
@@ -200,6 +300,9 @@ func get_ability_type(ability_id: int) -> AbilityType:
 		LoreAbility.LORE_OF_BATTLE, LoreAbility.SONG_OF_BANISHMENT, \
 		LoreAbility.DEEP_MEMORY, LoreAbility.INNER_LIGHT:
 			return AbilityType.ACTIVE
+		LoreAbility.SONG_OF_FREEDOM, LoreAbility.SONG_OF_THE_TREES, \
+		LoreAbility.SONG_OF_AULE:
+			return AbilityType.SUSTAINED
 		LoreAbility.DEADLY_LORE:
 			return AbilityType.TRIGGERED  # Triggers on crit
 		_:
@@ -210,6 +313,10 @@ func get_ability_type(ability_id: int) -> AbilityType:
 # ============================================================================
 
 func activate_ability(ability_id: int, target: Variant = null) -> bool:
+	# Handle sustained song toggle
+	if get_ability_type(ability_id) == AbilityType.SUSTAINED:
+		return _toggle_song(ability_id)
+
 	var check: Dictionary = can_use_ability(ability_id)
 	if not check.can_use:
 		GameManager.log_message(check.reason, ThemeColors.MSG_ERROR)
@@ -705,14 +812,14 @@ func apply_grace_bonus() -> void:
 
 func _get_skill_for_ability(ability_id: int) -> int:
 	# All Lore abilities are in skill 7 (S_LOR)
-	if ability_id >= 140 and ability_id <= 154:
+	if ability_id >= 140 and ability_id <= 157:
 		return Constants.Skill.S_LOR
 	return -1
 
 func _get_ability_index(ability_id: int) -> int:
 	# Convert global ability ID to skill-local index
-	# Lore abilities: 140 -> 0, 141 -> 1, etc.
-	if ability_id >= 140 and ability_id <= 154:
+	# Lore abilities: 140 -> 0, 141 -> 1, ..., 157 -> 17
+	if ability_id >= 140 and ability_id <= 157:
 		return ability_id - 140
 	return -1
 
@@ -733,6 +840,9 @@ func _get_ability_name(ability_id: int) -> String:
 		LoreAbility.DEVICE_MASTERY: return "Device Mastery"
 		LoreAbility.GRACE: return "Grace"
 		LoreAbility.SONG_OF_BANISHMENT: return "Song of Banishment"
+		LoreAbility.SONG_OF_FREEDOM: return "Song of Freedom"
+		LoreAbility.SONG_OF_THE_TREES: return "Song of the Trees"
+		LoreAbility.SONG_OF_AULE: return "Song of Aule"
 		_: return "Unknown Ability"
 
 ## Get list of all implemented Lore abilities
@@ -753,6 +863,9 @@ func get_lore_abilities() -> Array[int]:
 		LoreAbility.DEVICE_MASTERY,
 		LoreAbility.GRACE,
 		LoreAbility.SONG_OF_BANISHMENT,
+		LoreAbility.SONG_OF_FREEDOM,
+		LoreAbility.SONG_OF_THE_TREES,
+		LoreAbility.SONG_OF_AULE,
 	]
 
 ## Get learned ACTIVE lore abilities the player can invoke via the voice menu
@@ -769,17 +882,26 @@ func get_learned_active_abilities() -> Array[Dictionary]:
 		LoreAbility.LORE_OF_SLEEP,
 		LoreAbility.WORD_OF_MASTERY,
 		LoreAbility.SONG_OF_BANISHMENT,
+		LoreAbility.SONG_OF_FREEDOM,
+		LoreAbility.SONG_OF_THE_TREES,
+		LoreAbility.SONG_OF_AULE,
 	]
 	for id in active_ids:
 		if has_ability(id):
 			var check: Dictionary = can_use_ability(id)
+			var is_sustained: bool = get_ability_type(id) == AbilityType.SUSTAINED
+			var is_active_song: bool = player != null and player.active_song_id == id
+			var display_name: String = _get_ability_name(id)
+			if is_active_song:
+				display_name += " [SINGING]"
 			result.append({
 				"id": id,
-				"name": _get_ability_name(id),
+				"name": display_name,
 				"cost": get_effective_voice_cost(id),
-				"can_use": check.can_use,
-				"reason": check.reason,
+				"can_use": check.can_use if not is_active_song else true,
+				"reason": check.reason if not is_active_song else "Stop singing",
 				"needs_target": _ability_needs_target(id),
+				"is_sustained": is_sustained,
 			})
 	return result
 

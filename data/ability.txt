@@ -798,3 +798,22 @@ T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:39:0:99  # Light Source
 
+# Sustained Songs (Sil-Q singing)
+
+N:155:Song of Freedom
+I:7:15:4
+D:A sustained song that grants +3 evasion while singing.
+D: Drains 1 voice charge per turn. Toggle on/off from the voice menu.
+
+N:156:Song of the Trees
+I:7:16:5
+P:7/4
+D:A sustained song that grants +5 stealth while singing.
+D: Drains 1 voice charge per turn. Requires Lore of Silence.
+
+N:157:Song of Aule
+I:7:17:7
+P:7/0
+D:A sustained song of the smith-god that grants +2 melee while singing.
+D: Drains 2 voice charges per turn. Requires Word of Command.
+

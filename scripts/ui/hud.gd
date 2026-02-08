@@ -17,6 +17,7 @@ var depth_label: Label
 var turn_label: Label
 var prot_label: Label
 var stealth_label: Label
+var song_label: Label                # Active song indicator
 var hunger_label: Label              # Hunger state indicator
 var status_container: HBoxContainer
 var stats_container: HBoxContainer   # Center column stats
@@ -151,6 +152,12 @@ func _build_action_bar() -> void:
 	stealth_label.text = ""
 	ThemeColors.apply_body_font(stealth_label, ThemeColors.FONT_SIZE_BODY)
 	stats_container.add_child(stealth_label)
+
+	# Song indicator
+	song_label = Label.new()
+	song_label.text = ""
+	ThemeColors.apply_body_font(song_label, ThemeColors.FONT_SIZE_BODY)
+	stats_container.add_child(song_label)
 
 	# Hunger indicator
 	hunger_label = Label.new()
@@ -612,6 +619,14 @@ func update_player_stats(player: Player) -> void:
 
 	# Stealth / Detection eye indicator
 	_update_detection_indicator(player)
+
+	# Song indicator
+	if song_label:
+		if player.active_song_id >= 0 and _ability_system_ref:
+			song_label.text = "♪ %s" % _ability_system_ref.get_active_song_name()
+			song_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		else:
+			song_label.text = ""
 
 	# Hunger indicator
 	_update_hunger_display(player)
