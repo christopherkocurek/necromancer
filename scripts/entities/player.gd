@@ -622,8 +622,8 @@ func _recalculate_stats() -> void:
 	var eff_str: int = strength + _equip_str_bonus
 	var eff_dex: int = dexterity + _equip_dex_bonus
 
-	# Sil-Q formula: 20 * 1.2^Con (compounding 20% per Con point)
-	var hp_base: int = 2000  # 20 * 100 for integer math
+	# Modified Sil-Q formula: 24 * 1.2^Con (base bumped from 20 for survivability)
+	var hp_base: int = 2400  # 24 * 100 for integer math
 	if eff_con >= 0:
 		for i in range(eff_con):
 			hp_base = hp_base * 12 / 10

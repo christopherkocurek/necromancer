@@ -1473,6 +1473,10 @@ func _spawn_items(depth: int) -> void:
 
 		if item_data:
 			var item_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
+			# Ego enchantment chance: 10% base + 1% per depth (max ~30% at depth 20)
+			var ego_chance: float = 0.10 + depth * 0.01
+			if randf() < ego_chance:
+				_apply_floor_ego(item_copy, depth)
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
 			item.initialize_from_item_data(item_copy)
@@ -2519,3 +2523,36 @@ func _carve_winding_corridor(from: Vector2i, to: Vector2i) -> void:
 		# Safety: don't go out of bounds
 		pos.x = clampi(pos.x, 1, level.width - 2)
 		pos.y = clampi(pos.y, 1, level.height - 2)
+
+# ============================================================================
+# EGO ENCHANTMENT FOR FLOOR ITEMS
+# ============================================================================
+
+## Apply random ego enchantment to a floor-spawned item based on depth
+func _apply_floor_ego(item: DataManager.ItemData, depth: int) -> void:
+	var tval: int = item.tval
+	var is_weapon: bool = tval >= 20 and tval <= 23
+	var is_armor: bool = tval >= 30 and tval <= 37
+	var is_jewelry: bool = tval == 39 or tval == 40 or tval == 45
+
+	# Quality scales with depth: 1 for shallow, 2 for deep
+	var quality: int = 1
+	if depth >= 10:
+		quality = 2
+
+	if is_weapon:
+		item.attack_bonus += quality
+		var ego_names: Array[String] = ["Keen", "Sharp", "Deadly", "Vicious", "Bright"]
+		if quality >= 2:
+			ego_names = ["Masterwork", "Radiant", "Fell", "Elven", "Ancient"]
+		item.name = "%s %s" % [ego_names.pick_random(), item.name]
+	elif is_armor:
+		item.evasion_bonus += quality
+		var ego_names: Array[String] = ["Sturdy", "Reinforced", "Warded", "Tempered"]
+		if quality >= 2:
+			ego_names = ["Mithril-forged", "Enchanted", "Blessed", "Ancient"]
+		item.name = "%s %s" % [ego_names.pick_random(), item.name]
+	elif is_jewelry:
+		item.pval += quality
+		var ego_names: Array[String] = ["Gleaming", "Enchanted", "Elven", "Ancient"]
+		item.name = "%s %s" % [ego_names.pick_random(), item.name]
