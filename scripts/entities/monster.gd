@@ -970,46 +970,18 @@ func _drop_loot() -> void:
 	current_level.add_item(dropped_item)
 	GameManager.log_message("The %s drops a %s." % [entity_name, item_copy.name], ThemeColors.TEXT_SECONDARY)
 
-## Apply random ego enchantment to an item (quality: 1=good, 2=great)
+## Apply random ego enchantment to a monster drop (quality: 1=good, 2=great)
 func _apply_ego_enchantment(item: DataManager.ItemData, quality: int) -> void:
-	# Weapons get attack bonus and/or special prefix
-	var tval: int = item.tval
-	var is_weapon: bool = tval >= 20 and tval <= 23
-	var is_armor: bool = tval >= 30 and tval <= 37
-	var is_jewelry: bool = tval == 39 or tval == 40 or tval == 45
-
-	if is_weapon:
+	# Quality 2 (great) gets deeper ego pool and excludes cursed
+	var effective_depth: int = monster_data.depth + quality * 3
+	var exclude_cursed: bool = quality >= 2
+	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, item.sval, effective_depth, exclude_cursed)
+	if ego:
+		DataManager.apply_ego_to_item(item, ego)
+	else:
+		# Fallback: just add quality bonus
 		item.attack_bonus += quality
-		# Quality weapons get ego prefix
-		var ego_names: Array[String] = ["Keen", "Sharp", "Deadly", "Vicious", "Bright"]
-		if quality >= 2:
-			ego_names = ["Masterwork", "Radiant", "Fell", "Elven", "Ancient"]
-		var ego: String = ego_names.pick_random()
-		item.name = "%s %s" % [ego, item.name]
-		# Great weapons also get bonus damage
-		if quality >= 2 and item.damage_dice != "":
-			var parts: PackedStringArray = item.damage_dice.split("d")
-			if parts.size() >= 2:
-				var dice: int = int(parts[0]) + 1
-				item.damage_dice = "%dd%s" % [dice, parts[1]]
-	elif is_armor:
-		item.evasion_bonus += quality  # Less evasion penalty
-		var ego_names: Array[String] = ["Sturdy", "Reinforced", "Warded", "Tempered"]
-		if quality >= 2:
-			ego_names = ["Mithril-forged", "Enchanted", "Blessed", "Ancient"]
-		var ego: String = ego_names.pick_random()
-		item.name = "%s %s" % [ego, item.name]
-		# Great armor gets better protection
-		if quality >= 2 and item.protection_dice != "":
-			var parts: PackedStringArray = item.protection_dice.split("d")
-			if parts.size() >= 2:
-				var dice: int = int(parts[0]) + 1
-				item.protection_dice = "%dd%s" % [dice, parts[1]]
-	elif is_jewelry:
-		item.pval += quality
-		var ego_names: Array[String] = ["Gleaming", "Enchanted", "Elven", "Ancient"]
-		var ego: String = ego_names.pick_random()
-		item.name = "%s %s" % [ego, item.name]
+		item.name = "Fine %s" % item.name
 
 ## Check if monster is currently unwary (can be assassinated)
 func is_unwary() -> bool:

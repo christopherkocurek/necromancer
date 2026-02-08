@@ -872,13 +872,43 @@ func _add_boss_room(depth: int) -> void:
 
 	# Guaranteed quality treasure near boss (2 items)
 	var item_scene := preload("res://scenes/entities/item.tscn")
-	for i in range(2):
+	var boss_drops: int = 2
+
+	for i in range(boss_drops):
 		var item_data := DataManager.get_random_item_for_depth(depth + 3)
 		if not item_data:
 			continue
 		var boss_item: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
-		# Boss drops are always ego quality
-		_apply_floor_ego(boss_item, depth + 5)
+
+		# Boss loot tier based on floor depth — NEVER cursed
+		if depth >= 12:
+			# Deep bosses: guaranteed artifact attempt
+			var art: DataManager.ArtifactData = DataManager.get_random_artifact()
+			if art:
+				boss_item = DataManager.duplicate_artifact_as_item(art)
+			else:
+				_apply_floor_ego(boss_item, depth + 5, true)
+				boss_item.attack_bonus += 2
+				boss_item.evasion_bonus += 1
+		elif depth >= 9:
+			# Mid-deep bosses: 50% artifact, 50% major ego
+			if randf() < 0.5:
+				var art: DataManager.ArtifactData = DataManager.get_random_artifact()
+				if art:
+					boss_item = DataManager.duplicate_artifact_as_item(art)
+				else:
+					_apply_floor_ego(boss_item, depth + 5, true)
+			else:
+				_apply_floor_ego(boss_item, depth + 5, true)
+				boss_item.attack_bonus += 1
+		elif depth >= 6:
+			# Mid bosses: guaranteed major ego
+			_apply_floor_ego(boss_item, depth + 5, true)
+			boss_item.attack_bonus += 1
+			boss_item.evasion_bonus += 1
+		else:
+			# Early bosses: guaranteed minor ego (no cursed)
+			_apply_floor_ego(boss_item, depth + 3, true)
 
 		var offsets: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 		var item_pos: Vector2i = boss_pos + offsets[i % offsets.size()]
@@ -1564,22 +1594,27 @@ func _spawn_forge_materials(depth: int) -> void:
 
 	var item_scene := preload("res://scenes/entities/item.tscn")
 
-	# Build pool of smithing material names based on depth (Task 16: lowered thresholds)
-	var material_pool: Array[String] = ["Piece of Mithril"]
+	# Build pool of smithing material IDs based on depth
+	# Broken Glowing (enchanted reforging) available from first forge (depth 2)
+	# Broken Strange (artifact reclaim) appears in deep forges
+	var material_pool: Array[int] = [SmithingSystem.MITHRIL_ID]  # 410 — Piece of Mithril
+	var glowing_pool: Array[int] = []
 	if depth >= 2:
-		material_pool.append("Broken Glowing Weapon")
-		material_pool.append("Shattered Elven Mail")
-	if depth >= 5:
-		material_pool.append("Broken Glowing Ring")
+		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_WEAPON_ID)  # 491
+		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_ARMOR_ID)   # 492
+	if depth >= 4:
+		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_JEWELRY_ID) # 496
+	if depth >= 6:
+		material_pool.append(SmithingSystem.BROKEN_STRANGE_WEAPON_ID)  # 493
 	if depth >= 8:
-		material_pool.append("Broken Strange Weapon")
+		material_pool.append(SmithingSystem.BROKEN_STRANGE_ARMOR_ID)   # 494
 	if depth >= 10:
-		material_pool.append("Twisted Shadow-plate")
-	if depth >= 12:
-		material_pool.append("Broken Strange Jewelry")
+		material_pool.append(SmithingSystem.BROKEN_STRANGE_JEWELRY_ID) # 495
+	# Merge glowing into general pool for random picks
+	material_pool.append_array(glowing_pool)
 
 	for forge_pos: Vector2i in forge_positions:
-		var mat_count: int = randi_range(2, 3)
+		var mat_count: int = randi_range(3, 5)  # More materials per forge (was 2-3)
 		var spawned: int = 0
 
 		# Collect valid floor tiles within 3 tiles of forge
@@ -1594,9 +1629,23 @@ func _spawn_forge_materials(depth: int) -> void:
 
 		nearby_floors.shuffle()
 
-		for i in range(mini(mat_count, nearby_floors.size())):
-			var mat_name: String = material_pool.pick_random()
-			var mat_template: DataManager.ItemData = DataManager.get_item(mat_name)
+		var spawned_names: Array[String] = []
+		var spawn_ids: Array[int] = []
+
+		# Guarantee a matching pair of Broken Glowing for reforging (if available)
+		if not glowing_pool.is_empty() and nearby_floors.size() >= 2:
+			var pair_type: int = glowing_pool.pick_random()
+			spawn_ids.append(pair_type)
+			spawn_ids.append(pair_type)
+
+		# Fill remaining slots with random materials
+		var remaining: int = mat_count - spawn_ids.size()
+		for _j in range(remaining):
+			spawn_ids.append(material_pool.pick_random())
+
+		for i in range(mini(spawn_ids.size(), nearby_floors.size())):
+			var mat_id: int = spawn_ids[i]
+			var mat_template: DataManager.ItemData = DataManager.get_item_by_index(mat_id)
 			if mat_template == null:
 				continue
 
@@ -1606,6 +1655,9 @@ func _spawn_forge_materials(depth: int) -> void:
 			mat_item.initialize_from_item_data(mat_copy)
 			level.add_item(mat_item)
 			spawned += 1
+			spawned_names.append(mat_copy.name.replace("& ", "").replace("~", ""))
+		if spawned > 0:
+			print("Forge materials at depth %d: %s" % [depth, ", ".join(spawned_names)])
 
 ## Connect vault corridor points ($) to nearest room centers
 func _connect_vault_corridor_points() -> void:
@@ -1732,10 +1784,23 @@ func _spawn_items(depth: int) -> void:
 
 		if item_data:
 			var item_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
-			# Ego enchantment chance: 10% base + 1% per depth (max ~30% at depth 20)
-			var ego_chance: float = 0.10 + depth * 0.01
-			if randf() < ego_chance:
-				_apply_floor_ego(item_copy, depth)
+			# Tiered loot curve based on depth
+			var loot_tier: String = _roll_loot_tier(depth)
+			match loot_tier:
+				"minor":
+					_apply_floor_ego(item_copy, depth)
+				"major":
+					_apply_floor_ego(item_copy, depth)
+					# Major items also get "fine" quality boost
+					item_copy.attack_bonus += 1
+					item_copy.evasion_bonus += 1
+				"artifact":
+					# Try to replace with a real artifact from artefact.txt
+					var art: DataManager.ArtifactData = DataManager.get_random_artifact()
+					if art:
+						var art_item: DataManager.ItemData = DataManager.duplicate_artifact_as_item(art)
+						# Use the artifact copy instead
+						item_copy = art_item
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
 			item.initialize_from_item_data(item_copy)
@@ -2937,34 +3002,53 @@ func _carve_winding_corridor(from: Vector2i, to: Vector2i) -> void:
 		pos.y = clampi(pos.y, 1, level.height - 2)
 
 # ============================================================================
+# LOOT TIER ROLLER
+# ============================================================================
+
+## Roll a loot tier based on floor depth
+func _roll_loot_tier(depth: int) -> String:
+	var roll: int = randi_range(1, 100)
+	# Tier probabilities: [mundane, minor, major, artifact]
+	var mundane: int
+	var minor: int
+	var major: int
+	# var artifact is the remainder
+
+	if depth <= 3:
+		mundane = 90; minor = 8; major = 2  # artifact = 0
+	elif depth <= 6:
+		mundane = 85; minor = 10; major = 5  # artifact = 0
+	elif depth <= 9:
+		mundane = 78; minor = 12; major = 8  # artifact = 2
+	elif depth <= 12:
+		mundane = 70; minor = 12; major = 12  # artifact = 6
+	elif depth <= 15:
+		mundane = 62; minor = 8; major = 20  # artifact = 10
+	elif depth <= 18:
+		mundane = 50; minor = 10; major = 25  # artifact = 15
+	else:
+		mundane = 35; minor = 5; major = 40  # artifact = 20
+
+	if roll <= mundane:
+		return "mundane"
+	elif roll <= mundane + minor:
+		return "minor"
+	elif roll <= mundane + minor + major:
+		return "major"
+	else:
+		return "artifact"
+
+# ============================================================================
 # EGO ENCHANTMENT FOR FLOOR ITEMS
 # ============================================================================
 
 ## Apply random ego enchantment to a floor-spawned item based on depth
-func _apply_floor_ego(item: DataManager.ItemData, depth: int) -> void:
-	var tval: int = item.tval
-	var is_weapon: bool = tval >= 20 and tval <= 23
-	var is_armor: bool = tval >= 30 and tval <= 37
-	var is_jewelry: bool = tval == 39 or tval == 40 or tval == 45
-
-	# Quality scales with depth: 1 for shallow, 2 for deep
-	var quality: int = 1
-	if depth >= 10:
-		quality = 2
-
-	if is_weapon:
+func _apply_floor_ego(item: DataManager.ItemData, depth: int, exclude_cursed: bool = false) -> void:
+	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, item.sval, depth, exclude_cursed)
+	if ego:
+		DataManager.apply_ego_to_item(item, ego)
+	else:
+		# Fallback: just add a quality bonus if no matching ego found
+		var quality: int = 1 if depth < 10 else 2
 		item.attack_bonus += quality
-		var ego_names: Array[String] = ["Keen", "Sharp", "Deadly", "Vicious", "Bright"]
-		if quality >= 2:
-			ego_names = ["Masterwork", "Radiant", "Fell", "Elven", "Ancient"]
-		item.name = "%s %s" % [ego_names.pick_random(), item.name]
-	elif is_armor:
-		item.evasion_bonus += quality
-		var ego_names: Array[String] = ["Sturdy", "Reinforced", "Warded", "Tempered"]
-		if quality >= 2:
-			ego_names = ["Mithril-forged", "Enchanted", "Blessed", "Ancient"]
-		item.name = "%s %s" % [ego_names.pick_random(), item.name]
-	elif is_jewelry:
-		item.pval += quality
-		var ego_names: Array[String] = ["Gleaming", "Enchanted", "Elven", "Ancient"]
-		item.name = "%s %s" % [ego_names.pick_random(), item.name]
+		item.name = "Fine %s" % item.name
