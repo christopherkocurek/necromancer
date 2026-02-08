@@ -1527,7 +1527,7 @@ W:4:0:5:200
 P:0:0d0:0:0d0
 A:4/3:12/6
 F:EASY_KNOW
-D:It grants a bonus of +10 to perception for 20d4 turns, and
+D:It grants a bonus of +10 to hunting for 20d4 turns, and
 D: restores a quarter of your voice.
 
 
@@ -2495,7 +2495,7 @@ W:0:1:1:0
 P:0:0d0:0:0d0
 F:EASY_KNOW
 D:As well as your Statistics, you have 8 skills open to you.
-D: Your Grace affects the last four of these: Perception, Will,
+D: Your Grace affects the last four of these: Hunting, Will,
 D: Smithing, and Lore. It also increases your 'Voice' which is
 D: a measure of how long you can maintain your concentration.
 

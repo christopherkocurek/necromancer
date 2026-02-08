@@ -168,23 +168,18 @@ func _check_stop_conditions() -> bool:
 		stop_explore("Monster spotted")
 		return true
 
-	# 2. New item visible
-	if _has_new_visible_item():
-		stop_explore("Item found")
-		return true
-
-	# 3. Player took damage
+	# 2. Player took damage
 	if player.current_health < last_player_health:
 		stop_explore("Took damage")
 		return true
 
-	# 4. Player on stairs
+	# 3. Player on stairs
 	var tile: int = level.get_tile(player.grid_position)
 	if tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.STAIRS_UP:
 		stop_explore("Reached stairs")
 		return true
 
-	# 5. Player on forge
+	# 4. Player on forge
 	if tile == Level.Tile.FORGE:
 		stop_explore("Found forge")
 		return true

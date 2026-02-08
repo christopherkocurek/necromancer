@@ -187,6 +187,25 @@ func get_movement_cost(pos: Vector2i) -> int:
 		return Constants.ACTION_COST * 2  # 2x for dark pools
 	return Constants.ACTION_COST
 
+## Attempt to disarm a trap at the given position.
+## Returns {"success": bool, "message": String}
+func disarm_trap(pos: Vector2i, hunting_skill: int) -> Dictionary:
+	var tile: int = get_tile(pos)
+	if tile != Tile.TRAP and tile != Tile.TRAP_TRIGGERED:
+		return {"success": false, "message": "There is no visible trap here."}
+
+	var chance: float = 0.40 + 0.05 * hunting_skill
+	if randf() < chance:
+		set_tile(pos, Tile.FLOOR)
+		# Clear trap data for this position
+		if trap_types.has(pos):
+			trap_types.erase(pos)
+		if triggered_traps.has(pos):
+			triggered_traps.erase(pos)
+		return {"success": true, "message": "You carefully disarm the trap."}
+	else:
+		return {"success": false, "message": "You fumble the disarm attempt!"}
+
 ## Called when an entity steps on a tile. Returns true if something happened.
 func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
@@ -248,11 +267,11 @@ func get_terrain_name(pos: Vector2i) -> String:
 		_: return ""
 
 func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
-	# Check for Perception to potentially spot and avoid (50% + Per*5%)
+	# Check for Hunting skill to potentially spot and avoid (50% + Hunting*5%)
 	var avoid_chance: int = 50
 	if is_instance_valid(entity) and entity.has_method("get_skill"):
-		var perception: int = entity.get_skill("perception")
-		avoid_chance += perception * 5
+		var hunting: int = entity.get_skill("hunting")
+		avoid_chance += hunting * 5
 
 	# Roll to avoid — trap stays active if avoided
 	if randi_range(1, 100) <= avoid_chance:

@@ -445,11 +445,14 @@ func _toggle_focus_mode() -> void:
 
 func _activate_focused() -> void:
 	if _focus_mode == 0:
-		# In inventory: quick-equip
+		# In inventory: use consumable if applicable, otherwise quick-equip
 		if selected_item != null:
-			var item_slot: int = _get_item_slot(selected_item)
-			if item_slot >= 0:
-				_try_equip_item(selected_item, item_slot)
+			if _is_consumable(selected_item):
+				_try_use_consumable(selected_item)
+			else:
+				var item_slot: int = _get_item_slot(selected_item)
+				if item_slot >= 0:
+					_try_equip_item(selected_item, item_slot)
 	else:
 		# In equipment: unequip
 		if selected_equipment_slot >= 0:
@@ -614,6 +617,19 @@ func _update_item_info(item: Variant) -> void:
 
 	var name_str: String = _get_item_display_with_stack(item)
 	var rarity_color: Color = ThemeColors.get_rarity_color(item)
+	item_info.bbcode_enabled = true
+
+	# If unidentified, show only flavor name + weight + purple tag
+	if GameManager.needs_identification(item) and not GameManager.is_item_identified(item):
+		var weight_str: String = ""
+		if "weight" in item:
+			weight_str = "Weight: %.1f lb\n" % (item.weight / 10.0)
+		item_info.text = "[color=#%s][b]%s[/b][/color]\n%s\n[color=#A855F7]Unidentified[/color]" % [
+			rarity_color.to_html(false), name_str, weight_str
+		]
+		return
+
+	# Identified or non-identifiable: show full stats
 	var stats_str: String = ""
 
 	if "attack_bonus" in item and item.attack_bonus != 0:
@@ -629,7 +645,6 @@ func _update_item_info(item: Variant) -> void:
 
 	var desc_str: String = item.description if "description" in item else ""
 
-	item_info.bbcode_enabled = true
 	item_info.text = "[color=#%s][b]%s[/b][/color]\n%s\n%s" % [
 		rarity_color.to_html(false), name_str, stats_str, desc_str
 	]
@@ -652,6 +667,40 @@ func _update_weight_display() -> void:
 			total_weight += item.weight / 10.0
 
 	weight_label.text = "Weight: %.1f lb" % total_weight
+
+# ============================================================================
+# CONSUMABLE USE (U key / Enter on consumables)
+# ============================================================================
+
+## Check if an item is a consumable (potion, scroll, food/herb)
+func _is_consumable(item: Variant) -> bool:
+	if item == null or not "tval" in item:
+		return false
+	return item.tval in [55, 75, 80]  # scrolls, potions, food/herbs
+
+## Try to use a consumable item from inventory
+func _try_use_consumable(item: Variant) -> void:
+	if item == null or not player:
+		return
+	if not _is_consumable(item):
+		GameManager.log_message("You can't use that.", ThemeColors.MSG_SYSTEM)
+		return
+
+	if ConsumableSystem.use_item(player, item):
+		# Decrement stack or remove from inventory
+		var count: int = item.stack_count if "stack_count" in item else 1
+		if count > 1:
+			item.stack_count = count - 1
+		else:
+			var idx: int = player.inventory.find(item)
+			if idx >= 0:
+				player.inventory.remove_at(idx)
+
+		# Clear selection and refresh display
+		selected_item = null
+		selected_slot_index = -1
+		_refresh_inventory()
+		_update_item_info(null)
 
 # ============================================================================
 # UTILITY
@@ -809,12 +858,12 @@ func _input(event: InputEvent) -> void:
 			_try_equip_item(selected_item, item_slot)
 		get_viewport().set_input_as_handled()
 
-	# Drop with Shift+D - now shows confirm dialog
-	# macOS keycode fallback for Shift+D (physical_keycode unreliable for symbol keys)
+	# Drop with 'd' or Shift+D - shows confirm dialog
+	# Lowercase 'd' (no shift) also triggers drop when inventory is open
 	if event.is_action_pressed("drop") and selected_item != null:
 		_request_drop()
 		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and event.shift_pressed:
+	elif event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D and selected_item != null:
 			_request_drop()
 			get_viewport().set_input_as_handled()
@@ -823,3 +872,9 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("unequip") and selected_equipment_slot >= 0:
 		_try_unequip_slot(selected_equipment_slot)
 		get_viewport().set_input_as_handled()
+
+	# Use consumable item with 'u' key (potions, scrolls, food/herbs)
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_U and selected_item != null:
+			_try_use_consumable(selected_item)
+			get_viewport().set_input_as_handled()

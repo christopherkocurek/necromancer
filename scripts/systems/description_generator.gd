@@ -9,8 +9,8 @@ class_name DescriptionGenerator
 # ============================================================================
 
 ## Generate a physical description based on monster data and knowledge tier.
-## At UNKNOWN tier: pure physical description from display_char and color.
-## At IDENTIFIED tier: adds behavioral hints from flags.
+## At tier 0 (IDENTIFIED): pure physical description from display_char and color.
+## At higher tiers: adds behavioral hints from flags.
 ## At COMPLETE tier: caller should use the D: line description instead.
 static func generate_monster_description(monster_data: Dictionary, tier: int) -> String:
 	var display_char: String = monster_data.get("char", "?")
@@ -306,6 +306,220 @@ static func _describe_generic(data: Dictionary, size: String, color: String, tie
 		if "UNIQUE" in flags:
 			base += " Something about it sets it apart from common beasts."
 	return base
+
+# ============================================================================
+# PER-UNIT DF-STYLE FLAVOR TEXT
+# ============================================================================
+
+## Generate per-unit procedural flavor text from monster attributes.
+## Uses HP for size, speed for movement, attacks for combat hints, flags for
+## special flavor. Randomized adjectives ensure two individuals of the same
+## species don't read identically.
+static func generate_unit_flavor(monster_data: Dictionary) -> String:
+	var parts: Array[String] = []
+
+	# Size descriptors from HP
+	var hp: int = _estimate_hp(monster_data)
+	var size_adjectives: Array[String] = _get_unit_size_adjectives(hp)
+	if not size_adjectives.is_empty():
+		parts.append("This creature %s." % size_adjectives.pick_random())
+
+	# Movement descriptors from speed
+	var spd: int = monster_data.get("speed", 2)
+	var movement: String = _get_unit_movement_descriptor(spd)
+	if not movement.is_empty():
+		parts.append(movement)
+
+	# Combat hints from attacks
+	var attacks: Array = monster_data.get("attacks", [])
+	var combat_hint: String = _get_unit_combat_hint(attacks)
+	if not combat_hint.is_empty():
+		parts.append(combat_hint)
+
+	# Flag-based flavor
+	var flags: Array = monster_data.get("flags", [])
+	var flag_flavor: String = _get_unit_flag_flavor(flags)
+	if not flag_flavor.is_empty():
+		parts.append(flag_flavor)
+
+	return " ".join(parts)
+
+static func _get_unit_size_adjectives(hp: int) -> Array[String]:
+	if hp <= 5:
+		return [
+			"has a scrawny, underfed frame",
+			"looks frail and wiry",
+			"is pitifully small",
+		]
+	elif hp <= 10:
+		return [
+			"has a lean, hungry look",
+			"is compact but alert",
+			"appears gaunt and desperate",
+		]
+	elif hp <= 25:
+		return [
+			"has a sturdy build",
+			"looks well-fed and strong",
+			"carries itself with confidence",
+		]
+	elif hp <= 50:
+		return [
+			"is heavily muscled",
+			"has a massive, powerful frame",
+			"towers over lesser creatures",
+		]
+	else:
+		return [
+			"is colossal, filling the corridor",
+			"has a body like a living siege engine",
+			"is terrifyingly enormous",
+		]
+
+static func _get_unit_movement_descriptor(spd: int) -> String:
+	var pool: Array[String] = []
+	if spd <= 1:
+		pool = [
+			"It moves with a sluggish, ponderous gait.",
+			"Each step seems to take great effort.",
+			"It lumbers forward, slow but inexorable.",
+		]
+	elif spd == 2:
+		pool = [
+			"It moves at a measured, cautious pace.",
+			"Its movements are deliberate and watchful.",
+			"",  # Sometimes no movement descriptor for normal speed
+		]
+	elif spd == 3:
+		pool = [
+			"It moves with surprising quickness.",
+			"Its feet are quick and sure.",
+			"It darts forward with alarming speed.",
+		]
+	else:
+		pool = [
+			"It moves with blindingly fast reflexes.",
+			"Its speed is almost impossible to track.",
+			"It seems to flicker between positions.",
+		]
+	return pool.pick_random()
+
+static func _get_unit_combat_hint(attacks: Array) -> String:
+	if attacks.is_empty():
+		return ""
+
+	var hints: Array[String] = []
+	for attack in attacks:
+		if not attack is Object:
+			continue
+		# Check attack method if available
+		var method: String = ""
+		if "method" in attack:
+			method = attack.method
+		elif attack.has_method("get") and attack.get("method"):
+			method = attack.get("method")
+
+		match method.to_lower():
+			"bite":
+				hints.append_array([
+					"It bears wicked fangs.",
+					"Its jaws look capable of crushing bone.",
+					"Saliva drips from sharp teeth.",
+				])
+			"claw":
+				hints.append_array([
+					"Its claws are long and cruel.",
+					"Razor-sharp talons extend from its limbs.",
+					"Its claws leave gouges in the stone.",
+				])
+			"hit", "punch":
+				hints.append_array([
+					"Its fists are scarred from many fights.",
+					"It wields crude but effective weapons.",
+					"Calloused knuckles speak of endless violence.",
+				])
+			"crush":
+				hints.append_array([
+					"It could crush a helm with those arms.",
+					"Its grip looks bone-breaking.",
+				])
+			"sting":
+				hints.append_array([
+					"A barbed stinger drips with venom.",
+					"Its tail curves with lethal intent.",
+				])
+			"touch":
+				hints.append_array([
+					"A cold aura surrounds its hands.",
+					"Its touch looks withering.",
+				])
+			_:
+				hints.append_array([
+					"It looks ready to attack.",
+					"Its posture radiates menace.",
+				])
+
+	if hints.is_empty():
+		return ""
+	return hints.pick_random()
+
+static func _get_unit_flag_flavor(flags: Array) -> String:
+	var candidates: Array[String] = []
+
+	if "UNDEAD" in flags:
+		candidates.append_array([
+			"Its eyes glow with unholy light.",
+			"The stench of death clings to it like a shroud.",
+			"It should not exist, yet it moves.",
+		])
+	if "SPIDER" in flags:
+		candidates.append_array([
+			"Multiple eyes gleam in the darkness.",
+			"Silk threads trail from its abdomen.",
+		])
+	if "ORC" in flags:
+		candidates.append_array([
+			"War-paint covers its face.",
+			"Crude tribal scars mark its flesh.",
+			"The red eye of Sauron is branded on its armor.",
+		])
+	if "TROLL" in flags:
+		candidates.append_array([
+			"It reeks of carrion and filth.",
+			"Its hide is like old leather, tough and scarred.",
+		])
+	if "WOLF" in flags:
+		candidates.append_array([
+			"Its hackles are raised, lips pulled back.",
+			"Yellow eyes track your every movement.",
+		])
+	if "EVIL" in flags and "UNIQUE" in flags:
+		candidates.append_array([
+			"A palpable malice radiates from it.",
+			"The shadows seem to deepen around it.",
+		])
+	if "DRAGON" in flags:
+		candidates.append_array([
+			"Heat shimmers in the air around it.",
+			"Ancient scales gleam like dark metal.",
+		])
+	if "INVISIBLE" in flags:
+		candidates.append_array([
+			"The air shimmers where it stands.",
+			"You can barely make out its outline.",
+		])
+	if "PASS_WALL" in flags:
+		candidates.append_array([
+			"Its form seems partially translucent.",
+		])
+	if "NO_FEAR" in flags:
+		candidates.append_array([
+			"It shows no sign of fear or hesitation.",
+		])
+
+	if candidates.is_empty():
+		return ""
+	return candidates.pick_random()
 
 # ============================================================================
 # TERRAIN DESCRIPTIONS

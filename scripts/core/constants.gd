@@ -12,7 +12,7 @@ enum Skill {
 	S_ARC = 1,  # Archery
 	S_EVN = 2,  # Evasion
 	S_STL = 3,  # Stealth
-	S_PER = 4,  # Perception
+	S_PER = 4,  # Hunting
 	S_WIL = 5,  # Will
 	S_SMT = 6,  # Smithing
 	S_LOR = 7   # Lore (was Song in Sil-Q)
@@ -129,7 +129,7 @@ enum StealthAbility {
 }
 
 # ============================================================================
-# PERCEPTION ABILITIES
+# HUNTING ABILITIES (formerly Perception)
 # ============================================================================
 
 enum PerceptionAbility {

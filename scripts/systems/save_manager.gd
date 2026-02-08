@@ -172,6 +172,8 @@ func _serialize_game_state() -> Dictionary:
 	return {
 		"current_depth": GameManager.current_depth,
 		"turn_count": GameManager.turn_count,
+		"identified_types": GameManager.identified_types.duplicate(),
+		"flavor_names": GameManager.flavor_names.duplicate(),
 	}
 
 func _serialize_player(player: Player) -> Dictionary:
@@ -306,6 +308,8 @@ func _serialize_item_object(item) -> Dictionary:
 		data["flags"] = item.flags.duplicate() if item.flags is Array else item.flags
 	if "fuel" in item:
 		data["fuel"] = item.fuel
+	if "identified" in item:
+		data["identified"] = item.identified
 	return data
 
 func _serialize_level(level: Level) -> Dictionary:
@@ -370,6 +374,17 @@ func apply_save_data(save_data: Dictionary, player: Player, level: Level) -> boo
 	var game_state: Dictionary = save_data.get("game_state", {})
 	GameManager.current_depth = game_state.get("current_depth", 1)
 	GameManager.turn_count = game_state.get("turn_count", 0)
+
+	# Restore identification state
+	if "identified_types" in game_state:
+		GameManager.identified_types = game_state.identified_types.duplicate()
+	else:
+		GameManager.identified_types.clear()
+	if "flavor_names" in game_state:
+		GameManager.flavor_names = game_state.flavor_names.duplicate()
+	else:
+		# Old save without flavor data: randomize fresh
+		GameManager._randomize_flavor_names()
 
 	# Apply player data
 	var player_data: Dictionary = save_data.get("player", {})

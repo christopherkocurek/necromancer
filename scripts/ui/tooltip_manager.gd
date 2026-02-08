@@ -69,7 +69,15 @@ func _clamp_position(pos: Vector2) -> Vector2:
 static func format_item_tooltip(item: Variant) -> String:
 	if item == null:
 		return ""
-	var text := "[b]%s[/b]\n" % GameManager.get_item_display_name(item)
+	var display_name: String = GameManager.get_item_display_name(item)
+	var text := "[b]%s[/b]\n" % display_name
+	# If unidentified, show only flavor name + weight + purple "Unidentified" tag
+	if GameManager.needs_identification(item) and not GameManager.is_item_identified(item):
+		if "weight" in item:
+			text += "[color=#%s]Weight: %.1f lb[/color]\n" % [ThemeColors.TEXT_MUTED.to_html(false), item.weight / 10.0]
+		text += "[color=#A855F7]Unidentified[/color]"
+		return text
+	# Identified or non-identifiable: show full stats
 	if "attack_bonus" in item and item.attack_bonus != 0:
 		text += "[color=#%s]Attack: %+d[/color]\n" % [ThemeColors.COMBAT_HIT.to_html(false), item.attack_bonus]
 	if "damage_dice" in item and item.damage_dice != "":

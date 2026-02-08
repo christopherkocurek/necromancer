@@ -3,27 +3,32 @@ class_name MonsterMemory
 ## Monster memory / lore discovery system.
 ## Tracks how much the player has learned about each monster type.
 ## Knowledge reveals more information over time.
+## Names are always shown on first sight (no UNKNOWN tier).
 
 signal monster_observed(monster_id: int, observation_count: int)
 signal knowledge_tier_reached(monster_id: int, tier: int)
 
 # Knowledge tiers - observations needed for each tier
+# Note: No UNKNOWN tier — monsters are always identified by name on first sight.
 enum KnowledgeTier {
-	UNKNOWN = 0,    # 0 observations - "Unknown creature"
-	IDENTIFIED = 1, # 1 observation - Name only
-	BASIC = 2,      # 3 observations - HP, basic attack
-	DETAILED = 3,   # 5 observations - All attacks, resistances
-	COMPLETE = 4,   # 10 observations - Full stats, flags
+	IDENTIFIED = 0, # 0 observations - Name + descriptive text + per-unit flavor
+	BASIC = 1,      # 3 observations - HP %, primary attack
+	DETAILED = 2,   # 5 observations - All attacks, resistances
+	COMPLETE = 3,   # 10 observations - Full stats, flags
 }
 
 # Observations needed for each tier
-const TIER_THRESHOLDS: Array[int] = [0, 1, 3, 5, 10]
+const TIER_THRESHOLDS: Array[int] = [0, 3, 5, 10]
 
 # Monster observation tracking: monster_id -> observation_count
 var seen_monsters: Dictionary = {}
 
 # Monster name cache for saving (since we only store IDs)
 var monster_names: Dictionary = {}  # monster_id -> name
+
+# Per-instance unit flavor cache: instance_id -> flavor string
+# This ensures the same individual always gets the same flavor text
+var _unit_flavor_cache: Dictionary = {}
 
 func _init() -> void:
 	pass
@@ -77,8 +82,6 @@ func _get_tier_for_count(count: int) -> int:
 
 func _log_tier_advancement(monster_name: String, tier: int) -> void:
 	match tier:
-		KnowledgeTier.IDENTIFIED:
-			GameManager.log_message("You can now identify %s." % monster_name, ThemeColors.MSG_INFO)
 		KnowledgeTier.BASIC:
 			GameManager.log_message("You've learned basic information about %s." % monster_name, ThemeColors.MSG_INFO)
 		KnowledgeTier.DETAILED:
@@ -113,10 +116,10 @@ func get_effective_tier(monster_id: int, player_lore: int) -> int:
 # ============================================================================
 
 func get_visible_info(monster: Monster, player_lore: int) -> Dictionary:
-	# Get a dictionary of information visible to the player about this monster
-	# Based on knowledge tier with lore skill bonus
+	# Get a dictionary of information visible to the player about this monster.
+	# Name and description are ALWAYS shown (no UNKNOWN tier).
 	var info: Dictionary = {
-		"name": "???",
+		"name": "",
 		"description": "",
 		"health_known": false,
 		"current_health": 0,
@@ -133,18 +136,14 @@ func get_visible_info(monster: Monster, player_lore: int) -> Dictionary:
 	}
 
 	if not is_instance_valid(monster) or not monster.monster_data:
+		info.name = "???"
 		return info
 
 	var monster_id: int = monster.monster_data.index
 	var tier: int = get_effective_tier(monster_id, player_lore)
 
-	# UNKNOWN tier - reveal nothing
-	if tier < KnowledgeTier.IDENTIFIED:
-		return info
-
-	# IDENTIFIED tier - name only
+	# IDENTIFIED tier (always) - name + descriptive text
 	info.name = monster.entity_name
-	info.description = ""
 
 	if tier < KnowledgeTier.BASIC:
 		return info
@@ -231,19 +230,8 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 	var lines: Array[String] = []
 	var info: Dictionary = get_visible_info(monster, player_lore)
 
-	if info.name == "???":
-		# Procedural DF-style description for unknown creatures
-		if is_instance_valid(monster) and monster.monster_data:
-			var desc_data: Dictionary = {
-				"char": monster.monster_data.display_char,
-				"color": monster.monster_data.color,
-				"health_dice": monster.monster_data.health_dice,
-				"flags": monster.monster_data.flags,
-			}
-			var desc: String = DescriptionGenerator.generate_monster_description(desc_data, 0)
-			lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc)
-		else:
-			lines.append("[color=gray]Unknown creature[/color]")
+	if info.name == "???" or info.name.is_empty():
+		lines.append("[color=gray]Unknown creature[/color]")
 		return lines
 
 	# Name with color based on stance
@@ -259,18 +247,32 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 
 	lines.append("[color=%s]%s[/color]" % [color, info.name])
 
-	# Procedural description at IDENTIFIED/BASIC/DETAILED tiers (before COMPLETE)
-	var monster_id: int = monster.monster_data.index if is_instance_valid(monster) and monster.monster_data else -1
-	var effective_tier: int = get_effective_tier(monster_id, player_lore) if monster_id >= 0 else 0
-	if effective_tier < KnowledgeTier.COMPLETE and is_instance_valid(monster) and monster.monster_data:
+	# Always show Sil-Q taxonomic + DF unit flavor descriptions
+	if is_instance_valid(monster) and monster.monster_data:
 		var desc_data: Dictionary = {
 			"char": monster.monster_data.display_char,
 			"color": monster.monster_data.color,
 			"health_dice": monster.monster_data.health_dice,
 			"flags": monster.monster_data.flags,
+			"speed": monster.speed,
+			"attacks": monster.monster_data.attacks,
 		}
+		var monster_id: int = monster.monster_data.index
+		var effective_tier: int = get_effective_tier(monster_id, player_lore)
+
+		# Sil-Q style taxonomic description
 		var desc: String = DescriptionGenerator.generate_monster_description(desc_data, effective_tier)
 		lines.append("[color=#9CA3AF][i]%s[/i][/color]" % desc)
+
+		# DF-style per-unit procedural flavor (unique per monster instance)
+		var unit_flavor: String = _get_unit_flavor(monster)
+		if not unit_flavor.is_empty():
+			lines.append("[color=#8B7D6B][i]%s[/i][/color]" % unit_flavor)
+
+	# At COMPLETE tier, show the D: line description instead of procedural
+	if info.description != "":
+		lines.append("")
+		lines.append("[i]%s[/i]" % info.description)
 
 	# Health (if known)
 	if info.health_known:
@@ -282,8 +284,6 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 		lines.append("[color=%s]HP: %d/%d (%.0f%%)[/color]" % [
 			health_color, info.current_health, info.max_health, info.health_percent * 100
 		])
-	else:
-		lines.append("HP: ???")
 
 	# Attacks (if known)
 	if info.attacks_known and info.attacks.size() > 0:
@@ -319,12 +319,29 @@ func format_monster_info_for_look(monster: Monster, player_lore: int) -> Array[S
 		if display_flags.size() > 0:
 			lines.append("Traits: %s" % ", ".join(display_flags))
 
-	# Description (if known)
-	if info.description != "":
-		lines.append("")
-		lines.append("[i]%s[/i]" % info.description)
-
 	return lines
+
+## Get or generate per-unit DF-style flavor text for a monster instance.
+## Cached by instance ID so the same individual always shows the same text.
+func _get_unit_flavor(monster: Monster) -> String:
+	if not is_instance_valid(monster) or not monster.monster_data:
+		return ""
+
+	var inst_id: int = monster.get_instance_id()
+	if inst_id in _unit_flavor_cache:
+		return _unit_flavor_cache[inst_id]
+
+	# Build data dict for the generator
+	var data: Dictionary = {
+		"health_dice": monster.monster_data.health_dice,
+		"speed": monster.speed,
+		"attacks": monster.monster_data.attacks,
+		"flags": monster.monster_data.flags,
+	}
+
+	var flavor: String = DescriptionGenerator.generate_unit_flavor(data)
+	_unit_flavor_cache[inst_id] = flavor
+	return flavor
 
 # ============================================================================
 # SERIALIZATION
@@ -342,8 +359,8 @@ func from_dict(data: Dictionary) -> void:
 	if "monster_names" in data:
 		monster_names = data.monster_names.duplicate()
 
+## Factory function to create MonsterMemory from saved data.
 static func create_from_dict(data: Dictionary) -> RefCounted:
-	"""Factory function to create MonsterMemory from saved data."""
 	var memory = (load("res://scripts/systems/monster_memory.gd") as GDScript).new()
 	memory.from_dict(data)
 	return memory

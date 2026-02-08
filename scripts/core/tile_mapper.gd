@@ -138,8 +138,8 @@ func _load_terrain_coords() -> void:
 	terrain_coords[9] = {"light": Vector2i(2, 4), "dark": Vector2i(3, 4)}    # FORGE ->  (terrain 65)
 	terrain_coords[10] = {"light": Vector2i(6, 1), "dark": Vector2i(7, 1)}    # TRAP ->  (terrain 19)
 	terrain_coords[11] = {"light": Vector2i(16, 1), "dark": Vector2i(17, 1)}    # TRAP_TRIGGERED ->  (terrain 24)
-	terrain_coords[12] = {"light": Vector2i(12, 0), "dark": Vector2i(13, 0)}    # DOOR_LOCKED ->  (terrain 6)
-	terrain_coords[13] = {"light": Vector2i(14, 0), "dark": Vector2i(15, 0)}    # DOOR_JAMMED ->  (terrain 7)
+	terrain_coords[12] = {"light": Vector2i(0, 2), "dark": Vector2i(1, 2)}    # DOOR_LOCKED -> same as DOOR_CLOSED (iron door)
+	terrain_coords[13] = {"light": Vector2i(0, 2), "dark": Vector2i(1, 2)}    # DOOR_JAMMED -> same as DOOR_CLOSED (iron door)
 	terrain_coords[14] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # DOOR_SECRET ->  (terrain 11)
 	terrain_coords[15] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # WATER ->  (terrain 51)
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
@@ -152,7 +152,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[21] = {"light": Vector2i(4, 18), "dark": Vector2i(5, 18)}    # MORGUL_RUNE
 	terrain_coords[22] = {"light": Vector2i(6, 18), "dark": Vector2i(7, 18)}    # SHADOW_BRAZIER
 	terrain_coords[23] = {"light": Vector2i(8, 18), "dark": Vector2i(9, 18)}    # GLYPH_OF_WARDING
-	terrain_coords[24] = {"light": Vector2i(10, 18), "dark": Vector2i(11, 18)}  # BONE_PILE
+	terrain_coords[24] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # BONE_PILE -> reuses RUBBLE sprite (row 18 placeholder blank)
 	terrain_coords[25] = {"light": Vector2i(12, 18), "dark": Vector2i(13, 18)}  # SHADOW_FLOOR
 	terrain_coords[26] = {"light": Vector2i(14, 18), "dark": Vector2i(15, 18)}  # THRONE_DAIS
 
@@ -456,6 +456,13 @@ func _load_item_coords() -> void:
 	item_coords[420] = Vector2i(11, 16)  # Rusted Helm
 	item_coords[421] = Vector2i(12, 16)  # Worn Boots
 	item_coords[422] = Vector2i(13, 16)  # Shattered Shield
+	# Mirkwood herbs (tval 80, svals 13-18) — reuse closest existing herb sprites
+	item_coords[423] = Vector2i(8, 16)  # Silverbark Moss -> Phosphorescent Moss sprite (moss)
+	item_coords[424] = Vector2i(27, 15)  # Nightshade Berry -> Athelas sprite (dark herb)
+	item_coords[425] = Vector2i(20, 15)  # Thornvine Root -> Healer's Herb sprite (root/herb)
+	item_coords[426] = Vector2i(20, 15)  # Moonpetal -> Healer's Herb sprite (petal/herb)
+	item_coords[427] = Vector2i(17, 15)  # Spider-bane -> Orc-rage Mushroom sprite (potent herb)
+	item_coords[428] = Vector2i(8, 16)  # Gloomcap -> Phosphorescent Moss sprite (fungus/mushroom)
 	item_coords[451] = Vector2i(14, 16)  # Note
 	item_coords[491] = Vector2i(15, 16)  # Broken Glowing Weapon
 	item_coords[492] = Vector2i(16, 16)  # Shattered Elven Mail

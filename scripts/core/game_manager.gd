@@ -114,14 +114,28 @@ func log_message(text: String, color: Color = ThemeColors.TEXT_PRIMARY) -> void:
 # IDENTIFICATION SYSTEM (Phase D)
 # ============================================================================
 
-## Consumable tvals that require identification
-const IDENT_TVALS: Array[int] = [55, 75, 80]  # Scrolls, Potions, Food/Herbs
+## Tvals that require identification
+const IDENT_TVALS: Array[int] = [40, 45, 55, 75, 80]  # Amulets, Rings, Scrolls, Potions, Food/Herbs
+
+## Food svals that are always identified (basic food, not herbs)
+const ALWAYS_IDENTIFIED_FOOD_SVALS: Array[int] = [1, 35, 36, 37, 38, 39, 40]  # Waymeal, Travel Bread, Dried Meat, Lembas, Cram, etc.
 
 ## Check if an item type needs identification
 func needs_identification(item: Variant) -> bool:
 	if item == null or not "tval" in item:
 		return false
-	return item.tval in IDENT_TVALS
+	# Artifacts are always identified
+	if item is DataManager.ArtifactData:
+		return false
+	if "artifact_data" in item and item.artifact_data != null:
+		return false
+	# Check tval
+	if item.tval not in IDENT_TVALS:
+		return false
+	# Exempt basic food items (bread, waymeal, etc.)
+	if item.tval == 80 and "sval" in item and item.sval in ALWAYS_IDENTIFIED_FOOD_SVALS:
+		return false
+	return true
 
 ## Check if a specific item type (tval:sval) has been globally identified
 func is_type_identified(tval: int, sval: int) -> bool:
@@ -146,12 +160,24 @@ func is_item_identified(item: Variant) -> bool:
 func identify_item(item: Variant) -> void:
 	if item == null:
 		return
-	if "identified" in item:
-		item.identified = true
+	# Check if this is a first-time type identification (for XP)
+	var first_time: bool = false
 	if "tval" in item and "sval" in item:
 		var key: String = "%d:%d" % [item.tval, item.sval]
+		if not identified_types.has(key):
+			first_time = true
 		identified_types[key] = true
+	if "identified" in item:
+		item.identified = true
 	log_message("You identify: %s" % _get_real_name(item), ThemeColors.MSG_INFO)
+	# Emit signal for other systems
+	EventBus.item_identified.emit(item)
+	# Grant XP for first-time identification
+	if first_time and player:
+		var xp_amount: int = 10  # Consumable default
+		if "tval" in item and item.tval in [40, 45]:  # Ring or amulet
+			xp_amount = 25
+		player.gain_experience(xp_amount, "identify")
 
 ## Get the display name for an item (respects identification)
 func get_item_display_name(item: Variant) -> String:
@@ -175,40 +201,65 @@ func _get_unidentified_name(item: Variant) -> String:
 		return flavor_names[key]
 	# Fallback generic names
 	match item.tval:
+		40: return "Unknown Amulet"
+		45: return "Unknown Ring"
 		55: return "Unknown Scroll"
 		75: return "Unknown Potion"
 		80: return "Unknown Herb"
 	return "Unknown Item"
 
-## Randomize flavor names for consumables at game start
+## Randomize flavor names for all identifiable categories at game start
 func _randomize_flavor_names() -> void:
 	flavor_names.clear()
 	var potion_flavors: Array[String] = [
-		"Murky Potion", "Cloudy Potion", "Dark Potion", "Glowing Potion",
-		"Shimmering Potion", "Bubbling Potion", "Viscous Potion", "Clear Potion",
-		"Green Potion", "Red Potion", "Blue Potion", "Golden Potion",
-		"Silver Potion", "Purple Potion", "Black Potion", "White Potion",
-		"Amber Potion", "Crimson Potion", "Turquoise Potion", "Smoky Potion",
+		"Murky Potion", "Emerald Potion", "Opalescent Potion", "Crimson Potion",
+		"Azure Potion", "Amber Potion", "Silvery Potion", "Midnight Potion",
+		"Pearlescent Potion", "Ochre Potion", "Violet Potion", "Jade Potion",
+		"Russet Potion", "Sapphire Potion", "Golden Potion", "Indigo Potion",
+		"Scarlet Potion", "Tawny Potion", "Bone-white Potion", "Smoky Potion",
+		"Phosphorescent Potion", "Swirling Potion", "Cloudy Potion",
+		"Shimmering Potion", "Bubbling Potion", "Thick Potion",
+		"Tar-black Potion", "Rose Potion", "Chalky Potion", "Iron-gray Potion",
 	]
 	var scroll_flavors: Array[String] = [
-		"Faded Scroll", "Crumpled Scroll", "Dusty Scroll", "Yellowed Scroll",
-		"Torn Scroll", "Sealed Scroll", "Ornate Scroll", "Charred Scroll",
-		"Wax-sealed Scroll", "Rune-marked Scroll", "Stained Scroll", "Ancient Scroll",
-		"Rolled Scroll", "Worn Scroll", "Gilded Scroll", "Dark Scroll",
+		"\"DWAR KAZAD\"", "\"GALAD ENNOR\"", "\"NAUR AMBAR\"", "\"GURTH GOTHRIM\"",
+		"\"AMON EITHEL\"", "\"THALION ITHIL\"", "\"MELLON ARDA\"", "\"CURUNIR ANOR\"",
+		"\"DAGNIR BEREN\"", "\"HAUDH NARGOTH\"", "\"RINGIL TAUR\"", "\"FEANOR SILME\"",
+		"\"NIMPHELOS GAUR\"", "\"NOLDOR AGLAR\"", "\"GONDOLIN ERED\"",
+		"\"THANGORODRIM\"", "\"CELEBRIMBOR\"", "\"NEVRAST FALATH\"",
+		"\"MAEDHROS SIRION\"", "\"ANGBAND MORGUL\"",
 	]
 	var herb_flavors: Array[String] = [
-		"Pale Herb", "Dark Herb", "Fragrant Herb", "Bitter Herb",
-		"Dried Herb", "Fresh Herb", "Pungent Herb", "Sweet Herb",
-		"Fibrous Root", "Tiny Mushroom", "Brown Lichen", "Spotted Fungus",
+		"a Black Herb", "a Spotted Mushroom", "a Thorny Sprig", "a Waxy Leaf",
+		"a Fragrant Root", "a Bitter Berry", "a Silver Moss", "a Gnarled Twig",
+		"a Luminous Lichen", "a Dried Flower", "a Pungent Bulb", "a Fuzzy Cap",
+		"a Crimson Seed", "a Pale Stalk", "a Twisted Vine", "a Dusty Pod",
+		"a Blue Petal", "a Oily Nut", "a Withered Frond", "a Ashen Bark",
+	]
+	var ring_flavors: Array[String] = [
+		"a Twisted Ring", "a Mithril Ring", "a Bone Ring", "an Iron Ring",
+		"a Copper Ring", "a Silver Ring", "a Gold Ring", "a Bronze Ring",
+		"a Stone Ring", "a Wooden Ring", "a Glass Ring", "a Onyx Ring",
+		"a Pearl Ring", "a Jade Ring", "a Ruby Ring", "an Obsidian Ring",
+	]
+	var amulet_flavors: Array[String] = [
+		"a Crystal Amulet", "an Amber Amulet", "a Moonstone Amulet",
+		"a Silver Amulet", "a Bone Amulet", "a Jade Amulet",
+		"an Ivory Amulet", "a Sapphire Amulet", "an Obsidian Amulet",
+		"a Coral Amulet", "a Garnet Amulet", "an Opal Amulet",
 	]
 	potion_flavors.shuffle()
 	scroll_flavors.shuffle()
 	herb_flavors.shuffle()
+	ring_flavors.shuffle()
+	amulet_flavors.shuffle()
 
-	# Assign flavor names to all known consumable svals
+	# Assign flavor names to all known identifiable svals
 	var potion_idx: int = 0
 	var scroll_idx: int = 0
 	var herb_idx: int = 0
+	var ring_idx: int = 0
+	var amulet_idx: int = 0
 	for item_data in DataManager.items.values():
 		if item_data is DataManager.ItemData:
 			var key: String = "%d:%d" % [item_data.tval, item_data.sval]
@@ -218,6 +269,12 @@ func _randomize_flavor_names() -> void:
 			elif item_data.tval == 55 and scroll_idx < scroll_flavors.size():
 				flavor_names[key] = scroll_flavors[scroll_idx]
 				scroll_idx += 1
-			elif item_data.tval == 80 and herb_idx < herb_flavors.size():
+			elif item_data.tval == 80 and item_data.sval not in ALWAYS_IDENTIFIED_FOOD_SVALS and herb_idx < herb_flavors.size():
 				flavor_names[key] = herb_flavors[herb_idx]
 				herb_idx += 1
+			elif item_data.tval == 45 and ring_idx < ring_flavors.size():
+				flavor_names[key] = ring_flavors[ring_idx]
+				ring_idx += 1
+			elif item_data.tval == 40 and amulet_idx < amulet_flavors.size():
+				flavor_names[key] = amulet_flavors[amulet_idx]
+				amulet_idx += 1

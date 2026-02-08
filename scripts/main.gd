@@ -36,6 +36,11 @@ var voice_menu: PopupMenu = null
 var _voice_menu_abilities: Array[Dictionary] = []  # Cached list from ability_system
 var _pending_voice_ability_id: int = -1  # Ability waiting for target selection
 
+# Item selection menu (for consumable quick-use: comma/Q/R keys)
+var item_menu: PopupMenu = null
+var _item_menu_items: Array = []  # Cached list of matching inventory items
+var _item_menu_tval: int = -1  # Which tval category the menu is showing
+
 # Resting state (Z / Shift+Z)
 var _resting: bool = false
 var _rest_turns_taken: int = 0
@@ -154,6 +159,13 @@ func _setup_ui_panels() -> void:
 	voice_menu.name = "VoiceMenu"
 	voice_menu.id_pressed.connect(_on_voice_menu_selected)
 	ui_layer.add_child(voice_menu)
+
+	# Item selection menu (comma/Q/R quick-use)
+	item_menu = PopupMenu.new()
+	item_menu.name = "ItemMenu"
+	item_menu.id_pressed.connect(_on_item_menu_selected)
+	item_menu.popup_hide.connect(_on_item_menu_closed)
+	ui_layer.add_child(item_menu)
 
 	# Connect NPC interaction event
 	EventBus.npc_interacted.connect(_on_npc_interacted)
@@ -748,6 +760,63 @@ func _unhandled_input(event: InputEvent) -> void:
 		HelpOverlay.toggle()
 		get_viewport().set_input_as_handled()
 
+	# Eat food/herb (comma key) - macOS-safe dual check
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if event.keycode == KEY_COMMA or event.unicode == 44:
+			if player and player.is_alive and GameManager.is_player_turn:
+				_open_item_selection(80, "eat", "You have nothing to eat.")
+			get_viewport().set_input_as_handled()
+			return
+
+	# Quaff potion (Q key)
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if event.keycode == KEY_Q:
+			if player and player.is_alive and GameManager.is_player_turn:
+				_open_item_selection(75, "quaff", "You have no potions.")
+			get_viewport().set_input_as_handled()
+			return
+
+	# Read scroll (R key) - only when no UI panel is open (R is unequip in inventory)
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if event.keycode == KEY_R:
+			if player and player.is_alive and GameManager.is_player_turn:
+				_open_item_selection(55, "read", "You have no scrolls to read.")
+			get_viewport().set_input_as_handled()
+			return
+
+	# Disarm trap (D key, no shift — Shift+D is drop)
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if event.keycode == KEY_D:
+			if player and player.is_alive and GameManager.is_player_turn and current_level:
+				var hunting_skill: int = player.get_skill("hunting")
+				var result: Dictionary = current_level.disarm_trap(player.grid_position, hunting_skill)
+				if result.success:
+					player.gain_experience(5, "disarm")
+					GameManager.log_message(result.message, ThemeColors.MSG_INFO)
+					player.consume_energy()
+					turn_system._after_player_action()
+				else:
+					var tile: int = current_level.get_tile(player.grid_position)
+					if tile == Level.Tile.TRAP or tile == Level.Tile.TRAP_TRIGGERED:
+						# Failed disarm on a real trap — trigger it
+						GameManager.log_message(result.message, ThemeColors.MSG_WARNING)
+						current_level.on_entity_step(player, player.grid_position)
+						player.consume_energy()
+						turn_system._after_player_action()
+					else:
+						GameManager.log_message(result.message, ThemeColors.MSG_SYSTEM)
+				hud.update_player_stats(player)
+			get_viewport().set_input_as_handled()
+			return
+
+	# Blow horn/flute (P key)
+	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+		if event.keycode == KEY_P:
+			if player and player.is_alive and GameManager.is_player_turn:
+				_open_item_selection(Constants.TVAL_HORN, "blow", "You have no horns or flutes.")
+			get_viewport().set_input_as_handled()
+			return
+
 	# Escape: open settings panel when no other panel is open
 	if event.is_action_pressed("ui_cancel"):
 		_toggle_settings()
@@ -765,7 +834,8 @@ func _is_ui_open() -> bool:
 		   (smithing_panel and smithing_panel.visible) or \
 		   (bestiary_panel and bestiary_panel.visible) or \
 		   (settings_panel and settings_panel.visible) or \
-		   (voice_menu and voice_menu.visible)
+		   (voice_menu and voice_menu.visible) or \
+		   (item_menu and item_menu.visible)
 
 func _toggle_inventory() -> void:
 	if inventory_panel.visible:
@@ -924,6 +994,85 @@ func _on_voice_menu_selected(index: int) -> void:
 				player.consume_energy()
 
 # ============================================================================
+# ITEM SELECTION MENU (comma / Q / R keys)
+# ============================================================================
+
+func _open_item_selection(tval: int, verb: String, empty_msg: String) -> void:
+	## Open a selection popup for consumable items of the given tval.
+	## If 0 items: show empty_msg. If 1 item: use immediately. If 2+: show popup.
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return
+
+	# Filter inventory for matching tval
+	_item_menu_items.clear()
+	_item_menu_tval = tval
+	for item in player.inventory:
+		if item != null and "tval" in item and item.tval == tval:
+			_item_menu_items.append(item)
+
+	if _item_menu_items.is_empty():
+		GameManager.log_message(empty_msg, ThemeColors.MSG_SYSTEM)
+		return
+
+	if _item_menu_items.size() == 1:
+		# Single item - use directly without popup
+		_consume_inventory_item(_item_menu_items[0])
+		return
+
+	# Multiple items - build and show popup menu
+	item_menu.clear()
+	for i in range(_item_menu_items.size()):
+		var item = _item_menu_items[i]
+		var label: String = GameManager.get_item_display_name(item)
+		var stack: int = item.stack_count if "stack_count" in item else 1
+		if stack > 1:
+			label += " (x%d)" % stack
+		item_menu.add_item(label, i)
+
+	item_menu.popup_centered()
+	GameManager.is_player_turn = false
+
+func _on_item_menu_selected(index: int) -> void:
+	## Handle item selection from the popup menu.
+	GameManager.is_player_turn = true
+	if index < 0 or index >= _item_menu_items.size():
+		return
+
+	var item = _item_menu_items[index]
+	_consume_inventory_item(item)
+
+func _on_item_menu_closed() -> void:
+	## Restore player turn when menu is dismissed without selection.
+	if not GameManager.is_player_turn:
+		GameManager.is_player_turn = true
+
+func _consume_inventory_item(item: Variant) -> void:
+	## Use a consumable item from inventory, decrement stack or remove, and end turn.
+	if item == null or not player:
+		return
+
+	# For horns, use_item sets up pending state and returns false; don't consume turn yet
+	if "tval" in item and item.tval == Constants.TVAL_HORN:
+		ConsumableSystem.use_item(player, item)
+		# Horn pending state is handled by the horn direction intercept at top of _unhandled_input
+		return
+
+	if ConsumableSystem.use_item(player, item):
+		# Decrement stack or remove from inventory
+		var count: int = item.stack_count if "stack_count" in item else 1
+		if count > 1:
+			item.stack_count = count - 1
+		else:
+			var idx: int = player.inventory.find(item)
+			if idx >= 0:
+				player.inventory.remove_at(idx)
+
+		# Consume a turn
+		player.consume_energy()
+		turn_system._after_player_action()
+		hud.update_player_stats(player)
+
+# ============================================================================
 # SETTINGS PANEL
 # ============================================================================
 
@@ -1078,8 +1227,8 @@ func _process_rest_step() -> void:
 	# Take a rest turn (equivalent to waiting)
 	_rest_turns_taken += 1
 
-	# Slow HP regen during rest: +1 HP every 10 rest turns
-	if _rest_turns_taken % 10 == 0 and player.current_health < player.max_health:
+	# HP regen during rest: +1 HP every 4 rest turns
+	if _rest_turns_taken % 4 == 0 and player.current_health < player.max_health:
 		player.current_health = mini(player.current_health + 1, player.max_health)
 
 	# Simulate player consuming energy and processing the game tick

@@ -136,7 +136,7 @@ const SKILL_MELEE := Color("#EF4444")        # Red
 const SKILL_ARCHERY := Color("#4ADE80")      # Green
 const SKILL_EVASION := Color("#60A5FA")      # Blue
 const SKILL_STEALTH := Color("#166534")      # Dark green
-const SKILL_PERCEPTION := Color("#FACC15")   # Yellow
+const SKILL_HUNTING := Color("#FACC15")       # Yellow (formerly Perception)
 const SKILL_WILL := Color("#A855F7")         # Purple
 const SKILL_SMITHING := Color("#FB923C")     # Orange
 const SKILL_LORE := Color("#67E8F9")         # Cyan
@@ -311,7 +311,7 @@ static func get_skill_color(skill_name: String) -> Color:
 		"archery": return SKILL_ARCHERY
 		"evasion": return SKILL_EVASION
 		"stealth": return SKILL_STEALTH
-		"perception": return SKILL_PERCEPTION
+		"hunting": return SKILL_HUNTING
 		"will": return SKILL_WILL
 		"smithing": return SKILL_SMITHING
 		"lore": return SKILL_LORE

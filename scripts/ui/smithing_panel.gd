@@ -277,6 +277,9 @@ func _on_forge_pressed() -> void:
 	_refresh_ui()
 
 func _on_item_enhanced(item: Variant, result: String) -> void:
+	# Auto-identify items that are smithed
+	if item != null and GameManager.needs_identification(item):
+		GameManager.identify_item(item)
 	item_forged.emit(item)
 	# UI refresh happens in _on_forge_pressed
 

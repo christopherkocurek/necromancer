@@ -790,6 +790,33 @@ func load_vaults() -> void:
 # DATA ACCESS HELPERS
 # ============================================================================
 
+## Deep-copy an ItemData so mutations (identification, etc.) don't affect templates
+func duplicate_item_data(source: ItemData) -> ItemData:
+	var copy := ItemData.new()
+	copy.index = source.index
+	copy.name = source.name
+	copy.display_char = source.display_char
+	copy.color = source.color
+	copy.tval = source.tval
+	copy.sval = source.sval
+	copy.pval = source.pval
+	copy.depth = source.depth
+	copy.rarity = source.rarity
+	copy.weight = source.weight
+	copy.cost = source.cost
+	copy.allocation = source.allocation
+	copy.attack_bonus = source.attack_bonus
+	copy.damage_dice = source.damage_dice
+	copy.evasion_bonus = source.evasion_bonus
+	copy.protection_dice = source.protection_dice
+	copy.flags = source.flags.duplicate()
+	copy.granted_abilities = source.granted_abilities.duplicate(true)
+	copy.description = source.description
+	copy.identified = source.identified
+	copy.fuel = source.fuel
+	copy.stack_count = source.stack_count
+	return copy
+
 func get_monster(name: String) -> MonsterData:
 	return monsters.get(name)
 

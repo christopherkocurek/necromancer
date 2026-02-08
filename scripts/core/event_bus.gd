@@ -32,6 +32,7 @@ signal item_dropped(entity: Node, item: Resource, position: Vector2i)
 signal item_equipped(entity: Node, item: Resource, slot: String)
 signal item_unequipped(entity: Node, item: Resource, slot: String)
 signal item_used(entity: Node, item: Resource)
+signal item_identified(item_data: Variant)
 
 # Ability events
 signal ability_used(entity: Node, ability: Resource, targets: Array)

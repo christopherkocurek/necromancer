@@ -60,7 +60,7 @@ var skills: Dictionary = {
 	"archery": 0,
 	"evasion": 0,
 	"stealth": 0,
-	"perception": 0,
+	"hunting": 0,
 	"will": 0,
 	"smithing": 0,
 	"lore": 0,  # Was "song" in Sil-Q
@@ -107,7 +107,7 @@ var equip_flags: Dictionary = {}
 
 # Skill bonuses from equipment flags
 var equip_skill_bonuses: Dictionary = {
-	"perception": 0,
+	"hunting": 0,
 	"will": 0,
 	"stealth": 0,
 	"melee": 0,
@@ -197,6 +197,8 @@ func _ready() -> void:
 	_init_ability_arrays()
 	_apply_racial_modifiers()
 	_setup_player_sprite()
+	# Ensure player starts at full HP after stat calculation
+	current_health = max_health
 	EventBus.level_entered.connect(_on_level_entered)
 	EventBus.attack_missed.connect(_on_attack_evaded)
 
@@ -710,7 +712,7 @@ func _apply_equipment_flags() -> void:
 					_equip_gra_bonus += pval
 				# Skill bonuses (scaled by pval)
 				"PERCEPTION":
-					equip_skill_bonuses["perception"] += pval
+					equip_skill_bonuses["hunting"] += pval
 				"WILL":
 					equip_skill_bonuses["will"] += pval
 				"STEALTH":
@@ -941,7 +943,7 @@ const AFFINITY_MAP: Dictionary = {
 	"ARC_AFFINITY": "archery",
 	"EVN_AFFINITY": "evasion",
 	"STL_AFFINITY": "stealth",
-	"PER_AFFINITY": "perception",
+	"PER_AFFINITY": "hunting",
 	"WIL_AFFINITY": "will",
 	"SMT_AFFINITY": "smithing",
 	"LOR_AFFINITY": "lore",
@@ -950,7 +952,7 @@ const AFFINITY_MAP: Dictionary = {
 const PENALTY_MAP: Dictionary = {
 	"MEL_PENALTY": "melee", "ARC_PENALTY": "archery",
 	"EVN_PENALTY": "evasion", "STL_PENALTY": "stealth",
-	"PER_PENALTY": "perception", "WIL_PENALTY": "will",
+	"PER_PENALTY": "hunting", "WIL_PENALTY": "will",
 	"SMT_PENALTY": "smithing", "LOR_PENALTY": "lore",
 }
 
@@ -1222,15 +1224,15 @@ func get_total_attack(target: Entity) -> int:
 	# Rapid Attack penalty: -3 when doing rapid double-attacks
 	att += _rapid_attack_penalty
 
-	# Concentration: +MIN(consecutive_attacks, Perception/2) when not moved last turn
+	# Concentration: +MIN(consecutive_attacks, Hunting/2) when not moved last turn
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_CONCENTRATION):
 		if not moved_last_turn:
-			var per_bonus: int = get_skill("perception") / 2
+			var per_bonus: int = get_skill("hunting") / 2
 			att += mini(consecutive_attacks, maxi(per_bonus, 1))
 
-	# Focused Attack: +Perception/2 (always active if learned)
+	# Focused Attack: +Hunting/2 (always active if learned)
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
-		att += get_skill("perception") / 2
+		att += get_skill("hunting") / 2
 
 	# Assassination: +Stealth skill vs unwary/sleeping targets
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_ASSASSINATION):
@@ -1405,10 +1407,11 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 	# Charge VFX: impact particles when charging into melee
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_CHARGE):
 		if _is_charging_toward(target):
+			# Always show "Charge!" on the player, even if target died
+			vfx_floater("Charge!", ThemeColors.PRIMARY_BRIGHT, 16)
 			if is_instance_valid(target):
 				target.vfx_flash(ThemeColors.FLASH_CHARGE, 0.06, 0.15)
 				target.vfx_particles(ThemeColors.PRIMARY, 6, 25.0, 0.3)
-				vfx_floater("Charge!", ThemeColors.PRIMARY_BRIGHT, 16)
 
 	# Inner Light: bonus damage vs HURT_LITE enemies equal to Lore/3
 	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_INNER_LIGHT):
@@ -1548,9 +1551,9 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	var att: int = skills["archery"] + (dexterity / 2)
 	# Weapon proficiency bonus (BOW_PROFICIENCY or SLING_PROFICIENCY)
 	att += _get_ranged_proficiency_bonus()
-	# Keen Eyes: +Perception/2 to ranged attack
+	# Keen Eyes: +Hunting/2 to ranged attack
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_KEEN_EYES):
-		att += get_skill("perception") / 2
+		att += get_skill("hunting") / 2
 	# Ambush: +Stealth to ranged attack vs unwary targets
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_AMBUSH):
 		if is_instance_valid(target) and target is Monster:
@@ -1728,7 +1731,7 @@ func _get_bane_bonus(target: Entity) -> int:
 	# +floor(log2(kills)) for 2+ kills
 	return int(log(kill_count) / log(2.0))
 
-## Master Hunter: +MIN(kills_of_type, Perception/2)
+## Master Hunter: +MIN(kills_of_type, Hunting/2)
 func _get_master_hunter_bonus(target: Entity) -> int:
 	if not is_instance_valid(target) or not target is Monster:
 		return 0
@@ -1736,7 +1739,7 @@ func _get_master_hunter_bonus(target: Entity) -> int:
 	var kill_count: int = kills_by_name.get(mon_name, 0)
 	if kill_count < 1:
 		return 0
-	var per_cap: int = maxi(1, get_skill("perception") / 2)
+	var per_cap: int = maxi(1, get_skill("hunting") / 2)
 	return mini(kill_count, per_cap)
 
 ## Count adjacent allies attacking the same target (for flanking/overwhelming)
@@ -2052,13 +2055,7 @@ func handle_input() -> bool:
 		toggle_stealth_mode()
 		return false  # Toggling stealth doesn't cost a turn
 
-	# Quaff potion (Q key)
-	if Input.is_action_just_pressed("quaff"):
-		return _use_first_consumable(75)
-
-	# Eat food/herb (comma key)
-	if Input.is_action_just_pressed("eat"):
-		return _use_first_consumable(80)
+	# Quaff/Eat/Horn are now handled by main.gd item selection menus (Q/comma/P keys)
 
 	# Close door (C key)
 	if Input.is_action_just_pressed("close_door"):
@@ -2067,10 +2064,6 @@ func handle_input() -> bool:
 	# Search for secret doors (Shift+S)
 	if Input.is_action_just_pressed("search"):
 		return _try_search()
-
-	# Blow horn/flute (P key)
-	if Input.is_action_just_pressed("blow_horn"):
-		return _use_first_consumable(Constants.TVAL_HORN)
 
 	return false
 
@@ -2164,7 +2157,7 @@ func _try_search() -> bool:
 	if not GameManager.current_level:
 		return false
 
-	var per: int = get_skill("perception")
+	var per: int = get_skill("hunting")
 	var found: int = GameManager.current_level.search_for_secrets(grid_position, per)
 	if found > 0:
 		GameManager.log_message("You discover a hidden passage!", ThemeColors.ABILITY_LEARNED)

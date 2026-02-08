@@ -12,12 +12,12 @@ signal closed
 # ---------------------------------------------------------------------------
 const SKILL_NAMES: Array[String] = [
 	"melee", "archery", "evasion", "stealth",
-	"perception", "will", "smithing", "lore"
+	"hunting", "will", "smithing", "lore"
 ]
 
 const SKILL_LABELS: Array[String] = [
 	"Melee", "Archery", "Evasion", "Stealth",
-	"Perception", "Will", "Smithing", "Lore"
+	"Hunting", "Will", "Smithing", "Lore"
 ]
 
 const SKILL_RUNES: Array[String] = [
@@ -29,7 +29,7 @@ const CHAPTER_TITLES: Array[String] = [
 	"Chapter II: The Far Eye",
 	"Chapter III: The Art of Not Being There",
 	"Chapter IV: The Shadow's Gift",
-	"Chapter V: The Watcher's Vigil",
+	"Chapter V: The Hunter's Vigil",
 	"Chapter VI: The Unyielding Mind",
 	"Chapter VII: The Maker's Craft",
 	"Chapter VIII: Words of Power",
@@ -40,7 +40,7 @@ const CHAPTER_FLAVORS: Array[String] = [
 	"The arrow knows things the archer has forgotten.",
 	"The best defence is not being where the blade falls.",
 	"Darkness is not the absence of light. It is a weapon.",
-	"To see is to survive. To see first is to choose.",
+	"To hunt is to survive. To strike first is to choose.",
 	"The fortress of the mind has no gate.",
 	"Iron remembers the hands that shaped it.",
 	"To name a thing is to have power over it.",
@@ -86,7 +86,7 @@ const MARGINALIA := {
 		"I passed unseen through halls of nightmare. Then I sneezed.",
 		"Silence is the only language the darkness respects.",
 	],
-	"perception": [
+	"hunting": [
 		"Saw the trap. Stepped in it anyway. -- R.T., final entry",
 		"Trust your eyes. Trust your ears more.",
 		"The walls have eyes. Literally. Check them.",

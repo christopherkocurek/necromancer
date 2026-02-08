@@ -448,15 +448,8 @@ func _place_stairs(depth: int) -> void:
 	level.set_tile(down_pos, Level.Tile.STAIRS_DOWN)
 
 func _add_features(depth: int) -> void:
-	# Add doors at corridor junctions
-	for y in range(1, level.height - 1):
-		for x in range(1, level.width - 1):
-			var pos := Vector2i(x, y)
-			if level.get_tile(pos) == Level.Tile.FLOOR:
-				if _is_door_candidate(pos):
-					if randf() < 0.3:  # 30% chance for doors
-						var door_type: int = _pick_door_type(depth)
-						level.set_tile(pos, door_type)
+	# Place doors at room-corridor junctions and rare mid-corridor spots
+	_place_doors(depth)
 
 	# Add rubble in some rooms based on depth
 	if depth > 3:
@@ -653,15 +646,16 @@ func _add_boss_room(depth: int) -> void:
 			var item_scene := preload("res://scenes/entities/item.tscn")
 			var item_data := DataManager.get_themed_item_for_depth(depth + 2)
 			if item_data:
+				var boss_item_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
 				var item_pos := Vector2i(boss_pos.x + 1, boss_pos.y)
 				if level.is_in_bounds(item_pos) and level.get_tile(item_pos) == Level.Tile.FLOOR:
 					var item: Item = item_scene.instantiate()
 					item.grid_position = item_pos
-					item.initialize_from_item_data(item_data)
+					item.initialize_from_item_data(boss_item_copy)
 					level.add_item(item)
 
 func _is_door_candidate(pos: Vector2i) -> bool:
-	# A position is a door candidate if it connects two areas
+	# A position is a door candidate if it connects two areas (walls on two opposite sides, floor on the other two)
 	var north := level.get_tile(pos + Vector2i(0, -1))
 	var south := level.get_tile(pos + Vector2i(0, 1))
 	var east := level.get_tile(pos + Vector2i(1, 0))
@@ -678,6 +672,97 @@ func _is_door_candidate(pos: Vector2i) -> bool:
 		return true
 
 	return false
+
+## Check if a floor tile is a room entrance (connects a room to a corridor).
+## Returns true if the tile is on a room border with a corridor on the opposite side.
+func _is_room_entrance(pos: Vector2i) -> bool:
+	if level.get_tile(pos) != Level.Tile.FLOOR:
+		return false
+
+	# Must be a chokepoint: walls on two opposite sides (door candidate shape)
+	if not _is_door_candidate(pos):
+		return false
+
+	# Check if one side is inside a room and the other side is corridor (room_id == -1)
+	var pos_room: int = level.get_room_id(pos)
+	var cardinal_dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+	var has_room_neighbor: bool = false
+	var has_corridor_neighbor: bool = false
+
+	for dir: Vector2i in cardinal_dirs:
+		var neighbor: Vector2i = pos + dir
+		if not level.is_in_bounds(neighbor):
+			continue
+		var n_tile: int = level.get_tile(neighbor)
+		if n_tile == Level.Tile.WALL or n_tile == Level.Tile.VOID:
+			continue
+		var n_room: int = level.get_room_id(neighbor)
+		if n_room >= 0:
+			has_room_neighbor = true
+		else:
+			has_corridor_neighbor = true
+
+	return has_room_neighbor and has_corridor_neighbor
+
+## Place doors intelligently: room-corridor junctions (60%), rare mid-corridor (5%),
+## then validate no two doors are adjacent.
+func _place_doors(depth: int) -> void:
+	var door_positions: Array[Vector2i] = []
+
+	# Phase 1: Room-corridor junction doors (60% chance per valid junction)
+	for y in range(1, level.height - 1):
+		for x in range(1, level.width - 1):
+			var pos := Vector2i(x, y)
+			if level.get_tile(pos) == Level.Tile.FLOOR and _is_room_entrance(pos):
+				if randf() < 0.60:
+					door_positions.append(pos)
+
+	# Phase 2: Rare mid-corridor doors (5% chance, min 4-tile spacing from any door)
+	for y in range(1, level.height - 1):
+		for x in range(1, level.width - 1):
+			var pos := Vector2i(x, y)
+			if level.get_tile(pos) != Level.Tile.FLOOR:
+				continue
+			# Must be a corridor chokepoint but NOT a room entrance
+			if not _is_door_candidate(pos):
+				continue
+			if _is_room_entrance(pos):
+				continue
+			if randf() >= 0.05:
+				continue
+			# Check minimum 4-tile spacing from any existing door
+			var too_close: bool = false
+			for existing_door: Vector2i in door_positions:
+				var dist: int = abs(pos.x - existing_door.x) + abs(pos.y - existing_door.y)
+				if dist < 4:
+					too_close = true
+					break
+			if not too_close:
+				door_positions.append(pos)
+
+	# Phase 3: Validation — remove any door that is adjacent to another door
+	var valid_doors: Array[Vector2i] = []
+	var door_set: Dictionary = {}
+	for door_pos: Vector2i in door_positions:
+		door_set[door_pos] = true
+
+	for door_pos: Vector2i in door_positions:
+		var has_adjacent_door: bool = false
+		var adj_dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+		for dir: Vector2i in adj_dirs:
+			var neighbor: Vector2i = door_pos + dir
+			if neighbor != door_pos and door_set.has(neighbor):
+				# If the neighbor was already placed in valid_doors, remove this one
+				if neighbor in valid_doors:
+					has_adjacent_door = true
+					break
+		if not has_adjacent_door:
+			valid_doors.append(door_pos)
+
+	# Phase 4: Actually place door tiles
+	for door_pos: Vector2i in valid_doors:
+		var door_type: int = _pick_door_type(depth)
+		level.set_tile(door_pos, door_type)
 
 ## Try to place a vault room of the specified type. Returns Room or null.
 func _try_place_vault_room(room_type: int, depth: int) -> Room:
@@ -863,27 +948,30 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 					else:
 						var i_data := DataManager.get_themed_item_for_depth(depth)
 						if i_data:
+							var i_copy: DataManager.ItemData = DataManager.duplicate_item_data(i_data)
 							var itm: Item = item_scene.instantiate()
 							itm.grid_position = tile_pos
-							itm.initialize_from_item_data(i_data)
+							itm.initialize_from_item_data(i_copy)
 							level.add_item(itm)
 				"*":
 					# Treasure
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
 					var item_data := DataManager.get_themed_item_for_depth(depth)
 					if item_data:
+						var star_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
 						var item: Item = item_scene.instantiate()
 						item.grid_position = tile_pos
-						item.initialize_from_item_data(item_data)
+						item.initialize_from_item_data(star_copy)
 						level.add_item(item)
 				"&":
 					# Good treasure (higher depth items)
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
 					var item_data := DataManager.get_themed_item_for_depth(depth + 3)
 					if item_data:
+						var amp_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
 						var item: Item = item_scene.instantiate()
 						item.grid_position = tile_pos
-						item.initialize_from_item_data(item_data)
+						item.initialize_from_item_data(amp_copy)
 						level.add_item(item)
 				"1", "2", "3", "4":
 					# Monster at depth + N
@@ -1203,9 +1291,10 @@ func _spawn_items(depth: int) -> void:
 			item_data = DataManager.get_random_item_for_depth(depth)
 
 		if item_data:
+			var item_copy: DataManager.ItemData = DataManager.duplicate_item_data(item_data)
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
-			item.initialize_from_item_data(item_data)
+			item.initialize_from_item_data(item_copy)
 			level.add_item(item)
 			spawned += 1
 
@@ -1226,9 +1315,10 @@ func _spawn_items(depth: int) -> void:
 
 		var food_data: DataManager.ItemData = DataManager.get_random_actual_food(depth)
 		if food_data:
+			var food_copy: DataManager.ItemData = DataManager.duplicate_item_data(food_data)
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
-			item.initialize_from_item_data(food_data)
+			item.initialize_from_item_data(food_copy)
 			level.add_item(item)
 			spawned += 1
 
@@ -1247,9 +1337,10 @@ func _spawn_items(depth: int) -> void:
 
 		var herb_data: DataManager.ItemData = DataManager.get_random_herb_for_depth(depth)
 		if herb_data:
+			var herb_copy: DataManager.ItemData = DataManager.duplicate_item_data(herb_data)
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
-			item.initialize_from_item_data(herb_data)
+			item.initialize_from_item_data(herb_copy)
 			level.add_item(item)
 			spawned += 1
 
@@ -1904,9 +1995,10 @@ func _spawn_lore_objects(depth: int) -> void:
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
+		var lore_copy: DataManager.ItemData = DataManager.duplicate_item_data(lore_data)
 		var item: Item = item_scene.instantiate()
 		item.grid_position = spawn_pos
-		item.initialize_from_item_data(lore_data)
+		item.initialize_from_item_data(lore_copy)
 		level.add_item(item)
 		spawned += 1
 
