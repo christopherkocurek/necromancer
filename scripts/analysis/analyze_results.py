@@ -258,8 +258,9 @@ def generate_report(results, stats):
     avg_depths = {a: s["avg_depth"] for a, s in stats.items()}
 
     if win_rates:
-        best_arch = max(win_rates, key=win_rates.get)
-        worst_arch = min(win_rates, key=win_rates.get)
+        # Break ties by avg_depth when win rates are equal
+        best_arch = max(stats.keys(), key=lambda a: (stats[a]["win_rate"], stats[a]["avg_depth"]))
+        worst_arch = min(stats.keys(), key=lambda a: (stats[a]["win_rate"], stats[a]["avg_depth"]))
         overall_wr = all_wins / max(total, 1) * 100
 
         lines.append(f"1. **Overall win rate: {overall_wr:.1f}%** — "
