@@ -615,6 +615,10 @@ func _decide_and_act() -> bool:
 	# v3: save position for next turn's door closing
 	_prev_position = _player.grid_position
 
+	# Priority 0.1: HUNGER — eat if hungry (prevents starvation deaths)
+	if _check_hunger():
+		return true
+
 	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
 	var voice_pct: float = float(_player.voice_charges) / float(maxi(_player.max_voice, 1))
 	var adj_count: int = _count_adjacent_monsters()
@@ -624,9 +628,23 @@ func _decide_and_act() -> bool:
 	if _archetype_id == "STEALTH_PURE":
 		return await _stealth_pure_decide(hp_pct, adj_count, vis_count)
 
+	# --- GREENWOOD_RANGER: patient stalker ambush predator ---
+	if _archetype_id == "GREENWOOD_RANGER":
+		var ranger_result: bool = _greenwood_ranger_decide(hp_pct, adj_count, vis_count)
+		if ranger_result:
+			return true
+		# Fall through to standard priorities if ranger had nothing to do
+
 	# --- STEALTH_ASSASSIN / HOBBIT_BURGLAR: hunt unwary targets from stealth ---
 	if _archetype_id in ["STEALTH_ASSASSIN", "HOBBIT_BURGLAR"]:
 		return await _stealth_assassin_decide(hp_pct, adj_count, vis_count)
+
+	# --- HOBBIT_SNIPER: stand-and-shoot with Steady Aim ---
+	if _archetype_id == "HOBBIT_SNIPER":
+		var sniper_result: bool = _hobbit_sniper_decide(hp_pct, adj_count, vis_count)
+		if sniper_result:
+			return true
+		# Fall through to standard priorities if sniper had nothing to do
 
 	# Priority 0: EMERGENCY — overwhelmed by multiple adjacent enemies
 	if adj_count >= 2:
@@ -717,6 +735,11 @@ func _decide_and_act() -> bool:
 	# Priority 9: LOOT — pick up items on ground
 	if _has_items_on_ground():
 		return _pickup_item()
+
+	# Priority 9.5: SMITH material seeking — prioritize smithing materials
+	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_visible_monster():
+		if _smith_should_seek_materials() and _try_seek_smithing_materials():
+			return true
 
 	# Priority 10: SEEK ITEMS — pathfind to visible items when safe
 	if not _has_visible_monster() and _try_seek_nearby_item():
@@ -1617,6 +1640,118 @@ func _stealth_pure_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool
 	if _stuck_counter < RANDOM_MOVE_THRESHOLD:
 		return _do_auto_explore_step()
 	return _do_random_move()
+
+func _greenwood_ranger_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
+	## GREENWOOD_RANGER: Patient Stalker — wait 3 turns in stealth before striking.
+	## Double damage after 3+ consecutive stealth turns with no adjacent alert enemies.
+
+	# Emergency: flee at low HP
+	if hp_pct < FLEE_HP_PCT:
+		if _try_heal():
+			return true
+		if _try_multi_step_flee():
+			_total_flee_attempts += 1
+			return true
+
+	# Adjacent alert enemy: fight or flee
+	if adj_count > 0:
+		var adj_mon: Monster = _get_nearest_adjacent_monster()
+		if adj_mon and adj_mon.alertness >= Constants.ALERTNESS_ALERT:
+			# Alert enemy adjacent — Patient Stalker is broken, fight or flee
+			if _should_fight(adj_mon):
+				_try_start_combat_song()
+				return _attack_adjacent_monster()
+			else:
+				return _try_multi_step_flee()
+		# Adjacent UNWARY enemy: attack with Patient Stalker bonus if ready
+		if _player.get("_stalker_double_ready") == true:
+			_try_start_combat_song()
+			return _attack_adjacent_monster()
+		# Not ready yet — keep waiting in stealth (don't attack)
+		if _player.stealth_mode:
+			return _do_wait_for_stalker()
+		# Not stealthed — just attack
+		return _attack_adjacent_monster()
+
+	# Visible unwary enemies: approach in stealth
+	if vis_count > 0 and _player.stealth_mode:
+		var target: Monster = _get_best_assassination_target_visible()
+		if target and target.alertness < Constants.ALERTNESS_ALERT:
+			# Patient Stalker ready? Close in for the kill
+			if _player.get("_stalker_double_ready") == true:
+				return _move_toward_target(target.grid_position)
+			# Not ready — stay stealthed and approach slowly (stealth turns build)
+			var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
+			if dist > 2:
+				return _move_toward_target(target.grid_position)
+			# Close range but not ready — wait for proc
+			return _do_wait_for_stalker()
+
+	# Visible alert enemies: use ranged if available
+	if vis_count > 0:
+		if _try_ranged_attack():
+			return true
+		if _try_kite_and_shoot():
+			return true
+
+	# No enemies — fall through to standard exploration
+	return false
+
+func _do_wait_for_stalker() -> bool:
+	## Wait in place while Patient Stalker charges.
+	if _turn_system:
+		_turn_system._after_player_action()
+	return true
+
+func _hobbit_sniper_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
+	## HOBBIT_SNIPER: Stand-and-shoot loop exploiting Steady Aim.
+	## Steady Aim grants +3 ranged attack when player hasn't moved or attacked.
+
+	# Emergency: flee at low HP
+	if hp_pct < FLEE_HP_PCT:
+		if _try_heal():
+			return true
+		if _try_multi_step_flee():
+			_total_flee_attempts += 1
+			return true
+
+	# Adjacent enemy: melee (we're in trouble)
+	if adj_count > 0:
+		_try_start_combat_song()
+		return _attack_adjacent_monster()
+
+	# Visible enemies: sniper loop
+	if vis_count > 0:
+		# If Steady Aim is charged, fire!
+		if _player.has_steady_aim_bonus():
+			if _try_ranged_attack():
+				return true
+			# Can't fire (no ammo/LOS) — try kiting
+			if _try_kite_and_shoot():
+				return true
+		else:
+			# Steady Aim not ready — WAIT (don't move, don't attack)
+			# But only if we have ranged capability and target in range
+			if _player.can_fire_ranged():
+				var nearest: Monster = _get_nearest_visible_monster()
+				if nearest:
+					var dist: int = _get_chebyshev_distance(_player.grid_position, nearest.grid_position)
+					if dist >= 2 and dist <= 6:
+						# Stand still — Steady Aim will charge
+						return _do_wait()
+			# No ranged option — just fight normally
+			if _try_ranged_attack():
+				return true
+
+	# No enemies — standard exploration behavior (fall through to main loop)
+	return false
+
+func _do_wait() -> bool:
+	## Wait in place (pass turn without moving or attacking).
+	## Used by Steady Aim to charge the bonus.
+	if _turn_system:
+		_turn_system._after_player_action()
+	return true
 
 func _stealth_assassin_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
 	## v3 STEALTH_ASSASSIN / HOBBIT_BURGLAR: Hunt unwary targets with alertness tracking.
@@ -2603,6 +2738,83 @@ func _get_best_assassination_target_visible() -> Monster:
 			best_dist = dist
 			best = mon
 	return best
+
+func _check_hunger() -> bool:
+	## Eat food if hungry. Returns true if action taken.
+	if not _player or not is_instance_valid(_player):
+		return false
+	if _player.hunger > _player.HUNGER_HUNGRY:
+		return false
+	# Eat any food item (tval 80)
+	for item in _player.inventory:
+		if item == null:
+			continue
+		if "tval" in item and item.tval == 80:
+			_use_consumable_item(item)
+			_total_food_eaten += 1
+			return true
+	return false
+
+func _smith_should_seek_materials() -> bool:
+	## Check if the smith needs more smithing materials.
+	if _archetype_id not in ["SMITH", "ELF_SMITH"]:
+		return false
+	var material_count: int = 0
+	for item in _player.inventory:
+		if item == null:
+			continue
+		if _is_smithing_material(item):
+			var stack: int = item.stack_count if "stack_count" in item else 1
+			material_count += stack
+	return material_count < 3  # Need at least 3 for reliable forging
+
+func _is_smithing_material(item: Variant) -> bool:
+	## Check if an item is a smithing material based on name keywords.
+	if item == null:
+		return false
+	var item_name: String = ""
+	if "name" in item:
+		item_name = str(item.name).to_lower()
+	elif "entity_name" in item:
+		item_name = str(item.entity_name).to_lower()
+	if item_name.is_empty():
+		return false
+	return "mithril" in item_name or "fragment" in item_name or "ore" in item_name \
+		or "metal" in item_name or "salvage" in item_name or "shard" in item_name \
+		or "remnant" in item_name or "ingot" in item_name
+
+func _try_seek_smithing_materials() -> bool:
+	## Smith: pathfind to visible smithing materials on the ground.
+	if not _level or not _player:
+		return false
+	var pp: Vector2i = _player.grid_position
+	var best_pos: Vector2i = Vector2i(-1, -1)
+	var best_dist: int = 999
+	# Check visible item nodes on the ground
+	for child in _level.get_children():
+		if not is_instance_valid(child):
+			continue
+		if not child.has_method("get_data"):
+			continue
+		var item_data: Variant = child.get_data()
+		if item_data == null:
+			continue
+		if _is_smithing_material(item_data):
+			var item_pos: Vector2i = Vector2i(-1, -1)
+			if "grid_position" in child:
+				item_pos = child.grid_position
+			elif "position" in child:
+				item_pos = Vector2i(int(child.position.x / 64), int(child.position.y / 64))
+			if item_pos == Vector2i(-1, -1):
+				continue
+			var dist: int = _get_chebyshev_distance(pp, item_pos)
+			if dist < best_dist and dist <= ITEM_SEEK_RANGE:
+				best_dist = dist
+				best_pos = item_pos
+	if best_pos != Vector2i(-1, -1):
+		_total_materials_collected += 1
+		return _move_toward_target(best_pos)
+	return false
 
 # ============================================================================
 # INPUT SIMULATION
