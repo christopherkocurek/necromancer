@@ -19,12 +19,15 @@ var _survival: bool = false
 var _exit_code: int = 0
 
 func _init():
-	_args = OS.get_cmdline_args()
-	_unit_only = "--unit-only" in _args
-	_gameplay_only = "--gameplay-only" in _args
-	_bot_only = "--bot-only" in _args
-	_fuzz = "--fuzz" in _args
-	_survival = "--survival" in _args
+	# User args come after "--" separator in Godot 4.x
+	_args = OS.get_cmdline_user_args()
+	# Fallback: also check full args in case invoked without "--" separator
+	var _all_args: PackedStringArray = OS.get_cmdline_args()
+	_unit_only = "--unit-only" in _args or "--unit-only" in _all_args
+	_gameplay_only = "--gameplay-only" in _args or "--gameplay-only" in _all_args
+	_bot_only = "--bot-only" in _args or "--bot-only" in _all_args
+	_fuzz = "--fuzz" in _args or "--fuzz" in _all_args
+	_survival = "--survival" in _args or "--survival" in _all_args
 
 	print("\n" + "=".repeat(70))
 	print("  NECROMANCER GODOT - TEST RUNNER")
@@ -83,6 +86,9 @@ func _run_unit_tests():
 	if gut_script:
 		var gut = gut_script.new()
 		root.add_child(gut)
+
+		# Disable subdirectory auto-discovery so only explicitly added dirs run
+		gut.include_subdirectories = false
 
 		if not _gameplay_only:
 			gut.add_directory("res://tests/unit")
