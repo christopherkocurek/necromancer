@@ -57,6 +57,8 @@ F:BOW_PROFICIENCY
 E:39:0:1:1     # ~ Wooden Torch (1)
 E:80:37:2:2    # , Fragment of Lembas (2)
 E:23:8:1:1     # | Curved Sword (1)
+E:19:12:1:1    # } Silvan Bow (1)
+E:17:1:20:20   # | Arrows (20)
 D:The Elves of Middle-earth have dwindled in the Third Age, but those
 D: who remain are wise and fair. Whether from the golden woods of
 D: Lothlorien, the hidden valley of Rivendell, or the dark forests
@@ -80,6 +82,8 @@ F:SWORD_PROFICIENCY
 E:39:0:1:1     # ~ Wooden Torch (1)
 E:80:35:3:3    # , Pieces of Dark Bread (3)
 E:23:8:1:1     # | Curved Sword (1)
+E:19:12:1:1    # } Silvan Bow (1)
+E:17:1:20:20   # | Arrows (20)
 D:Men are the secondborn children of Iluvatar, mortal and fleeting.
 D: Yet in the Third Age, many great kingdoms of Men still stand.
 D: The Rangers of the North carry the blood of Numenor, the
@@ -104,6 +108,8 @@ F:AXE_PROFICIENCY | ARC_PENALTY | DWARVEN_RESILIENCE
 E:39:0:1:1     # ~ Wooden Torch (1)
 E:80:35:2:2    # , Pieces of Dark Bread (2)
 E:21:8:1:1     # \ Dwarven Hammer (1)
+E:19:12:1:1    # } Silvan Bow (1)
+E:17:1:20:20   # | Arrows (20)
 D:The Dwarves are a tough and secretive people, created by
 D: Aule the Smith in ages past. They are master craftsmen
 D: and fierce warriors, though slow to trust outsiders.
@@ -158,6 +164,8 @@ E:80:38:3:3    # , Seed Cakes (3)
 E:23:9:1:1     # | Sylvan Blade (1)
 E:18:1:1:1     # } Sling (1)
 E:16:1:5:5     # - Sling Stones (5)
+E:19:12:1:1    # } Silvan Bow (1)
+E:17:1:20:20   # | Arrows (20)
 D:Hobbits are a small, quiet folk who love peace, good food,
 D: and comfortable homes. Yet when pressed, they show a
 D: remarkable resilience. Their small stature makes them

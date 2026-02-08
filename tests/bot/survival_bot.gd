@@ -109,6 +109,24 @@ var _total_rest_turns: int = 0             ## Total turns spent resting
 var _explored_tiles: int = 0               ## Floor exploration tracking
 var _total_tiles: int = 0
 
+# v3 telemetry — tactical AI tracking
+var _total_corridor_fights: int = 0        ## Fights in tiles with combat_score >= 3.0
+var _total_corridor_repositions: int = 0   ## Times bot moved to corridor for combat
+var _total_doors_closed: int = 0           ## Doors closed for tactical advantage
+var _total_threats_avoided: int = 0        ## Times bot fled from assessed-dangerous monster
+var _total_food_eaten: int = 0             ## Food items consumed for hunger
+var _total_last_stand_turns: int = 0       ## Turns in Last Stand zone
+var _total_materials_collected: int = 0    ## Smithing materials picked up
+var _total_assassination_attacks: int = 0  ## Attacks against unwary targets
+var _total_song_switches: int = 0          ## Times active song was changed
+var _total_voice_at_death: int = 0         ## Voice charges remaining when dying
+var _total_abilities_by_id: Dictionary = {} ## {ability_id: use_count}
+
+# v3 internal state
+var _was_monster_unwary: bool = false       ## Set before attack, checked after kill
+var _monster_alertness_cache: Dictionary = {} ## entity_id -> previous alertness
+var _prev_position: Vector2i = Vector2i(-1, -1)  ## Position before last move (for door closing)
+
 # ============================================================================
 # ENHANCED BOT — SKILL SYSTEM REFERENCES
 # ============================================================================
@@ -271,20 +289,33 @@ func _init_archetype_strategy() -> void:
 
 	match _archetype_id:
 		"WARRIOR":
-			_skill_priorities = ["melee", "evasion", "will", "stealth"]
+			_skill_priorities = ["melee", "evasion", "hunting", "stealth"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},
+				{"skill": Constants.Skill.S_MEL, "ability": 4, "name": "Charge"},
+				{"skill": Constants.Skill.S_MEL, "ability": 5, "name": "Follow-Through"},
 				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
 			]
-		"STEALTH", "STEALTH_PURE":
+		"STEALTH":
+			_skill_priorities = ["stealth", "evasion", "melee", "lore"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_STL, "ability": 7, "name": "Throat Slit"},
+				{"skill": Constants.Skill.S_STL, "ability": 5, "name": "Vanish"},
+				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+			]
+		"STEALTH_PURE":
 			_skill_priorities = ["stealth", "evasion", "will", "lore"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_STL, "ability": 5, "name": "Vanish"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
-				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_STL, "ability": 3, "name": "Escape Artist"},
+				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
 			]
 		"STEALTH_ASSASSIN":
 			_skill_priorities = ["stealth", "melee", "evasion", "will"]
@@ -292,24 +323,40 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
 				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
 				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_STL, "ability": 7, "name": "Throat Slit"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_MEL, "ability": 6, "name": "Opening Strike"},
 			]
 		"LORE_MAGE":
 			_skill_priorities = ["lore", "will", "evasion", "stealth"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"},
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"},
 				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
+				{"skill": Constants.Skill.S_LOR, "ability": 5, "name": "Herbcraft"},
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"},
 				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},
+				{"skill": Constants.Skill.S_LOR, "ability": 4, "name": "Lore of Silence"},
 				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
 			]
-		"RANGER", "RANGER_MARKSMAN":
+		"RANGER":
 			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
 				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_ARC, "ability": 5, "name": "Keen Eyes"},
+				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
+			]
+		"RANGER_MARKSMAN":
+			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_ARC, "ability": 5, "name": "Keen Eyes"},
+				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_ARC, "ability": 7, "name": "Deadly Hail"},
 			]
 		"RANGER_STEALTH_ARCHER":
 			_skill_priorities = ["archery", "stealth", "evasion", "hunting"]
@@ -317,24 +364,108 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
 				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
 				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
+				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
 			]
 		"TANK":
-			_skill_priorities = ["evasion", "melee", "will", "smithing"]
+			_skill_priorities = ["melee", "evasion", "will", "hunting"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
-				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
 				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
+				{"skill": Constants.Skill.S_EVN, "ability": 3, "name": "Crowd Fighting"},
+				{"skill": Constants.Skill.S_EVN, "ability": 7, "name": "Heavy Armour Use"},
 				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
+				{"skill": Constants.Skill.S_WIL, "ability": 2, "name": "Strength in Adversity"},
 			]
 		"SMITH":
 			_skill_priorities = ["smithing", "melee", "evasion", "will"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
 				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Aule"},
 				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_SMT, "ability": 3, "name": "Reforge"},
+				{"skill": Constants.Skill.S_SMT, "ability": 4, "name": "Expertise"},
+			]
+		"POLEARM_MASTER":
+			_skill_priorities = ["melee", "evasion", "hunting", "will"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_MEL, "ability": 3, "name": "Polearm Mastery"},
+				{"skill": Constants.Skill.S_MEL, "ability": 4, "name": "Charge"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_MEL, "ability": 5, "name": "Follow-Through"},
+				{"skill": Constants.Skill.S_MEL, "ability": 8, "name": "Cleave"},
+			]
+		"ELF_SMITH":
+			_skill_priorities = ["smithing", "evasion", "lore", "melee"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
+				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
+				{"skill": Constants.Skill.S_LOR, "ability": 17, "name": "Song of Aule"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_SMT, "ability": 3, "name": "Reforge"},
+				{"skill": Constants.Skill.S_SMT, "ability": 4, "name": "Expertise"},
+			]
+		"WILL_TANK":
+			_skill_priorities = ["will", "melee", "evasion", "hunting"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
+				{"skill": Constants.Skill.S_WIL, "ability": 2, "name": "Strength in Adversity"},
+				{"skill": Constants.Skill.S_WIL, "ability": 3, "name": "Formidable"},
+				{"skill": Constants.Skill.S_WIL, "ability": 4, "name": "Defy Death"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
+			]
+		"HOBBIT_SNIPER":
+			_skill_priorities = ["archery", "stealth", "evasion", "will"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
+				{"skill": Constants.Skill.S_ARC, "ability": 5, "name": "Keen Eyes"},
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+			]
+		"GREENWOOD_RANGER":
+			_skill_priorities = ["stealth", "archery", "evasion", "lore"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+			]
+		"HOBBIT_BURGLAR":
+			_skill_priorities = ["stealth", "evasion", "hunting", "melee"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
+				{"skill": Constants.Skill.S_STL, "ability": 4, "name": "Light Fingers"},
+				{"skill": Constants.Skill.S_STL, "ability": 9, "name": "Pilfer"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 4, "name": "Alchemy"},
+			]
+		"BANISHMENT_MAGE":
+			_skill_priorities = ["lore", "will", "evasion", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"},
+				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
+				{"skill": Constants.Skill.S_LOR, "ability": 14, "name": "Song of Banishment"},
+				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
+				{"skill": Constants.Skill.S_WIL, "ability": 4, "name": "Defy Death"},
+			]
+		"SHIELD_WALL":
+			_skill_priorities = ["melee", "evasion", "will", "hunting"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_EVN, "ability": 3, "name": "Crowd Fighting"},
+				{"skill": Constants.Skill.S_EVN, "ability": 7, "name": "Heavy Armour Use"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_MEL, "ability": 11, "name": "Defensive Stance"},
 			]
 		_:
 			_skill_priorities = ["melee", "evasion", "will", "stealth"]
@@ -478,6 +609,11 @@ func _decide_and_act() -> bool:
 	_try_buy_skills()       # Invest XP in skill priorities
 	_try_learn_abilities()  # Learn abilities when prerequisites met
 	_try_equip_from_inventory()  # Auto-equip better gear
+	_update_detection_tracking() # v3: track monster alertness transitions
+	_try_close_door_behind()     # v3: close doors after passing through
+
+	# v3: save position for next turn's door closing
+	_prev_position = _player.grid_position
 
 	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
 	var voice_pct: float = float(_player.voice_charges) / float(maxi(_player.max_voice, 1))
@@ -488,14 +624,21 @@ func _decide_and_act() -> bool:
 	if _archetype_id == "STEALTH_PURE":
 		return await _stealth_pure_decide(hp_pct, adj_count, vis_count)
 
-	# --- STEALTH_ASSASSIN: hunt unwary targets from stealth ---
-	if _archetype_id == "STEALTH_ASSASSIN":
+	# --- STEALTH_ASSASSIN / HOBBIT_BURGLAR: hunt unwary targets from stealth ---
+	if _archetype_id in ["STEALTH_ASSASSIN", "HOBBIT_BURGLAR"]:
 		return await _stealth_assassin_decide(hp_pct, adj_count, vis_count)
 
 	# Priority 0: EMERGENCY — overwhelmed by multiple adjacent enemies
 	if adj_count >= 2:
 		if _try_emergency_ability():
 			return true
+
+	# Priority 0.5: REPOSITION — move to corridor/doorway if in open room with threats
+	if vis_count > 0 and not _has_adjacent_monster():
+		var current_score: float = _tile_combat_score(_player.grid_position)
+		if current_score < 2.0:  # We're in an open area
+			if _retreat_to_corridor():
+				return true
 
 	# Priority 1: FLEE at 30% HP (upgraded from 10%)
 	if hp_pct < FLEE_HP_PCT:
@@ -530,8 +673,8 @@ func _decide_and_act() -> bool:
 		if not _has_visible_monster():
 			return await _do_rest()
 
-	# Priority 3: LORE_MAGE proactive abilities (before combat starts)
-	if _archetype_id == "LORE_MAGE" and vis_count > 0 and not _has_adjacent_monster():
+	# Priority 3: LORE_MAGE/BANISHMENT_MAGE proactive abilities (before combat starts)
+	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE"] and vis_count > 0 and not _has_adjacent_monster():
 		if _try_proactive_lore_abilities(vis_count, voice_pct):
 			return true
 
@@ -550,11 +693,18 @@ func _decide_and_act() -> bool:
 		if _try_offensive_ability():
 			return true
 
-	# Priority 7: COMBAT — fight adjacent monsters
+	# Priority 7: COMBAT — fight adjacent monsters (v3: with threat assessment)
 	if _has_adjacent_monster():
 		# Use consumable mid-combat if HP < 50%
 		if hp_pct < HP_HEAL_PCT:
 			if _try_use_consumable():
+				return true
+		# v3: Check if we should fight or flee
+		var adj_monster: Monster = _get_nearest_adjacent_monster()
+		if adj_monster and not _should_fight(adj_monster):
+			_total_threats_avoided += 1
+			if _try_multi_step_flee():
+				_total_flee_attempts += 1
 				return true
 		_try_start_combat_song()
 		return _attack_adjacent_monster()
@@ -576,13 +726,13 @@ func _decide_and_act() -> bool:
 	if _is_on_forge() and _try_use_forge():
 		return true
 
-	# Priority 12: SMITH forge-seeking — pathfind to forge tiles
-	if _archetype_id == "SMITH" and not _has_visible_monster():
+	# Priority 12: SMITH/ELF_SMITH forge-seeking — pathfind to forge tiles
+	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_visible_monster():
 		if _try_seek_forge():
 			return true
 
-	# Priority 13: LORE_MAGE — Deep Memory when stairs not found
-	if _archetype_id == "LORE_MAGE" and not _has_visible_monster():
+	# Priority 13: LORE_MAGE/BANISHMENT_MAGE — Deep Memory when stairs not found
+	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE"] and not _has_visible_monster():
 		if _try_use_deep_memory():
 			return true
 
@@ -804,15 +954,21 @@ func _attack_adjacent_monster() -> bool:
 	if not monster:
 		return false
 
+	# v3: Capture alertness BEFORE the attack for stealth kill tracking
+	_was_monster_unwary = false
+	if "alertness" in monster:
+		_was_monster_unwary = monster.alertness < Constants.ALERTNESS_ALERT
+
+	# v3: Track corridor fights
+	var combat_score: float = _tile_combat_score(_player.grid_position)
+	if combat_score >= 3.0:
+		_total_corridor_fights += 1
+
 	var direction: Vector2i = monster.grid_position - _player.grid_position
 	_player.moved_this_turn = true
 	_player.attacked_this_turn = true
 	_player.record_action(_player.direction_to_action(direction))
 
-	# try_move handles attack-on-bump via can_move_to (entity collision) but
-	# actually, in this game, movement into a monster triggers attack via
-	# the entity's move logic. Let's use try_move which handles combat.
-	var prev_hp: int = monster.current_health
 	_player.try_move(direction)
 	var move_cost: int = _level.get_movement_cost(_player.grid_position) if _level else 100
 	_player.consume_energy(move_cost)
@@ -824,6 +980,10 @@ func _attack_adjacent_monster() -> bool:
 	if not is_instance_valid(monster) or not monster.is_alive:
 		_floor_stats["monsters_killed"] += 1
 		_total_kills += 1
+		# v3: Track stealth kills
+		if _was_monster_unwary:
+			_total_stealth_kills += 1
+			_total_assassination_attacks += 1
 
 	_track_damage()
 	return true
@@ -1242,18 +1402,24 @@ func _manage_stealth() -> void:
 		"STEALTH_PURE":
 			# Always stealth — only drop for emergencies
 			should_stealth = true
-		"STEALTH_ASSASSIN":
+		"STEALTH_ASSASSIN", "HOBBIT_BURGLAR":
 			# Stealth ON when exploring, OFF when adjacent and ready to strike
 			should_stealth = not _has_adjacent_monster()
-		"STEALTH", "RANGER_STEALTH_ARCHER":
-			# Stealth ON when: no adjacent monsters
+		"STEALTH", "GREENWOOD_RANGER":
+			# Stealth ON: keep it on even with visible monsters (hybrid stealth)
 			should_stealth = not _has_adjacent_monster()
-		"LORE_MAGE":
+		"RANGER_STEALTH_ARCHER":
+			# v3 fix: keep stealth ON with visible monsters (shoot from stealth for Ambush)
+			should_stealth = not _has_adjacent_monster()
+		"LORE_MAGE", "BANISHMENT_MAGE":
 			# Stealth ON when: no visible monsters
 			should_stealth = not _has_visible_monster()
 		"RANGER", "RANGER_MARKSMAN":
-			# Stealth ON when exploring, OFF for ranged combat
-			should_stealth = not _has_visible_monster()
+			# v3 fix: keep stealth ON unless adjacent (was: off with visible)
+			should_stealth = not _has_adjacent_monster()
+		"HOBBIT_SNIPER":
+			# Stealth ON when exploring, OFF only when adjacent
+			should_stealth = not _has_adjacent_monster()
 		_:
 			# Other archetypes: stealth when wounded and no adjacent threats
 			var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
@@ -1283,9 +1449,10 @@ func _should_descend() -> bool:
 	if _floor_turn >= MAX_TURNS_PER_FLOOR - 20:
 		return true
 
-	# Check floor exploration percentage
+	# Check floor exploration percentage (v3: per-archetype threshold)
 	var explore_pct: float = _get_floor_explore_pct()
-	if explore_pct >= FLOOR_EXPLORE_PCT:
+	var threshold: float = _get_archetype_explore_threshold()
+	if explore_pct >= threshold:
 		return true  # Floor sufficiently explored
 
 	# Not enough explored yet — keep exploring
@@ -1311,13 +1478,19 @@ func _get_floor_explore_pct() -> float:
 	return float(explored) / float(total_floor)
 
 func _is_ranged_archetype() -> bool:
-	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER"]
+	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER", "HOBBIT_SNIPER", "GREENWOOD_RANGER"]
 
 func _is_caster_archetype() -> bool:
-	return _archetype_id in ["LORE_MAGE"]
+	return _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "ELF_SMITH"]
 
 func _is_stealth_archetype() -> bool:
-	return _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "RANGER_STEALTH_ARCHER"]
+	return _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_BURGLAR", "HOBBIT_SNIPER"]
+
+func _is_tank_archetype() -> bool:
+	return _archetype_id in ["TANK", "SHIELD_WALL", "WILL_TANK"]
+
+func _is_melee_archetype() -> bool:
+	return _archetype_id in ["WARRIOR", "POLEARM_MASTER", "TANK", "SHIELD_WALL", "WILL_TANK", "SMITH"]
 
 # ============================================================================
 # v2 — CONSUMABLE USAGE
@@ -1446,7 +1619,7 @@ func _stealth_pure_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool
 	return _do_random_move()
 
 func _stealth_assassin_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
-	## STEALTH_ASSASSIN: Hunt unwary monsters from stealth for surprise attacks.
+	## v3 STEALTH_ASSASSIN / HOBBIT_BURGLAR: Hunt unwary targets with alertness tracking.
 	# Emergency
 	if hp_pct < FLEE_HP_PCT:
 		if _try_use_consumable():
@@ -1460,27 +1633,44 @@ func _stealth_assassin_decide(hp_pct: float, adj_count: int, vis_count: int) -> 
 			return _attack_adjacent_monster()
 		return _do_random_move()
 
-	# Adjacent monster: finish it off
+	# Adjacent monster: check alertness for assassination
 	if adj_count > 0:
-		_try_start_combat_song()
-		var monster: Monster = _get_nearest_adjacent_monster()
-		if monster and not monster.is_alive:
-			pass
+		var target: Monster = _get_best_assassination_target()
+		if target:
+			var is_unwary: bool = "alertness" in target and target.alertness < Constants.ALERTNESS_ALERT
+			if is_unwary:
+				# Assassination attack — target is unwary/sleeping
+				_try_start_combat_song()
+				return _attack_adjacent_monster()
+			elif _should_fight(target):
+				# Alert target but we can take it
+				_try_start_combat_song()
+				return _attack_adjacent_monster()
+			else:
+				# Too dangerous — flee
+				_total_threats_avoided += 1
+				if _try_multi_step_flee():
+					_total_flee_attempts += 1
+					return true
+				return _attack_adjacent_monster()  # Cornered
 		return _attack_adjacent_monster()
 
-	# Visible monster: approach while stealthed for surprise attack
+	# Visible unwary monster: approach stealthily
 	if vis_count > 0 and _player.stealth_mode:
-		var target: Monster = _get_weakest_visible_monster()
+		var target: Monster = _get_best_assassination_target_visible()
 		if target:
-			var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
-			if dist <= 2:
-				# Close enough — move in for the kill
-				return _move_toward_target(target.grid_position)
-			elif dist <= 5:
-				# Approach stealthily
-				return _move_toward_target(target.grid_position)
+			var is_unwary: bool = "alertness" in target and target.alertness < Constants.ALERTNESS_ALERT
+			if is_unwary:
+				var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
+				if dist <= 6:
+					return _move_toward_target(target.grid_position)
 
-	# Visible monster but not stealthed — flee and re-stealth
+	# Visible ALERT monster while stealthed: try to break LOS
+	if vis_count > 0 and _player.stealth_mode:
+		_total_combats_avoided += 1
+		return _move_avoiding_monsters()
+
+	# Visible monster, not stealthed — flee to re-stealth
 	if vis_count > 0 and not _player.stealth_mode:
 		if _try_multi_step_flee():
 			return true
@@ -1629,7 +1819,7 @@ func _try_seek_forge() -> bool:
 	## SMITH archetype: pathfind to forge tiles when none nearby.
 	if not _level or not _player:
 		return false
-	if _archetype_id != "SMITH":
+	if _archetype_id not in ["SMITH", "ELF_SMITH"]:
 		return false
 
 	# Scan for forge tiles
@@ -1777,7 +1967,7 @@ func _try_start_exploration_song() -> bool:
 		return false
 
 	# Song of the Trees (+5 stealth) — great for exploration
-	if _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "LORE_MAGE", "RANGER", "RANGER_STEALTH_ARCHER"]:
+	if _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "LORE_MAGE", "BANISHMENT_MAGE", "RANGER", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_SNIPER", "HOBBIT_BURGLAR"]:
 		if _ability_system.has_ability(156):  # SONG_OF_THE_TREES
 			var check: Dictionary = _ability_system.can_use_ability(156)
 			if check.get("can_use", false):
@@ -2191,6 +2381,230 @@ func _try_learn_abilities() -> void:
 				return  # Only learn one per cycle
 
 # ============================================================================
+# v3 — CORRIDOR / DOORWAY FIGHTING
+# ============================================================================
+
+func _tile_combat_score(pos: Vector2i) -> float:
+	## Score a tile for how good it is to fight on. Higher = better.
+	if not _level or not _level.is_passable(pos):
+		return -999.0
+	var score: float = 0.0
+	var adjacent_passable: int = 0
+	for dx in range(-1, 2):
+		for dy in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var adj: Vector2i = pos + Vector2i(dx, dy)
+			if _level.is_in_bounds(adj) and _level.is_passable(adj):
+				adjacent_passable += 1
+	# Corridors (2-3 passable neighbors) are great for fighting
+	if adjacent_passable <= 3:
+		score += 0.8 * float(8 - adjacent_passable)
+	# Doorway detection
+	var tile_type: int = _level.get_tile(pos)
+	if tile_type == Level.Tile.DOOR_OPEN or tile_type == Level.Tile.DOOR_CLOSED:
+		score += 1.0
+	# Adjacent to a door is also good
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var adj_pos: Vector2i = pos + Vector2i(dx, dy)
+			if _level.is_in_bounds(adj_pos):
+				var adj_tile: int = _level.get_tile(adj_pos)
+				if adj_tile == Level.Tile.DOOR_OPEN or adj_tile == Level.Tile.DOOR_CLOSED:
+					score += 0.5
+	return score
+
+func _retreat_to_corridor() -> bool:
+	## When threatened, move to the nearest tile with the best combat score.
+	var pp: Vector2i = _player.grid_position
+	var best_pos: Vector2i = pp
+	var best_score: float = _tile_combat_score(pp)
+	for dx in range(-3, 4):
+		for dy in range(-3, 4):
+			var candidate: Vector2i = pp + Vector2i(dx, dy)
+			if not _level.is_in_bounds(candidate) or not _level.is_passable(candidate):
+				continue
+			var dist: int = _get_chebyshev_distance(pp, candidate)
+			if dist == 0 or dist > 3:
+				continue
+			var entity_at: Entity = _level.get_entity_at(candidate)
+			if entity_at != null and entity_at != _player:
+				continue
+			var score: float = _tile_combat_score(candidate) - float(dist) * 0.3
+			if score > best_score:
+				best_score = score
+				best_pos = candidate
+	if best_pos != pp:
+		_total_corridor_repositions += 1
+		return _move_toward_target(best_pos)
+	return false
+
+# ============================================================================
+# v3 — THREAT ASSESSMENT
+# ============================================================================
+
+func _assess_threat(monster: Monster) -> float:
+	## Return a threat score. > 1.0 = dangerous, < 1.0 = manageable.
+	if not is_instance_valid(monster):
+		return 0.0
+	var player_att: int = _player.get_melee_attack() if _player.has_method("get_melee_attack") else _player.skills.get("melee", 0) + 5
+	var player_evn: int = _player.get_evasion() if _player.has_method("get_evasion") else _player.skills.get("evasion", 0) + 5
+	var monster_att: int = monster.attack if "attack" in monster else 5
+	var monster_evn: int = monster.evasion if "evasion" in monster else 5
+	var player_advantage: float = float(player_att - monster_evn)
+	var monster_advantage: float = float(monster_att - player_evn)
+	var hp_ratio: float = float(monster.max_health) / float(maxi(_player.current_health, 1))
+	var threat: float = (monster_advantage + 10.0) / (player_advantage + 10.0) * hp_ratio
+	# Adjust for flags
+	if "flags3" in monster:
+		if monster.flags3 & Constants.RF3_NO_SLEEP:
+			threat *= 1.2
+		if monster.flags3 & Constants.RF3_NO_FEAR:
+			threat *= 1.1
+	if "flags1" in monster:
+		if monster.flags1 & Constants.RF1_UNIQUE:
+			threat *= 2.0
+	return threat
+
+func _should_fight(monster: Monster) -> bool:
+	## Decide whether to engage a monster or avoid it.
+	var threat: float = _assess_threat(monster)
+	match _archetype_id:
+		"STEALTH_PURE":
+			return threat < 0.3
+		"STEALTH_ASSASSIN", "HOBBIT_BURGLAR":
+			if "alertness" in monster and monster.alertness < Constants.ALERTNESS_ALERT:
+				return true  # Always strike unwary targets
+			return threat < 0.8
+		"TANK", "WARRIOR", "SHIELD_WALL", "POLEARM_MASTER", "WILL_TANK":
+			return threat < 2.0
+		"LORE_MAGE", "BANISHMENT_MAGE":
+			return threat < 1.5
+		_:
+			return threat < 1.2
+
+# ============================================================================
+# v3 — DOOR TACTICS
+# ============================================================================
+
+func _try_close_door_behind() -> bool:
+	## After moving, close any open door we just passed through.
+	if not _level or not _player:
+		return false
+	if _prev_position == Vector2i(-1, -1):
+		return false
+	if not _level.is_in_bounds(_prev_position):
+		return false
+	var tile: int = _level.get_tile(_prev_position)
+	if tile != Level.Tile.DOOR_OPEN:
+		return false
+	# Close it if a monster is chasing us or we're a stealth archetype
+	if _has_visible_monster() or _is_stealth_archetype():
+		_level.set_tile(_prev_position, Level.Tile.DOOR_CLOSED)
+		_total_doors_closed += 1
+		return true
+	return false
+
+# ============================================================================
+# v3 — DETECTION TRACKING
+# ============================================================================
+
+func _update_detection_tracking() -> void:
+	## Call at start of each turn to detect alertness transitions.
+	if not _level or not _player or not _player.stealth_mode:
+		_monster_alertness_cache.clear()
+		return
+	for entity in _level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		var mon: Monster = entity as Monster
+		if not "alertness" in mon:
+			continue
+		var eid: int = mon.get_instance_id()
+		var prev_alertness: int = _monster_alertness_cache.get(eid, mon.alertness)
+		if prev_alertness < Constants.ALERTNESS_ALERT and mon.alertness >= Constants.ALERTNESS_ALERT:
+			_total_detections += 1
+		_monster_alertness_cache[eid] = mon.alertness
+
+# ============================================================================
+# v3 — PER-ARCHETYPE EXPLORATION THRESHOLD
+# ============================================================================
+
+func _get_archetype_explore_threshold() -> float:
+	## How much of the floor to explore before descending.
+	match _archetype_id:
+		"STEALTH_PURE":
+			return 0.30
+		"STEALTH_ASSASSIN", "STEALTH", "RANGER_STEALTH_ARCHER", "HOBBIT_BURGLAR":
+			return 0.40
+		"LORE_MAGE", "BANISHMENT_MAGE":
+			return 0.60
+		"GREENWOOD_RANGER", "HOBBIT_SNIPER":
+			return 0.50
+		"WARRIOR", "TANK", "SHIELD_WALL", "POLEARM_MASTER", "WILL_TANK":
+			return 0.80
+		"SMITH", "ELF_SMITH":
+			return 0.90
+		_:
+			return 0.70
+
+# ============================================================================
+# v3 — PER-ABILITY TRACKING
+# ============================================================================
+
+func _track_ability_use(ability_id: int) -> void:
+	_total_abilities_used += 1
+	if not _total_abilities_by_id.has(ability_id):
+		_total_abilities_by_id[ability_id] = 0
+	_total_abilities_by_id[ability_id] += 1
+
+# ============================================================================
+# v3 — BEST ASSASSINATION TARGET
+# ============================================================================
+
+func _get_best_assassination_target() -> Monster:
+	## Return the best adjacent assassination target (lowest alertness, then lowest HP).
+	var best: Monster = null
+	var best_alertness: int = 999
+	var pp: Vector2i = _player.grid_position
+	for entity in _level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		var dist: int = _get_chebyshev_distance(pp, entity.grid_position)
+		if dist > 1:
+			continue
+		var mon: Monster = entity as Monster
+		var alertness: int = mon.alertness if "alertness" in mon else Constants.ALERTNESS_ALERT
+		if alertness < best_alertness:
+			best_alertness = alertness
+			best = mon
+		elif alertness == best_alertness and best != null and mon.current_health < best.current_health:
+			best = mon
+	return best
+
+func _get_best_assassination_target_visible() -> Monster:
+	## Return the best visible assassination target (lowest alertness, then closest).
+	var best: Monster = null
+	var best_alertness: int = 999
+	var best_dist: int = 999
+	var pp: Vector2i = _player.grid_position
+	for entity in _level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		if not _level.is_tile_visible(entity.grid_position):
+			continue
+		var mon: Monster = entity as Monster
+		var alertness: int = mon.alertness if "alertness" in mon else Constants.ALERTNESS_ALERT
+		var dist: int = _get_chebyshev_distance(pp, mon.grid_position)
+		if alertness < best_alertness or (alertness == best_alertness and dist < best_dist):
+			best_alertness = alertness
+			best_dist = dist
+			best = mon
+	return best
+
+# ============================================================================
 # INPUT SIMULATION
 # ============================================================================
 
@@ -2274,6 +2688,10 @@ func _finish_run(cause: String) -> void:
 	_run_active = false
 	_deepest_floor = maxi(_deepest_floor, GameManager.current_depth)
 
+	# v3: capture voice at death
+	if _player and is_instance_valid(_player):
+		_total_voice_at_death = _player.voice_charges
+
 	# Emit structured JSON result line for harness capture
 	var result_json: Dictionary = {
 		"archetype": archetype_config.get("archetype_id", "DEFAULT"),
@@ -2310,6 +2728,18 @@ func _finish_run(cause: String) -> void:
 		"total_lore_of_sleep": _total_lore_of_sleep,
 		"total_deep_memory": _total_deep_memory,
 		"total_rest_turns": _total_rest_turns,
+		# v3 telemetry
+		"total_corridor_fights": _total_corridor_fights,
+		"total_corridor_repositions": _total_corridor_repositions,
+		"total_doors_closed": _total_doors_closed,
+		"total_threats_avoided": _total_threats_avoided,
+		"total_food_eaten": _total_food_eaten,
+		"total_last_stand_turns": _total_last_stand_turns,
+		"total_materials_collected": _total_materials_collected,
+		"total_assassination_attacks": _total_assassination_attacks,
+		"total_song_switches": _total_song_switches,
+		"total_voice_at_death": _total_voice_at_death,
+		"total_abilities_by_id": _total_abilities_by_id,
 		"per_floor_stats": _all_floor_stats,
 		"timestamp": Time.get_datetime_string_from_system(),
 	}
@@ -2335,6 +2765,10 @@ func _finish_run(cause: String) -> void:
 		_total_combats_avoided, _total_stealth_kills, _total_detections, _total_rest_turns])
 	print("WoC: %d | Sleep: %d | Deep Memory: %d | Forges visited: %d" % [
 		_total_word_of_command, _total_lore_of_sleep, _total_deep_memory, _total_forges_visited])
+	print("Corridor fights: %d | Repositions: %d | Doors closed: %d | Threats avoided: %d" % [
+		_total_corridor_fights, _total_corridor_repositions, _total_doors_closed, _total_threats_avoided])
+	print("Assassinations: %d | Voice at death: %d | Materials: %d" % [
+		_total_assassination_attacks, _total_voice_at_death, _total_materials_collected])
 	print("Cause of end: %s" % _cause_of_end)
 	print("Errors encountered: %d" % _total_errors)
 

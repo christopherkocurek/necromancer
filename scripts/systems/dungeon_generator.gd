@@ -1556,7 +1556,7 @@ func _spawn_forge_materials(depth: int) -> void:
 		material_pool.append("Broken Strange Jewelry")
 
 	for forge_pos: Vector2i in forge_positions:
-		var mat_count: int = randi_range(1, 3)
+		var mat_count: int = randi_range(2, 3)
 		var spawned: int = 0
 
 		# Collect valid floor tiles within 3 tiles of forge
