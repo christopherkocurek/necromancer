@@ -1,21 +1,30 @@
 extends SceneTree
 ## Test runner for Necromancer Godot
-## Runs all GUT unit tests and the playtest bot
+## Runs all GUT unit tests, gameplay tests, and bots
 ##
 ## Usage:
 ##   godot --path . --headless --script res://test_runner.gd
 ##   godot --path . --headless --script res://test_runner.gd -- --unit-only
+##   godot --path . --headless --script res://test_runner.gd -- --gameplay-only
 ##   godot --path . --headless --script res://test_runner.gd -- --bot-only
+##   godot --path . --headless --script res://test_runner.gd -- --fuzz
+##   godot --path . --headless --script res://test_runner.gd -- --survival
 
 var _args: PackedStringArray
 var _unit_only: bool = false
+var _gameplay_only: bool = false
 var _bot_only: bool = false
+var _fuzz: bool = false
+var _survival: bool = false
 var _exit_code: int = 0
 
 func _init():
 	_args = OS.get_cmdline_args()
 	_unit_only = "--unit-only" in _args
+	_gameplay_only = "--gameplay-only" in _args
 	_bot_only = "--bot-only" in _args
+	_fuzz = "--fuzz" in _args
+	_survival = "--survival" in _args
 
 	print("\n" + "=".repeat(70))
 	print("  NECROMANCER GODOT - TEST RUNNER")
@@ -23,26 +32,42 @@ func _init():
 
 	if _unit_only:
 		print("Mode: Unit tests only\n")
+	elif _gameplay_only:
+		print("Mode: Gameplay tests only\n")
 	elif _bot_only:
 		print("Mode: Bot playtest only\n")
+	elif _fuzz:
+		print("Mode: Fuzz bot only\n")
+	elif _survival:
+		print("Mode: Survival bot only\n")
 	else:
-		print("Mode: Full test suite\n")
+		print("Mode: Full test suite (unit + gameplay + bot)\n")
 
 	call_deferred("_run_tests")
 
 func _run_tests():
-	if not _bot_only:
+	var _run_gut: bool = not _bot_only and not _fuzz and not _survival
+	var _run_bot: bool = not _unit_only and not _gameplay_only and not _fuzz and not _survival
+
+	if _run_gut:
 		await _run_unit_tests()
 
-	if not _unit_only:
+	if _fuzz:
+		await _run_fuzz_bot()
+	elif _survival:
+		await _run_survival_bot()
+	elif _run_bot:
 		await _run_bot_playtest()
 
 	_report_final()
 	quit(_exit_code)
 
 func _run_unit_tests():
+	var _label: String = "UNIT TESTS" if _unit_only else "UNIT + GAMEPLAY TESTS"
+	if _gameplay_only:
+		_label = "GAMEPLAY TESTS"
 	print("─".repeat(70))
-	print("  UNIT TESTS")
+	print("  %s" % _label)
 	print("─".repeat(70) + "\n")
 
 	# Check if GUT is available
@@ -59,8 +84,11 @@ func _run_unit_tests():
 		var gut = gut_script.new()
 		root.add_child(gut)
 
-		gut.add_directory("res://tests/unit")
-		gut.add_directory("res://tests/integration")
+		if not _gameplay_only:
+			gut.add_directory("res://tests/unit")
+			gut.add_directory("res://tests/integration")
+		if not _unit_only:
+			gut.add_directory("res://tests/gameplay")
 
 		# Run and wait
 		gut.test_scripts()
@@ -112,6 +140,64 @@ func _run_bot_playtest():
 
 	# Give control to the scene tree
 	# Bot will quit with appropriate exit code
+
+func _run_fuzz_bot():
+	print("─".repeat(70))
+	print("  FUZZ BOT")
+	print("─".repeat(70) + "\n")
+
+	var bot_script_path: String = "res://tests/bot/fuzz_bot.gd"
+	if not ResourceLoader.exists(bot_script_path):
+		print("[ERROR] Fuzz bot script not found: %s\n" % bot_script_path)
+		_exit_code = 1
+		return
+
+	var main_scene_path: String = "res://scenes/main.tscn"
+	if not ResourceLoader.exists(main_scene_path):
+		print("[ERROR] Main scene not found: %s\n" % main_scene_path)
+		_exit_code = 1
+		return
+
+	var main_scene: PackedScene = load(main_scene_path)
+	var main_instance: Node = main_scene.instantiate()
+	root.add_child(main_instance)
+
+	var bot_script = load(bot_script_path)
+	var bot: Node = Node.new()
+	bot.set_script(bot_script)
+	bot.name = "FuzzBot"
+	main_instance.add_child(bot)
+
+	print("[FUZZ BOT] Running 500+ random actions... (will exit when complete)\n")
+
+func _run_survival_bot():
+	print("─".repeat(70))
+	print("  SURVIVAL BOT")
+	print("─".repeat(70) + "\n")
+
+	var bot_script_path: String = "res://tests/bot/survival_bot.gd"
+	if not ResourceLoader.exists(bot_script_path):
+		print("[ERROR] Survival bot script not found: %s\n" % bot_script_path)
+		_exit_code = 1
+		return
+
+	var main_scene_path: String = "res://scenes/main.tscn"
+	if not ResourceLoader.exists(main_scene_path):
+		print("[ERROR] Main scene not found: %s\n" % main_scene_path)
+		_exit_code = 1
+		return
+
+	var main_scene: PackedScene = load(main_scene_path)
+	var main_instance: Node = main_scene.instantiate()
+	root.add_child(main_instance)
+
+	var bot_script = load(bot_script_path)
+	var bot: Node = Node.new()
+	bot.set_script(bot_script)
+	bot.name = "SurvivalBot"
+	main_instance.add_child(bot)
+
+	print("[SURVIVAL BOT] Running full 20-floor playthrough... (will exit when complete)\n")
 
 func _report_final():
 	print("\n" + "=".repeat(70))
