@@ -1030,6 +1030,13 @@ static func _get_terrain_pool(tile_type: int) -> Array[String]:
 				"A raised platform of obsidian stone, its surface etched with sigils of command.",
 				"The dais radiates power — this is a seat of dominion over the darkness.",
 			]
+		27:  # INSCRIPTION
+			return [
+				"Words have been carved into the stone floor here.",
+				"Faded inscriptions mark this stretch of floor — someone left a message.",
+				"Scratched letters and crude symbols cover the flagstones.",
+				"An old inscription is chiseled into the ground, still barely legible.",
+			]
 		_:
 			return ["Unremarkable dungeon floor."]
 

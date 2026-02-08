@@ -70,6 +70,25 @@ var _total_healing_done: int = 0
 var _deepest_floor: int = 0
 var _total_errors: int = 0
 
+# Enhanced bot — skill usage tracking
+var _total_abilities_used: int = 0
+var _total_ranged_attacks: int = 0
+var _total_items_equipped: int = 0
+var _total_forges_used: int = 0
+var _total_stealth_toggles: int = 0
+var _total_skills_bought: int = 0
+var _total_abilities_learned: int = 0
+var _total_songs_started: int = 0
+
+# ============================================================================
+# ENHANCED BOT — SKILL SYSTEM REFERENCES
+# ============================================================================
+
+var _ability_system: Node = null    ## AbilitySystem autoload
+var _skill_priorities: Array[String] = []  ## Skill names in priority order for XP spending
+var _ability_wishlist: Array[Dictionary] = []  ## [{skill: int, ability: int, name: String}]
+var _archetype_id: String = ""      ## Cached archetype identifier
+
 # ============================================================================
 # READY / ENTRY POINT
 # ============================================================================
@@ -109,10 +128,25 @@ func _ready() -> void:
 		_finish_run("SETUP_FAILURE")
 		return
 
-	print("[SURVIVAL BOT] Game started. Player: %s | Depth: %d | HP: %d/%d" % [
+	# Find AbilitySystem — it's a property of main, not an autoload
+	if _main and "ability_system" in _main:
+		_ability_system = _main.ability_system
+	if not _ability_system:
+		# Fallback: search autoloads
+		_ability_system = get_tree().root.get_node_or_null("AbilitySystem")
+
+	# Initialize archetype-specific strategy
+	_init_archetype_strategy()
+
+	print("[SURVIVAL BOT] Game started. Player: %s | Depth: %d | HP: %d/%d | Voice: %d/%d" % [
 		_player.entity_name, GameManager.current_depth,
-		_player.current_health, _player.max_health
+		_player.current_health, _player.max_health,
+		_player.voice_charges, _player.max_voice,
 	])
+	if _ability_system:
+		print("[SURVIVAL BOT] AbilitySystem: FOUND | Skills: %s" % str(_skill_priorities))
+	else:
+		print("[SURVIVAL BOT] AbilitySystem: NOT FOUND — abilities disabled")
 
 	# Run the main loop
 	_run_active = true
@@ -197,6 +231,68 @@ func _search_tree(node: Node, script_name: String) -> Node:
 		if found:
 			return found
 	return null
+
+# ============================================================================
+# ARCHETYPE STRATEGY
+# ============================================================================
+
+func _init_archetype_strategy() -> void:
+	## Set skill priorities and ability wishlist based on archetype.
+	_archetype_id = archetype_config.get("archetype_id", "DEFAULT")
+
+	match _archetype_id:
+		"WARRIOR":
+			_skill_priorities = ["melee", "evasion", "will", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},          # MEL_POWER
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},         # MEL_FINESSE
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},        # EVN_BLOCKING
+			]
+		"STEALTH":
+			_skill_priorities = ["stealth", "evasion", "lore", "melee"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},        # STL_DISGUISE
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},   # STL_ASSASSINATION
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of the Trees"}, # SONG_OF_THE_TREES
+			]
+		"LORE_MAGE":
+			_skill_priorities = ["lore", "will", "evasion", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"}, # WORD_OF_COMMAND
+				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"}, # SONG_OF_FREEDOM
+				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},     # DEEP_MEMORY
+				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},  # LORE_OF_SLEEP
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},  # WIL_CURSE_BREAKING
+			]
+		"RANGER":
+			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},       # ARC_FLETCHERY
+				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},     # ARC_POINT_BLANK
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},  # PER_NATURAL_TALENT
+			]
+		"TANK":
+			_skill_priorities = ["evasion", "melee", "will", "smithing"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},        # EVN_BLOCKING
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},           # MEL_POWER
+				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},  # WIL_CURSE_BREAKING
+			]
+		"SMITH":
+			_skill_priorities = ["smithing", "melee", "evasion", "will"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},     # SMT_WEAPONSMITH
+				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},     # SMT_ARMOURSMITH
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},           # MEL_POWER
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},         # EVN_DODGING
+			]
+		_:
+			_skill_priorities = ["melee", "evasion", "will", "stealth"]
+			_ability_wishlist = []
 
 # ============================================================================
 # MAIN LOOP
@@ -324,71 +420,101 @@ func _run_floor_loop() -> void:
 # ============================================================================
 
 func _decide_and_act() -> bool:
-	## Main decision function. Returns true if an action was taken (turn consumed).
+	## Main decision function with comprehensive skill usage.
+	## Returns true if an action was taken (turn consumed).
 	if not _player or not _player.is_alive:
 		return false
 	if not _level:
 		return false
 
-	# Priority 1: CRITICAL HP - try to heal or flee
-	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+	# --- FREE ACTIONS (no turn cost) ---
+	_manage_stealth()       # Toggle stealth mode based on context
+	_try_buy_skills()       # Invest XP in skill priorities
+	_try_learn_abilities()  # Learn abilities when prerequisites met
+	_try_equip_from_inventory()  # Auto-equip better gear
 
+	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+	var adj_count: int = _count_adjacent_monsters()
+	var vis_count: int = _count_visible_monsters()
+
+	# Priority 0: EMERGENCY — overwhelmed by multiple adjacent enemies
+	if adj_count >= 2:
+		if _try_emergency_ability():
+			return true
+
+	# Priority 1: CRITICAL HP — heal, use ability, or flee
 	if hp_pct < HP_CRITICAL_PCT:
-		# Extremely low HP - try healing first, then flee
 		if _try_heal():
+			return true
+		if _try_emergency_ability():
 			return true
 		if _try_flee_from_monster():
 			return true
-		# If no healing and no monster, rest
 		if not _has_adjacent_monster() and not _has_visible_monster():
 			return await _do_rest()
-		# Last resort: try to move away from danger
 		return _do_random_move()
 
+	# Priority 2: LOW HP — heal urgently, fight if cornered
 	if hp_pct < HP_LOW_PCT:
-		# Low HP - try healing urgently
 		if _try_heal():
 			return true
-		# If monster adjacent, fight (we have to)
 		if _has_adjacent_monster():
+			# Start combat song before fighting
+			_try_start_combat_song()
 			return _attack_adjacent_monster()
-		# If no threats, rest
 		if not _has_visible_monster():
 			return await _do_rest()
 
-	# Priority 2: COMBAT - fight adjacent monsters
+	# Priority 3: RANGED ATTACK — shoot visible monsters at range
+	if not _has_adjacent_monster() and vis_count > 0:
+		if _try_ranged_attack():
+			return true
+
+	# Priority 4: VOICE OFFENSIVE — use abilities on visible threats
+	if vis_count > 0 and not _has_adjacent_monster():
+		if _try_offensive_ability():
+			return true
+
+	# Priority 5: COMBAT — fight adjacent monsters
 	if _has_adjacent_monster():
+		# Start combat song before melee
+		_try_start_combat_song()
 		return _attack_adjacent_monster()
 
-	# Priority 3: HEAL if moderately wounded and safe
-	if hp_pct < HP_HEAL_PCT and _has_healing_potion():
-		if not _has_visible_monster():
-			if _try_heal():
-				return true
+	# Priority 6: HEAL if moderately wounded and safe
+	if hp_pct < HP_HEAL_PCT and not _has_visible_monster():
+		if _try_heal():
+			return true
 
-	# Priority 4: LOOT - pick up items on ground
+	# Priority 7: LOOT — pick up items on ground (auto-equips upgrades)
 	if _has_items_on_ground():
 		return _pickup_item()
 
-	# Priority 5: ON STAIRS - descend
+	# Priority 8: FORGE — use forge if standing on one
+	if _is_on_forge() and _try_use_forge():
+		return true
+
+	# Priority 9: EXPLORATION SONG — start if safe and not singing
+	if not _has_visible_monster() and not _has_adjacent_monster():
+		if _try_start_exploration_song():
+			return true
+
+	# Priority 10: ON STAIRS — descend
 	if _is_on_stairs_down():
 		return await _do_descend()
 
-	# Priority 6: REST if wounded and safe
+	# Priority 11: REST if wounded and safe
 	if hp_pct < HP_REST_PCT and not _has_visible_monster():
 		if not _has_adjacent_monster():
 			return await _do_rest()
 
-	# Priority 7: EXPLORE - find stairs
-	# If we know where stairs are, pathfind there
+	# Priority 12: EXPLORE — find stairs (SMITH may prefer forges)
 	var stairs_pos: Vector2i = _level.find_stairs_down()
 	if stairs_pos != Vector2i(-1, -1) and _level.is_explored(stairs_pos):
-		# We know where stairs are - pathfind to them
 		var path_to_stairs: Array[Vector2i] = _level.find_path_through_doors(
 			_player.grid_position, stairs_pos
 		)
 		if path_to_stairs.size() > 1:
-			# Move toward stairs (skip index 0 which is current position)
 			var next_step: Vector2i = path_to_stairs[1] if path_to_stairs[0] == _player.grid_position else path_to_stairs[0]
 			return _move_to_position(next_step)
 		elif path_to_stairs.size() == 1:
@@ -400,7 +526,6 @@ func _decide_and_act() -> bool:
 	if _stuck_counter < RANDOM_MOVE_THRESHOLD:
 		return _do_auto_explore_step()
 	else:
-		# We're stuck - try random movement to unstick
 		return _do_random_move()
 
 # ============================================================================
@@ -513,6 +638,64 @@ func _count_healing_items() -> int:
 				var stack: int = item.stack_count if "stack_count" in item else 1
 				count += stack
 	return count
+
+func _count_adjacent_monsters() -> int:
+	## Count monsters within Chebyshev distance 1.
+	if not _level:
+		return 0
+	var count: int = 0
+	var pp: Vector2i = _player.grid_position
+	for entity in _level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive:
+			var dist: int = maxi(absi(entity.grid_position.x - pp.x),
+								 absi(entity.grid_position.y - pp.y))
+			if dist <= 1:
+				count += 1
+	return count
+
+func _count_visible_monsters() -> int:
+	## Count all visible alive monsters.
+	if not _level:
+		return 0
+	var count: int = 0
+	for entity in _level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive:
+			if _level.is_tile_visible(entity.grid_position):
+				count += 1
+	return count
+
+func _get_visible_monsters() -> Array[Monster]:
+	## Return all visible alive monsters sorted by distance.
+	var monsters: Array[Monster] = []
+	if not _level:
+		return monsters
+	var pp: Vector2i = _player.grid_position
+	for entity in _level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive:
+			if _level.is_tile_visible(entity.grid_position):
+				monsters.append(entity as Monster)
+	# Sort by distance (closest first)
+	monsters.sort_custom(func(a: Monster, b: Monster) -> bool:
+		var da: int = maxi(absi(a.grid_position.x - pp.x), absi(a.grid_position.y - pp.y))
+		var db: int = maxi(absi(b.grid_position.x - pp.x), absi(b.grid_position.y - pp.y))
+		return da < db
+	)
+	return monsters
+
+func _is_on_forge() -> bool:
+	## Check if player is standing on a forge tile.
+	if not _level:
+		return false
+	return _level.get_tile(_player.grid_position) == Level.Tile.FORGE
+
+func _get_chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
+	return maxi(absi(a.x - b.x), absi(a.y - b.y))
 
 # ============================================================================
 # ACTIONS
@@ -658,6 +841,9 @@ func _pickup_item() -> bool:
 		item_node.queue_free()
 		_floor_stats["items_found"] += 1
 		_total_items += 1
+
+		# Auto-equip if it's equippable and better than current
+		_try_auto_equip(item_data)
 
 		# Consume turn
 		_player.consume_energy()
@@ -923,6 +1109,497 @@ func _attempt_emergency_descent() -> void:
 		await get_tree().create_timer(TICK_DELAY).timeout
 
 # ============================================================================
+# ENHANCED BOT — STEALTH MANAGEMENT
+# ============================================================================
+
+func _manage_stealth() -> void:
+	## Toggle stealth mode based on context. This is a FREE action (no turn cost).
+	if not _player:
+		return
+
+	var should_stealth: bool = false
+
+	# Stealth-focused archetypes prefer stealth when safe
+	if _archetype_id in ["STEALTH", "RANGER"]:
+		# Stealth ON when: no adjacent monsters and exploring
+		should_stealth = not _has_adjacent_monster()
+	elif _archetype_id == "LORE_MAGE":
+		# Stealth ON when: no visible monsters (hide while exploring)
+		should_stealth = not _has_visible_monster()
+	else:
+		# Other archetypes: stealth when wounded and no adjacent threats
+		var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+		should_stealth = hp_pct < HP_HEAL_PCT and not _has_adjacent_monster()
+
+	if _player.stealth_mode != should_stealth:
+		_player.toggle_stealth_mode()
+		_total_stealth_toggles += 1
+
+# ============================================================================
+# ENHANCED BOT — SONG MANAGEMENT
+# ============================================================================
+
+func _try_start_combat_song() -> bool:
+	## Start a combat-appropriate sustained song. Costs a turn.
+	if not _ability_system or not _player:
+		return false
+	# Already singing a combat song?
+	if _player.active_song_id in [155, 157]:  # Freedom or Aule
+		return false
+	# Need voice to sustain
+	if _player.voice_charges < 5:
+		return false
+
+	# Song of Aule (+2 melee) — best for melee archetypes
+	if _ability_system.has_ability(157):  # SONG_OF_AULE
+		var check: Dictionary = _ability_system.can_use_ability(157)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(157):
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Song of Freedom (+3 evasion) — good for anyone in combat
+	if _ability_system.has_ability(155):  # SONG_OF_FREEDOM
+		var check: Dictionary = _ability_system.can_use_ability(155)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(155):
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	return false
+
+func _try_start_exploration_song() -> bool:
+	## Start an exploration-appropriate sustained song. Costs a turn.
+	if not _ability_system or not _player:
+		return false
+	# Already singing?
+	if _player.active_song_id >= 0:
+		return false
+	# Need voice to sustain
+	if _player.voice_charges < 10:
+		return false
+
+	# Song of the Trees (+5 stealth) — great for exploration
+	if _archetype_id in ["STEALTH", "LORE_MAGE", "RANGER"]:
+		if _ability_system.has_ability(156):  # SONG_OF_THE_TREES
+			var check: Dictionary = _ability_system.can_use_ability(156)
+			if check.get("can_use", false):
+				if _ability_system.activate_ability(156):
+					_total_songs_started += 1
+					_player.consume_energy()
+					if _turn_system:
+						_turn_system._after_player_action()
+					return true
+
+	# Song of Freedom (+3 evasion) for defensive exploration
+	if _ability_system.has_ability(155):  # SONG_OF_FREEDOM
+		var check: Dictionary = _ability_system.can_use_ability(155)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(155):
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	return false
+
+# ============================================================================
+# ENHANCED BOT — VOICE ABILITIES
+# ============================================================================
+
+func _try_emergency_ability() -> bool:
+	## Use emergency AOE ability when overwhelmed. Costs a turn.
+	if not _ability_system or not _player:
+		return false
+
+	# Word of Command (140) — AOE fear+stun, best emergency ability
+	if _ability_system.has_ability(140):
+		var check: Dictionary = _ability_system.can_use_ability(140)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(140):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Song of Banishment (154) — AOE undead flee (once per floor)
+	if _ability_system.has_ability(154):
+		var check: Dictionary = _ability_system.can_use_ability(154)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(154):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	return false
+
+func _try_offensive_ability() -> bool:
+	## Use offensive voice abilities against visible targets. Costs a turn.
+	if not _ability_system or not _player:
+		return false
+	if _player.voice_charges < 3:
+		return false
+
+	var visible_monsters: Array[Monster] = _get_visible_monsters()
+	if visible_monsters.is_empty():
+		return false
+
+	# Lore of Sleep (150) — single target sleep (great for strong enemies)
+	if _ability_system.has_ability(150):
+		var check: Dictionary = _ability_system.can_use_ability(150)
+		if check.get("can_use", false):
+			# Target the strongest visible monster
+			var target: Monster = visible_monsters[0]
+			for m in visible_monsters:
+				if m.max_health > target.max_health:
+					target = m
+			if _ability_system.activate_ability(150, target):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Word of Command (140) — AOE when 2+ visible enemies
+	if visible_monsters.size() >= 2 and _ability_system.has_ability(140):
+		var check: Dictionary = _ability_system.can_use_ability(140)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(140):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Lore of Silence (144) — reduce perception in radius
+	if visible_monsters.size() >= 2 and _ability_system.has_ability(144):
+		var check: Dictionary = _ability_system.can_use_ability(144)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(144):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Inner Light (147) — damage light-sensitive monsters
+	if _ability_system.has_ability(147):
+		var check: Dictionary = _ability_system.can_use_ability(147)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(147):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Deep Memory (142) — reveal map (useful if no stairs found)
+	if _ability_system.has_ability(142):
+		var stairs_pos: Vector2i = _level.find_stairs_down()
+		if stairs_pos == Vector2i(-1, -1) or not _level.is_explored(stairs_pos):
+			var check: Dictionary = _ability_system.can_use_ability(142)
+			if check.get("can_use", false):
+				if _ability_system.activate_ability(142):
+					_total_abilities_used += 1
+					_player.consume_energy()
+					if _turn_system:
+						_turn_system._after_player_action()
+					return true
+
+	return false
+
+# ============================================================================
+# ENHANCED BOT — RANGED ATTACKS
+# ============================================================================
+
+func _try_ranged_attack() -> bool:
+	## Fire at the nearest visible monster if have bow + ammo. Costs a turn.
+	if not _player or not _player.can_fire_ranged():
+		return false
+
+	var visible_monsters: Array[Monster] = _get_visible_monsters()
+	if visible_monsters.is_empty():
+		return false
+
+	# Find best ranged target (closest non-adjacent)
+	var pp: Vector2i = _player.grid_position
+	for monster in visible_monsters:
+		var dist: int = _get_chebyshev_distance(pp, monster.grid_position)
+		if dist < 2:
+			continue  # Skip adjacent — melee is better
+		if dist > 8:
+			continue  # Too far, low accuracy
+
+		# Check line of sight
+		if _level.has_los_to(pp, monster.grid_position):
+			if _player.consume_arrow():
+				_player.attacked_this_turn = true
+				_player.ranged_attack(monster, dist)
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				_total_ranged_attacks += 1
+
+				# Track kills
+				if not is_instance_valid(monster) or not monster.is_alive:
+					_floor_stats["monsters_killed"] += 1
+					_total_kills += 1
+
+				_track_damage()
+				return true
+
+	return false
+
+# ============================================================================
+# ENHANCED BOT — EQUIPMENT MANAGEMENT
+# ============================================================================
+
+func _try_auto_equip(item_data: Variant) -> void:
+	## Try to equip a newly picked up item if it's better than current gear.
+	if item_data == null or not _player:
+		return
+	if "tval" not in item_data:
+		return
+
+	var tval: int = item_data.tval
+	if not Constants.TVAL_TO_SLOT.has(tval):
+		return  # Not equippable
+
+	var slot_id: int = Constants.TVAL_TO_SLOT[tval]
+	var slot_key: String = _equip_slot_key(slot_id)
+	if slot_key.is_empty():
+		return
+
+	var current_item: Variant = _player.equipment.get(slot_key)
+
+	# Always equip if slot is empty
+	if current_item == null:
+		if _player.equip_item(item_data, slot_key):
+			_total_items_equipped += 1
+		return
+
+	# Compare items: prefer higher attack bonus for weapons, higher evasion for armor
+	if _is_item_upgrade(item_data, current_item, slot_key):
+		if _player.equip_item(item_data, slot_key):
+			_total_items_equipped += 1
+
+func _try_equip_from_inventory() -> void:
+	## Scan inventory for equippable items better than current gear. FREE action.
+	if not _player:
+		return
+
+	for item in _player.inventory:
+		if item == null or "tval" not in item:
+			continue
+		var tval: int = item.tval
+		if not Constants.TVAL_TO_SLOT.has(tval):
+			continue
+
+		var slot_id: int = Constants.TVAL_TO_SLOT[tval]
+		var slot_key: String = _equip_slot_key(slot_id)
+		if slot_key.is_empty():
+			continue
+
+		var current_item: Variant = _player.equipment.get(slot_key)
+		if current_item == null:
+			if _player.equip_item(item, slot_key):
+				_total_items_equipped += 1
+		elif _is_item_upgrade(item, current_item, slot_key):
+			if _player.equip_item(item, slot_key):
+				_total_items_equipped += 1
+
+func _is_item_upgrade(new_item: Variant, current_item: Variant, slot_key: String) -> bool:
+	## Compare two items for the same slot. Returns true if new_item is better.
+	var new_score: int = _item_score(new_item, slot_key)
+	var old_score: int = _item_score(current_item, slot_key)
+	return new_score > old_score
+
+func _item_score(item: Variant, slot_key: String) -> int:
+	## Score an item for comparison. Higher = better.
+	if item == null:
+		return -999
+	var score: int = 0
+
+	# Weapon slots: prefer attack bonus + damage dice
+	if slot_key in ["weapon", "bow"]:
+		score += item.attack if "attack" in item else 0
+		score += item.dd * item.ds if ("dd" in item and "ds" in item) else 0
+		score += item.to_h * 2 if "to_h" in item else 0
+
+	# Armor slots: prefer evasion + protection
+	elif slot_key in ["armor", "head", "cloak", "hands", "feet", "off_hand"]:
+		score += item.evasion if "evasion" in item else 0
+		score += item.pd * item.ps if ("pd" in item and "ps" in item) else 0
+		score += item.to_a * 2 if "to_a" in item else 0
+
+	# Jewelry: prefer any bonus
+	elif slot_key in ["ring_left", "ring_right", "amulet"]:
+		score += item.to_h if "to_h" in item else 0
+		score += item.to_a if "to_a" in item else 0
+		score += item.pval if "pval" in item else 0
+
+	# Light: prefer higher pval (brighter/longer)
+	elif slot_key == "light":
+		score += item.pval if "pval" in item else 0
+
+	# Quiver: prefer more ammo
+	elif slot_key == "quiver":
+		score += item.pval if "pval" in item else 0
+
+	return score
+
+func _equip_slot_key(slot_id: int) -> String:
+	## Map EquipSlot enum to equipment dictionary key.
+	match slot_id:
+		Constants.EquipSlot.WEAPON: return "weapon"
+		Constants.EquipSlot.OFF_HAND: return "off_hand"
+		Constants.EquipSlot.BOW: return "bow"
+		Constants.EquipSlot.QUIVER: return "quiver"
+		Constants.EquipSlot.HEAD: return "head"
+		Constants.EquipSlot.BODY: return "armor"
+		Constants.EquipSlot.CLOAK: return "cloak"
+		Constants.EquipSlot.HANDS: return "hands"
+		Constants.EquipSlot.FEET: return "feet"
+		Constants.EquipSlot.NECK: return "amulet"
+		Constants.EquipSlot.RING_L: return "ring_left"
+		Constants.EquipSlot.RING_R: return "ring_right"
+		Constants.EquipSlot.LIGHT: return "light"
+	return ""
+
+# ============================================================================
+# ENHANCED BOT — SMITHING
+# ============================================================================
+
+func _try_use_forge() -> bool:
+	## Try to forge at the current forge tile. Costs a turn.
+	if not _player or not _is_on_forge():
+		return false
+
+	# Start Song of Aule if available (for +1 smithing bonus)
+	if _ability_system and _player.active_song_id != 157:
+		if _ability_system.has_ability(157):
+			var check: Dictionary = _ability_system.can_use_ability(157)
+			if check.get("can_use", false):
+				_ability_system.activate_ability(157)
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Check smithing skill — need at least 1
+	var smithing_level: int = _player.skills.get("smithing", 0)
+	if smithing_level < 1:
+		return false
+
+	var smithing_system: RefCounted = SmithingSystem.new() if ClassDB.class_exists("SmithingSystem") else null
+	if smithing_system == null:
+		# Try loading the script
+		var script: GDScript = load("res://scripts/systems/smithing_system.gd") as GDScript
+		if script:
+			smithing_system = script.new()
+	if smithing_system == null:
+		return false
+
+	# Check for available recipes
+	var recipes: Array = smithing_system.get_available_recipes(_player)
+	if recipes.is_empty():
+		return false
+
+	# Try the first available recipe
+	var recipe: Variant = recipes[0]
+	var success: bool = false
+
+	# Get mithril materials
+	var mithril: Array = smithing_system.get_mithril_materials(_player)
+	if not mithril.is_empty() and recipe.has("type"):
+		var templates: Array = smithing_system.get_creatable_items(recipe.type, GameManager.current_depth)
+		if not templates.is_empty():
+			var result: Variant = smithing_system.create_item(_player, templates[0], mithril[0])
+			if result:
+				_total_forges_used += 1
+				success = true
+
+	if success:
+		_player.consume_energy()
+		if _turn_system:
+			_turn_system._after_player_action()
+		return true
+
+	return false
+
+# ============================================================================
+# ENHANCED BOT — SKILL INVESTMENT
+# ============================================================================
+
+func _try_buy_skills() -> void:
+	## Invest XP in skill priorities. FREE action (no turn cost).
+	if not _player or _skill_priorities.is_empty():
+		return
+
+	# Try to buy one skill point per decision cycle (avoid spending all XP at once)
+	for skill_name in _skill_priorities:
+		if _player.can_afford_skill(skill_name):
+			if _player.invest_skill(skill_name):
+				_total_skills_bought += 1
+				return  # Only buy one per cycle
+
+func _try_learn_abilities() -> void:
+	## Learn abilities from wishlist when prerequisites are met. FREE action.
+	if not _player or _ability_wishlist.is_empty():
+		return
+
+	for entry in _ability_wishlist:
+		var skill_type: int = entry.get("skill", -1)
+		var ability_num: int = entry.get("ability", -1)
+		if skill_type < 0 or ability_num < 0:
+			continue
+
+		# Already learned?
+		if _player.has_ability(skill_type, ability_num):
+			continue
+
+		# Check if ability data exists and we meet requirements
+		var abilities: Array = DataManager.get_abilities_for_skill(skill_type) if DataManager else []
+		for ability_data in abilities:
+			if ability_data.ability_num == ability_num:
+				# Check skill level requirement
+				var skill_names: Array[String] = ["melee", "archery", "evasion", "stealth", "hunting", "will", "smithing", "lore"]
+				var skill_key: String = skill_names[skill_type] if skill_type < skill_names.size() else ""
+				var player_level: int = _player.skills.get(skill_key, 0)
+				if player_level < ability_data.level_requirement:
+					break  # Not high enough skill
+
+				# Check XP cost
+				var owned: int = _player.abilities_in_skill(skill_type)
+				var affinity: int = _player.get_ability_affinity_level(skill_key) if _player.has_method("get_ability_affinity_level") else 0
+				var xp_cost: int = maxi(0, (owned + 1) * 500 - 500 * affinity)
+				if _player.xp_available < xp_cost:
+					break  # Can't afford
+
+				# Learn it
+				_player.xp_available -= xp_cost
+				_player.learn_ability(skill_type, ability_num)
+				if not _player.has_meta("learned_abilities"):
+					_player.set_meta("learned_abilities", [])
+				var learned: Array = _player.get_meta("learned_abilities")
+				learned.append(entry.get("name", "Unknown"))
+				_player.set_meta("learned_abilities", learned)
+				_total_abilities_learned += 1
+				print("[SURVIVAL BOT] Learned ability: %s (-%d XP)" % [entry.get("name", "Unknown"), xp_cost])
+				return  # Only learn one per cycle
+
+# ============================================================================
 # INPUT SIMULATION
 # ============================================================================
 
@@ -954,6 +1631,9 @@ func _reset_floor_stats() -> void:
 		"damage_taken": 0,
 		"healing_done": 0,
 		"auto_explore_uses": 0,
+		"abilities_used": 0,
+		"ranged_attacks": 0,
+		"items_equipped": 0,
 		"errors": [],
 	}
 	_floor_hp_at_start = _player.current_health if _player else 0
@@ -1016,6 +1696,14 @@ func _finish_run(cause: String) -> void:
 		"total_damage_taken": _total_damage_taken,
 		"total_healing_done": _total_healing_done,
 		"total_errors": _total_errors,
+		"total_abilities_used": _total_abilities_used,
+		"total_ranged_attacks": _total_ranged_attacks,
+		"total_items_equipped": _total_items_equipped,
+		"total_forges_used": _total_forges_used,
+		"total_stealth_toggles": _total_stealth_toggles,
+		"total_skills_bought": _total_skills_bought,
+		"total_abilities_learned": _total_abilities_learned,
+		"total_songs_started": _total_songs_started,
 		"per_floor_stats": _all_floor_stats,
 		"timestamp": Time.get_datetime_string_from_system(),
 	}
@@ -1031,6 +1719,10 @@ func _finish_run(cause: String) -> void:
 	print("Total items: %d" % _total_items)
 	print("Total damage taken: %d" % _total_damage_taken)
 	print("Total healing done: %d" % _total_healing_done)
+	print("Abilities used: %d | Ranged: %d | Equipped: %d | Forged: %d" % [
+		_total_abilities_used, _total_ranged_attacks, _total_items_equipped, _total_forges_used])
+	print("Stealth toggles: %d | Skills bought: %d | Abilities learned: %d | Songs: %d" % [
+		_total_stealth_toggles, _total_skills_bought, _total_abilities_learned, _total_songs_started])
 	print("Cause of end: %s" % _cause_of_end)
 	print("Errors encountered: %d" % _total_errors)
 

@@ -2483,6 +2483,7 @@ func _scatter_storytelling(depth: int) -> void:
 		var pos: Vector2i = level.find_random_floor()
 		if pos == Vector2i(-1, -1):
 			continue
+		level.set_tile(pos, Level.Tile.INSCRIPTION)
 		level.flavor_messages[pos] = available[i]
 		placed += 1
 

@@ -57,6 +57,7 @@ enum Tile {
 	BONE_PILE = 24,      # Bone piles - 1x movement, flavor text only
 	SHADOW_FLOOR = 25,   # Shadow floor - 1x movement, 1d4 damage if tile is lit
 	THRONE_DAIS = 26,    # Throne dais - 1x movement, flavor text only
+	INSCRIPTION = 27,    # Inscribed floor - 1x movement, readable lore marker (no combat effect)
 }
 
 # Track which traps have been triggered (to avoid re-triggering)
@@ -177,7 +178,7 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
 			return true
 		_:
 			return false
@@ -256,10 +257,11 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	if tile == Tile.THRONE_DAIS and entity is Player:
 		EventBus.message_logged.emit("You stand upon the dais. Dark power radiates from the stone.", ThemeColors.MSG_WARNING)
 
-	# Environmental storytelling — one-time flavor messages
-	if entity is Player and pos in flavor_messages and pos not in _seen_flavor_positions:
-		_seen_flavor_positions[pos] = true
-		EventBus.message_logged.emit(flavor_messages[pos], ThemeColors.MSG_INFO)
+	# Environmental storytelling — inscription tiles with one-time flavor messages
+	if tile == Tile.INSCRIPTION and entity is Player:
+		if pos in flavor_messages and pos not in _seen_flavor_positions:
+			_seen_flavor_positions[pos] = true
+			EventBus.message_logged.emit(flavor_messages[pos], ThemeColors.MSG_INFO)
 
 	return false
 
@@ -279,6 +281,7 @@ func get_terrain_name(pos: Vector2i) -> String:
 		Tile.BONE_PILE: return "Bone Pile"
 		Tile.SHADOW_FLOOR: return "Shadow Floor"
 		Tile.THRONE_DAIS: return "Throne Dais"
+		Tile.INSCRIPTION: return "Inscription"
 		_: return ""
 
 func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:

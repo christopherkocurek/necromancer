@@ -158,6 +158,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[24] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # BONE_PILE -> reuses RUBBLE sprite (row 18 placeholder blank)
 	terrain_coords[25] = {"light": Vector2i(12, 18), "dark": Vector2i(13, 18)}  # SHADOW_FLOOR
 	terrain_coords[26] = {"light": Vector2i(14, 18), "dark": Vector2i(15, 18)}  # THRONE_DAIS
+	terrain_coords[27] = {"light": Vector2i(10, 18), "dark": Vector2i(11, 18)}  # INSCRIPTION -> row 18 slot (was BONE_PILE placeholder)
 
 func _load_monster_coords() -> void:
 	# === Tier 1: Outer Pits ===
