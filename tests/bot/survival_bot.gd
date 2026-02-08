@@ -2466,12 +2466,67 @@ func _try_buy_skills() -> void:
 	if not _player or _skill_priorities.is_empty():
 		return
 
-	# Try to buy one skill point per decision cycle (avoid spending all XP at once)
+	# Phase 1: Rush targets — fill critical skill thresholds before normal spending
+	var rush_targets: Array[Dictionary] = _get_skill_rush_targets()
+	for target in rush_targets:
+		var skill_name: String = target["skill"]
+		var target_level: int = target["level"]
+		var current_level: int = _player.get_skill(skill_name)
+		if current_level < target_level:
+			if _try_buy_single_skill(skill_name):
+				return  # Bought one point, done for this cycle
+
+	# Phase 2: Normal round-robin (existing priority order)
 	for skill_name in _skill_priorities:
-		if _player.can_afford_skill(skill_name):
-			if _player.invest_skill(skill_name):
-				_total_skills_bought += 1
-				return  # Only buy one per cycle
+		if _try_buy_single_skill(skill_name):
+			return  # Only buy one per cycle
+
+
+func _try_buy_single_skill(skill_name: String) -> bool:
+	## Attempt to buy a single skill point. Returns true if successful.
+	if _player.can_afford_skill(skill_name):
+		if _player.invest_skill(skill_name):
+			_total_skills_bought += 1
+			return true
+	return false
+
+
+func _get_skill_rush_targets() -> Array[Dictionary]:
+	## Returns [{skill: "stealth", level: 2}, ...] — skills to rush before normal spending.
+	## Ensures ability-dependent builds reach unlock thresholds ASAP.
+	match _archetype_id:
+		"STEALTH_PURE":
+			return [{"skill": "stealth", "level": 3}, {"skill": "evasion", "level": 1}]
+		"STEALTH_ASSASSIN":
+			return [{"skill": "stealth", "level": 2}, {"skill": "melee", "level": 1}]
+		"STEALTH":
+			return [{"skill": "stealth", "level": 2}, {"skill": "evasion", "level": 1}]
+		"HOBBIT_BURGLAR":
+			return [{"skill": "stealth", "level": 2}, {"skill": "evasion", "level": 1}]
+		"HOBBIT_SNIPER":
+			return [{"skill": "archery", "level": 2}, {"skill": "stealth", "level": 1}]
+		"GREENWOOD_RANGER":
+			return [{"skill": "stealth", "level": 2}, {"skill": "archery", "level": 1}]
+		"RANGER_STEALTH_ARCHER":
+			return [{"skill": "stealth", "level": 1}, {"skill": "archery", "level": 2}]
+		"LORE_MAGE", "BANISHMENT_MAGE":
+			return [{"skill": "lore", "level": 3}, {"skill": "will", "level": 1}]
+		"WARRIOR":
+			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
+		"POLEARM_MASTER":
+			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
+		"SHIELD_WALL":
+			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 2}]
+		"TANK", "WILL_TANK":
+			return [{"skill": "melee", "level": 1}, {"skill": "evasion", "level": 1}]
+		"SMITH":
+			return [{"skill": "smithing", "level": 2}, {"skill": "melee", "level": 1}]
+		"ELF_SMITH":
+			return [{"skill": "smithing", "level": 2}, {"skill": "evasion", "level": 1}]
+		"RANGER", "RANGER_MARKSMAN":
+			return [{"skill": "archery", "level": 2}, {"skill": "evasion", "level": 1}]
+		_:
+			return []
 
 func _try_learn_abilities() -> void:
 	## Learn abilities from wishlist when prerequisites are met. FREE action.
