@@ -14,7 +14,7 @@ extends Node
 const MAX_TURNS_PER_FLOOR: int = 200
 const MAX_TOTAL_TURNS: int = 5000
 const STUCK_THRESHOLD: int = 20       ## Abort floor if no position change for this many turns
-const RANDOM_MOVE_THRESHOLD: int = 30 ## Try random movement after this many stuck turns
+const RANDOM_MOVE_THRESHOLD: int = 10 ## Try random movement after this many stuck turns
 const HP_CRITICAL_PCT: float = 0.10   ## Below 10% HP: flee (legacy, see FLEE_HP_PCT)
 const HP_LOW_PCT: float = 0.25        ## Below 25% HP: try healing urgently
 const HP_HEAL_PCT: float = 0.50       ## Below 50% HP: quaff potion if available
@@ -751,23 +751,22 @@ func _decide_and_act() -> bool:
 	if _has_items_on_ground():
 		return _pickup_item()
 
-	# Priority 9.5: SMITH material seeking — prioritize smithing materials
-	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_visible_monster():
-		if _smith_should_seek_materials() and _try_seek_smithing_materials():
-			return true
-
-	# Priority 10: SEEK ITEMS — pathfind to visible items when safe
-	if not _has_visible_monster() and _try_seek_nearby_item():
-		return true
-
-	# Priority 11: FORGE — use forge if standing on one
+	# Priority 9.5: FORGE — use forge if standing on one (before seeking items)
 	if _is_on_forge() and _try_use_forge():
 		return true
 
-	# Priority 12: SMITH/ELF_SMITH forge-seeking — pathfind to forge tiles
+	# Priority 10: SMITH material + forge seeking — prioritize smithing pipeline
 	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_visible_monster():
+		# Seek smithing materials first (within range of forge)
+		if _smith_should_seek_materials() and _try_seek_smithing_materials():
+			return true
+		# Pathfind to forge tiles (bot "knows" forge positions)
 		if _try_seek_forge():
 			return true
+
+	# Priority 11: SEEK ITEMS — pathfind to visible items when safe
+	if not _has_visible_monster() and _try_seek_nearby_item():
+		return true
 
 	# Priority 13: LORE_MAGE/BANISHMENT_MAGE — Deep Memory when stairs not found
 	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE"] and not _has_visible_monster():
@@ -1323,22 +1322,19 @@ func _move_to_position(target: Vector2i) -> bool:
 
 func _move_in_direction(direction: Vector2i) -> bool:
 	## Execute a movement in the given direction.
+	## Returns true only if player actually moved or attacked (position changed or monster killed).
 	if direction == Vector2i.ZERO:
 		return false
 	if not _player or not _level:
 		return false
+
+	var pos_before: Vector2i = _player.grid_position
 
 	# Check if there's a monster at the target (attack it)
 	var target_pos: Vector2i = _player.grid_position + direction
 	var entity_at: Entity = _level.get_entity_at(target_pos)
 	if entity_at != null and entity_at != _player and entity_at is Monster:
 		_player.attacked_this_turn = true
-
-	# Check for closed door
-	var tile_at_target: int = _level.get_tile(target_pos)
-	if tile_at_target == Level.Tile.DOOR_CLOSED:
-		# Open the door (try_move handles this)
-		pass
 
 	_player.moved_this_turn = true
 	_player.record_action(_player.direction_to_action(direction))
@@ -1356,13 +1352,16 @@ func _move_in_direction(direction: Vector2i) -> bool:
 		_turn_system._after_player_action()
 
 	# Track combat results
+	var killed_monster: bool = false
 	if entity_at != null and entity_at is Monster:
 		if not is_instance_valid(entity_at) or not entity_at.is_alive:
 			_floor_stats["monsters_killed"] += 1
 			_total_kills += 1
+			killed_monster = true
 
 	_track_damage()
-	return true
+	# Return true only if player actually moved or killed something
+	return moved or killed_monster
 
 func _do_random_move() -> bool:
 	## Try moving in a random passable direction.
@@ -1386,11 +1385,21 @@ func _do_random_move() -> bool:
 				if hp_pct > HP_CRITICAL_PCT:
 					return _move_in_direction(dir)
 
-	# Completely stuck - wait a turn
+	# Completely stuck - try opening an adjacent closed door before giving up
+	for dir in directions:
+		var door_pos: Vector2i = _player.grid_position + dir
+		if _level and _level.get_tile(door_pos) == Level.Tile.DOOR_CLOSED:
+			_level.set_tile(door_pos, Level.Tile.DOOR_OPEN)
+			_player.consume_energy()
+			if _turn_system:
+				_turn_system._after_player_action()
+			return true  # Opened a door — next turn we can move through it
+
+	# Truly stuck with no doors to open - wait a turn
 	_player.consume_energy()
 	if _turn_system:
 		_turn_system._after_player_action()
-	return true
+	return false
 
 func _attempt_emergency_descent() -> void:
 	## Last-ditch attempt to find and use stairs.
@@ -1985,7 +1994,8 @@ func _try_seek_forge() -> bool:
 	if _archetype_id not in ["SMITH", "ELF_SMITH"]:
 		return false
 
-	# Scan for nearest explored forge tile with uses remaining
+	# Scan for nearest forge tile — bot "knows" forge positions directly
+	# (required because auto-explore often doesn't reach forge rooms before stuck-abort)
 	var pp: Vector2i = _player.grid_position
 	var best_forge: Vector2i = Vector2i(-1, -1)
 	var best_dist: int = 999
@@ -1994,11 +2004,10 @@ func _try_seek_forge() -> bool:
 		for x in range(_level.width):
 			var pos := Vector2i(x, y)
 			if _level.is_forge_tile(pos):
-				if _level.is_explored(pos):
-					var dist: int = _get_chebyshev_distance(pp, pos)
-					if dist < best_dist:
-						best_dist = dist
-						best_forge = pos
+				var dist: int = _get_chebyshev_distance(pp, pos)
+				if dist < best_dist:
+					best_dist = dist
+					best_forge = pos
 
 	if best_forge != Vector2i(-1, -1) and best_dist > 0:
 		_total_forges_visited += 1
@@ -2865,8 +2874,9 @@ func _try_close_door_behind() -> bool:
 	var tile: int = _level.get_tile(_prev_position)
 	if tile != Level.Tile.DOOR_OPEN:
 		return false
-	# Close it if a monster is chasing us or we're a stealth archetype
-	if _has_visible_monster() or _is_stealth_archetype():
+	# Only close doors when a monster is actually visible and chasing us
+	# (Don't close speculatively — it traps the bot and invalidates pathfinding)
+	if _has_visible_monster():
 		_level.set_tile(_prev_position, Level.Tile.DOOR_CLOSED)
 		_total_doors_closed += 1
 		return true
@@ -3047,6 +3057,7 @@ func _try_seek_smithing_materials() -> bool:
 	var best_pos: Vector2i = Vector2i(-1, -1)
 	var best_dist: int = 999
 	# Check item nodes on the ground (use _level.items, not get_children)
+	# Bot "knows" material positions directly (same as forge seeking)
 	for item_node in _level.items:
 		if not is_instance_valid(item_node):
 			continue
@@ -3055,10 +3066,8 @@ func _try_seek_smithing_materials() -> bool:
 			continue
 		if _is_smithing_material(item_data):
 			var item_pos: Vector2i = item_node.grid_position
-			if not _level.is_tile_visible(item_pos):
-				continue
 			var dist: int = _get_chebyshev_distance(pp, item_pos)
-			if dist < best_dist and dist <= ITEM_SEEK_RANGE * 2:  # Wider range for materials
+			if dist < best_dist:  # No range limit for smithing materials
 				best_dist = dist
 				best_pos = item_pos
 	if best_pos != Vector2i(-1, -1):
@@ -3126,6 +3135,17 @@ func _update_stuck_detection() -> void:
 		return
 	if _player.grid_position == _last_position:
 		_stuck_counter += 1
+		# After 5 turns stuck, open all adjacent closed doors (self-unstick)
+		if _stuck_counter == 5 and _level:
+			var dirs: Array[Vector2i] = [
+				Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+				Vector2i(-1, 0), Vector2i(1, 0),
+				Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+			]
+			for dir: Vector2i in dirs:
+				var pos: Vector2i = _player.grid_position + dir
+				if _level.is_in_bounds(pos) and _level.get_tile(pos) == Level.Tile.DOOR_CLOSED:
+					_level.set_tile(pos, Level.Tile.DOOR_OPEN)
 	else:
 		_stuck_counter = 0
 		_last_position = _player.grid_position
