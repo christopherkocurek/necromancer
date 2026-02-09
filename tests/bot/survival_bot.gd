@@ -625,6 +625,7 @@ func _decide_and_act() -> bool:
 	_manage_stealth()       # Toggle stealth mode based on context
 	_try_buy_skills()       # Invest XP in skill priorities
 	_try_learn_abilities()  # Learn abilities when prerequisites met
+	_try_swap_to_bow()      # Ranged archetypes: prefer bow over sling
 	_try_equip_from_inventory()  # Auto-equip better gear
 	_update_detection_tracking() # v3: track monster alertness transitions
 	_try_close_door_behind()     # v3: close doors after passing through
@@ -656,8 +657,8 @@ func _decide_and_act() -> bool:
 	if _archetype_id in ["STEALTH_ASSASSIN", "HOBBIT_BURGLAR"]:
 		return await _stealth_assassin_decide(hp_pct, adj_count, vis_count)
 
-	# --- HOBBIT_SNIPER: stand-and-shoot with Steady Aim ---
-	if _archetype_id == "HOBBIT_SNIPER":
+	# --- HOBBIT_SNIPER / RANGER_STEALTH_ARCHER: shoot-first ranged stealth ---
+	if _archetype_id in ["HOBBIT_SNIPER", "RANGER_STEALTH_ARCHER"]:
 		var sniper_result: bool = _hobbit_sniper_decide(hp_pct, adj_count, vis_count)
 		if sniper_result:
 			return true
@@ -760,10 +761,11 @@ func _decide_and_act() -> bool:
 	# Priority 10: SMITH material + forge seeking — prioritize smithing pipeline
 	# Only gate on adjacent monsters (distant monsters shouldn't block forging)
 	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_adjacent_monster():
-		# Seek smithing materials first (within range of forge)
-		if _smith_should_seek_materials() and _try_seek_smithing_materials():
-			return true
-		# Pathfind to forge tiles (bot "knows" forge positions)
+		var wants_materials: bool = _smith_should_seek_materials()
+		if wants_materials:
+			if _try_seek_smithing_materials():
+				return true
+		# Pathfind to forge tiles (bot "knows" forge positions) — always try if SMITH
 		if _try_seek_forge():
 			return true
 
@@ -1745,8 +1747,9 @@ func _do_wait_for_stalker() -> bool:
 	return true
 
 func _hobbit_sniper_decide(hp_pct: float, adj_count: int, vis_count: int) -> bool:
-	## HOBBIT_SNIPER: Stand-and-shoot loop exploiting Steady Aim.
-	## Steady Aim grants +3 ranged attack when player hasn't moved or attacked.
+	## HOBBIT_SNIPER: Shoot first, ask questions later.
+	## Steady Aim (+3 ranged) is a nice bonus but NOT worth waiting for at close range.
+	## Fire immediately at any distance — the shot itself is more valuable than the bonus.
 
 	# Emergency: flee at low HP
 	if hp_pct < FLEE_HP_PCT:
@@ -1756,33 +1759,28 @@ func _hobbit_sniper_decide(hp_pct: float, adj_count: int, vis_count: int) -> boo
 			_total_flee_attempts += 1
 			return true
 
-	# Adjacent enemy: melee (we're in trouble)
+	# Adjacent enemy: try to kite away first, then melee
 	if adj_count > 0:
+		if adj_count == 1 and _try_kite_and_shoot():
+			return true
 		_try_start_combat_song()
 		return _attack_adjacent_monster()
 
-	# Visible enemies: sniper loop
+	# Visible enemies: fire immediately
 	if vis_count > 0:
-		# If Steady Aim is charged, fire!
-		if _player.has_steady_aim_bonus():
-			if _try_ranged_attack():
-				return true
-			# Can't fire (no ammo/LOS) — try kiting
-			if _try_kite_and_shoot():
-				return true
-		else:
-			# Steady Aim not ready — WAIT (don't move, don't attack)
-			# But only if we have ranged capability and target in range
-			if _player.can_fire_ranged():
-				var nearest: Monster = _get_nearest_visible_monster()
-				if nearest:
-					var dist: int = _get_chebyshev_distance(_player.grid_position, nearest.grid_position)
-					if dist >= 2 and dist <= 6:
-						# Stand still — Steady Aim will charge
-						return _do_wait()
-			# No ranged option — just fight normally
-			if _try_ranged_attack():
-				return true
+		# Always try to fire — Steady Aim bonus is passive gravy, not a requirement
+		if _try_ranged_attack():
+			return true
+		# Can't fire (no ammo/LOS) — try kiting into position
+		if _try_kite_and_shoot():
+			return true
+		# At safe distance (4+) with Steady Aim not charged — wait one turn
+		if not _player.has_steady_aim_bonus() and _player.can_fire_ranged():
+			var nearest: Monster = _get_nearest_visible_monster()
+			if nearest:
+				var dist: int = _get_chebyshev_distance(_player.grid_position, nearest.grid_position)
+				if dist >= 4:
+					return _do_wait()
 
 	# No enemies — standard exploration behavior (fall through to main loop)
 	return false
@@ -2038,13 +2036,7 @@ func _smith_has_forgeable_materials() -> bool:
 			glowing_count += 1
 		elif idx in [SmithingSystem.BROKEN_STRANGE_WEAPON_ID, SmithingSystem.BROKEN_STRANGE_ARMOR_ID, SmithingSystem.BROKEN_STRANGE_JEWELRY_ID]:
 			strange_count += 1
-	# Check if any recipe is possible
-	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_WEAPONSMITH):
-		return true
-	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_ARMOURSMITH):
-		return true
-	if mithril_count >= 1 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_JEWELLER):
-		return true
+	# CREATE no longer needs materials — check for material-consuming recipes only
 	if glowing_count >= 2 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_REFORGE):
 		return true
 	if strange_count >= 2 and _player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_RECLAIM):
@@ -2387,6 +2379,41 @@ func _try_auto_equip(item_data: Variant) -> void:
 		if _player.equip_item(item_data, slot_key):
 			_total_items_equipped += 1
 
+func _try_swap_to_bow() -> void:
+	## Ranged archetypes: if a sling is equipped but a bow is in inventory, swap.
+	## Bows have better range and Hobbits start with 20 arrows vs 5 sling stones.
+	if not _player or not _is_ranged_archetype():
+		return
+	var current_ranged: Variant = _player.equipment.get("bow")
+	if current_ranged == null:
+		return
+	# Only swap if currently using a sling (tval 18)
+	if not "tval" in current_ranged or current_ranged.tval != 18:
+		return
+	# Look for a bow (tval 19) in inventory
+	for i in range(_player.inventory.size()):
+		var item: Variant = _player.inventory[i]
+		if item != null and "tval" in item and item.tval == 19:
+			# Swap: move sling to inventory, equip bow
+			var old_sling: Variant = current_ranged
+			_player.equipment["bow"] = item
+			_player.inventory.remove_at(i)
+			_player.inventory.append(old_sling)
+			_total_items_equipped += 1
+			# Also swap ammo: look for arrows (tval 17) in inventory
+			var current_quiver: Variant = _player.equipment.get("quiver")
+			for j in range(_player.inventory.size()):
+				var ammo: Variant = _player.inventory[j]
+				if ammo != null and "tval" in ammo and ammo.tval == 17:
+					if current_quiver != null:
+						_player.inventory.remove_at(j)
+						_player.inventory.append(current_quiver)
+					else:
+						_player.inventory.remove_at(j)
+					_player.equipment["quiver"] = ammo
+					break
+			return
+
 func _try_equip_from_inventory() -> void:
 	## Scan inventory for equippable items better than current gear. FREE action.
 	if not _player:
@@ -2629,19 +2656,20 @@ func _bot_do_reforge(ss: SmithingSystem, forge_bonus: int, depth: int) -> bool:
 	return true  # Turn was spent
 
 func _bot_do_create(ss: SmithingSystem, recipe_type: SmithingSystem.RecipeType, forge_bonus: int, depth: int) -> bool:
-	var mithril: Array = ss.get_mithril_materials(_player)
-	if mithril.is_empty():
-		return false
 	var templates: Array = ss.get_creatable_items(recipe_type, depth)
 	if templates.is_empty():
 		return false
 	# Smart selection: pick the best template for our current equipment gaps
 	var best_template: Variant = _pick_best_create_template(templates)
-	var result: Variant = ss.create_item(_player, best_template, mithril[0], forge_bonus)
+	# Use Mithril if available for premium version, otherwise forge from supplies
+	var mithril_items: Array = ss.get_mithril_materials(_player)
+	var mithril: Variant = mithril_items[0] if not mithril_items.is_empty() else null
+	var result: Variant = ss.create_item(_player, best_template, forge_bonus, mithril)
 	if result:
 		_total_create_successes += 1
 		_try_auto_equip(result)
-		print("[SURVIVAL BOT] CREATE success: %s" % (result.name if "name" in result else "item"))
+		var mithril_tag: String = " (Mithril)" if mithril != null else ""
+		print("[SURVIVAL BOT] CREATE%s success: %s" % [mithril_tag, result.name if "name" in result else "item"])
 		return true
 	return true  # Turn was spent even on failure
 
