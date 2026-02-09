@@ -132,11 +132,11 @@ func _update_info() -> void:
 	info_label.clear()
 	info_label.append_text("\n".join(lines))
 
-func _gui_input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and not event.echo:
 		var dir := Vector2i.ZERO
 		match event.keycode:
 			KEY_UP, KEY_W, KEY_K: dir = Vector2i(0, -1)
@@ -149,16 +149,16 @@ func _gui_input(event: InputEvent) -> void:
 			KEY_N: dir = Vector2i(1, 1)
 			KEY_ENTER, KEY_KP_ENTER:
 				_confirm_target()
-				accept_event()
+				get_viewport().set_input_as_handled()
 				return
 			KEY_ESCAPE:
 				close()
 				cancelled.emit()
-				accept_event()
+				get_viewport().set_input_as_handled()
 				return
 			KEY_TAB:
 				_cycle_target()
-				accept_event()
+				get_viewport().set_input_as_handled()
 				return
 
 		if dir != Vector2i.ZERO:
@@ -169,7 +169,7 @@ func _gui_input(event: InputEvent) -> void:
 				target_cursor = new_pos
 				_update_cursor_position()
 				_update_info()
-			accept_event()
+			get_viewport().set_input_as_handled()
 
 func _confirm_target() -> void:
 	# Verify LOS

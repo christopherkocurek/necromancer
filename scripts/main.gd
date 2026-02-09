@@ -847,7 +847,8 @@ func _is_ui_open() -> bool:
 		   (bestiary_panel and bestiary_panel.visible) or \
 		   (settings_panel and settings_panel.visible) or \
 		   (voice_menu and voice_menu.visible) or \
-		   (item_menu and item_menu.visible)
+		   (item_menu and item_menu.visible) or \
+		   (target_panel and target_panel.visible)
 
 func _toggle_inventory() -> void:
 	if inventory_panel.visible:
