@@ -180,14 +180,33 @@ func _populate_items_for_recipe() -> void:
 					display += " [%s]" % template.protection_dice
 				item_list.add_item(display)
 
+			# Show Mithril as optional material (if player has any)
+			_populate_optional_mithril()
+
 		SmithingSystemScript.RecipeType.REFORGE, \
 		SmithingSystemScript.RecipeType.RECLAIM, \
 		SmithingSystemScript.RecipeType.MASTERWORK:
 			# No template selection — materials only
 			pass
 
-	# Populate material list
-	_populate_materials()
+	# Populate material list (for non-CREATE recipes)
+	if selected_recipe.type not in [
+		SmithingSystemScript.RecipeType.CREATE_WEAPON,
+		SmithingSystemScript.RecipeType.CREATE_ARMOR,
+		SmithingSystemScript.RecipeType.CREATE_JEWELRY,
+	]:
+		_populate_materials()
+
+func _populate_optional_mithril() -> void:
+	## Show Mithril as an optional material for CREATE recipes.
+	material_list.clear()
+	_current_materials.clear()
+	selected_materials.clear()
+	var mithril_items: Array = smithing_system.get_mithril_materials(player)
+	if not mithril_items.is_empty():
+		_current_materials = mithril_items
+		for mat in _current_materials:
+			material_list.add_item("(Optional) %s — enhanced quality" % _get_item_display_name(mat))
 
 func _populate_materials() -> void:
 	material_list.clear()
@@ -261,17 +280,26 @@ func _update_info() -> void:
 		lines.append("")
 		lines.append("Required Skill: Smithing %d" % selected_recipe.required_skill)
 
-		# Show material count (adjusted for Master Smith)
+		# Show material count (adjusted for recipe type)
 		var needed: int = selected_recipe.material_count
-		if selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
+		if selected_recipe.type in [SmithingSystemScript.RecipeType.CREATE_WEAPON, SmithingSystemScript.RecipeType.CREATE_ARMOR, SmithingSystemScript.RecipeType.CREATE_JEWELRY]:
+			lines.append("Materials: Forge supplies (Mithril optional)")
+		elif selected_recipe.type == SmithingSystemScript.RecipeType.MASTERWORK and smithing_system.has_master_smith(player):
 			needed = 2
 			lines.append("Materials needed: %d (Master Smith)" % needed)
 		else:
 			lines.append("Materials needed: %d" % needed)
 
-		# Show XP cost for applicable recipes
+		# Show recipe-specific info
 		var forge_bonus: int = level.get_forge_bonus(player.grid_position) if level else 0
+		var skill: int = player.skills.get("smithing", 0)
 		match selected_recipe.type:
+			SmithingSystemScript.RecipeType.CREATE_WEAPON, \
+			SmithingSystemScript.RecipeType.CREATE_ARMOR, \
+			SmithingSystemScript.RecipeType.CREATE_JEWELRY:
+				lines.append("[color=cyan]Quality scales with Smithing skill (%d).[/color]" % skill)
+				if not selected_materials.is_empty():
+					lines.append("[color=gold]Using Mithril: lighter weight + bonus stats.[/color]")
 			SmithingSystemScript.RecipeType.REFORGE:
 				var cost: int = smithing_system.get_reforge_xp_cost(player)
 				lines.append("XP Cost: %d (have %d)" % [cost, player.xp_available])
@@ -353,7 +381,8 @@ func _update_forge_button() -> void:
 			SmithingSystemScript.RecipeType.CREATE_WEAPON, \
 			SmithingSystemScript.RecipeType.CREATE_ARMOR, \
 			SmithingSystemScript.RecipeType.CREATE_JEWELRY:
-				can_forge = selected_template != null and has_enough_materials
+				# CREATE only needs a template — materials (Mithril) are optional
+				can_forge = selected_template != null
 			SmithingSystemScript.RecipeType.REFORGE:
 				can_forge = has_enough_materials
 			SmithingSystemScript.RecipeType.RECLAIM:
@@ -379,8 +408,10 @@ func _on_forge_pressed() -> void:
 		SmithingSystemScript.RecipeType.CREATE_WEAPON, \
 		SmithingSystemScript.RecipeType.CREATE_ARMOR, \
 		SmithingSystemScript.RecipeType.CREATE_JEWELRY:
-			if selected_template and not selected_materials.is_empty():
-				smithing_system.create_item(player, selected_template, selected_materials[0], forge_bonus)
+			if selected_template:
+				# Mithril is optional — pass it if selected, null otherwise
+				var mithril: Variant = selected_materials[0] if not selected_materials.is_empty() else null
+				smithing_system.create_item(player, selected_template, forge_bonus, mithril)
 
 		SmithingSystemScript.RecipeType.REFORGE:
 			if selected_materials.size() >= 2:

@@ -3,9 +3,13 @@ class_name SmithingSystem
 ## Smithing system for creating, reforging, reclaiming, and masterworking items at forges.
 ## Ported from Sil-Q smithing mechanics (cmd4.c), expanded for The Necromancer.
 ##
+## Design: All recipes always produce an item. Randomness is in WHAT you get, not WHETHER.
+## Materials are the cost — no XP charge for reforging. Reclaim/Masterwork still cost XP.
+##
 ## Recipes:
-##   CREATE    - Use Mithril to forge a new base item (Weaponsmith/Armoursmith/Jeweller)
-##   REFORGE   - Combine 2 Broken Glowing items → type-filtered enchanted item (600 XP)
+##   CREATE    - Forge supplies at the forge, no materials needed. Quality scales with smithing skill.
+##               Optionally use Mithril for premium version (lighter, extra bonuses).
+##   REFORGE   - Combine 2 Broken Glowing items → type-filtered enchanted item (no XP cost)
 ##   RECLAIM   - Combine 2 Broken Strange items → type-filtered artifact (depth×50 XP)
 ##   MASTERWORK - Combine 4 Broken Strange items → legendary artifact (depth×75 XP)
 
@@ -17,9 +21,9 @@ signal reclaim_mastery_offer(artifacts: Array)     # UI: show pick-from-3 for Re
 
 # Recipe types
 enum RecipeType {
-	CREATE_WEAPON,   # Mithril → new weapon (requires SMT_WEAPONSMITH)
-	CREATE_ARMOR,    # Mithril → new armor (requires SMT_ARMOURSMITH)
-	CREATE_JEWELRY,  # Mithril → new ring/amulet/light (requires SMT_JEWELLER)
+	CREATE_WEAPON,   # Forge supplies → new weapon (requires SMT_WEAPONSMITH). Optional Mithril upgrade.
+	CREATE_ARMOR,    # Forge supplies → new armor (requires SMT_ARMOURSMITH). Optional Mithril upgrade.
+	CREATE_JEWELRY,  # Forge supplies → new ring/amulet/light (requires SMT_JEWELLER). Optional Mithril upgrade.
 	REFORGE,         # 2 Broken Glowing items → enchanted item (requires SMT_REFORGE)
 	RECLAIM,         # 2 Broken Strange items → artifact (requires SMT_RECLAIM)
 	MASTERWORK,      # 4 Broken Strange items → legendary artifact (requires SMT_MASTERWORK)
@@ -84,23 +88,23 @@ func _init() -> void:
 func _init_recipes() -> void:
 	recipes.append(Recipe.new(
 		"Forge Weapon", RecipeType.CREATE_WEAPON, 2,
-		Constants.SmithingAbility.SMT_WEAPONSMITH, 1,
-		"Forge a new weapon from Mithril. Choose the weapon type."
+		Constants.SmithingAbility.SMT_WEAPONSMITH, 0,
+		"Forge a weapon from supplies at the forge. Quality scales with Smithing skill. Use Mithril for a premium version."
 	))
 	recipes.append(Recipe.new(
 		"Forge Armor", RecipeType.CREATE_ARMOR, 2,
-		Constants.SmithingAbility.SMT_ARMOURSMITH, 1,
-		"Forge new armor from Mithril. Choose the armor type."
+		Constants.SmithingAbility.SMT_ARMOURSMITH, 0,
+		"Forge armor from supplies at the forge. Quality scales with Smithing skill. Use Mithril for a premium version."
 	))
 	recipes.append(Recipe.new(
 		"Forge Jewelry", RecipeType.CREATE_JEWELRY, 3,
-		Constants.SmithingAbility.SMT_JEWELLER, 1,
-		"Forge a ring, amulet, or light source from Mithril."
+		Constants.SmithingAbility.SMT_JEWELLER, 0,
+		"Forge a ring, amulet, or light source. Quality scales with Smithing skill. Use Mithril for a premium version."
 	))
 	recipes.append(Recipe.new(
 		"Reforge", RecipeType.REFORGE, 5,
 		Constants.SmithingAbility.SMT_REFORGE, 2,
-		"Combine 2 Broken Glowing items into a random enchanted item of chosen type. Costs 600 XP."
+		"Combine 2 Broken Glowing items into a random enchanted item of chosen type."
 	))
 	recipes.append(Recipe.new(
 		"Reclaim", RecipeType.RECLAIM, 8,
@@ -114,28 +118,16 @@ func _init_recipes() -> void:
 	))
 
 # ============================================================================
-# SUCCESS CHANCE — varies by recipe type (Task 8)
+# SUCCESS CHANCE — UI display only (all recipes now succeed 100%)
+# Design: smithing always produces an item. Randomness is in WHAT you get.
+# These functions are kept for potential UI "difficulty" display.
 # ============================================================================
 
-func get_success_chance(player: Player, recipe_type: RecipeType = RecipeType.CREATE_WEAPON, forge_bonus: int = 0) -> int:
-	var skill: int = player.skills.get("smithing", 0) + forge_bonus
-	# Song of Aule bonus (Task 13)
-	if _has_song_of_aule(player):
-		skill += 2
-	match recipe_type:
-		RecipeType.CREATE_WEAPON, RecipeType.CREATE_ARMOR, RecipeType.CREATE_JEWELRY:
-			return mini(skill * 8, 95)
-		RecipeType.REFORGE:
-			return mini(skill * 6, 90)
-		RecipeType.RECLAIM:
-			return mini(skill * 5, 85)
-		RecipeType.MASTERWORK:
-			return mini(skill * 4, 80)
-	return mini(skill * 8, 95)
+func get_success_chance(_player: Player, _recipe_type: RecipeType = RecipeType.CREATE_WEAPON, _forge_bonus: int = 0) -> int:
+	return 100
 
-func roll_success(player: Player, recipe_type: RecipeType = RecipeType.CREATE_WEAPON, forge_bonus: int = 0) -> bool:
-	var chance: int = get_success_chance(player, recipe_type, forge_bonus)
-	return randi_range(1, 100) <= chance
+func roll_success(_player: Player, _recipe_type: RecipeType = RecipeType.CREATE_WEAPON, _forge_bonus: int = 0) -> bool:
+	return true
 
 # ============================================================================
 # XP COST HELPERS (Tasks 6, 9)
@@ -205,7 +197,7 @@ func get_broken_strange_items(player: Player) -> Array:
 func get_materials_for_recipe(player: Player, recipe_type: RecipeType) -> Array:
 	match recipe_type:
 		RecipeType.CREATE_WEAPON, RecipeType.CREATE_ARMOR, RecipeType.CREATE_JEWELRY:
-			return get_mithril_materials(player)
+			return []  # CREATE uses forge supplies — no materials required. Mithril is optional.
 		RecipeType.REFORGE:
 			return get_broken_glowing_items(player)
 		RecipeType.RECLAIM, RecipeType.MASTERWORK:
@@ -309,7 +301,16 @@ func _has_flag(item: Variant, flag: String) -> bool:
 	return false
 
 # ============================================================================
-# CREATE — Forge new items from Mithril
+# CREATE — Forge items from supplies at the forge. No materials required.
+# Quality scales with smithing skill. Optional Mithril for premium versions.
+#
+# Skill bonuses (applied to base template):
+#   Weapons: +smithing/3 attack, +1 damage die at skill 8+
+#   Armor:   +smithing/4 evasion (reduces penalty), -weight at skill 6+
+#   Jewelry: +smithing/5 to pval
+#
+# Mithril upgrade (optional): "Mithril" prefix, -50% weight, +1 attack/evasion,
+#   adds MITHRIL flag for future mechanics.
 # ============================================================================
 
 func get_creatable_items(recipe_type: RecipeType, depth: int) -> Array:
@@ -332,55 +333,95 @@ func get_creatable_items(recipe_type: RecipeType, depth: int) -> Array:
 		items.append(item_data)
 	return items
 
-func create_item(player: Player, template: Variant, mithril: Variant, forge_bonus: int = 0) -> Variant:
-	if not roll_success(player, RecipeType.CREATE_WEAPON, forge_bonus):
+func create_item(player: Player, template: Variant, _forge_bonus: int = 0, mithril: Variant = null) -> Variant:
+	# Optionally consume Mithril for premium version
+	var using_mithril: bool = mithril != null
+	if using_mithril:
 		_consume_material(player, mithril)
-		smithing_failed.emit(null, "Creation failed — Mithril consumed")
-		GameManager.log_message("Your smithing attempt fails. The Mithril is ruined.", ThemeColors.MSG_ERROR)
-		return null
-
-	_consume_material(player, mithril)
 
 	var new_item: DataManager.ItemData = DataManager.duplicate_item_data(template)
 	if new_item == null:
 		return null
 
-	# Smithing bonus: +attack or +protection based on skill
 	var smithing_skill: int = _get_effective_skill(player)
-	if _is_weapon(new_item) and "attack_bonus" in new_item:
-		new_item.attack_bonus += smithing_skill / 5
-	elif _is_armor(new_item) and "evasion_bonus" in new_item:
-		new_item.evasion_bonus += smithing_skill / 10
 
-	player.inventory.append(new_item)
-	item_forged.emit(new_item, "Forged from Mithril!")
-	GameManager.log_message("You forge a %s from Mithril!" % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
+	# ---- Skill-based quality scaling ----
+	if _is_weapon(new_item):
+		# Attack bonus: +1 per 3 smithing skill (skill 3→+1, 6→+2, 9→+3)
+		var attack_bonus: int = smithing_skill / 3
+		if "attack_bonus" in new_item:
+			new_item.attack_bonus += attack_bonus
+		# Bonus damage die at high skill (skill 8+)
+		if smithing_skill >= 8 and "damage_dice" in new_item and new_item.damage_dice != "":
+			new_item.damage_dice = _add_damage_die(new_item.damage_dice)
+
+	elif _is_armor(new_item):
+		# Evasion bonus: reduces armor penalty. +1 per 4 skill (skill 4→+1, 8→+2)
+		var eva_bonus: int = smithing_skill / 4
+		if "evasion_bonus" in new_item:
+			new_item.evasion_bonus += eva_bonus
+		# Weight reduction at skill 6+: 25% lighter
+		if smithing_skill >= 6 and "weight" in new_item:
+			new_item.weight = maxi(1, int(new_item.weight * 0.75))
+
+	elif _is_jewelry(new_item):
+		# Pval bonus: +1 per 5 skill (skill 5→+1, 10→+2)
+		var pval_bonus: int = smithing_skill / 5
+		if "pval" in new_item:
+			new_item.pval += pval_bonus
+
+	# ---- Mithril upgrade (optional) ----
+	if using_mithril:
+		# Premium quality: extra bonuses
+		if _is_weapon(new_item) and "attack_bonus" in new_item:
+			new_item.attack_bonus += 1
+		elif _is_armor(new_item) and "evasion_bonus" in new_item:
+			new_item.evasion_bonus += 1
+		elif _is_jewelry(new_item) and "pval" in new_item:
+			new_item.pval += 1
+
+		# Mithril is lighter: 50% weight reduction (stacks with skill reduction)
+		if "weight" in new_item:
+			new_item.weight = maxi(1, int(new_item.weight * 0.5))
+
+		# Add MITHRIL flag
+		if "flags" in new_item and new_item.flags is Array:
+			if "MITHRIL" not in new_item.flags:
+				new_item.flags.append("MITHRIL")
+
+		# Mithril prefix in name
+		if "name" in new_item:
+			new_item.name = "Mithril " + new_item.name
+
+		player.inventory.append(new_item)
+		item_forged.emit(new_item, "Forged from Mithril!")
+		GameManager.log_message("You forge a %s from Mithril!" % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
+	else:
+		player.inventory.append(new_item)
+		item_forged.emit(new_item, "Forged!")
+		GameManager.log_message("You forge a %s at the anvil." % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
+
 	player.add_noise(Constants.NOISE_SMITHING)
 	return new_item
+
+## Add +1 to the number of damage dice in a dice string like "2d5" → "3d5"
+func _add_damage_die(dice_str: String) -> String:
+	var parts: PackedStringArray = dice_str.split("d")
+	if parts.size() != 2:
+		return dice_str
+	var num_dice: int = parts[0].to_int()
+	if num_dice <= 0:
+		num_dice = 1
+	return "%dd%s" % [num_dice + 1, parts[1]]
 
 # ============================================================================
 # REFORGE — 2 Broken Glowing items → type-filtered enchanted item (Task 3)
 # ============================================================================
 
-func reforge(player: Player, material1: Variant, material2: Variant, depth: int, forge_bonus: int = 0) -> Variant:
-	# Check XP cost (Task 6)
-	var xp_cost: int = get_reforge_xp_cost(player)
-	if not _can_afford_xp(player, xp_cost):
-		smithing_failed.emit(null, "Not enough XP (need %d, have %d)" % [xp_cost, player.xp_available])
-		GameManager.log_message("You lack the experience to attempt reforging (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
-		return null
-
-	if not roll_success(player, RecipeType.REFORGE, forge_bonus):
-		_consume_material(player, material1)
-		_consume_material(player, material2)
-		_spend_xp(player, xp_cost)
-		smithing_failed.emit(null, "Reforging failed — materials and XP consumed")
-		GameManager.log_message("Your reforging attempt fails. The broken items crumble to dust.", ThemeColors.MSG_ERROR)
-		return null
-
+func reforge(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0) -> Variant:
+	# Materials are the cost — no XP charge for reforging
 	_consume_material(player, material1)
 	_consume_material(player, material2)
-	_spend_xp(player, xp_cost)
 
 	# Type-filter based on input material category (Task 3)
 	var category: MaterialCategory = get_material_category(material1)
@@ -389,17 +430,13 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 
 	if new_item == null:
 		# Fallback: any item at depth
-		new_item = DataManager.duplicate_item_data(DataManager.get_random_item_for_depth(depth + 2))
+		var fallback: DataManager.ItemData = DataManager.get_random_item_for_depth(depth + 2)
+		if fallback:
+			new_item = DataManager.duplicate_item_data(fallback)
 
 	if new_item:
-		# Enchantment bonus for reforged items
-		var smithing_skill: int = _get_effective_skill(player)
-		if _is_weapon(new_item) and "attack_bonus" in new_item:
-			new_item.attack_bonus += 1 + smithing_skill / 8
-		elif _is_armor(new_item) and "evasion_bonus" in new_item:
-			new_item.evasion_bonus += 1
-		elif _is_jewelry(new_item) and "pval" in new_item:
-			new_item.pval = maxi(new_item.pval, 1)
+		# Apply ego enchantment — reforged items are enchanted, not plain
+		_apply_reforge_ego(new_item, depth)
 		player.inventory.append(new_item)
 		item_forged.emit(new_item, "Reforged!")
 		GameManager.log_message("The broken fragments reform into a %s!" % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
@@ -408,29 +445,23 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 	return new_item
 
 ## Reforge Mastery: reject result and reroll once (Task 10)
-func reforge_with_mastery(player: Player, material1: Variant, material2: Variant, depth: int, forge_bonus: int = 0) -> Array:
+func reforge_with_mastery(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0) -> Array:
 	# Returns [item1, item2] — UI shows item1, player can reject for item2
-	var xp_cost: int = get_reforge_xp_cost(player)
-	if not _can_afford_xp(player, xp_cost):
-		return []
-
-	if not roll_success(player, RecipeType.REFORGE, forge_bonus):
-		_consume_material(player, material1)
-		_consume_material(player, material2)
-		_spend_xp(player, xp_cost)
-		smithing_failed.emit(null, "Reforging failed")
-		GameManager.log_message("Your reforging attempt fails. The broken items crumble to dust.", ThemeColors.MSG_ERROR)
-		return []
-
+	# Materials are the cost — no XP charge
 	_consume_material(player, material1)
 	_consume_material(player, material2)
-	_spend_xp(player, xp_cost)
 
 	var category: MaterialCategory = get_material_category(material1)
 	var tvals: Array[int] = _get_tvals_for_category(category)
 
 	var item1: DataManager.ItemData = DataManager.get_random_item_by_tvals(tvals, depth)
 	var item2: DataManager.ItemData = DataManager.get_random_item_by_tvals(tvals, depth)
+
+	# Apply ego enchantments to both candidates
+	if item1:
+		_apply_reforge_ego(item1, depth)
+	if item2:
+		_apply_reforge_ego(item2, depth)
 
 	var results: Array = []
 	if item1:
@@ -442,13 +473,7 @@ func reforge_with_mastery(player: Player, material1: Variant, material2: Variant
 func accept_reforge_mastery_item(player: Player, item: DataManager.ItemData) -> void:
 	if item == null:
 		return
-	var smithing_skill: int = _get_effective_skill(player)
-	if _is_weapon(item) and "attack_bonus" in item:
-		item.attack_bonus += 1 + smithing_skill / 8
-	elif _is_armor(item) and "evasion_bonus" in item:
-		item.evasion_bonus += 1
-	elif _is_jewelry(item) and "pval" in item:
-		item.pval = maxi(item.pval, 1)
+	# Ego already applied during reforge_with_mastery — just add to inventory
 	player.inventory.append(item)
 	item_forged.emit(item, "Reforged!")
 	GameManager.log_message("The broken fragments reform into a %s!" % _get_item_name(item), ThemeColors.ABILITY_LEARNED)
@@ -458,7 +483,7 @@ func accept_reforge_mastery_item(player: Player, item: DataManager.ItemData) -> 
 # RECLAIM — 2 Broken Strange items → type-filtered artifact (Task 4)
 # ============================================================================
 
-func reclaim(player: Player, material1: Variant, material2: Variant, _depth: int, forge_bonus: int = 0) -> Variant:
+func reclaim(player: Player, material1: Variant, material2: Variant, _depth: int, _forge_bonus: int = 0) -> Variant:
 	# Type-filter based on input material category (Task 4)
 	var category: MaterialCategory = get_material_category(material1)
 	var tvals: Array[int] = _get_tvals_for_category(category)
@@ -478,14 +503,6 @@ func reclaim(player: Player, material1: Variant, material2: Variant, _depth: int
 		GameManager.log_message("You lack the experience to reclaim this artifact (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
 		return null
 
-	if not roll_success(player, RecipeType.RECLAIM, forge_bonus):
-		_consume_material(player, material1)
-		_consume_material(player, material2)
-		_spend_xp(player, xp_cost)
-		smithing_failed.emit(null, "Reclaiming failed — materials and XP consumed")
-		GameManager.log_message("The strange fragments resist your efforts and dissolve.", ThemeColors.MSG_ERROR)
-		return null
-
 	_consume_material(player, material1)
 	_consume_material(player, material2)
 	_spend_xp(player, xp_cost)
@@ -501,7 +518,7 @@ func reclaim(player: Player, material1: Variant, material2: Variant, _depth: int
 	return null
 
 ## Reclaim Mastery: show 3 artifacts, player picks one (Task 11)
-func reclaim_with_mastery(player: Player, material1: Variant, material2: Variant, _depth: int, forge_bonus: int = 0) -> Array[DataManager.ArtifactData]:
+func reclaim_with_mastery(player: Player, material1: Variant, material2: Variant, _depth: int, _forge_bonus: int = 0) -> Array[DataManager.ArtifactData]:
 	var category: MaterialCategory = get_material_category(material1)
 	var tvals: Array[int] = _get_tvals_for_category(category)
 	var candidates: Array[DataManager.ArtifactData] = DataManager.get_random_artifacts_by_tvals(tvals, 3)
@@ -517,14 +534,6 @@ func reclaim_with_mastery(player: Player, material1: Variant, material2: Variant
 
 	if not _can_afford_xp(player, xp_cost):
 		GameManager.log_message("You lack the experience to reclaim an artifact (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
-		return []
-
-	if not roll_success(player, RecipeType.RECLAIM, forge_bonus):
-		_consume_material(player, material1)
-		_consume_material(player, material2)
-		_spend_xp(player, xp_cost)
-		smithing_failed.emit(null, "Reclaiming failed")
-		GameManager.log_message("The strange fragments resist your efforts and dissolve.", ThemeColors.MSG_ERROR)
 		return []
 
 	_consume_material(player, material1)
@@ -548,7 +557,7 @@ func accept_reclaim_mastery_artifact(player: Player, artifact: DataManager.Artif
 # MASTERWORK — 4 Broken Strange items → legendary artifact (Task 2)
 # ============================================================================
 
-func masterwork(player: Player, materials: Array, _depth: int, forge_bonus: int = 0) -> Variant:
+func masterwork(player: Player, materials: Array, _depth: int, _forge_bonus: int = 0) -> Variant:
 	# Master Smith (Task 12): only need 2 materials instead of 4
 	var required_count: int = 4
 	if player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_MASTER_SMITH):
@@ -574,14 +583,6 @@ func masterwork(player: Player, materials: Array, _depth: int, forge_bonus: int 
 	if not _can_afford_xp(player, xp_cost):
 		smithing_failed.emit(null, "Not enough XP (need %d, have %d)" % [xp_cost, player.xp_available])
 		GameManager.log_message("You lack the experience for a masterwork (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
-		return null
-
-	if not roll_success(player, RecipeType.MASTERWORK, forge_bonus):
-		for i in range(required_count):
-			_consume_material(player, materials[i])
-		_spend_xp(player, xp_cost)
-		smithing_failed.emit(null, "Masterwork failed — materials and XP consumed")
-		GameManager.log_message("The fragments shatter! Your masterwork attempt has failed.", ThemeColors.MSG_ERROR)
 		return null
 
 	for i in range(required_count):
@@ -622,6 +623,26 @@ func _get_item_name(item: Variant) -> String:
 	if "name" in item:
 		return item.name
 	return "item"
+
+## Apply a random ego enchantment to a reforged item.
+## Broken Glowing items were once enchanted — reforging restores an enchantment.
+## Always excludes cursed egos (player-crafted items should never be cursed).
+## Falls back to a "Fine" quality bonus if no matching ego is found.
+func _apply_reforge_ego(item: DataManager.ItemData, depth: int) -> void:
+	if item == null:
+		return
+	var sval: int = item.sval if "sval" in item else 0
+	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, sval, depth, true)
+	if ego:
+		DataManager.apply_ego_to_item(item, ego)
+	else:
+		# No matching ego — apply a generic quality bonus
+		if _is_weapon(item) and "attack_bonus" in item:
+			item.attack_bonus += 1
+			item.name = "Fine %s" % item.name
+		elif _is_armor(item) and "evasion_bonus" in item:
+			item.evasion_bonus += 1
+			item.name = "Fine %s" % item.name
 
 # ============================================================================
 # RECIPE ACCESS

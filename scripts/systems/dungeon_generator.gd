@@ -1597,7 +1597,8 @@ func _spawn_forge_materials(depth: int) -> void:
 	# Build pool of smithing material IDs based on depth
 	# Broken Glowing (enchanted reforging) available from first forge (depth 2)
 	# Broken Strange (artifact reclaim) appears in deep forges
-	var material_pool: Array[int] = [SmithingSystem.MITHRIL_ID]  # 410 — Piece of Mithril
+	# Mithril spawns naturally at depth 15+ via loot tables — not placed at forges
+	var material_pool: Array[int] = []
 	var glowing_pool: Array[int] = []
 	if depth >= 2:
 		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_WEAPON_ID)  # 491
