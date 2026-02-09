@@ -17,6 +17,7 @@ signal quit_requested
 var player_data: Dictionary = {}
 var run_stats: RunStats = null
 var final_score: int = 0
+var _player_ref: Player = null  # Kept for character panel access
 
 # Phased reveal state
 var _reveal_active: bool = false
@@ -52,6 +53,7 @@ func _setup_typewriter_timer() -> void:
 	add_child(_typewriter_timer)
 
 func show_death(player: Player, stats: RunStats) -> void:
+	_player_ref = player
 	run_stats = stats
 	_store_player_data(player)
 	_calculate_score(player)
@@ -390,7 +392,15 @@ func _show_inventory() -> void:
 	GameManager.log_message("Inventory view not yet implemented.", ThemeColors.MSG_SYSTEM)
 
 func _show_character() -> void:
-	GameManager.log_message("Character sheet not yet implemented.", ThemeColors.MSG_SYSTEM)
+	if _player_ref and is_instance_valid(_player_ref):
+		# Find the character panel in our parent (UILayer)
+		var parent_layer: Node = get_parent()
+		if parent_layer:
+			for child in parent_layer.get_children():
+				if child is CharacterPanel:
+					child.open(_player_ref)
+					return
+	GameManager.log_message("Character data not available.", ThemeColors.MSG_SYSTEM)
 
 func _show_messages() -> void:
 	GameManager.log_message("Message log not yet implemented.", ThemeColors.MSG_SYSTEM)

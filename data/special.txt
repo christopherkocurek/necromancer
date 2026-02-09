@@ -1072,3 +1072,115 @@ C:0:0:0:0:0:0:2
 T:31:0:99
 F:STEALTH
 B:3/9
+
+# ============================================================================
+# RING EGOS (tval 45) — for smithing reforge
+# ============================================================================
+
+# Ring of Protection: +1 evasion
+N:200:of Protection
+W:2:3:0:500
+C:0:0:0:1:0:0:0
+T:45:0:99
+
+# Ring of Might: +1 STR
+N:201:of Might
+W:4:4:0:1000
+C:0:0:0:0:0:0:1
+T:45:0:99
+F:STR
+
+# Ring of Precision: +1 DEX
+N:202:of Precision
+W:4:4:0:1000
+C:0:0:0:0:0:0:1
+T:45:0:99
+F:DEX
+
+# Ring of Fortitude: +1 CON
+N:203:of Fortitude
+W:4:4:0:1000
+C:0:0:0:0:0:0:1
+T:45:0:99
+F:CON
+
+# Ring of Grace: +1 GRA
+N:204:of Grace
+W:6:5:0:1500
+C:0:0:0:0:0:0:1
+T:45:0:99
+F:GRA
+
+# Ring of Resilience: resist fire
+N:205:of Resilience
+W:5:4:0:1200
+C:0:0:0:0:0:0:0
+T:45:0:99
+F:RES_FIRE
+
+# Ring of Frost Ward: resist cold
+N:206:of Frost Ward
+W:5:4:0:1200
+C:0:0:0:0:0:0:0
+T:45:0:99
+F:RES_COLD
+
+# Ring of the Serpent: resist poison
+N:207:of the Serpent
+W:6:5:0:1500
+C:0:0:0:0:0:0:0
+T:45:0:99
+F:RES_POIS
+
+# Ring of Free Action
+N:208:of Free Action
+W:8:6:0:2000
+C:0:0:0:0:0:0:0
+T:45:0:99
+F:FREE_ACT
+
+# ============================================================================
+# AMULET EGOS (tval 40) — for smithing reforge
+# ============================================================================
+
+# Amulet of Warding: +1 evasion, sustain will
+N:209:of Warding
+W:3:3:0:600
+C:0:0:0:1:0:0:0
+T:40:0:99
+F:SUST_GRA
+
+# Amulet of Vitality: +1 CON
+N:210:of Vitality
+W:4:4:0:1000
+C:0:0:0:0:0:0:1
+T:40:0:99
+F:CON
+
+# Amulet of Perception: +1 perception pval
+N:211:of Perception
+W:3:3:0:800
+C:0:0:0:0:0:0:1
+T:40:0:99
+F:PERCEPTION
+
+# Amulet of the Blessed: sustain stats
+N:212:of the Blessed
+W:6:5:0:1500
+C:0:0:0:0:0:0:0
+T:40:0:99
+F:SUST_STR | SUST_DEX
+
+# Amulet of Courage: resist fear, +1 will
+N:213:of Courage
+W:5:4:0:1200
+C:0:0:0:0:0:0:1
+T:40:0:99
+F:RES_FEAR
+
+# Amulet of the Wise: +1 GRA
+N:214:of the Wise
+W:6:5:0:1500
+C:0:0:0:0:0:0:1
+T:40:0:99
+F:GRA

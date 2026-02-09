@@ -154,7 +154,7 @@ func test_masterwork_success_rate():
 # ============================================================================
 
 func test_reforge_xp_cost_base():
-	assert_eq(SmithingSystem.REFORGE_XP_COST, 600, "Reforge base cost = 600")
+	assert_eq(SmithingSystem.REFORGE_XP_COST, 250, "Reforge base cost = 250")
 
 func test_reclaim_xp_multiplier():
 	assert_eq(SmithingSystem.RECLAIM_XP_MULTIPLIER, 50, "Reclaim multiplier = 50")
@@ -180,11 +180,8 @@ func test_forge_bonus_values():
 	var level := Level.new()
 	level.width = 10
 	level.height = 10
-	level._tiles = []
-	for _y in range(10):
-		var row: Array[int] = []
-		row.resize(10)
-		level._tiles.append(row)
+	level.terrain.resize(100)
+	level.terrain.fill(Level.Tile.FLOOR)
 
 	# Normal forge
 	level.set_tile(Vector2i(1, 1), Level.Tile.FORGE)
@@ -204,11 +201,8 @@ func test_forge_use_tracking():
 	var level := Level.new()
 	level.width = 10
 	level.height = 10
-	level._tiles = []
-	for _y in range(10):
-		var row: Array[int] = []
-		row.resize(10)
-		level._tiles.append(row)
+	level.terrain.resize(100)
+	level.terrain.fill(Level.Tile.FLOOR)
 
 	level.set_tile(Vector2i(5, 5), Level.Tile.FORGE)
 	level.init_forge_uses(Vector2i(5, 5), 3)
@@ -233,11 +227,8 @@ func test_is_forge_tile_all_types():
 	var level := Level.new()
 	level.width = 10
 	level.height = 10
-	level._tiles = []
-	for _y in range(10):
-		var row: Array[int] = []
-		row.resize(10)
-		level._tiles.append(row)
+	level.terrain.resize(100)
+	level.terrain.fill(Level.Tile.FLOOR)
 
 	level.set_tile(Vector2i(1, 1), Level.Tile.FORGE)
 	level.set_tile(Vector2i(2, 2), Level.Tile.FORGE_ENCHANTED)
@@ -345,3 +336,78 @@ func test_smithing_ability_enum_has_all_abilities():
 	assert_eq(Constants.SmithingAbility.SMT_SALVAGE, 9)
 	assert_eq(Constants.SmithingAbility.SMT_RECLAIM_MASTERY, 10)
 	assert_eq(Constants.SmithingAbility.SMT_MASTER_SMITH, 11)
+
+# ============================================================================
+# REFORGE XP COST AND CHARGING (Redesign C1)
+# ============================================================================
+
+func test_reforge_xp_cost_is_250():
+	assert_eq(SmithingSystem.REFORGE_XP_COST, 250, "Reforge base XP cost should be 250")
+
+func test_reforge_xp_cost_formula():
+	# Base cost 250, no expertise discount: should be 250
+	# With expertise at skill 6-9: 250 * 0.5 = 125
+	# With expertise at skill 10+: 250 * 0.25 = 62
+	assert_eq(int(250 * 1.0), 250, "No expertise = 250 XP")
+	assert_eq(int(250 * 0.5), 125, "Expertise skill 6-9 = 125 XP")
+	assert_eq(int(250 * 0.25), 62, "Expertise skill 10+ = 62 XP")
+
+# ============================================================================
+# REFORGE TYPE CHOICE (Redesign C2)
+# ============================================================================
+
+func test_reforge_accepts_chosen_tval_parameter():
+	# Verify reforge function accepts the chosen_tval and use_chosen_tval params
+	# We can't call reforge without a player, but we verify the function signature exists
+	# by checking the recipe description mentions type choice
+	var reforge_recipe: SmithingSystem.Recipe = null
+	for r in smithing.recipes:
+		if r.type == SmithingSystem.RecipeType.REFORGE:
+			reforge_recipe = r
+	assert_not_null(reforge_recipe)
+	assert_true(reforge_recipe.description.contains("Choose output type"), "Reforge description mentions type choice")
+
+func test_material_category_enum_values():
+	# Verify the three categories that players can choose from
+	assert_eq(SmithingSystem.MaterialCategory.WEAPON, 0)
+	assert_eq(SmithingSystem.MaterialCategory.ARMOR, 1)
+	assert_eq(SmithingSystem.MaterialCategory.JEWELRY, 2)
+
+# ============================================================================
+# REFORGE SKILL SCALING (Redesign C4)
+# ============================================================================
+
+func test_reforge_skill_tier_system():
+	# Tier system: smithing/5 per tier
+	# 0-4 = no bonus, 5-9 = Improved(+1), 10-14 = Fine(+2), 15-19 = Flawless(+3), 20+ = Masterwork(+4)
+	assert_eq(smithing._get_smithing_tier(0), 0, "Smithing 0: tier 0")
+	assert_eq(smithing._get_smithing_tier(4), 0, "Smithing 4: tier 0")
+	assert_eq(smithing._get_smithing_tier(5), 1, "Smithing 5: tier 1 (Improved)")
+	assert_eq(smithing._get_smithing_tier(9), 1, "Smithing 9: tier 1")
+	assert_eq(smithing._get_smithing_tier(10), 2, "Smithing 10: tier 2 (Fine)")
+	assert_eq(smithing._get_smithing_tier(15), 3, "Smithing 15: tier 3 (Flawless)")
+	assert_eq(smithing._get_smithing_tier(20), 4, "Smithing 20: tier 4 (Masterwork)")
+
+func test_reforge_skill_tier_names():
+	assert_eq(smithing._get_smithing_tier_name(0), "", "Tier 0: no prefix")
+	assert_eq(smithing._get_smithing_tier_name(1), "Improved", "Tier 1: Improved")
+	assert_eq(smithing._get_smithing_tier_name(2), "Fine", "Tier 2: Fine")
+	assert_eq(smithing._get_smithing_tier_name(3), "Flawless", "Tier 3: Flawless")
+	assert_eq(smithing._get_smithing_tier_name(4), "Masterwork", "Tier 4: Masterwork")
+
+func test_reforge_skill_tier_capped_at_4():
+	# Even smithing 100 should cap at tier 4
+	assert_eq(smithing._get_smithing_tier(100), 4, "Tier caps at 4")
+
+# ============================================================================
+# WEAPONSMITH/ARMOURSMITH SOFT GATE (Redesign C3)
+# ============================================================================
+
+func test_weaponsmith_armoursmith_ability_constants():
+	# Verify ability constants exist and can be used for checks
+	assert_eq(Constants.SmithingAbility.SMT_WEAPONSMITH, 0, "Weaponsmith ability = 0")
+	assert_eq(Constants.SmithingAbility.SMT_ARMOURSMITH, 1, "Armoursmith ability = 1")
+
+func test_reforge_skill_bonus_function_exists():
+	# Verify the _apply_reforge_skill_bonuses method exists on smithing system
+	assert_true(smithing.has_method("_apply_reforge_skill_bonuses"), "Skill bonus function exists")

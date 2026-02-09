@@ -23,6 +23,14 @@ var _mastery_reforge_items: Array = []   # [item1, item2] for Reforge Mastery
 var _mastery_reclaim_artifacts: Array = [] # [art1, art2, art3] for Reclaim Mastery
 var _in_mastery_mode: bool = false
 
+# Type choice state for reforge — player picks Weapon/Armor/Jewelry then subtype
+var _reforge_type_chosen: bool = false
+var _reforge_chosen_category: int = SmithingSystemScript.MaterialCategory.WEAPON
+var _in_type_selection: bool = false  # True when showing category picker in item_list
+var _in_subtype_selection: bool = false  # True when showing subtype picker
+var _reforge_subtypes: Array = []  # Available subtypes for chosen category
+var _reforge_chosen_template: Variant = null  # Chosen item subtype for reforge
+
 # Cached lists for index mapping
 var _current_templates: Array = []
 var _current_materials: Array = []
@@ -77,6 +85,11 @@ func close() -> void:
 	_current_templates.clear()
 	_current_materials.clear()
 	_in_mastery_mode = false
+	_in_type_selection = false
+	_in_subtype_selection = false
+	_reforge_type_chosen = false
+	_reforge_chosen_template = null
+	_reforge_subtypes.clear()
 	_mastery_reforge_items.clear()
 	_mastery_reclaim_artifacts.clear()
 	PanelTransition.close_panel(self, func(): closed.emit())
@@ -134,21 +147,23 @@ func _populate_recipes() -> void:
 			recipe_list.set_item_disabled(idx, true)
 
 func _on_recipe_selected(index: int) -> void:
-	# Map the index back to available recipes only
+	# Map the ItemList index directly to the recipe (includes disabled items)
 	var statuses: Array[Dictionary] = smithing_system.get_all_recipes_with_status(player)
-	var available_idx: int = 0
 	selected_recipe = null
 
-	for status in statuses:
+	if index >= 0 and index < statuses.size():
+		var status: Dictionary = statuses[index]
 		if status.available:
-			if available_idx == index:
-				selected_recipe = status.recipe
-				break
-			available_idx += 1
+			selected_recipe = status.recipe
 
 	selected_template = null
 	selected_materials.clear()
 	_in_mastery_mode = false
+	_in_type_selection = false
+	_in_subtype_selection = false
+	_reforge_type_chosen = false
+	_reforge_chosen_template = null
+	_reforge_subtypes.clear()
 	_populate_items_for_recipe()
 	_update_success_display()
 	_update_info()
@@ -176,14 +191,21 @@ func _populate_items_for_recipe() -> void:
 				var display: String = _get_item_display_name(template)
 				if "damage_dice" in template and template.damage_dice != "":
 					display += " (%s)" % template.damage_dice
-				elif "protection_dice" in template and template.protection_dice != "":
+				elif "protection_dice" in template and template.protection_dice != "" and template.protection_dice != "0d0":
 					display += " [%s]" % template.protection_dice
 				item_list.add_item(display)
 
 			# Show Mithril as optional material (if player has any)
 			_populate_optional_mithril()
 
-		SmithingSystemScript.RecipeType.REFORGE, \
+		SmithingSystemScript.RecipeType.REFORGE:
+			# Show type selection in item_list for player to choose output category
+			if not _reforge_type_chosen:
+				_in_type_selection = true
+				item_list.add_item("Weapon")
+				item_list.add_item("Armor")
+				item_list.add_item("Jewelry")
+
 		SmithingSystemScript.RecipeType.RECLAIM, \
 		SmithingSystemScript.RecipeType.MASTERWORK:
 			# No template selection — materials only
@@ -226,6 +248,16 @@ func _on_item_selected(index: int) -> void:
 	# Handle mastery pick-from-list
 	if _in_mastery_mode:
 		_handle_mastery_selection(index)
+		return
+
+	# Handle reforge category selection
+	if _in_type_selection:
+		_handle_type_selection(index)
+		return
+
+	# Handle reforge subtype selection
+	if _in_subtype_selection:
+		_handle_subtype_selection(index)
 		return
 
 	if index < _current_templates.size():
@@ -302,7 +334,23 @@ func _update_info() -> void:
 					lines.append("[color=gold]Using Mithril: lighter weight + bonus stats.[/color]")
 			SmithingSystemScript.RecipeType.REFORGE:
 				var cost: int = smithing_system.get_reforge_xp_cost(player)
-				lines.append("XP Cost: %d (have %d)" % [cost, player.xp_available])
+				if player.xp_available < cost:
+					lines.append("[color=red]XP Cost: %d (have %d) — Cannot afford![/color]" % [cost, player.xp_available])
+				else:
+					lines.append("XP Cost: %d (have %d)" % [cost, player.xp_available])
+				# Show smithing tier info
+				var tier: int = smithing_system._get_smithing_tier(skill)
+				var tier_name: String = smithing_system._get_smithing_tier_name(tier)
+				if not tier_name.is_empty():
+					lines.append("[color=cyan]Quality tier: %s (+%d)[/color]" % [tier_name, tier])
+				if _reforge_type_chosen and _reforge_chosen_template != null:
+					var type_names: Array[String] = ["Weapon", "Armor", "Jewelry"]
+					lines.append("[color=cyan]Forging: %s (%s)[/color]" % [_get_item_display_name(_reforge_chosen_template), type_names[_reforge_chosen_category]])
+				elif _in_subtype_selection:
+					var type_names: Array[String] = ["Weapon", "Armor", "Jewelry"]
+					lines.append("[color=cyan]Category: %s — select a specific type above.[/color]" % type_names[_reforge_chosen_category])
+				else:
+					lines.append("Select an output category above.")
 			SmithingSystemScript.RecipeType.RECLAIM:
 				lines.append("XP Cost: artifact depth x %d" % SmithingSystemScript.RECLAIM_XP_MULTIPLIER)
 				if smithing_system._get_expertise_discount(player) < 1.0:
@@ -368,7 +416,7 @@ func _update_mastery_info(lines: Array[String]) -> void:
 func _update_forge_button() -> void:
 	var can_forge: bool = false
 
-	if _in_mastery_mode:
+	if _in_mastery_mode or _in_type_selection or _in_subtype_selection:
 		forge_button.disabled = true
 		return
 
@@ -384,7 +432,9 @@ func _update_forge_button() -> void:
 				# CREATE only needs a template — materials (Mithril) are optional
 				can_forge = selected_template != null
 			SmithingSystemScript.RecipeType.REFORGE:
-				can_forge = has_enough_materials
+				# Need materials + type chosen + enough XP
+				var xp_cost: int = smithing_system.get_reforge_xp_cost(player)
+				can_forge = has_enough_materials and _reforge_type_chosen and player.xp_available >= xp_cost
 			SmithingSystemScript.RecipeType.RECLAIM:
 				can_forge = has_enough_materials
 			SmithingSystemScript.RecipeType.MASTERWORK:
@@ -418,7 +468,7 @@ func _on_forge_pressed() -> void:
 				if smithing_system.has_reforge_mastery(player):
 					_start_reforge_mastery(depth, forge_bonus)
 				else:
-					smithing_system.reforge(player, selected_materials[0], selected_materials[1], depth, forge_bonus)
+					smithing_system.reforge(player, selected_materials[0], selected_materials[1], depth, forge_bonus, _reforge_chosen_category, _reforge_type_chosen, _reforge_chosen_template)
 
 		SmithingSystemScript.RecipeType.RECLAIM:
 			if selected_materials.size() >= 2:
@@ -438,12 +488,58 @@ func _on_forge_pressed() -> void:
 		_refresh_ui()
 
 # ============================================================================
+# TYPE SELECTION (Reforge)
+# ============================================================================
+
+func _handle_type_selection(index: int) -> void:
+	# Map index to MaterialCategory: 0=Weapon, 1=Armor, 2=Jewelry
+	match index:
+		0: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.WEAPON
+		1: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.ARMOR
+		2: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.JEWELRY
+		_: return
+
+	_in_type_selection = false
+	_in_subtype_selection = true
+
+	# Show available subtypes for the chosen category
+	var depth: int = level.depth if level else 5
+	_reforge_subtypes = smithing_system.get_reforge_subtypes(_reforge_chosen_category, depth)
+	item_list.clear()
+	for subtype in _reforge_subtypes:
+		var display: String = _get_item_display_name(subtype)
+		if "damage_dice" in subtype and subtype.damage_dice != "":
+			display += " (%s)" % subtype.damage_dice
+		elif "protection_dice" in subtype and subtype.protection_dice != "" and subtype.protection_dice != "0d0":
+			display += " [%s]" % subtype.protection_dice
+		item_list.add_item(display)
+
+	_update_info()
+	_update_forge_button()
+
+func _handle_subtype_selection(index: int) -> void:
+	if index < 0 or index >= _reforge_subtypes.size():
+		return
+	_reforge_chosen_template = _reforge_subtypes[index]
+	_reforge_type_chosen = true
+	_in_subtype_selection = false
+
+	# Show selected subtype as confirmed
+	item_list.clear()
+	var display: String = _get_item_display_name(_reforge_chosen_template)
+	item_list.add_item("Forging: %s (selected)" % display)
+	item_list.set_item_disabled(0, true)
+
+	_update_info()
+	_update_forge_button()
+
+# ============================================================================
 # MASTERY FLOWS
 # ============================================================================
 
 func _start_reforge_mastery(depth: int, forge_bonus: int) -> void:
 	_mastery_reforge_items = smithing_system.reforge_with_mastery(
-		player, selected_materials[0], selected_materials[1], depth, forge_bonus
+		player, selected_materials[0], selected_materials[1], depth, forge_bonus, _reforge_chosen_category, _reforge_type_chosen, _reforge_chosen_template
 	)
 	if _mastery_reforge_items.is_empty():
 		# Forge failed — already handled by smithing_system

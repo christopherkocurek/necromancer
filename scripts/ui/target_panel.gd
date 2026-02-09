@@ -109,7 +109,7 @@ func _update_info() -> void:
 		return
 
 	var lines: Array[String] = []
-	lines.append("[b]Target Mode[/b] (Enter=fire, Esc=cancel, arrows to aim)")
+	lines.append("[b]Target Mode[/b] (Enter/F=fire, Esc=cancel, arrows to aim)")
 	lines.append("")
 
 	# Distance
@@ -147,7 +147,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_U: dir = Vector2i(1, -1)
 			KEY_B: dir = Vector2i(-1, 1)
 			KEY_N: dir = Vector2i(1, 1)
-			KEY_ENTER, KEY_KP_ENTER:
+			KEY_ENTER, KEY_KP_ENTER, KEY_F:
 				_confirm_target()
 				get_viewport().set_input_as_handled()
 				return

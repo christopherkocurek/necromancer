@@ -4,12 +4,13 @@ class_name SmithingSystem
 ## Ported from Sil-Q smithing mechanics (cmd4.c), expanded for The Necromancer.
 ##
 ## Design: All recipes always produce an item. Randomness is in WHAT you get, not WHETHER.
-## Materials are the cost — no XP charge for reforging. Reclaim/Masterwork still cost XP.
+## Materials + XP are the cost. Expertise discount applies to all XP costs.
 ##
 ## Recipes:
 ##   CREATE    - Forge supplies at the forge, no materials needed. Quality scales with smithing skill.
 ##               Optionally use Mithril for premium version (lighter, extra bonuses).
-##   REFORGE   - Combine 2 Broken Glowing items → type-filtered enchanted item (no XP cost)
+##   REFORGE   - Combine 2 Broken Glowing items → player-chosen type enchanted item (250 XP)
+##               Smithing skill scaling + Weaponsmith/Armoursmith specialization bonuses.
 ##   RECLAIM   - Combine 2 Broken Strange items → type-filtered artifact (depth×50 XP)
 ##   MASTERWORK - Combine 4 Broken Strange items → legendary artifact (depth×75 XP)
 
@@ -56,7 +57,7 @@ const ARMOR_TVALS: Array[int] = [30, 31, 32, 34, 35, 36, 37]  # Boots, Gloves, H
 const JEWELRY_TVALS: Array[int] = [39, 40, 45]  # Light, Amulet, Ring
 
 # XP costs
-const REFORGE_XP_COST: int = 600
+const REFORGE_XP_COST: int = 250
 const RECLAIM_XP_MULTIPLIER: int = 50   # artifact.depth × this
 const MASTERWORK_XP_MULTIPLIER: int = 75  # artifact.depth × this
 
@@ -104,7 +105,7 @@ func _init_recipes() -> void:
 	recipes.append(Recipe.new(
 		"Reforge", RecipeType.REFORGE, 5,
 		Constants.SmithingAbility.SMT_REFORGE, 2,
-		"Combine 2 Broken Glowing items into a random enchanted item of chosen type."
+		"Combine 2 Broken Glowing items into an enchanted item. Choose output type (Weapon/Armor/Jewelry). Quality scales with Smithing skill."
 	))
 	recipes.append(Recipe.new(
 		"Reclaim", RecipeType.RECLAIM, 8,
@@ -418,15 +419,42 @@ func _add_damage_die(dice_str: String) -> String:
 # REFORGE — 2 Broken Glowing items → type-filtered enchanted item (Task 3)
 # ============================================================================
 
-func reforge(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0) -> Variant:
-	# Materials are the cost — no XP charge for reforging
+## Get available item subtypes for a category at a given depth (for subtype picker).
+func get_reforge_subtypes(category: MaterialCategory, depth: int) -> Array:
+	var tvals: Array[int] = _get_tvals_for_category(category)
+	var subtypes: Array = []
+	for item_data in DataManager.items.values():
+		if not "tval" in item_data:
+			continue
+		if item_data.tval not in tvals:
+			continue
+		if _has_flag(item_data, "INSTA_ART") or _has_flag(item_data, "NO_SMITHING"):
+			continue
+		if "depth" in item_data and item_data.depth > depth + 5:
+			continue
+		subtypes.append(item_data)
+	return subtypes
+
+func reforge(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0, chosen_tval: MaterialCategory = MaterialCategory.WEAPON, use_chosen_tval: bool = false, chosen_template: Variant = null) -> Variant:
+	# XP cost check — reforge costs 250 XP (with Expertise discount)
+	var xp_cost: int = get_reforge_xp_cost(player)
+	if not _can_afford_xp(player, xp_cost):
+		smithing_failed.emit(null, "Not enough XP (need %d, have %d)" % [xp_cost, player.xp_available])
+		GameManager.log_message("You lack the experience to reforge (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
+		return null
+
 	_consume_material(player, material1)
 	_consume_material(player, material2)
+	_spend_xp(player, xp_cost)
 
-	# Type-filter based on input material category (Task 3)
-	var category: MaterialCategory = get_material_category(material1)
-	var tvals: Array[int] = _get_tvals_for_category(category)
-	var new_item: DataManager.ItemData = DataManager.get_random_item_by_tvals(tvals, depth)
+	# Use player-chosen template if provided, otherwise random from category
+	var new_item: DataManager.ItemData = null
+	if chosen_template != null:
+		new_item = DataManager.duplicate_item_data(chosen_template)
+	else:
+		var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
+		var tvals: Array[int] = _get_tvals_for_category(category)
+		new_item = DataManager.get_random_item_by_tvals(tvals, depth)
 
 	if new_item == null:
 		# Fallback: any item at depth
@@ -435,8 +463,10 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 			new_item = DataManager.duplicate_item_data(fallback)
 
 	if new_item:
-		# Apply ego enchantment — reforged items are enchanted, not plain
+		# Apply ego enchantment — reforged items always get a real enchantment
 		_apply_reforge_ego(new_item, depth)
+		# Smithing tier bonuses (Improved/Fine/Flawless/Masterwork)
+		_apply_reforge_skill_bonuses(new_item, player)
 		player.inventory.append(new_item)
 		item_forged.emit(new_item, "Reforged!")
 		GameManager.log_message("The broken fragments reform into a %s!" % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
@@ -445,23 +475,38 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 	return new_item
 
 ## Reforge Mastery: reject result and reroll once (Task 10)
-func reforge_with_mastery(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0) -> Array:
-	# Returns [item1, item2] — UI shows item1, player can reject for item2
-	# Materials are the cost — no XP charge
+func reforge_with_mastery(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0, chosen_tval: MaterialCategory = MaterialCategory.WEAPON, use_chosen_tval: bool = false, chosen_template: Variant = null) -> Array:
+	# Returns [item1, item2] — UI shows both, player picks one
+	# XP cost check
+	var xp_cost: int = get_reforge_xp_cost(player)
+	if not _can_afford_xp(player, xp_cost):
+		smithing_failed.emit(null, "Not enough XP (need %d, have %d)" % [xp_cost, player.xp_available])
+		GameManager.log_message("You lack the experience to reforge (need %d XP)." % xp_cost, ThemeColors.MSG_ERROR)
+		return []
+
 	_consume_material(player, material1)
 	_consume_material(player, material2)
+	_spend_xp(player, xp_cost)
 
-	var category: MaterialCategory = get_material_category(material1)
-	var tvals: Array[int] = _get_tvals_for_category(category)
+	# Both candidates use the same chosen template (different ego rolls)
+	var item1: DataManager.ItemData = null
+	var item2: DataManager.ItemData = null
+	if chosen_template != null:
+		item1 = DataManager.duplicate_item_data(chosen_template)
+		item2 = DataManager.duplicate_item_data(chosen_template)
+	else:
+		var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
+		var tvals: Array[int] = _get_tvals_for_category(category)
+		item1 = DataManager.get_random_item_by_tvals(tvals, depth)
+		item2 = DataManager.get_random_item_by_tvals(tvals, depth)
 
-	var item1: DataManager.ItemData = DataManager.get_random_item_by_tvals(tvals, depth)
-	var item2: DataManager.ItemData = DataManager.get_random_item_by_tvals(tvals, depth)
-
-	# Apply ego enchantments to both candidates
+	# Apply ego enchantments and skill bonuses to both candidates
 	if item1:
 		_apply_reforge_ego(item1, depth)
+		_apply_reforge_skill_bonuses(item1, player)
 	if item2:
 		_apply_reforge_ego(item2, depth)
+		_apply_reforge_skill_bonuses(item2, player)
 
 	var results: Array = []
 	if item1:
@@ -627,22 +672,66 @@ func _get_item_name(item: Variant) -> String:
 ## Apply a random ego enchantment to a reforged item.
 ## Broken Glowing items were once enchanted — reforging restores an enchantment.
 ## Always excludes cursed egos (player-crafted items should never be cursed).
-## Falls back to a "Fine" quality bonus if no matching ego is found.
+## Always produces a real ego — tries broader depth range if initial search fails.
 func _apply_reforge_ego(item: DataManager.ItemData, depth: int) -> void:
 	if item == null:
 		return
 	var sval: int = item.sval if "sval" in item else 0
+	# Try exact depth first, then broaden search up to depth 20
 	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, sval, depth, true)
+	if ego == null:
+		# Broaden: try with sval 0 (wildcard) and higher depth
+		ego = DataManager.select_ego_for_item(item.tval, 0, maxi(depth, 10), true)
+	if ego == null:
+		# Last resort: try any non-cursed ego at max depth
+		ego = DataManager.select_ego_for_item(item.tval, 0, 20, true)
 	if ego:
 		DataManager.apply_ego_to_item(item, ego)
-	else:
-		# No matching ego — apply a generic quality bonus
-		if _is_weapon(item) and "attack_bonus" in item:
-			item.attack_bonus += 1
-			item.name = "Fine %s" % item.name
-		elif _is_armor(item) and "evasion_bonus" in item:
-			item.evasion_bonus += 1
-			item.name = "Fine %s" % item.name
+
+## Smithing quality tier system — smithing/5 per tier of positive modification.
+## Tiers: 5=Improved(+1), 10=Fine(+2), 15=Flawless(+3), 20=Masterwork(+4).
+## Weaponsmith/Armoursmith grants +1 effective tier (not additive stacking).
+## Bonus applies to attack (weapons), evasion (armor), or pval (jewelry).
+const SMITHING_TIER_NAMES: Array[String] = ["", "Improved", "Fine", "Flawless", "Masterwork"]
+
+func _get_smithing_tier(smithing_skill: int) -> int:
+	return clampi(smithing_skill / 5, 0, 4)
+
+func _get_smithing_tier_name(tier: int) -> String:
+	if tier >= 0 and tier < SMITHING_TIER_NAMES.size():
+		return SMITHING_TIER_NAMES[tier]
+	return ""
+
+func _apply_reforge_skill_bonuses(item: DataManager.ItemData, player: Player) -> void:
+	if item == null or player == null:
+		return
+	var smithing_skill: int = _get_effective_skill(player)
+	var tier: int = _get_smithing_tier(smithing_skill)
+
+	# Weaponsmith/Armoursmith grants +1 effective tier
+	if _is_weapon(item) and player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_WEAPONSMITH):
+		tier = mini(tier + 1, 4)
+	elif _is_armor(item) and player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_ARMOURSMITH):
+		tier = mini(tier + 1, 4)
+
+	if tier <= 0:
+		return
+
+	# Apply tier bonus to the relevant stat
+	if _is_weapon(item):
+		if "attack_bonus" in item:
+			item.attack_bonus += tier
+	elif _is_armor(item):
+		if "evasion_bonus" in item:
+			item.evasion_bonus += tier
+	elif _is_jewelry(item):
+		if "pval" in item:
+			item.pval += tier
+
+	# Apply tier prefix to name
+	var tier_name: String = _get_smithing_tier_name(tier)
+	if not tier_name.is_empty() and "name" in item:
+		item.name = tier_name + " " + item.name
 
 # ============================================================================
 # RECIPE ACCESS

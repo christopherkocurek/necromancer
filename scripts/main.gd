@@ -23,6 +23,7 @@ var smithing_panel: Control = null
 var target_panel: Control = null    # TargetPanel for archery/wand targeting
 var bestiary_panel: Control = null   # BestiaryPanel for monster lore
 var settings_panel: Control = null   # SettingsPanel for accessibility/display/controls
+var character_panel: Control = null  # CharacterPanel for player stats (C key)
 
 var current_level: Level = null
 var player: Player = null
@@ -47,6 +48,14 @@ var _rest_turns_taken: int = 0
 var _rest_max_turns: int = 0  # 0 = rest until full, >0 = rest N turns
 var _rest_hp_before: int = 0  # Track HP for damage interrupt
 
+# Mining state (T key → tunnel rubble)
+var _mining: bool = false
+var _mining_turns_taken: int = 0
+var _mining_turns_required: int = 4
+var _mining_target: Vector2i = Vector2i(-1, -1)
+var _mining_hp_before: int = 0
+var _pending_tunnel: bool = false
+
 # Auto-explore state (flag-based loop)
 var _auto_exploring: bool = false
 
@@ -69,6 +78,7 @@ const QuestSystemScript := preload("res://scripts/systems/quest_system.gd")
 const AutoExploreScript := preload("res://scripts/systems/auto_explore.gd")
 const MonsterMemoryScript := preload("res://scripts/systems/monster_memory.gd")
 const BestiaryPanelScript := preload("res://scripts/ui/bestiary_panel.gd")
+const CharacterPanelScript := preload("res://scripts/ui/character_panel.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
 
@@ -131,6 +141,12 @@ func _setup_ui_panels() -> void:
 	bestiary_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bestiary_panel.closed.connect(_on_bestiary_closed)
 	ui_layer.add_child(bestiary_panel)
+
+	# Instantiate character panel (hidden by default, script-only - no scene needed)
+	character_panel = CharacterPanelScript.new()
+	character_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	character_panel.closed.connect(_on_character_panel_closed)
+	ui_layer.add_child(character_panel)
 
 	# Instantiate settings panel (hidden by default)
 	settings_panel = SETTINGS_PANEL_SCENE.instantiate()
@@ -238,7 +254,7 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
 	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, ThemeColors.MSG_INFO)
-	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Tome: T  Pickup: G", ThemeColors.MSG_SYSTEM)
+	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Tome: T/@/A  Tunnel: Shift+T  Pickup: G", ThemeColors.MSG_SYSTEM)
 
 	# Show layer entry message
 	var entry_msg := LayerConfig.get_entry_message(1, 0)
@@ -289,6 +305,24 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 		player.dexterity += base_stats.get("dex", 0)
 		player.constitution += base_stats.get("con", 0)
 		player.grace += base_stats.get("gra", 0)
+
+	# Apply pre-creation skill investments
+	if character_data.has("skill_investments"):
+		for skill_name in character_data.skill_investments:
+			var invest: int = character_data.skill_investments[skill_name]
+			if invest > 0:
+				player.skills[skill_name] = player.skills.get(skill_name, 0) + invest
+
+	# Apply pre-creation ability purchases
+	if character_data.has("ability_purchases"):
+		for purchase in character_data.ability_purchases:
+			player.learn_ability(purchase.skill_type, purchase.ability_num)
+
+	# Deduct pre-creation XP
+	if character_data.has("xp_spent_precreation"):
+		player.xp_available -= character_data.xp_spent_precreation
+
+	player._recalculate_stats()
 
 	# Connect player death signal
 	player.player_died.connect(_on_player_died)
@@ -427,10 +461,12 @@ func _process(_delta: float) -> void:
 		GameManager.cycle_zoom_reverse()
 		_update_camera_zoom()
 
-	# Process resting / auto-exploring when it's the player's turn
+	# Process resting / mining / auto-exploring when it's the player's turn
 	if player and player.is_alive and turn_system.current_state == TurnSystem.TurnState.PLAYER_INPUT:
 		if _resting:
 			_process_rest_step()
+		elif _mining:
+			_process_mining_step()
 		elif _auto_exploring:
 			_process_auto_explore_step()
 
@@ -581,14 +617,31 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 		return  # Block all other input while awaiting direction
 
+	# Tunnel directional prompt intercept (must come before UI/movement checks)
+	if _pending_tunnel:
+		if event is InputEventKey and event.pressed and not event.echo:
+			var tunnel_dir: Vector2i = DirectionPrompt.get_direction_from_event(event)
+			if tunnel_dir != Vector2i.ZERO:
+				_try_mine_direction(tunnel_dir)
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_ESCAPE:
+				_pending_tunnel = false
+				GameManager.log_message("Tunnelling cancelled.", ThemeColors.MSG_SYSTEM)
+				get_viewport().set_input_as_handled()
+				return
+		return  # Block all other input while awaiting direction
+
 	# Don't process game input if UI is open
 	if _is_ui_open():
 		return
 
-	# Interrupt resting or auto-exploring on any key press
-	if (_resting or _auto_exploring) and event is InputEventKey and event.pressed and not event.echo:
+	# Interrupt resting, mining, or auto-exploring on any key press
+	if (_resting or _auto_exploring or _mining) and event is InputEventKey and event.pressed and not event.echo:
 		if _resting:
 			_stop_rest("Interrupted")
+		if _mining:
+			_stop_mining("Interrupted")
 		if _auto_exploring:
 			_stop_auto_explore_flag("Interrupted")
 		get_viewport().set_input_as_handled()
@@ -609,9 +662,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_tome()
 		get_viewport().set_input_as_handled()
 
-	# Tome toggle (T key)
+	# Tome toggle (t key, lowercase only)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_T and not event.shift_pressed and not event.echo:
 		_toggle_tome()
+		get_viewport().set_input_as_handled()
+
+	# Tunnel / dig rubble (Shift+T key)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_T and event.shift_pressed and not event.echo:
+		if player and player.is_alive and GameManager.is_player_turn:
+			_try_start_tunnel()
+		get_viewport().set_input_as_handled()
+
+	# Character profile (Shift+C)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_C and event.shift_pressed and not event.echo:
+		_toggle_character_panel()
 		get_viewport().set_input_as_handled()
 
 	# Look mode toggle (X key)
@@ -634,12 +698,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_start_rest(20)
 		get_viewport().set_input_as_handled()
 
-	# F key: Fire (archery) if bow equipped, else forge if on forge tile
+	# F key: Forge if on forge tile, else fire (archery) if bow equipped
 	if event.is_action_pressed("forge"):
-		if player and player.can_fire_ranged():
-			_open_targeting()
-		else:
+		if player and current_level and current_level.is_forge_tile(player.grid_position):
 			_try_use_forge()
+		elif player and player.can_fire_ranged():
+			_open_targeting()
 		get_viewport().set_input_as_handled()
 
 	# Equip from floor (E key when no panel is open)
@@ -845,6 +909,7 @@ func _is_ui_open() -> bool:
 		   (dialogue_panel and dialogue_panel.visible) or \
 		   (smithing_panel and smithing_panel.visible) or \
 		   (bestiary_panel and bestiary_panel.visible) or \
+		   (character_panel and character_panel.visible) or \
 		   (settings_panel and settings_panel.visible) or \
 		   (voice_menu and voice_menu.visible) or \
 		   (item_menu and item_menu.visible) or \
@@ -930,6 +995,7 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 			if ability_system:
 				ability_system.activate_ability(ability_id, target_entity)
 				player.consume_energy()
+				turn_system._after_player_action()
 		else:
 			GameManager.log_message("No valid target there.", ThemeColors.MSG_SYSTEM)
 		return
@@ -943,6 +1009,7 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 			player.attacked_this_turn = true
 			player.ranged_attack(target_entity, dist)
 			player.consume_energy()
+			turn_system._after_player_action()
 	else:
 		GameManager.log_message("Nothing to hit there.", ThemeColors.MSG_SYSTEM)
 
@@ -1277,6 +1344,100 @@ func _has_visible_monster() -> bool:
 	return false
 
 # ============================================================================
+# TUNNELLING / MINING (T key)
+# ============================================================================
+
+func _try_start_tunnel() -> void:
+	if not player or not player.is_alive:
+		return
+	if not player.has_equip_flag("TUNNEL"):
+		GameManager.log_message("You need a digging tool to mine rubble.", ThemeColors.MSG_WARNING)
+		return
+	_pending_tunnel = true
+	GameManager.log_message("Tunnel in which direction?", ThemeColors.MSG_INFO)
+
+func _try_mine_direction(dir: Vector2i) -> void:
+	_pending_tunnel = false
+	if not player or not current_level:
+		return
+	var target_pos: Vector2i = player.grid_position + dir
+	if not current_level.is_in_bounds(target_pos):
+		GameManager.log_message("Nothing to mine there.", ThemeColors.MSG_SYSTEM)
+		return
+	if current_level.get_tile(target_pos) != Level.Tile.RUBBLE:
+		GameManager.log_message("There is no rubble in that direction.", ThemeColors.MSG_SYSTEM)
+		return
+
+	# Calculate mining turns based on smithing skill
+	var smithing_level: int = player.get_skill("smithing") if player.has_method("get_skill") else 0
+	_mining_turns_required = maxi(2, 4 - smithing_level / 2)
+	_mining_target = target_pos
+	_mining_turns_taken = 0
+	_mining_hp_before = player.current_health
+	_mining = true
+	GameManager.log_message("You begin mining the rubble... (%d turns)" % _mining_turns_required, ThemeColors.MSG_SYSTEM)
+
+func _process_mining_step() -> void:
+	if not _mining or not player or not player.is_alive:
+		_stop_mining("Invalid state")
+		return
+
+	# Interrupt: monster visible
+	if _has_visible_monster():
+		_stop_mining("Monster spotted!")
+		return
+
+	# Interrupt: took damage
+	if player.current_health < _mining_hp_before:
+		_stop_mining("Took damage!")
+		return
+
+	# Take a mining turn
+	_mining_turns_taken += 1
+
+	# Generate digging noise each turn
+	if current_level:
+		current_level.add_floor_noise(Constants.NOISE_DIGGING)
+	if player.has_method("add_noise"):
+		player.add_noise(Constants.NOISE_DIGGING)
+
+	# Consume energy for the turn
+	player.consume_energy()
+	turn_system._after_player_action()
+
+	# Update HP tracker for next check
+	_mining_hp_before = player.current_health
+
+	# Check completion
+	if _mining_turns_taken >= _mining_turns_required:
+		_complete_mining()
+		return
+
+func _complete_mining() -> void:
+	_mining = false
+	if current_level and current_level.is_in_bounds(_mining_target):
+		current_level.set_tile(_mining_target, Level.Tile.FLOOR)
+		GameManager.log_message("You clear the rubble.", ThemeColors.MSG_INFO)
+		player.gain_experience(5, "mining")
+		# Refresh FOV since rubble was already transparent but passability changed
+		var fov_radius: int = current_level.get_fov_radius()
+		var light_radius: int = player.get_light_radius()
+		current_level.update_fov(player.grid_position, fov_radius)
+		current_level.apply_lighting(player.grid_position, light_radius)
+		current_level.update_entity_visibility()
+		current_level.apply_fov_to_tilemap()
+		hud.update_player_stats(player)
+
+func _stop_mining(reason: String) -> void:
+	if not _mining:
+		return
+	_mining = false
+	if _mining_turns_taken > 0:
+		GameManager.log_message("Mining interrupted: %s" % reason, ThemeColors.MSG_WARNING)
+	else:
+		GameManager.log_message(reason, ThemeColors.MSG_WARNING)
+
+# ============================================================================
 # AUTO-EXPLORE (Phase 8C)
 # ============================================================================
 
@@ -1419,6 +1580,30 @@ func _toggle_bestiary() -> void:
 			GameManager.is_player_turn = false
 
 func _on_bestiary_closed() -> void:
+	GameManager.is_player_turn = true
+
+# ============================================================================
+# CHARACTER PANEL (C key)
+# ============================================================================
+
+func _toggle_character_panel() -> void:
+	if character_panel and character_panel.visible:
+		character_panel.close()
+	else:
+		# Close other panels first
+		if inventory_panel and inventory_panel.visible:
+			inventory_panel.close()
+		if tome_panel and tome_panel.visible:
+			tome_panel.close()
+		if look_panel and look_panel.visible:
+			look_panel.close()
+		if bestiary_panel and bestiary_panel.visible:
+			bestiary_panel.close()
+		if character_panel and player:
+			character_panel.open(player)
+			GameManager.is_player_turn = false
+
+func _on_character_panel_closed() -> void:
 	GameManager.is_player_turn = true
 
 # ============================================================================

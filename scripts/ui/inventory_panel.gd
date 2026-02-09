@@ -327,6 +327,8 @@ func _refresh_equipment() -> void:
 	var slot_key_map: Dictionary = {
 		"weapon": Constants.EquipSlot.WEAPON,
 		"off_hand": Constants.EquipSlot.OFF_HAND,
+		"bow": Constants.EquipSlot.BOW,
+		"quiver": Constants.EquipSlot.QUIVER,
 		"armor": Constants.EquipSlot.BODY,
 		"cloak": Constants.EquipSlot.CLOAK,
 		"head": Constants.EquipSlot.HEAD,

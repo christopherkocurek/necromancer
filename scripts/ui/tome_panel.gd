@@ -344,6 +344,17 @@ func _setup_index_content() -> void:
 	index_header.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 	index_content.add_child(index_header)
 
+	# Hint label
+	var index_hint := Label.new()
+	index_hint.text = "Balance your skill investments with abilities."
+	index_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var body_font_hint: Font = ThemeColors.get_font("body")
+	if body_font_hint:
+		index_hint.add_theme_font_override("font", body_font_hint)
+	index_hint.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT - 2)
+	index_hint.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.55))
+	index_content.add_child(index_hint)
+
 	var sep := HSeparator.new()
 	index_content.add_child(sep)
 
@@ -1059,16 +1070,18 @@ func _update_selection_indicators() -> void:
 		var row: Dictionary = skill_rows[i]
 		var btn: Button = row.container
 		if i == selected_skill_idx:
-			row.name_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
-			row.numeral_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
-			# Gold background + left border for spatial selection
+			row.numeral_label.text = "> %s." % SKILL_NUMERALS[i]
+			row.name_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
+			row.numeral_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
+			# Gold background highlight + left border for spatial selection
 			var sel_style := StyleBoxFlat.new()
-			sel_style.bg_color = Color(ThemeColors.GOLD_WARM, 0.18)
+			sel_style.bg_color = Color(ThemeColors.GOLD_WARM, 0.3)
 			sel_style.border_width_left = 2
 			sel_style.border_color = ThemeColors.GOLD_WARM
 			sel_style.content_margin_left = 4
 			btn.add_theme_stylebox_override("normal", sel_style)
 		else:
+			row.numeral_label.text = "%s." % SKILL_NUMERALS[i]
 			row.name_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
 			row.numeral_label.add_theme_color_override("font_color", ThemeColors.SCROLL_INK)
 			# Restore transparent normal style

@@ -331,6 +331,7 @@ func _process(delta: float) -> void:
 				play_music(exploration_track)
 
 func _start_combat_music() -> void:
+	return  # Combat music disabled — kept for future reuse
 	if not in_combat:
 		in_combat = true
 		play_music("pursuit")

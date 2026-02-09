@@ -184,7 +184,7 @@ func is_in_bounds(pos: Vector2i) -> bool:
 func is_passable(pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
 	match tile:
-		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.RUBBLE, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.FORGE_ENCHANTED, Tile.FORGE_UNIQUE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
+		Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.FORGE_ENCHANTED, Tile.FORGE_UNIQUE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
 			return true
 		_:
 			return false
@@ -308,6 +308,7 @@ func consume_forge_use(pos: Vector2i) -> int:
 
 func get_terrain_name(pos: Vector2i) -> String:
 	match get_tile(pos):
+		Tile.RUBBLE: return "Rubble"
 		Tile.VINE_FLOOR: return "Vines"
 		Tile.WATER: return "Water"
 		Tile.LAVA: return "Lava"

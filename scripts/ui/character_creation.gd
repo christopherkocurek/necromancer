@@ -1,6 +1,6 @@
 extends Control
 class_name CharacterCreation
-## Character creation flow: Race -> House -> Gender -> Trait -> Stats -> Name -> Confirm
+## Character creation flow: Race -> House -> Gender -> Trait -> Stats -> Skills -> Name -> Confirm
 ## Enhanced with gender selection, age system, parentage history, and NameGenerator integration.
 
 const BackstoryGeneratorScript := preload("res://scripts/systems/backstory_generator.gd")
@@ -8,7 +8,7 @@ const BackstoryGeneratorScript := preload("res://scripts/systems/backstory_gener
 signal creation_complete(character_data: Dictionary)
 signal creation_cancelled
 
-enum Stage { RACE, HOUSE, GENDER, TRAIT, STATS, NAME, DIFFICULTY, CONFIRM }
+enum Stage { RACE, HOUSE, GENDER, TRAIT, STATS, SKILLS, NAME, DIFFICULTY, CONFIRM }
 
 var current_stage: Stage = Stage.RACE
 
@@ -22,6 +22,38 @@ var character_name: String = ""
 var character_age: int = 0
 var character_history: String = ""
 var selected_difficulty: int = GameManager.Difficulty.NORMAL
+
+# Skill shopping state (pre-creation investments)
+var skill_investments: Dictionary = {
+	"melee": 0, "archery": 0, "evasion": 0, "stealth": 0,
+	"hunting": 0, "will": 0, "smithing": 0, "lore": 0,
+}
+var ability_purchases: Array = []  # [{skill_type: int, ability_num: int, name: String}]
+var _precreation_xp_spent: int = 0
+
+# Skill stage constants
+const SKILL_NAMES: Array[String] = [
+	"melee", "archery", "evasion", "stealth",
+	"hunting", "will", "smithing", "lore"
+]
+const SKILL_LABELS: Array[String] = [
+	"Melee", "Archery", "Evasion", "Stealth",
+	"Hunting", "Will", "Smithing", "Lore"
+]
+const AFFINITY_FLAG_MAP: Dictionary = {
+	"MEL_AFFINITY": "melee", "ARC_AFFINITY": "archery",
+	"EVN_AFFINITY": "evasion", "STL_AFFINITY": "stealth",
+	"PER_AFFINITY": "hunting", "WIL_AFFINITY": "will",
+	"SMT_AFFINITY": "smithing", "LOR_AFFINITY": "lore",
+}
+const PENALTY_FLAG_MAP: Dictionary = {
+	"MEL_PENALTY": "melee", "ARC_PENALTY": "archery",
+	"EVN_PENALTY": "evasion", "STL_PENALTY": "stealth",
+	"PER_PENALTY": "hunting", "WIL_PENALTY": "will",
+	"SMT_PENALTY": "smithing", "LOR_PENALTY": "lore",
+}
+# Ability expand state for the skills stage
+var _skills_expanded_idx: int = -1  # Which skill row is expanded (-1 = none)
 
 # UI References (set in _ready or via @onready)
 @onready var stage_label: Label = $VBoxContainer/StageLabel
@@ -231,6 +263,8 @@ func _populate_stage(stage: Stage) -> void:
 			_show_trait_selection()
 		Stage.STATS:
 			_show_stat_allocation()
+		Stage.SKILLS:
+			_show_skills_stage()
 		Stage.NAME:
 			_show_name_entry()
 		Stage.DIFFICULTY:
@@ -303,6 +337,7 @@ func _on_race_selected(race_name: String) -> void:
 	selected_race = race_name
 	selected_house = ""  # Reset house when race changes
 	selected_gender = ""  # Reset gender when race changes
+	_reset_skill_investments()  # Affinity changes invalidate costs
 	_update_race_info()
 	_update_navigation()
 
@@ -365,6 +400,7 @@ func _show_house_selection() -> void:
 
 func _on_house_selected(house_name: String) -> void:
 	selected_house = house_name
+	_reset_skill_investments()  # Affinity changes invalidate costs
 	_update_house_info()
 	_update_navigation()
 
@@ -743,6 +779,440 @@ func _get_stat_summary() -> String:
 	]
 
 # ============================================================================
+# SKILL SHOPPING (pre-creation investments)
+# ============================================================================
+
+func _reset_skill_investments() -> void:
+	for key in skill_investments:
+		skill_investments[key] = 0
+	ability_purchases.clear()
+	_precreation_xp_spent = 0
+	_skills_expanded_idx = -1
+
+func _get_affinity_level(skill_name: String) -> int:
+	## Return combined affinity level from race + house (mirrors Player.get_ability_affinity_level).
+	var level: int = 0
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	if house_data:
+		for flag in house_data.affinities:
+			if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
+				level += 1
+	var race_data: DataManager.RaceData = DataManager.get_race(selected_race)
+	if race_data:
+		for flag in race_data.flags:
+			if PENALTY_FLAG_MAP.get(flag, "") == skill_name:
+				level -= 1
+			if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
+				level += 1
+	return level
+
+func _calc_skill_point_cost(skill_name: String, current_level: int) -> int:
+	## Cost to go from current_level to current_level+1. Mirrors Player.get_skill_cost.
+	var has_affinity: bool = false
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	if house_data:
+		for flag in house_data.affinities:
+			if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
+				has_affinity = true
+				break
+	if not has_affinity:
+		var race_data: DataManager.RaceData = DataManager.get_race(selected_race)
+		if race_data:
+			for flag in race_data.flags:
+				if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
+					has_affinity = true
+					break
+	var discount: int = 100 if has_affinity else 0
+	return maxi(0, 100 * (current_level + 1) - discount)
+
+func _calc_total_skill_cost(skill_name: String) -> int:
+	## Total XP cost for all invested points in this skill.
+	var total: int = 0
+	for i in range(skill_investments[skill_name]):
+		total += _calc_skill_point_cost(skill_name, i)
+	return total
+
+func _calc_ability_xp_cost(skill_name: String, position_in_tree: int) -> int:
+	## Cost for an ability: (owned_count + 1) * 500 - affinity * 500.
+	var affinity: int = _get_affinity_level(skill_name)
+	return maxi(0, (position_in_tree + 1) * 500 - 500 * affinity)
+
+func _get_remaining_xp() -> int:
+	return Player.STARTING_XP - _precreation_xp_spent
+
+func _recalculate_precreation_xp() -> void:
+	## Recalculate total XP spent from skill investments and ability purchases.
+	_precreation_xp_spent = 0
+	for skill_name in SKILL_NAMES:
+		_precreation_xp_spent += _calc_total_skill_cost(skill_name)
+	for purchase in ability_purchases:
+		_precreation_xp_spent += purchase.get("xp_cost", 0)
+
+func _show_skills_stage() -> void:
+	stage_label.text = "Invest Experience"
+	_skills_expanded_idx = -1
+
+	# Header with remaining XP
+	var header_label := RichTextLabel.new()
+	header_label.bbcode_enabled = true
+	header_label.fit_content = true
+	header_label.scroll_active = false
+	var gold: String = ThemeColors.PRIMARY.to_html(false)
+	var muted: String = ThemeColors.TEXT_MUTED.to_html(false)
+	header_label.text = "[color=#%s]Experience Remaining: %d[/color]\n[color=#%s]You don't need to spend all your experience now — you can invest more during the game.[/color]" % [
+		gold, _get_remaining_xp(), muted
+	]
+	ThemeColors.apply_rich_body_font(header_label)
+	content_container.add_child(header_label)
+	stat_labels["_skills_xp_header"] = header_label
+
+	# Scrollable skill list
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 420)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_container.add_child(scroll)
+
+	var skills_vbox := VBoxContainer.new()
+	skills_vbox.add_theme_constant_override("separation", 4)
+	skills_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(skills_vbox)
+
+	for i in range(SKILL_NAMES.size()):
+		var skill_name: String = SKILL_NAMES[i]
+		var skill_label_text: String = SKILL_LABELS[i]
+
+		# Skill row container
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+
+		# Skill name label
+		var name_label := Label.new()
+		var affinity: int = _get_affinity_level(skill_name)
+		var affinity_star: String = " *" if affinity > 0 else ""
+		name_label.text = skill_label_text + affinity_star
+		name_label.custom_minimum_size.x = 120
+		name_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+		ThemeColors.apply_body_font(name_label)
+		row.add_child(name_label)
+
+		# [-] button
+		var minus_btn := Button.new()
+		minus_btn.text = "-"
+		minus_btn.custom_minimum_size = Vector2(40, 40)
+		minus_btn.disabled = skill_investments[skill_name] <= 0
+		minus_btn.pressed.connect(_on_skill_decrement.bind(i))
+		ThemeColors.apply_button_theme(minus_btn)
+		row.add_child(minus_btn)
+		stat_buttons["skill_%s_minus" % skill_name] = minus_btn
+
+		# Level display
+		var level_label := Label.new()
+		level_label.text = str(skill_investments[skill_name])
+		level_label.custom_minimum_size.x = 36
+		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		level_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY if skill_investments[skill_name] > 0 else ThemeColors.TEXT_MUTED)
+		ThemeColors.apply_body_font(level_label)
+		row.add_child(level_label)
+		stat_labels["skill_%s_level" % skill_name] = level_label
+
+		# [+] button
+		var plus_btn := Button.new()
+		plus_btn.text = "+"
+		plus_btn.custom_minimum_size = Vector2(40, 40)
+		plus_btn.pressed.connect(_on_skill_increment.bind(i))
+		ThemeColors.apply_button_theme(plus_btn)
+		row.add_child(plus_btn)
+		stat_buttons["skill_%s_plus" % skill_name] = plus_btn
+
+		# Cost display for next point
+		var cost_label := Label.new()
+		var next_cost: int = _calc_skill_point_cost(skill_name, skill_investments[skill_name])
+		cost_label.text = "(%d XP)" % next_cost
+		cost_label.custom_minimum_size.x = 100
+		cost_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		ThemeColors.apply_body_font(cost_label, ThemeColors.FONT_SIZE_HINT)
+		row.add_child(cost_label)
+		stat_labels["skill_%s_cost" % skill_name] = cost_label
+
+		# Expand button (show abilities)
+		var expand_btn := Button.new()
+		expand_btn.text = "Abilities..."
+		expand_btn.custom_minimum_size = Vector2(100, 40)
+		expand_btn.pressed.connect(_on_skill_expand_toggle.bind(i))
+		ThemeColors.apply_button_theme(expand_btn)
+		row.add_child(expand_btn)
+
+		skills_vbox.add_child(row)
+
+		# Ability sub-container (initially hidden, shown when expanded)
+		var ability_container := VBoxContainer.new()
+		ability_container.name = "abilities_%d" % i
+		ability_container.add_theme_constant_override("separation", 2)
+		ability_container.visible = (_skills_expanded_idx == i)
+		skills_vbox.add_child(ability_container)
+		stat_labels["skill_%s_abilities" % skill_name] = ability_container
+
+		if _skills_expanded_idx == i:
+			_populate_ability_list(i, ability_container)
+
+	_update_skill_buttons()
+
+	info_label.bbcode_enabled = true
+	info_label.text = _get_skills_summary()
+
+func _on_skill_increment(skill_idx: int) -> void:
+	var skill_name: String = SKILL_NAMES[skill_idx]
+	var current_level: int = skill_investments[skill_name]
+	if current_level >= 20:
+		return
+	var cost: int = _calc_skill_point_cost(skill_name, current_level)
+	if cost > _get_remaining_xp():
+		return
+	skill_investments[skill_name] = current_level + 1
+	_recalculate_precreation_xp()
+	_update_skill_buttons()
+	_update_skills_header()
+	info_label.text = _get_skills_summary()
+
+func _on_skill_decrement(skill_idx: int) -> void:
+	var skill_name: String = SKILL_NAMES[skill_idx]
+	var current_level: int = skill_investments[skill_name]
+	if current_level <= 0:
+		return
+	# Check if any purchased ability depends on this skill level
+	for purchase in ability_purchases:
+		if purchase.skill_name == skill_name:
+			var ability_data: DataManager.AbilityData = DataManager.get_abilities_for_skill(purchase.skill_type)[0] if not DataManager.get_abilities_for_skill(purchase.skill_type).is_empty() else null
+			# Find the actual ability
+			for ab in DataManager.get_abilities_for_skill(purchase.skill_type):
+				if ab.ability_num == purchase.ability_num:
+					if ab.level_requirement >= current_level:
+						# Can't decrement — ability requires this level
+						return
+					break
+	skill_investments[skill_name] = current_level - 1
+	_recalculate_precreation_xp()
+	_update_skill_buttons()
+	_update_skills_header()
+	info_label.text = _get_skills_summary()
+
+func _on_skill_expand_toggle(skill_idx: int) -> void:
+	if _skills_expanded_idx == skill_idx:
+		_skills_expanded_idx = -1  # Collapse
+	else:
+		_skills_expanded_idx = skill_idx  # Expand this one
+
+	# Toggle visibility of all ability containers
+	for i in range(SKILL_NAMES.size()):
+		var key: String = "skill_%s_abilities" % SKILL_NAMES[i]
+		if stat_labels.has(key):
+			var container: VBoxContainer = stat_labels[key]
+			var should_show: bool = (_skills_expanded_idx == i)
+			container.visible = should_show
+			# Clear and repopulate
+			for child in container.get_children():
+				child.queue_free()
+			if should_show:
+				_populate_ability_list(i, container)
+
+func _populate_ability_list(skill_idx: int, container: VBoxContainer) -> void:
+	## Populate available abilities for a skill in the pre-creation stage.
+	var skill_name: String = SKILL_NAMES[skill_idx]
+	var skill_type: int = skill_idx  # Skill enum matches index order
+	var invested_level: int = skill_investments[skill_name]
+	var abilities_list: Array = DataManager.get_abilities_for_skill(skill_type)
+
+	if abilities_list.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "  No abilities available."
+		empty_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		ThemeColors.apply_body_font(empty_label, ThemeColors.FONT_SIZE_HINT)
+		container.add_child(empty_label)
+		return
+
+	# Count already purchased abilities in this skill for cost calculation
+	var owned_count: int = 0
+	for purchase in ability_purchases:
+		if purchase.skill_name == skill_name:
+			owned_count += 1
+
+	for ability in abilities_list:
+		var ab_row := HBoxContainer.new()
+		ab_row.add_theme_constant_override("separation", 8)
+
+		# Indent
+		var spacer := Control.new()
+		spacer.custom_minimum_size.x = 24
+		ab_row.add_child(spacer)
+
+		# Ability name
+		var ab_name_label := Label.new()
+		ab_name_label.text = ability.name
+		ab_name_label.custom_minimum_size.x = 200
+		ThemeColors.apply_body_font(ab_name_label, ThemeColors.FONT_SIZE_HINT)
+		ab_row.add_child(ab_name_label)
+
+		# Check if already purchased
+		var already_purchased: bool = false
+		for purchase in ability_purchases:
+			if purchase.skill_type == skill_type and purchase.ability_num == ability.ability_num:
+				already_purchased = true
+				break
+
+		# Check prerequisites
+		var prereqs_met: bool = true
+		for prereq in ability.prereqs:
+			var prereq_skill: int = prereq.get("skill", -1)
+			var prereq_ability: int = prereq.get("ability", -1)
+			if prereq_skill >= 0 and prereq_ability >= 0:
+				# Check if prereq ability was purchased
+				var found: bool = false
+				for purchase in ability_purchases:
+					if purchase.skill_type == prereq_skill and purchase.ability_num == prereq_ability:
+						found = true
+						break
+				if not found:
+					prereqs_met = false
+					break
+
+		var meets_level: bool = invested_level >= ability.level_requirement
+		var affinity: int = _get_affinity_level(skill_name)
+		var xp_cost: int = maxi(0, (owned_count + 1) * 500 - 500 * affinity)
+		var can_afford: bool = xp_cost <= _get_remaining_xp()
+
+		if already_purchased:
+			ab_name_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
+			var learned_label := Label.new()
+			learned_label.text = "Learned"
+			learned_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
+			ThemeColors.apply_body_font(learned_label, ThemeColors.FONT_SIZE_HINT)
+			ab_row.add_child(learned_label)
+		elif not meets_level:
+			ab_name_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+			var req_label := Label.new()
+			req_label.text = "Need %s Lv %d" % [SKILL_LABELS[skill_idx], ability.level_requirement]
+			req_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+			ThemeColors.apply_body_font(req_label, ThemeColors.FONT_SIZE_HINT)
+			ab_row.add_child(req_label)
+		elif not prereqs_met:
+			ab_name_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+			var prereq_label := Label.new()
+			prereq_label.text = "Missing prereqs"
+			prereq_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
+			ThemeColors.apply_body_font(prereq_label, ThemeColors.FONT_SIZE_HINT)
+			ab_row.add_child(prereq_label)
+		else:
+			ab_name_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+			var learn_btn := Button.new()
+			learn_btn.text = "Learn (%d XP)" % xp_cost
+			learn_btn.custom_minimum_size = Vector2(130, 30)
+			learn_btn.disabled = not can_afford
+			learn_btn.pressed.connect(_on_ability_learn.bind(skill_idx, ability, xp_cost))
+			ThemeColors.apply_button_theme(learn_btn)
+			ab_row.add_child(learn_btn)
+
+		# Description tooltip (small text after the row)
+		container.add_child(ab_row)
+		if not ability.description.is_empty():
+			var desc_label := Label.new()
+			desc_label.text = "    " + ability.description
+			desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			desc_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+			ThemeColors.apply_body_font(desc_label, ThemeColors.FONT_SIZE_HINT)
+			container.add_child(desc_label)
+
+func _on_ability_learn(skill_idx: int, ability: DataManager.AbilityData, xp_cost: int) -> void:
+	var skill_name: String = SKILL_NAMES[skill_idx]
+	ability_purchases.append({
+		"skill_type": ability.skill_type,
+		"ability_num": ability.ability_num,
+		"skill_name": skill_name,
+		"name": ability.name,
+		"xp_cost": xp_cost,
+	})
+	_recalculate_precreation_xp()
+	_update_skill_buttons()
+	_update_skills_header()
+	info_label.text = _get_skills_summary()
+
+	# Refresh expanded ability list
+	if _skills_expanded_idx == skill_idx:
+		var key: String = "skill_%s_abilities" % skill_name
+		if stat_labels.has(key):
+			var container: VBoxContainer = stat_labels[key]
+			for child in container.get_children():
+				child.queue_free()
+			_populate_ability_list(skill_idx, container)
+
+func _update_skill_buttons() -> void:
+	for i in range(SKILL_NAMES.size()):
+		var skill_name: String = SKILL_NAMES[i]
+		var current_level: int = skill_investments[skill_name]
+
+		# Update level label
+		var level_key: String = "skill_%s_level" % skill_name
+		if stat_labels.has(level_key):
+			var label: Label = stat_labels[level_key]
+			label.text = str(current_level)
+			label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY if current_level > 0 else ThemeColors.TEXT_MUTED)
+
+		# Update cost label
+		var cost_key: String = "skill_%s_cost" % skill_name
+		if stat_labels.has(cost_key):
+			var label: Label = stat_labels[cost_key]
+			if current_level >= 20:
+				label.text = "(MAX)"
+			else:
+				var next_cost: int = _calc_skill_point_cost(skill_name, current_level)
+				label.text = "(%d XP)" % next_cost
+
+		# Update buttons
+		var minus_key: String = "skill_%s_minus" % skill_name
+		var plus_key: String = "skill_%s_plus" % skill_name
+		if stat_buttons.has(minus_key):
+			stat_buttons[minus_key].disabled = current_level <= 0
+		if stat_buttons.has(plus_key):
+			if current_level >= 20:
+				stat_buttons[plus_key].disabled = true
+			else:
+				var cost: int = _calc_skill_point_cost(skill_name, current_level)
+				stat_buttons[plus_key].disabled = cost > _get_remaining_xp()
+
+func _update_skills_header() -> void:
+	if stat_labels.has("_skills_xp_header"):
+		var header: RichTextLabel = stat_labels["_skills_xp_header"]
+		var gold: String = ThemeColors.PRIMARY.to_html(false)
+		var muted: String = ThemeColors.TEXT_MUTED.to_html(false)
+		header.text = "[color=#%s]Experience Remaining: %d[/color]\n[color=#%s]You don't need to spend all your experience now — you can invest more during the game.[/color]" % [
+			gold, _get_remaining_xp(), muted
+		]
+
+func _get_skills_summary() -> String:
+	var invested: PackedStringArray = []
+	for i in range(SKILL_NAMES.size()):
+		var level: int = skill_investments[SKILL_NAMES[i]]
+		if level > 0:
+			invested.append("%s %d" % [SKILL_LABELS[i], level])
+
+	var abilities_text: PackedStringArray = []
+	for purchase in ability_purchases:
+		abilities_text.append(purchase.name)
+
+	var summary: String = ""
+	if not invested.is_empty():
+		summary += "Skills: " + ", ".join(invested)
+	if not abilities_text.is_empty():
+		if not summary.is_empty():
+			summary += "\n"
+		summary += "Abilities: " + ", ".join(abilities_text)
+	if summary.is_empty():
+		summary = "No skill investments yet."
+
+	summary += "\nXP Spent: %d / %d" % [_precreation_xp_spent, Player.STARTING_XP]
+	return summary
+
+# ============================================================================
 # NAME ENTRY (with age and parentage)
 # ============================================================================
 
@@ -1007,10 +1477,28 @@ func _get_character_summary() -> String:
 
 	var diff_label: String = GameManager.DIFFICULTY_MODIFIERS.get(selected_difficulty, {}).get("label", "Normal")
 
-	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s | Difficulty: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d\n\nStarting XP: %d" % [
+	var remaining_xp: int = Player.STARTING_XP - _precreation_xp_spent
+	var skills_text: String = ""
+	var invested_skills: PackedStringArray = []
+	for i in range(SKILL_NAMES.size()):
+		var level: int = skill_investments[SKILL_NAMES[i]]
+		if level > 0:
+			invested_skills.append("%s %d" % [SKILL_LABELS[i], level])
+	if not invested_skills.is_empty():
+		skills_text = "\nSkills: " + ", ".join(invested_skills)
+	var abilities_text: String = ""
+	var ability_names: PackedStringArray = []
+	for purchase in ability_purchases:
+		ability_names.append(purchase.name)
+	if not ability_names.is_empty():
+		abilities_text = "\nAbilities: " + ", ".join(ability_names)
+
+	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s | Difficulty: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d%s%s\n\nStarting XP: %d (Invested: %d)" % [
 		display_name, house_suffix, selected_race, selected_house,
 		gender_text, age_text, trait_text, diff_label,
-		final_str, final_dex, final_con, final_gra, Player.STARTING_XP
+		final_str, final_dex, final_con, final_gra,
+		skills_text, abilities_text,
+		remaining_xp, _precreation_xp_spent,
 	]
 
 # ============================================================================
@@ -1163,6 +1651,9 @@ func _update_navigation() -> void:
 		Stage.STATS:
 			next_button.text = "Next"
 			next_button.disabled = false
+		Stage.SKILLS:
+			next_button.text = "Next"
+			next_button.disabled = false
 		Stage.NAME:
 			next_button.text = "Next"
 			next_button.disabled = character_name.is_empty()
@@ -1190,6 +1681,12 @@ func _finish_creation() -> void:
 	if GameManager:
 		GameManager.set_difficulty(selected_difficulty)
 
+	# Build non-zero skill investments for output
+	var nonzero_skills: Dictionary = {}
+	for skill_name in skill_investments:
+		if skill_investments[skill_name] > 0:
+			nonzero_skills[skill_name] = skill_investments[skill_name]
+
 	var character_data := {
 		"race": selected_race,
 		"house": selected_house,
@@ -1200,6 +1697,9 @@ func _finish_creation() -> void:
 		"age": character_age,
 		"history": character_history,
 		"difficulty": selected_difficulty,
+		"skill_investments": nonzero_skills,
+		"ability_purchases": ability_purchases.duplicate(),
+		"xp_spent_precreation": _precreation_xp_spent,
 	}
 	creation_complete.emit(character_data)
 

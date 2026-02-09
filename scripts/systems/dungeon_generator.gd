@@ -143,20 +143,20 @@ func generate(target_level: Level, depth: int) -> void:
 	# Place stairs
 	_place_stairs(depth)
 
-	# Add features based on depth
+	# Ensure forges on appropriate levels (before features so rubble doesn't block them)
+	_ensure_forges(depth)
+
+	# Add features based on depth (rubble/traps avoid forge tiles)
 	_add_features(depth)
 
 	# Place themed guards near doors
 	_place_door_guards(depth)
 
-	# Ensure forges on appropriate levels
-	_ensure_forges(depth)
-
-	# Spawn smithing materials near forges (Sil-Q: 1-3 items within 3 tiles)
-	_spawn_forge_materials(depth)
-
 	# Apply layer-specific decoration
 	_apply_layer_decoration(depth)
+
+	# Spawn smithing materials near forges LAST (finds passable tiles after all decoration)
+	_spawn_forge_materials(depth)
 
 	# Scatter environmental storytelling (flavor messages on tiles)
 	_scatter_storytelling(depth)
@@ -620,7 +620,7 @@ func _add_features(depth: int) -> void:
 	# Place doors at room-corridor junctions and rare mid-corridor spots
 	_place_doors(depth)
 
-	# Add rubble in some rooms based on depth
+	# Add rubble in some rooms based on depth (rubble is impassable, skip narrow corridors)
 	if depth > 3:
 		for room in rooms:
 			if randf() < 0.2:
@@ -630,7 +630,7 @@ func _add_features(depth: int) -> void:
 						randi_range(room.position.x + 1, room.position.x + room.size.x - 2),
 						randi_range(room.position.y + 1, room.position.y + room.size.y - 2)
 					)
-					if level.get_tile(rubble_pos) == Level.Tile.FLOOR:
+					if level.get_tile(rubble_pos) == Level.Tile.FLOOR and _count_passable_neighbors(rubble_pos) >= 3:
 						level.set_tile(rubble_pos, Level.Tile.RUBBLE)
 
 	# Forges are guaranteed by _ensure_forges() - no random placement here
@@ -1618,14 +1618,14 @@ func _spawn_forge_materials(depth: int) -> void:
 		var mat_count: int = randi_range(3, 5)  # More materials per forge (was 2-3)
 		var spawned: int = 0
 
-		# Collect valid floor tiles within 3 tiles of forge
+		# Collect valid passable tiles within 3 tiles of forge (not just FLOOR)
 		var nearby_floors: Array[Vector2i] = []
 		for dy in range(-3, 4):
 			for dx in range(-3, 4):
 				var pos := Vector2i(forge_pos.x + dx, forge_pos.y + dy)
 				if pos == forge_pos:
 					continue
-				if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+				if level.is_in_bounds(pos) and level.is_passable(pos):
 					nearby_floors.append(pos)
 
 		nearby_floors.shuffle()
@@ -1648,6 +1648,7 @@ func _spawn_forge_materials(depth: int) -> void:
 			var mat_id: int = spawn_ids[i]
 			var mat_template: DataManager.ItemData = DataManager.get_item_by_index(mat_id)
 			if mat_template == null:
+				push_warning("Forge material ID %d not found" % mat_id)
 				continue
 
 			var mat_copy: DataManager.ItemData = DataManager.duplicate_item_data(mat_template)
@@ -1980,6 +1981,7 @@ func _apply_layer_decoration(depth: int) -> void:
 	print("Applied %s decorations at depth %d" % [layer_name, depth])
 
 ## Scatter density-based terrain features on random floor tiles.
+## Safety: impassable scatter tiles (e.g. RUBBLE) are not placed in 1-wide corridors.
 func _scatter_terrain(depth: int, params: Dictionary) -> void:
 	var density: float = params.get("scatter_density", 0.0)
 	if density <= 0.0:
@@ -1987,17 +1989,43 @@ func _scatter_terrain(depth: int, params: Dictionary) -> void:
 
 	var layer_name: String = LayerConfig.get_layer_name(depth)
 	var scatter_tile: int = _get_scatter_tile_for_layer(layer_name)
+	var tile_is_impassable: bool = not _is_scatter_tile_passable(scatter_tile)
 	var scattered: int = 0
 
 	for y in range(1, level.height - 1):
 		for x in range(1, level.width - 1):
 			var pos := Vector2i(x, y)
 			if level.get_tile(pos) == Level.Tile.FLOOR and randf() < density:
+				# Don't place impassable scatter in narrow corridors
+				if tile_is_impassable and _count_passable_neighbors(pos) < 3:
+					continue
 				level.set_tile(pos, scatter_tile)
 				scattered += 1
 
 	if scattered > 0:
 		print("Scattered %d terrain tiles at depth %d" % [scattered, depth])
+
+## Check if a scatter tile type is passable (walkable).
+func _is_scatter_tile_passable(tile: int) -> bool:
+	match tile:
+		Level.Tile.RUBBLE:
+			return false
+		_:
+			return true
+
+## Count passable neighbors around a position (8-directional).
+func _count_passable_neighbors(pos: Vector2i) -> int:
+	var count: int = 0
+	var dirs: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+	for dir: Vector2i in dirs:
+		var neighbor: Vector2i = pos + dir
+		if level.is_in_bounds(neighbor) and level.is_passable(neighbor):
+			count += 1
+	return count
 
 ## Get the scatter terrain tile type for a layer.
 func _get_scatter_tile_for_layer(layer_name: String) -> int:

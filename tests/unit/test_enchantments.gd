@@ -10,8 +10,8 @@ func test_egos_loaded():
 	assert_gte(DataManager.egos.size(), 78, "Should load at least 78 ego types")
 
 func test_ego_count_matches_file():
-	# special.txt has 97 N: lines
-	assert_eq(DataManager.egos.size(), 97, "Should load exactly 97 ego types from special.txt")
+	# special.txt has 112 unique N: lines (97 original + 15 new ring/amulet egos)
+	assert_eq(DataManager.egos.size(), 112, "Should load all 112 ego types from special.txt")
 
 func test_ego_21_gondolin_fields():
 	var ego: DataManager.EgoData = DataManager.egos.get(21)

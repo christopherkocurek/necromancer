@@ -68,7 +68,7 @@ func load_monsters() -> void:
 				if n_parts.size() >= 1:
 					current_monster.index = int(n_parts[0])
 				if n_parts.size() >= 2:
-					current_monster.name = n_parts[1]
+					current_monster.name = n_parts[1].replace("& ", "").replace("~", "").strip_edges()
 			"G":
 				# G:symbol:color
 				if current_monster:
@@ -219,7 +219,7 @@ func load_items() -> void:
 				if n_parts.size() >= 1:
 					current_item.index = int(n_parts[0])
 				if n_parts.size() >= 2:
-					current_item.name = n_parts[1]
+					current_item.name = n_parts[1].replace("& ", "").replace("~", "").strip_edges()
 			"G":
 				if current_item:
 					var g_parts := value.split(":")
@@ -431,7 +431,7 @@ func load_artifacts() -> void:
 				if n_parts.size() >= 1:
 					current_artifact.index = int(n_parts[0])
 				if n_parts.size() >= 2:
-					current_artifact.name = n_parts[1]
+					current_artifact.name = n_parts[1].replace("& ", "").replace("~", "").strip_edges()
 			"I":
 				if current_artifact:
 					var i_parts := value.split(":")

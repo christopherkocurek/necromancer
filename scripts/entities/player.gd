@@ -1169,6 +1169,10 @@ func pick_up_item(item_data: Variant) -> bool:
 	if "stack_count" not in item_data:
 		item_data.stack_count = 1
 	inventory.append(item_data)
+	# Forge Intuition: auto-identify unidentified items on pickup
+	if has_forge_intuition() and "identified" in item_data and not item_data.identified:
+		GameManager.identify_item(item_data)
+		GameManager.log_message("Forge Intuition: You recognize the %s." % item_data.name, ThemeColors.MSG_INFO)
 	EventBus.item_picked_up.emit(self, item_data)
 	return true
 
@@ -1230,6 +1234,10 @@ func equip_item(item_data: Variant, slot: String) -> bool:
 
 	equipment[slot] = item_data
 	inventory.erase(item_data)
+	# Forge Intuition: auto-identify unidentified items on equip
+	if has_forge_intuition() and "identified" in item_data and not item_data.identified:
+		GameManager.identify_item(item_data)
+		GameManager.log_message("Forge Intuition: You recognize the %s." % item_data.name, ThemeColors.MSG_INFO)
 	EventBus.item_equipped.emit(self, item_data, slot)
 	_recalculate_stats()
 	return true
@@ -1683,7 +1691,7 @@ func _get_heavy_armor_penalty() -> int:
 
 ## Ranged weapon weight for crit/STR calculations
 func _get_bow_weight() -> int:
-	var ranged_weapon = equipment.get("off_hand")
+	var ranged_weapon = equipment.get("bow")
 	if ranged_weapon != null and "weight" in ranged_weapon:
 		return ranged_weapon.weight
 	return 30

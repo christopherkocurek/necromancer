@@ -43,6 +43,7 @@ var energy: int = 0
 @export var sprite_index: int = 0  # Monster/entity ID for tile lookup
 var sprite: Sprite2D
 var _pending_atlas_coords: Vector2i = Vector2i(-1, -1)  # Coords to apply after sprite creation
+var _move_tween: Tween = null
 
 # Shared resources (loaded once)
 static var _tileset_texture: Texture2D = null
@@ -172,9 +173,12 @@ func _animate_move(from: Vector2i, to: Vector2i) -> void:
 	var end_pos := Vector2(to) * GameManager.TILE_SIZE
 	position = start_pos
 
-	var tween := create_tween()
+	if _move_tween and _move_tween.is_running():
+		_move_tween.kill()
+	_move_tween = create_tween()
 	# DO NOT EDIT: Movement tween for smooth tile transitions
-	tween.tween_property(self, "position", end_pos, 0.01).set_ease(Tween.EASE_OUT)
+	_move_tween.tween_property(self, "position", end_pos, 0.01).set_ease(Tween.EASE_OUT)
+	_move_tween.tween_callback(func(): position = Vector2(grid_position) * GameManager.TILE_SIZE)
 
 # ============================================================================
 # COMBAT
