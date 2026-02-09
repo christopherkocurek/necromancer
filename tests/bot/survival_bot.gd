@@ -12,7 +12,8 @@ extends Node
 # ============================================================================
 
 const MAX_TURNS_PER_FLOOR: int = 200
-const MAX_TOTAL_TURNS: int = 5000
+const MAX_TURNS_PER_FLOOR_STEALTH: int = 400  ## Stealth-avoidance archetypes path around monsters
+const MAX_TOTAL_TURNS: int = 8000
 const STUCK_THRESHOLD: int = 20       ## Abort floor if no position change for this many turns
 const RANDOM_MOVE_THRESHOLD: int = 10 ## Try random movement after this many stuck turns
 const HP_CRITICAL_PCT: float = 0.10   ## Below 10% HP: flee (legacy, see FLEE_HP_PCT)
@@ -547,7 +548,8 @@ func _run_floor_loop() -> void:
 	_last_position = _player.grid_position if _player else Vector2i(-1, -1)
 	_floor_hp_at_start = _player.current_health if _player else 0
 
-	while _floor_turn < MAX_TURNS_PER_FLOOR and _run_active:
+	var floor_limit: int = MAX_TURNS_PER_FLOOR_STEALTH if _archetype_id == "STEALTH_PURE" else MAX_TURNS_PER_FLOOR
+	while _floor_turn < floor_limit and _run_active:
 		# Safety checks
 		if not _is_player_alive():
 			return
@@ -756,7 +758,8 @@ func _decide_and_act() -> bool:
 		return true
 
 	# Priority 10: SMITH material + forge seeking — prioritize smithing pipeline
-	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_visible_monster():
+	# Only gate on adjacent monsters (distant monsters shouldn't block forging)
+	if _archetype_id in ["SMITH", "ELF_SMITH"] and not _has_adjacent_monster():
 		# Seek smithing materials first (within range of forge)
 		if _smith_should_seek_materials() and _try_seek_smithing_materials():
 			return true
@@ -1502,7 +1505,8 @@ func _should_descend() -> bool:
 		return true
 
 	# Always descend if floor turn limit is close
-	if _floor_turn >= MAX_TURNS_PER_FLOOR - 20:
+	var floor_limit: int = MAX_TURNS_PER_FLOOR_STEALTH if _archetype_id == "STEALTH_PURE" else MAX_TURNS_PER_FLOOR
+	if _floor_turn >= floor_limit - 20:
 		return true
 
 	# Check floor exploration percentage (v3: per-archetype threshold)
@@ -2010,7 +2014,8 @@ func _try_seek_forge() -> bool:
 					best_forge = pos
 
 	if best_forge != Vector2i(-1, -1) and best_dist > 0:
-		_total_forges_visited += 1
+		if best_dist == 1:
+			_total_forges_visited += 1  # Only count actual arrival at forge
 		return _move_toward_target(best_forge)
 
 	return false
@@ -2523,7 +2528,7 @@ func _try_use_forge() -> bool:
 		var success: bool = _try_execute_recipe(smithing_system, recipe, forge_bonus, depth)
 		if success:
 			_total_forges_used += 1
-			_total_forge_successes += 1
+			# forge_successes tracked per-recipe (create/reforge/reclaim/masterwork _successes)
 			# Consume forge use
 			_level.consume_forge_use(_player.grid_position)
 			_player.consume_energy()
@@ -2630,13 +2635,58 @@ func _bot_do_create(ss: SmithingSystem, recipe_type: SmithingSystem.RecipeType, 
 	var templates: Array = ss.get_creatable_items(recipe_type, depth)
 	if templates.is_empty():
 		return false
-	var result: Variant = ss.create_item(_player, templates[0], mithril[0], forge_bonus)
+	# Smart selection: pick the best template for our current equipment gaps
+	var best_template: Variant = _pick_best_create_template(templates)
+	var result: Variant = ss.create_item(_player, best_template, mithril[0], forge_bonus)
 	if result:
 		_total_create_successes += 1
 		_try_auto_equip(result)
 		print("[SURVIVAL BOT] CREATE success: %s" % (result.name if "name" in result else "item"))
 		return true
 	return true  # Turn was spent even on failure
+
+func _pick_best_create_template(templates: Array) -> Variant:
+	## Pick the template that fills our biggest equipment gap or best upgrades current gear.
+	var best: Variant = null
+	var best_score: int = -999
+
+	for template in templates:
+		if template == null or "tval" not in template:
+			continue
+		var tval: int = template.tval
+		if not Constants.TVAL_TO_SLOT.has(tval):
+			continue
+
+		var slot_id: int = Constants.TVAL_TO_SLOT[tval]
+		var slot_key: String = _equip_slot_key(slot_id)
+		if slot_key.is_empty():
+			continue
+
+		var current_item: Variant = _player.equipment.get(slot_key) if _player else null
+		var template_score: int = _item_score(template, slot_key)
+
+		if current_item == null:
+			# Empty slot — huge bonus, prioritize filling gaps
+			# Armor slots worth more than weapon (survivability)
+			var empty_bonus: int = 100
+			if slot_key in ["armor", "head", "off_hand", "feet", "hands", "cloak"]:
+				empty_bonus = 200  # Armor gaps are most dangerous
+			var score: int = empty_bonus + template_score
+			if score > best_score:
+				best_score = score
+				best = template
+		else:
+			# Slot occupied — only consider if it's an upgrade
+			var current_score: int = _item_score(current_item, slot_key)
+			var upgrade: int = template_score - current_score
+			if upgrade > 0 and upgrade > best_score:
+				best_score = upgrade
+				best = template
+
+	# Fallback: pick random if nothing scored well
+	if best == null:
+		best = templates.pick_random()
+	return best
 
 # ============================================================================
 # ENHANCED BOT — SKILL INVESTMENT
@@ -3071,7 +3121,8 @@ func _try_seek_smithing_materials() -> bool:
 				best_dist = dist
 				best_pos = item_pos
 	if best_pos != Vector2i(-1, -1):
-		_total_materials_collected += 1
+		if best_dist <= 1:
+			_total_materials_collected += 1  # Only count when adjacent (about to pick up)
 		return _move_toward_target(best_pos)
 	return false
 
@@ -3205,7 +3256,7 @@ func _finish_run(cause: String) -> void:
 		"total_stealth_kills": _total_stealth_kills,
 		"total_detections": _total_detections,
 		"total_forges_visited": _total_forges_visited,
-		"total_forge_successes": _total_forge_successes,
+		"total_forge_successes": _total_create_successes + _total_reforge_successes + _total_reclaim_successes + _total_masterwork_successes,
 		"total_word_of_command": _total_word_of_command,
 		"total_lore_of_sleep": _total_lore_of_sleep,
 		"total_deep_memory": _total_deep_memory,

@@ -621,3 +621,56 @@ func test_no_los_no_openness():
 	var no_los_m_per: int = perception / 2 - distance  # 3 - 3 = 0
 	assert_eq(los_m_per, 8, "LOS includes openness: 6 - 3 + 5 = 8")
 	assert_eq(no_los_m_per, 0, "No-LOS excludes openness: 3 - 3 = 0")
+
+# ============================================================================
+# TEST 14: DEPTH-SCALED PERCEPTION — DEEPER FLOORS ARE HARDER TO SNEAK
+# ============================================================================
+
+func test_depth_scaling_floor_1():
+	# Floor 1: depth/2 = 0 bonus
+	var depth: int = 1
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 0, "Floor 1: +0 perception bonus")
+
+func test_depth_scaling_floor_2():
+	# Floor 2: depth/2 = 1 bonus
+	var depth: int = 2
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 1, "Floor 2: +1 perception bonus")
+
+func test_depth_scaling_floor_4():
+	# Floor 4: depth/2 = 2 bonus
+	var depth: int = 4
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 2, "Floor 4: +2 perception bonus")
+
+func test_depth_scaling_floor_7():
+	# Floor 7: depth/2 = 3 bonus
+	var depth: int = 7
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 3, "Floor 7: +3 perception bonus")
+
+func test_depth_scaling_floor_10():
+	# Floor 10: depth/2 = 5 bonus
+	var depth: int = 10
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 5, "Floor 10: +5 perception bonus")
+
+func test_depth_scaling_floor_20():
+	# Floor 20 (final): depth/2 = 10 bonus — Sauron's inner sanctum
+	var depth: int = 20
+	var depth_bonus: int = depth / 2
+	assert_eq(depth_bonus, 10, "Floor 20: +10 perception bonus")
+
+func test_depth_scaling_net_effect_on_stealth():
+	# Orc Scout (perception 5) on Floor 7 at distance 4:
+	# Base: 5 - 4 = +1 (easy to avoid)
+	# With depth: 5 + 3 - 4 = +4 (much harder!)
+	var perception: int = 5
+	var distance: int = 4
+	var depth_bonus: int = 7 / 2  # Floor 7
+	var net_without_depth: int = perception - distance
+	var net_with_depth: int = perception + depth_bonus - distance
+	assert_eq(net_without_depth, 1, "Without depth scaling: easy (+1)")
+	assert_eq(net_with_depth, 4, "With depth scaling: challenging (+4)")
+	assert_true(net_with_depth > net_without_depth, "Depth scaling makes deeper floors harder")

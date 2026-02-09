@@ -14,7 +14,7 @@ set -euo pipefail
 # Configuration
 PARALLELISM="${1:-4}"
 RUNS_PER="${2:-40}"
-TIMEOUT_SECS=300
+TIMEOUT_SECS="${BOT_TIMEOUT:-300}"
 
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

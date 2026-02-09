@@ -278,6 +278,9 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 	if has_los:
 		# --- LOS detection roll ---
 		var m_per: int = perception
+		# Depth scaling: deeper floors are more vigilant (+1 per 2 floors)
+		var depth_bonus: int = GameManager.current_depth / 2 if GameManager else 0
+		m_per += depth_bonus
 		# Distance is a direct penalty (uncapped)
 		m_per -= distance
 		# Terrain openness: open areas are harder to hide in
@@ -310,6 +313,9 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 	else:
 		# --- No-LOS detection (hearing/sensing) ---
 		var m_per: int = perception / 2  # Halved without line of sight
+		# Depth scaling: deeper floors are more vigilant (+1 per 2 floors)
+		var depth_bonus: int = GameManager.current_depth / 2 if GameManager else 0
+		m_per += depth_bonus
 		m_per -= distance
 		m_per += player.get_combat_noise()
 		# No terrain openness without sight
