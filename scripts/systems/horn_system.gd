@@ -45,7 +45,7 @@ static func _horn_of_terror(player: Player, direction: Vector2i) -> bool:
 		Constants.HORN_CONE_RADIUS, Constants.HORN_CONE_ANGLE
 	)
 
-	var player_will: int = player.get_skill("will")
+	var player_will: int = player.get_effective_skill("will")
 	var affected_count: int = 0
 
 	for pos: Vector2i in cone_positions:
@@ -143,7 +143,7 @@ static func _horn_of_force(player: Player, direction: Vector2i) -> bool:
 		Constants.HORN_CONE_RADIUS, Constants.HORN_CONE_ANGLE
 	)
 
-	var player_will: int = player.get_skill("will")
+	var player_will: int = player.get_effective_skill("will")
 	var affected_count: int = 0
 
 	# Sort positions from farthest to nearest so knockback doesn't collide

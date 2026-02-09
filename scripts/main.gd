@@ -59,6 +59,9 @@ var _pending_tunnel: bool = false
 # Auto-explore state (flag-based loop)
 var _auto_exploring: bool = false
 
+# Wizard mode (Ctrl+W to toggle, then Ctrl+D/H/K/R for debug commands)
+var wizard_mode: bool = false
+
 # Systems (Phase 8C) - using Node/RefCounted to avoid load order issues
 var auto_explore: RefCounted = null  # AutoExplore
 var monster_memory: RefCounted = null
@@ -313,11 +316,6 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 			if invest > 0:
 				player.skills[skill_name] = player.skills.get(skill_name, 0) + invest
 
-	# Apply pre-creation ability purchases
-	if character_data.has("ability_purchases"):
-		for purchase in character_data.ability_purchases:
-			player.learn_ability(purchase.skill_type, purchase.ability_num)
-
 	# Deduct pre-creation XP
 	if character_data.has("xp_spent_precreation"):
 		player.xp_available -= character_data.xp_spent_precreation
@@ -342,6 +340,16 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 
 	player.grid_position = start_pos
 	current_level.add_entity(player)
+
+	# Apply entity name and ability purchases AFTER add_entity because
+	# player._ready() calls _init_ability_arrays() which wipes abilities,
+	# and unconditionally sets entity_name = "Necromancer"
+	if not character_data.is_empty():
+		player.entity_name = character_data.get("name", "Necromancer")
+	if character_data.has("ability_purchases"):
+		for purchase in character_data.ability_purchases:
+			player.learn_ability(purchase.skill_type, purchase.ability_num)
+		player._recalculate_stats()
 
 	# Grant starting equipment from race data
 	_grant_starting_equipment(player)
@@ -600,6 +608,38 @@ func _update_camera_zoom() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if current_state != GameState.PLAYING:
 		return
+
+	# Wizard mode toggle (Ctrl+W)
+	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and event.keycode == KEY_W:
+		wizard_mode = not wizard_mode
+		var state_str: String = "ENABLED" if wizard_mode else "DISABLED"
+		GameManager.log_message("[WIZARD MODE %s]" % state_str, Color.YELLOW)
+		get_viewport().set_input_as_handled()
+		return
+
+	# Wizard mode commands (Ctrl+D/H/K/R)
+	if wizard_mode and event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed:
+		match event.keycode:
+			KEY_D:  # Descend
+				_wizard_descend()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_H:  # Full heal
+				_wizard_heal()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_K:  # Kill all monsters
+				_wizard_kill_all()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_R:  # Reveal map
+				_wizard_reveal()
+				get_viewport().set_input_as_handled()
+				return
+			KEY_J:  # Give 100k XP
+				_wizard_xp()
+				get_viewport().set_input_as_handled()
+				return
 
 	# Horn directional prompt intercept (must come before UI/movement checks)
 	if ConsumableSystem.has_pending_horn():
@@ -1369,7 +1409,7 @@ func _try_mine_direction(dir: Vector2i) -> void:
 		return
 
 	# Calculate mining turns based on smithing skill
-	var smithing_level: int = player.get_skill("smithing") if player.has_method("get_skill") else 0
+	var smithing_level: int = player.get_effective_skill("smithing") if player.has_method("get_effective_skill") else 0
 	_mining_turns_required = maxi(2, 4 - smithing_level / 2)
 	_mining_target = target_pos
 	_mining_turns_taken = 0
@@ -1521,7 +1561,7 @@ func _observe_visible_monsters() -> void:
 
 	# Deep Memory: grant bonus observations on first sighting
 	var has_deep_memory: bool = player != null and player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_DEEP_MEMORY)
-	var player_lore: int = player.get_skill("lore") if player != null else 0
+	var player_lore: int = player.get_effective_skill("lore") if player != null else 0
 
 	# Whisper of the Valar: check if player has active whisper reveals
 	var has_whisper: bool = player != null and "_whisper_turns" in player and player._whisper_turns > 0
@@ -1627,3 +1667,49 @@ func _on_item_dropped_to_ground(entity: Node, item_data: Variant, pos: Vector2i)
 
 	var item_name: String = item_node.get_display_name()
 	GameManager.log_message("You drop the %s." % item_name, ThemeColors.MSG_SYSTEM)
+
+# ============================================================================
+# WIZARD MODE
+# ============================================================================
+
+func _wizard_descend() -> void:
+	if not player or not player.is_alive:
+		return
+	GameManager.log_message("[WIZARD] Descending...", Color.YELLOW)
+	_descend()
+
+func _wizard_heal() -> void:
+	if not player or not player.is_alive:
+		return
+	player.hp = player.max_hp
+	player.voice = player.max_voice
+	GameManager.log_message("[WIZARD] Fully healed. HP: %d/%d, Voice: %d/%d" % [player.hp, player.max_hp, player.voice, player.max_voice], Color.YELLOW)
+	hud.update_player_stats(player)
+
+func _wizard_kill_all() -> void:
+	if not current_level:
+		return
+	var monsters: Array[Monster] = current_level.get_monsters()
+	var count: int = monsters.size()
+	for monster in monsters:
+		monster.hp = 0
+		monster.is_alive = false
+		current_level.remove_entity(monster)
+		monster.queue_free()
+	GameManager.log_message("[WIZARD] Killed %d monsters." % count, Color.YELLOW)
+
+func _wizard_xp() -> void:
+	if not player or not player.is_alive:
+		return
+	player.gain_experience(100000, "wizard")
+	GameManager.log_message("[WIZARD] Granted 100,000 XP.", Color.YELLOW)
+	hud.update_player_stats(player)
+
+func _wizard_reveal() -> void:
+	if not current_level:
+		return
+	for y in range(current_level.height):
+		for x in range(current_level.width):
+			current_level.set_explored(Vector2i(x, y), true)
+	current_level.update_visibility(player.grid_position)
+	GameManager.log_message("[WIZARD] Map revealed.", Color.YELLOW)

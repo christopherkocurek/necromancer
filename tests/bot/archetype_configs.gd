@@ -38,6 +38,14 @@ const ARCHETYPES: Dictionary = {
 		"gender": "male",
 		# Cost: 0+0+3+10 = 13. Final with Elf(-1/+2/+1/+2) + Lorien(0/0/0/+1): STR-1 DEX2 CON3 GRA7
 		"base_stats": {"str": 0, "dex": 0, "con": 2, "gra": 4},
+		# Pre-game: Lore 6, Will 2, Evasion 1 (1900 XP) + Hidden Ways/Deep Memory/Domination (1500 XP) = 3400 XP
+		"skill_investments": {"lore": 6, "will": 2, "evasion": 1},
+		"ability_purchases": [
+			{"skill_type": 7, "ability_num": 0},   # Hidden Ways (lore 1)
+			{"skill_type": 7, "ability_num": 2},   # Deep Memory (lore 2)
+			{"skill_type": 7, "ability_num": 11},  # Word of Domination (lore 6)
+		],
+		"xp_spent_precreation": 3400,
 	},
 	"RANGER": {
 		"archetype_id": "RANGER",
@@ -181,6 +189,14 @@ const ARCHETYPES: Dictionary = {
 		"gender": "male",
 		# Cost: 0+0+3+10 = 13. Final with Elf(-1/+2/+1/+2) + Lorien(0/0/0/+1): STR-1 DEX2 CON3 GRA7
 		"base_stats": {"str": 0, "dex": 0, "con": 2, "gra": 4},
+		# Pre-game: Lore 6, Will 2, Evasion 1 (1900 XP) + Deep Memory/Light of Eldar/Domination (1500 XP) = 3400 XP
+		"skill_investments": {"lore": 6, "will": 2, "evasion": 1},
+		"ability_purchases": [
+			{"skill_type": 7, "ability_num": 2},   # Deep Memory (lore 2)
+			{"skill_type": 7, "ability_num": 5},   # Light of the Eldar (lore 3)
+			{"skill_type": 7, "ability_num": 11},  # Word of Domination (lore 6)
+		],
+		"xp_spent_precreation": 3400,
 	},
 	"SHIELD_WALL": {
 		"archetype_id": "SHIELD_WALL",
@@ -191,6 +207,25 @@ const ARCHETYPES: Dictionary = {
 		"gender": "male",
 		# Cost: 6+0+6+1 = 13. Final with Man(+1/0/+1/0) + Gondor(0/0/+1/0): STR4 DEX0 CON5 GRA1
 		"base_stats": {"str": 3, "dex": 0, "con": 3, "gra": 1},
+	},
+	# ========== v4 LORE REDESIGN ARCHETYPES ==========
+	"LORE_HEALER": {
+		"archetype_id": "LORE_HEALER",
+		"name": "SurvivalBot-LoreHealer",
+		"race": "Elf",
+		"house": "Of Rivendell",
+		"trait": "Echoes of the Firstborn",
+		"gender": "female",
+		# Cost: 0+0+6+6 = 12 -> adjusted: 0+1+6+6 = 13. Final with Elf(-1/+2/+1/+2) + Rivendell(0/0/+1/0): STR-1 DEX3 CON5 GRA6
+		"base_stats": {"str": 0, "dex": 1, "con": 3, "gra": 3},
+		# Pre-game: Lore 6, Will 1, Evasion 1 (1700 XP) + Deep Memory/Herbcraft/Domination (1500 XP) = 3200 XP
+		"skill_investments": {"lore": 6, "will": 1, "evasion": 1},
+		"ability_purchases": [
+			{"skill_type": 7, "ability_num": 2},   # Deep Memory (lore 2)
+			{"skill_type": 7, "ability_num": 3},   # Herbcraft (lore 2)
+			{"skill_type": 7, "ability_num": 11},  # Word of Domination (lore 6)
+		],
+		"xp_spent_precreation": 3200,
 	},
 }
 

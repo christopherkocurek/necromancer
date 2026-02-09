@@ -318,8 +318,8 @@ func attempt_banishment() -> bool:
 		return false
 
 	# Will check vs Sauron (difficulty 25)
-	var will_skill: int = player.get_skill("will") if player else 0
-	var lore_skill: int = player.get_skill("lore") if player else 0
+	var will_skill: int = player.get_effective_skill("will") if player else 0
+	var lore_skill: int = player.get_effective_skill("lore") if player else 0
 	var player_roll: int = randi_range(1, 20) + will_skill + (lore_skill / 2)
 	var sauron_difficulty: int = 25
 

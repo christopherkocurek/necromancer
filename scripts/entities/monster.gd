@@ -42,7 +42,16 @@ var is_pack_leader: bool = false
 var pack_id: int = -1  # For escort/pack morale bonuses
 var is_light_sensitive: bool = false  # Penalized in lit tiles
 var is_dark_aura: bool = false  # Suppresses player light when adjacent
+var is_shadow: bool = false  # Shadow creature (affected by Light of the Eldar)
 var _light_recoil_shown: bool = false  # Track if we showed the recoil message this turn
+
+# Domination (Word of Domination, ability 151)
+var is_dominated: bool = false
+var domination_owner: Entity = null  # Player who dominated this monster
+var domination_turns: int = 0  # Remaining turns of domination
+
+# Song noise perception bonus (applied by ability_system.gd each turn)
+var song_noise_perception_bonus: int = 0
 
 # Werewolf shapeshifting
 var werewolf_form: String = "human"  # "human" or "wolf"
@@ -123,6 +132,7 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 	is_brave = data.has_flag("BRAVE") or is_unique  # Uniques are brave
 	is_light_sensitive = data.has_flag("LIGHT_SENSITIVE")
 	is_dark_aura = data.has_flag("DARK_AURA")
+	is_shadow = data.has_flag("SHADOW")
 	has_friends_flag = data.has_flag("FRIENDS")
 
 	# Morale modifiers from flags
@@ -157,6 +167,13 @@ func take_turn() -> void:
 		return
 
 	EventBus.turn_started.emit(self)
+
+	# DOMINATED: Act on behalf of the player
+	if is_dominated:
+		_dominated_behavior()
+		_tick_domination()  # Decrement + break-free AFTER acting
+		EventBus.turn_ended.emit(self)
+		return
 
 	# Werewolf shapeshifting AI
 	_werewolf_ai_update()
@@ -291,6 +308,8 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		m_per += openness
 		# Combat noise bonus
 		m_per += player.get_combat_noise()
+		# Song noise bonus (from ability_system singing detection)
+		m_per += song_noise_perception_bonus
 		# Alertness diminishing returns: already alert monsters lose focus
 		if alertness >= Constants.ALERTNESS_ALERT:
 			m_per -= alertness / 2
@@ -318,6 +337,8 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		m_per += depth_bonus
 		m_per -= distance
 		m_per += player.get_combat_noise()
+		# Song noise bonus (from ability_system singing detection)
+		m_per += song_noise_perception_bonus
 		# No terrain openness without sight
 		# Alertness diminishing returns
 		if alertness >= Constants.ALERTNESS_ALERT:
@@ -640,6 +661,11 @@ func can_move_to(target: Vector2i) -> bool:
 	if not GameManager.current_level:
 		return false
 
+	# Warding sigils: impassable to monsters (Word of Warding, ability 154)
+	var tile_check: int = GameManager.current_level.get_tile(target)
+	if tile_check == Level.Tile.GLYPH_OF_WARDING:
+		return false
+
 	# Check terrain
 	if GameManager.current_level.has_method("is_passable"):
 		if not GameManager.current_level.is_passable(target):
@@ -746,6 +772,11 @@ func get_total_attack(target: Entity) -> int:
 	# Werewolf form bonuses
 	att += _wolf_attack_bonus
 
+	# Shadow creatures: Light of the Eldar penalty (applied by ability_system)
+	if is_shadow and is_in_lit_tile():
+		var eldar_penalty: int = _get_light_of_eldar_penalty()
+		att -= eldar_penalty
+
 	return att
 
 ## Monster evasion modifier stack per NECROMANCER_DESIGN_CANON section 1.5
@@ -775,6 +806,11 @@ func get_total_evasion(attacker: Entity) -> int:
 	# Werewolf wolf form: -1 evasion (more aggressive, less defensive)
 	if _is_werewolf() and werewolf_form == "wolf":
 		evn -= 1
+
+	# Shadow creatures: Light of the Eldar penalty
+	if is_shadow and is_in_lit_tile():
+		var eldar_penalty: int = _get_light_of_eldar_penalty()
+		evn -= eldar_penalty
 
 	# Shield Brother: player with shield_brother trait and a shield reduces adjacent monster evasion by 1
 	var sb_player: Player = GameManager.player
@@ -874,10 +910,116 @@ func _resolve_attack_effect(target: Entity, effect: String) -> void:
 			pass  # Unknown effect, treat as HURT
 
 # ============================================================================
+# DOMINATION AI (Word of Domination, ability 151)
+# ============================================================================
+
+## Tick domination duration. Break free on expiry or Will check.
+func _tick_domination() -> void:
+	domination_turns -= 1
+	if domination_turns <= 0:
+		_break_domination()
+		return
+	# Break-free check: d20 vs d20 + remaining_turns/2 (harder to break early)
+	var break_roll: int = randi_range(1, 20)
+	var hold_roll: int = randi_range(1, 20) + domination_turns / 2
+	if break_roll > hold_roll:
+		_break_domination()
+
+## Break free from domination
+func _break_domination() -> void:
+	is_dominated = false
+	domination_turns = 0
+	if is_instance_valid(domination_owner) and domination_owner is Player:
+		var p: Player = domination_owner as Player
+		p.dominated_monsters.erase(self)
+	domination_owner = null
+	GameManager.log_message("The %s breaks free from your control!" % entity_name, ThemeColors.MSG_WARNING)
+	# Become alert and hostile
+	alertness = Constants.ALERTNESS_MAX
+	ai_state = AIState.HUNTING
+
+## Dominated behavior: attack nearest non-dominated monster
+func _dominated_behavior() -> void:
+	var nearest_enemy: Monster = null
+	var nearest_dist: int = 999
+
+	if GameManager.current_level:
+		for entity in GameManager.current_level.entities:
+			if not is_instance_valid(entity) or not entity is Monster or entity == self:
+				continue
+			if not entity.is_alive or entity.is_dominated:
+				continue
+			var dist: int = _grid_distance(grid_position, entity.grid_position)
+			if dist < nearest_dist:
+				nearest_dist = dist
+				nearest_enemy = entity
+
+	if nearest_enemy == null:
+		# No enemies — follow the player
+		var player: Player = GameManager.player
+		if player and _grid_distance(grid_position, player.grid_position) > 2:
+			var direction: Vector2i = _direction_toward(player.grid_position)
+			if can_move_to(grid_position + direction):
+				try_move(direction)
+		return
+
+	# Attack if adjacent
+	if nearest_dist <= 1:
+		attack_entity(nearest_enemy)
+		return
+
+	# Move toward nearest enemy
+	if GameManager.current_level:
+		var path: Array[Vector2i] = GameManager.current_level.find_path(grid_position, nearest_enemy.grid_position)
+		if path.size() > 1:
+			var next_pos: Vector2i = path[1]
+			var dir: Vector2i = next_pos - grid_position
+			if can_move_to(next_pos):
+				try_move(dir)
+				return
+
+	var direction: Vector2i = _direction_toward(nearest_enemy.grid_position)
+	if can_move_to(grid_position + direction):
+		try_move(direction)
+
+## Apply domination from Word of Domination
+func dominate(owner: Entity, turns: int) -> void:
+	is_dominated = true
+	domination_owner = owner
+	domination_turns = turns
+	# Stop fleeing/hunting the player
+	ai_state = AIState.IDLE
+	target = null
+	GameManager.log_message("The %s is under your control!" % entity_name, ThemeColors.ABILITY_LEARNED)
+
+# ============================================================================
+# LIGHT OF THE ELDAR / SHADOW CREATURE SUPPORT
+# ============================================================================
+
+## Get Light of the Eldar combat penalty for shadow creatures
+func _get_light_of_eldar_penalty() -> int:
+	var player: Player = GameManager.player
+	if not is_instance_valid(player):
+		return 0
+	if not player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
+		return 0
+	return 2  # -2 attack and -2 evasion for shadow creatures in lit tiles
+
+## Reset song noise perception bonus (called each turn by ability_system)
+func reset_song_noise_bonus() -> void:
+	song_noise_perception_bonus = 0
+
+# ============================================================================
 # DEATH
 # ============================================================================
 
 func die(killer: Entity = null) -> void:
+	# Clean up domination reference
+	if is_dominated and is_instance_valid(domination_owner) and domination_owner is Player:
+		var p: Player = domination_owner as Player
+		p.dominated_monsters.erase(self)
+		is_dominated = false
+
 	# Process rewards BEFORE calling super.die() which triggers signals
 	# Check validity before using 'is' operator to avoid freed instance errors
 	if killer != null and is_instance_valid(killer) and killer is Player:
@@ -1125,7 +1267,7 @@ func _spell_slow(cast_target: Entity) -> bool:
 	var save_roll: int = 0
 	if cast_target is Player:
 		var p: Player = cast_target as Player
-		save_roll = randi_range(1, 20) + p.get_skill("will")
+		save_roll = randi_range(1, 20) + p.get_effective_skill("will")
 	else:
 		save_roll = randi_range(1, 20)
 	var spell_roll: int = randi_range(1, 20) + perception
@@ -1143,7 +1285,7 @@ func _spell_hold(cast_target: Entity) -> bool:
 	var save_roll: int = 0
 	if cast_target is Player:
 		var p: Player = cast_target as Player
-		save_roll = randi_range(1, 20) + p.get_skill("will")
+		save_roll = randi_range(1, 20) + p.get_effective_skill("will")
 	else:
 		save_roll = randi_range(1, 20)
 	var spell_roll: int = randi_range(1, 20) + perception
@@ -1161,7 +1303,7 @@ func _spell_scare(cast_target: Entity) -> bool:
 	var save_roll: int = 0
 	if cast_target is Player:
 		var p: Player = cast_target as Player
-		save_roll = randi_range(1, 20) + p.get_skill("will")
+		save_roll = randi_range(1, 20) + p.get_effective_skill("will")
 	else:
 		save_roll = randi_range(1, 20)
 	var spell_roll: int = randi_range(1, 20) + perception
@@ -1179,7 +1321,7 @@ func _spell_conf(cast_target: Entity) -> bool:
 	var save_roll: int = 0
 	if cast_target is Player:
 		var p: Player = cast_target as Player
-		save_roll = randi_range(1, 20) + p.get_skill("will")
+		save_roll = randi_range(1, 20) + p.get_effective_skill("will")
 	else:
 		save_roll = randi_range(1, 20)
 	var spell_roll: int = randi_range(1, 20) + perception

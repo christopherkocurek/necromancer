@@ -455,23 +455,28 @@ func update_hotbar(player_ref: Player, ability_sys: Node) -> void:
 
 ## Get a short display name for ability in hotbar
 func _get_hotbar_ability_name(ability_id: int) -> String:
-	# Match the ability IDs from AbilitySystem.LoreAbility
+	# Match the ability IDs from AbilitySystem.LoreAbility (v4: IDs 140-159)
 	match ability_id:
-		140: return "Cmd"    # Word of Command
-		141: return "Btl"    # Lore of Battle
+		140: return "Hide"   # Lore of Hidden Ways
+		141: return "Open"   # Word of Opening
 		142: return "Mem"    # Deep Memory
-		143: return "Open"   # Word of Opening
-		144: return "Slnc"   # Lore of Silence
-		145: return "Herb"   # Herbcraft
-		146: return "Shut"   # Word of Shutting
-		147: return "Lght"   # Inner Light
-		148: return "Ddly"   # Deadly Lore
+		143: return "Herb"   # Herbcraft
+		144: return "Name"   # Lore of Naming
+		145: return "Lght"   # Light of the Eldar
+		146: return "Cmd"    # Word of Command
+		147: return "Free"   # Song of Freedom
+		148: return "Lor"    # Song of Lorien
 		149: return "Endr"   # Lore of Endurance
-		150: return "Slp"    # Lore of Sleep
-		151: return "Mstr"   # Word of Mastery
-		152: return "Dev"    # Device Mastery
-		153: return "Grce"   # Grace
-		154: return "Bnsh"   # Song of Banishment
+		150: return "Bnsh"   # Song of Banishment
+		151: return "Dom"    # Word of Domination
+		152: return "Aule"   # Song of Aule
+		153: return "Heal"   # Song of Healing
+		154: return "Ward"   # Word of Warding
+		155: return "Auth"   # Word of Authority
+		156: return "Unmk"   # Word of Unmaking
+		157: return "Thm"    # Mastery of Themes
+		158: return "Grce"   # Grace
+		159: return "Tree"   # Song of the Trees
 		_: return "???"
 
 # ============================================================================

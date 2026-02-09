@@ -224,17 +224,15 @@ func _on_ability_activated(ability_id: int, _ability_name: String) -> void:
 		return
 
 	match ability_id:
-		140:  # Word of Command
+		146:  # Word of Command
 			_vfx_word_of_command(player)
-		141:  # Lore of Battle
-			_vfx_lore_of_battle(player)
-		143:  # Word of Opening
+		141:  # Word of Opening
 			_vfx_word_of_opening(player)
-		145:  # Herbcraft (passive, but triggered on use)
+		143:  # Herbcraft (sustained, triggered on toggle)
 			_vfx_herbcraft(player)
-		154:  # Song of Banishment
+		150:  # Song of Banishment
 			_vfx_song_of_banishment(player)
-		147:  # Inner Light (already has VFX in ability_system.gd, enhance here)
+		145:  # Light of the Eldar
 			_vfx_inner_light(player)
 
 ## Word of Command: Blue-white shockwave, 12 radiating particles, zoom pulse

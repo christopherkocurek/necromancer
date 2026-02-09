@@ -104,7 +104,7 @@ var _total_detections: int = 0             ## Times stealth was broken
 var _total_forges_visited: int = 0         ## Distinct forge tiles visited
 var _total_forge_successes: int = 0        ## Successful forges
 var _total_word_of_command: int = 0        ## Specific ability counts
-var _total_lore_of_sleep: int = 0
+var _total_dominations: int = 0
 var _total_deep_memory: int = 0
 var _total_rest_turns: int = 0             ## Total turns spent resting
 var _explored_tiles: int = 0               ## Floor exploration tracking
@@ -242,6 +242,13 @@ func _bypass_character_creation() -> void:
 			"gender": archetype_config.get("gender", "male"),
 			"base_stats": archetype_config.get("base_stats", {"str": 4, "dex": 3, "con": 4, "gra": 2}),
 		}
+		# Pass through pre-game investments if configured
+		if archetype_config.has("skill_investments"):
+			default_char["skill_investments"] = archetype_config["skill_investments"]
+		if archetype_config.has("ability_purchases"):
+			default_char["ability_purchases"] = archetype_config["ability_purchases"]
+		if archetype_config.has("xp_spent_precreation"):
+			default_char["xp_spent_precreation"] = archetype_config["xp_spent_precreation"]
 
 	print("[SURVIVAL BOT] Bypassing character creation with: %s (%s %s)" % [
 		default_char["name"], default_char["race"], default_char["house"]])
@@ -314,7 +321,7 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_STL, "ability": 7, "name": "Throat Slit"},
 				{"skill": Constants.Skill.S_STL, "ability": 5, "name": "Vanish"},
-				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_LOR, "ability": 19, "name": "Song of the Trees"},
 			]
 		"STEALTH_PURE":
 			_skill_priorities = ["stealth", "evasion", "will", "lore"]
@@ -323,7 +330,7 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_STL, "ability": 5, "name": "Vanish"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_STL, "ability": 3, "name": "Escape Artist"},
-				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_LOR, "ability": 19, "name": "Song of the Trees"},
 			]
 		"STEALTH_ASSASSIN":
 			_skill_priorities = ["stealth", "melee", "evasion", "will"]
@@ -338,13 +345,14 @@ func _init_archetype_strategy() -> void:
 		"LORE_MAGE":
 			_skill_priorities = ["lore", "will", "evasion", "stealth"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"},
 				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
-				{"skill": Constants.Skill.S_LOR, "ability": 5, "name": "Herbcraft"},
-				{"skill": Constants.Skill.S_LOR, "ability": 15, "name": "Song of Freedom"},
-				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},
-				{"skill": Constants.Skill.S_LOR, "ability": 4, "name": "Lore of Silence"},
-				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
+				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Lore of Hidden Ways"},
+				{"skill": Constants.Skill.S_LOR, "ability": 6, "name": "Word of Command"},
+				{"skill": Constants.Skill.S_LOR, "ability": 11, "name": "Word of Domination"},
+				{"skill": Constants.Skill.S_LOR, "ability": 7, "name": "Song of Freedom"},
+				{"skill": Constants.Skill.S_LOR, "ability": 3, "name": "Herbcraft"},
+				{"skill": Constants.Skill.S_LOR, "ability": 8, "name": "Song of Lorien"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		"RANGER":
 			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
@@ -374,7 +382,7 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
 				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
-				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_LOR, "ability": 19, "name": "Song of the Trees"},
 			]
 		"TANK":
 			_skill_priorities = ["melee", "evasion", "will", "hunting"]
@@ -415,7 +423,7 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_SMT, "ability": 0, "name": "Weaponsmith"},
 				{"skill": Constants.Skill.S_SMT, "ability": 1, "name": "Armoursmith"},
 				{"skill": Constants.Skill.S_SMT, "ability": 2, "name": "Jeweller"},
-				{"skill": Constants.Skill.S_LOR, "ability": 17, "name": "Song of Aule"},
+				{"skill": Constants.Skill.S_LOR, "ability": 12, "name": "Song of Aule"},
 				{"skill": Constants.Skill.S_SMT, "ability": 3, "name": "Reforge"},
 				{"skill": Constants.Skill.S_SMT, "ability": 4, "name": "Expertise"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
@@ -448,7 +456,7 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
 				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
-				{"skill": Constants.Skill.S_LOR, "ability": 16, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_LOR, "ability": 19, "name": "Song of the Trees"},
 			]
 		"HOBBIT_BURGLAR":
 			_skill_priorities = ["stealth", "evasion", "hunting", "melee"]
@@ -463,12 +471,25 @@ func _init_archetype_strategy() -> void:
 		"BANISHMENT_MAGE":
 			_skill_priorities = ["lore", "will", "evasion", "stealth"]
 			_ability_wishlist = [
-				{"skill": Constants.Skill.S_LOR, "ability": 0, "name": "Word of Command"},
 				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
-				{"skill": Constants.Skill.S_LOR, "ability": 14, "name": "Song of Banishment"},
-				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Lore of Sleep"},
-				{"skill": Constants.Skill.S_WIL, "ability": 0, "name": "Curse Breaking"},
-				{"skill": Constants.Skill.S_WIL, "ability": 4, "name": "Defy Death"},
+				{"skill": Constants.Skill.S_LOR, "ability": 5, "name": "Light of the Eldar"},
+				{"skill": Constants.Skill.S_LOR, "ability": 6, "name": "Word of Command"},
+				{"skill": Constants.Skill.S_LOR, "ability": 10, "name": "Song of Banishment"},
+				{"skill": Constants.Skill.S_LOR, "ability": 11, "name": "Word of Domination"},
+				{"skill": Constants.Skill.S_LOR, "ability": 8, "name": "Song of Lorien"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+			]
+		"LORE_HEALER":
+			_skill_priorities = ["lore", "will", "evasion", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_LOR, "ability": 2, "name": "Deep Memory"},
+				{"skill": Constants.Skill.S_LOR, "ability": 3, "name": "Herbcraft"},
+				{"skill": Constants.Skill.S_LOR, "ability": 7, "name": "Song of Freedom"},
+				{"skill": Constants.Skill.S_LOR, "ability": 13, "name": "Song of Healing"},
+				{"skill": Constants.Skill.S_LOR, "ability": 11, "name": "Word of Domination"},
+				{"skill": Constants.Skill.S_LOR, "ability": 8, "name": "Song of Lorien"},
+				{"skill": Constants.Skill.S_LOR, "ability": 14, "name": "Word of Warding"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		"SHIELD_WALL":
 			_skill_priorities = ["melee", "evasion", "will", "hunting"]
@@ -623,8 +644,8 @@ func _decide_and_act() -> bool:
 
 	# --- FREE ACTIONS (no turn cost) ---
 	_manage_stealth()       # Toggle stealth mode based on context
+	_try_learn_abilities()  # Learn abilities when prerequisites met (before skills to preserve XP)
 	_try_buy_skills()       # Invest XP in skill priorities
-	_try_learn_abilities()  # Learn abilities when prerequisites met
 	_try_swap_to_bow()      # Ranged archetypes: prefer bow over sling
 	_try_equip_from_inventory()  # Auto-equip better gear
 	_update_detection_tracking() # v3: track monster alertness transitions
@@ -669,7 +690,13 @@ func _decide_and_act() -> bool:
 		if _try_emergency_ability():
 			return true
 
-	# Priority 0.5: REPOSITION — move to corridor/doorway if in open room with threats
+	# Priority 0.5a: Lore archetypes proactive abilities BEFORE repositioning
+	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER"]:
+		if vis_count > 0 and not _has_adjacent_monster():
+			if _try_proactive_lore_abilities(vis_count, voice_pct):
+				return true
+
+	# Priority 0.5b: REPOSITION — move to corridor/doorway if in open room with threats
 	if vis_count > 0 and not _has_adjacent_monster():
 		var current_score: float = _tile_combat_score(_player.grid_position)
 		if current_score < 2.0:  # We're in an open area
@@ -708,11 +735,6 @@ func _decide_and_act() -> bool:
 			return _attack_adjacent_monster()
 		if not _has_visible_monster():
 			return await _do_rest()
-
-	# Priority 3: LORE_MAGE/BANISHMENT_MAGE proactive abilities (before combat starts)
-	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE"] and vis_count > 0 and not _has_adjacent_monster():
-		if _try_proactive_lore_abilities(vis_count, voice_pct):
-			return true
 
 	# Priority 4: KITING — ranged archetypes maintain distance and fire
 	if _is_ranged_archetype() and not _has_adjacent_monster() and vis_count > 0:
@@ -773,10 +795,16 @@ func _decide_and_act() -> bool:
 	if not _has_visible_monster() and _try_seek_nearby_item():
 		return true
 
-	# Priority 13: LORE_MAGE/BANISHMENT_MAGE — Deep Memory when stairs not found
-	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE"] and not _has_visible_monster():
+	# Priority 13: Lore archetypes — Deep Memory when stairs not found
+	if _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER"] and not _has_visible_monster():
 		if _try_use_deep_memory():
 			return true
+
+	# Priority 13.5: VOICE CONSERVATION — stop singing when low on voice and safe
+	if _player.active_song_id >= 0 and voice_pct < 0.3 and not _has_visible_monster():
+		_ability_system.stop_song()
+		if _player.active_song_id_2 >= 0:
+			_ability_system.stop_song_2()
 
 	# Priority 14: EXPLORATION SONG — start if safe and not singing
 	if not _has_visible_monster() and not _has_adjacent_monster():
@@ -1472,7 +1500,7 @@ func _manage_stealth() -> void:
 		"RANGER_STEALTH_ARCHER":
 			# v3 fix: keep stealth ON with visible monsters (shoot from stealth for Ambush)
 			should_stealth = not _has_adjacent_monster()
-		"LORE_MAGE", "BANISHMENT_MAGE":
+		"LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER":
 			# Stealth ON when: no visible monsters
 			should_stealth = not _has_visible_monster()
 		"RANGER", "RANGER_MARKSMAN":
@@ -1543,7 +1571,7 @@ func _is_ranged_archetype() -> bool:
 	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER", "HOBBIT_SNIPER", "GREENWOOD_RANGER"]
 
 func _is_caster_archetype() -> bool:
-	return _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "ELF_SMITH"]
+	return _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER", "ELF_SMITH"]
 
 func _is_stealth_archetype() -> bool:
 	return _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_BURGLAR", "HOBBIT_SNIPER"]
@@ -2061,34 +2089,56 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 	if voice_pct < VOICE_EMERGENCY_RESERVE and vis_count < 3:
 		return false
 
-	# Lore of Sleep on approaching monster BEFORE melee range
-	if vis_count >= 1 and _ability_system.has_ability(150):
+	# Word of Domination (151) — charm a non-dominated monster (highest priority proactive)
+	if vis_count >= 1 and _ability_system.has_ability(151):
+		var visible_monsters: Array[Monster] = _get_visible_monsters()
+		# Find strongest non-dominated target
+		var best_target: Monster = null
+		var best_hp: int = 0
+		for mon in visible_monsters:
+			if not mon.is_dominated and mon.current_health > best_hp:
+				best_target = mon
+				best_hp = mon.current_health
+		if best_target != null:
+			var check: Dictionary = _ability_system.can_use_ability(151)
+			if check.get("can_use", false):
+				if _ability_system.activate_ability(151, best_target):
+					_total_abilities_used += 1
+					_total_dominations += 1
+					_player.consume_energy()
+					if _turn_system:
+						_turn_system._after_player_action()
+					return true
+
+	# Word of Command (146) when 2+ visible (pre-emptive AOE)
+	if vis_count >= 2 and _ability_system.has_ability(146):
+		var check: Dictionary = _ability_system.can_use_ability(146)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(146):
+				_total_abilities_used += 1
+				_total_word_of_command += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Song of Banishment (150) — vs undead groups
+	if vis_count >= 2 and _ability_system.has_ability(150):
 		var check: Dictionary = _ability_system.can_use_ability(150)
 		if check.get("can_use", false):
-			var visible_monsters: Array[Monster] = _get_visible_monsters()
-			if not visible_monsters.is_empty():
-				# Target strongest approaching monster
-				var target: Monster = visible_monsters[0]
-				for m in visible_monsters:
-					if m.max_health > target.max_health:
-						target = m
-				var dist: int = _get_chebyshev_distance(_player.grid_position, target.grid_position)
-				if dist >= 2 and dist <= 5:  # Pre-emptive range
-					if _ability_system.activate_ability(150, target):
-						_total_abilities_used += 1
-						_total_lore_of_sleep += 1
-						_player.consume_energy()
-						if _turn_system:
-							_turn_system._after_player_action()
-						return true
+			if _ability_system.activate_ability(150):
+				_total_abilities_used += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
 
-	# Word of Command when 2+ visible (pre-emptive AOE)
-	if vis_count >= 2 and _ability_system.has_ability(140):
+	# Hidden Ways (140) — reduce perception on approaching monster (lowest proactive priority)
+	if vis_count >= 1 and _ability_system.has_ability(140):
 		var check: Dictionary = _ability_system.can_use_ability(140)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(140):
 				_total_abilities_used += 1
-				_total_word_of_command += 1
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2097,15 +2147,14 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 	return false
 
 func _try_use_deep_memory() -> bool:
-	## Use Deep Memory to reveal map when stairs haven't been found.
+	## Use Deep Memory to reveal map — use freely when safe (no monsters visible).
 	if not _ability_system or not _player:
 		return false
 	if not _ability_system.has_ability(142):
 		return false
-
-	var stairs_pos: Vector2i = _level.find_stairs_down()
-	if stairs_pos != Vector2i(-1, -1) and _level.is_explored(stairs_pos):
-		return false  # Already know where stairs are
+	# Save voice if running low
+	if _player.voice_charges < 4:
+		return false
 
 	var check: Dictionary = _ability_system.can_use_ability(142)
 	if not check.get("can_use", false):
@@ -2130,28 +2179,41 @@ func _try_start_combat_song() -> bool:
 	if not _ability_system or not _player:
 		return false
 	# Already singing a combat song?
-	if _player.active_song_id in [155, 157]:  # Freedom or Aule
+	if _player.active_song_id in [147, 152, 153]:  # Freedom, Aule, or Healing
 		return false
 	# Need voice to sustain
 	if _player.voice_charges < 5:
 		return false
 
-	# Song of Aule (+2 melee) — best for melee archetypes
-	if _ability_system.has_ability(157):  # SONG_OF_AULE
-		var check: Dictionary = _ability_system.can_use_ability(157)
+	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+
+	# Song of Healing (153) — priority when wounded (lore/2 HP/turn)
+	if hp_pct < 0.7 and _ability_system.has_ability(153):  # SONG_OF_HEALING
+		var check: Dictionary = _ability_system.can_use_ability(153)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(157):
+			if _ability_system.activate_ability(153):
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
 				return true
 
-	# Song of Freedom (+3 evasion) — good for anyone in combat
-	if _ability_system.has_ability(155):  # SONG_OF_FREEDOM
-		var check: Dictionary = _ability_system.can_use_ability(155)
+	# Song of Aule (+1 weapon dmg, +1 armor prot) — best for melee archetypes
+	if _ability_system.has_ability(152):  # SONG_OF_AULE
+		var check: Dictionary = _ability_system.can_use_ability(152)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(155):
+			if _ability_system.activate_ability(152):
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Song of Freedom (+3 evasion + status resist) — good for anyone in combat
+	if _ability_system.has_ability(147):  # SONG_OF_FREEDOM
+		var check: Dictionary = _ability_system.can_use_ability(147)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(147):
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2171,12 +2233,25 @@ func _try_start_exploration_song() -> bool:
 	if _player.voice_charges < 10:
 		return false
 
+	var hp_pct: float = float(_player.current_health) / float(maxi(_player.max_health, 1))
+
+	# Herbcraft (143) — priority when wounded during exploration (stops bleeding, +50% rest regen)
+	if hp_pct < 0.8 and _ability_system.has_ability(143):  # HERBCRAFT
+		var check: Dictionary = _ability_system.can_use_ability(143)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(143):
+				_total_songs_started += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
 	# Song of the Trees (+5 stealth) — great for exploration
-	if _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "LORE_MAGE", "BANISHMENT_MAGE", "RANGER", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_SNIPER", "HOBBIT_BURGLAR"]:
-		if _ability_system.has_ability(156):  # SONG_OF_THE_TREES
-			var check: Dictionary = _ability_system.can_use_ability(156)
+	if _archetype_id in ["STEALTH", "STEALTH_PURE", "STEALTH_ASSASSIN", "LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER", "RANGER", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_SNIPER", "HOBBIT_BURGLAR"]:
+		if _ability_system.has_ability(159):  # SONG_OF_THE_TREES
+			var check: Dictionary = _ability_system.can_use_ability(159)
 			if check.get("can_use", false):
-				if _ability_system.activate_ability(156):
+				if _ability_system.activate_ability(159):
 					_total_songs_started += 1
 					_player.consume_energy()
 					if _turn_system:
@@ -2184,10 +2259,10 @@ func _try_start_exploration_song() -> bool:
 					return true
 
 	# Song of Freedom (+3 evasion) for defensive exploration
-	if _ability_system.has_ability(155):  # SONG_OF_FREEDOM
-		var check: Dictionary = _ability_system.can_use_ability(155)
+	if _ability_system.has_ability(147):  # SONG_OF_FREEDOM
+		var check: Dictionary = _ability_system.can_use_ability(147)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(155):
+			if _ability_system.activate_ability(147):
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2205,22 +2280,22 @@ func _try_emergency_ability() -> bool:
 	if not _ability_system or not _player:
 		return false
 
-	# Word of Command (140) — AOE fear+stun, best emergency ability
-	if _ability_system.has_ability(140):
-		var check: Dictionary = _ability_system.can_use_ability(140)
+	# Word of Command (146) — AOE fear+stun, best emergency ability
+	if _ability_system.has_ability(146):
+		var check: Dictionary = _ability_system.can_use_ability(146)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(140):
+			if _ability_system.activate_ability(146):
 				_total_abilities_used += 1
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
 				return true
 
-	# Song of Banishment (154) — AOE undead flee (once per floor)
-	if _ability_system.has_ability(154):
-		var check: Dictionary = _ability_system.can_use_ability(154)
+	# Song of Banishment (150) — AOE undead flee + [lore/2]d6 damage
+	if _ability_system.has_ability(150):
+		var check: Dictionary = _ability_system.can_use_ability(150)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(154):
+			if _ability_system.activate_ability(150):
 				_total_abilities_used += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2240,23 +2315,37 @@ func _try_offensive_ability() -> bool:
 	if visible_monsters.is_empty():
 		return false
 
-	# Lore of Sleep (150) — single target sleep (great for strong enemies)
-	if _ability_system.has_ability(150):
-		var check: Dictionary = _ability_system.can_use_ability(150)
+	# Word of Domination (151) — charm strongest visible monster
+	if _ability_system.has_ability(151):
+		var check: Dictionary = _ability_system.can_use_ability(151)
 		if check.get("can_use", false):
-			# Target the strongest visible monster
-			var target: Monster = visible_monsters[0]
+			# Target the strongest non-dominated visible monster
+			var target: Monster = null
 			for m in visible_monsters:
-				if m.max_health > target.max_health:
+				if m.is_dominated:
+					continue
+				if target == null or m.max_health > target.max_health:
 					target = m
-			if _ability_system.activate_ability(150, target):
+			if target and _ability_system.activate_ability(151, target):
+				_total_abilities_used += 1
+				_total_dominations += 1
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Word of Command (146) — AOE when 2+ visible enemies
+	if visible_monsters.size() >= 2 and _ability_system.has_ability(146):
+		var check: Dictionary = _ability_system.can_use_ability(146)
+		if check.get("can_use", false):
+			if _ability_system.activate_ability(146):
 				_total_abilities_used += 1
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
 				return true
 
-	# Word of Command (140) — AOE when 2+ visible enemies
+	# Lore of Hidden Ways (140) — reduce perception in radius
 	if visible_monsters.size() >= 2 and _ability_system.has_ability(140):
 		var check: Dictionary = _ability_system.can_use_ability(140)
 		if check.get("can_use", false):
@@ -2267,22 +2356,11 @@ func _try_offensive_ability() -> bool:
 					_turn_system._after_player_action()
 				return true
 
-	# Lore of Silence (144) — reduce perception in radius
-	if visible_monsters.size() >= 2 and _ability_system.has_ability(144):
-		var check: Dictionary = _ability_system.can_use_ability(144)
+	# Word of Authority (155) — AOE stun via presence
+	if visible_monsters.size() >= 2 and _ability_system.has_ability(155):
+		var check: Dictionary = _ability_system.can_use_ability(155)
 		if check.get("can_use", false):
-			if _ability_system.activate_ability(144):
-				_total_abilities_used += 1
-				_player.consume_energy()
-				if _turn_system:
-					_turn_system._after_player_action()
-				return true
-
-	# Inner Light (147) — damage light-sensitive monsters
-	if _ability_system.has_ability(147):
-		var check: Dictionary = _ability_system.can_use_ability(147)
-		if check.get("can_use", false):
-			if _ability_system.activate_ability(147):
+			if _ability_system.activate_ability(155):
 				_total_abilities_used += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2507,12 +2585,12 @@ func _try_use_forge() -> bool:
 	if not _player or not _is_on_forge():
 		return false
 
-	# Start Song of Aule if available (for +2 smithing bonus)
-	if _ability_system and _player.active_song_id != 157:
-		if _ability_system.has_ability(157):
-			var check: Dictionary = _ability_system.can_use_ability(157)
+	# Start Song of Aule if available (for +3 smithing bonus)
+	if _ability_system and _player.active_song_id != 152:
+		if _ability_system.has_ability(152):
+			var check: Dictionary = _ability_system.can_use_ability(152)
 			if check.get("can_use", false):
-				_ability_system.activate_ability(157)
+				_ability_system.activate_ability(152)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2735,10 +2813,36 @@ func _try_buy_skills() -> void:
 			if _try_buy_single_skill(skill_name):
 				return  # Bought one point, done for this cycle
 
-	# Phase 2: Normal round-robin (existing priority order)
+	# Phase 2: Normal round-robin, but reserve XP for next unlearned ability
+	var ability_reserve: int = _get_next_ability_xp_cost()
 	for skill_name in _skill_priorities:
+		if ability_reserve > 0:
+			var skill_cost: int = _player.get_skill_cost(_player.get_skill(skill_name), 1, skill_name)
+			if _player.xp_available - skill_cost < ability_reserve:
+				continue  # Would dip below ability reserve, skip
 		if _try_buy_single_skill(skill_name):
 			return  # Only buy one per cycle
+
+
+func _get_next_ability_xp_cost() -> int:
+	## Calculate the XP cost of the next unlearned ability on the wishlist.
+	## Returns 0 if all wishlist abilities are learned or wishlist is empty.
+	if _ability_wishlist.is_empty() or not _player:
+		return 0
+	var skill_names: Array[String] = ["melee", "archery", "evasion", "stealth", "hunting", "will", "smithing", "lore"]
+	for entry in _ability_wishlist:
+		var skill_type: int = entry.get("skill", -1)
+		var ability_num: int = entry.get("ability", -1)
+		if skill_type < 0 or ability_num < 0:
+			continue
+		if _player.has_ability(skill_type, ability_num):
+			continue
+		# This is the next unlearned ability — calculate its cost
+		var owned_in_skill: int = _player.abilities_in_skill(skill_type)
+		var skill_key: String = skill_names[skill_type] if skill_type < skill_names.size() else ""
+		var affinity: int = _player.get_ability_affinity_level(skill_key) if _player.has_method("get_ability_affinity_level") else 0
+		return maxi(0, (owned_in_skill + 1) * 500 - 500 * affinity)
+	return 0
 
 
 func _try_buy_single_skill(skill_name: String) -> bool:
@@ -2768,8 +2872,8 @@ func _get_skill_rush_targets() -> Array[Dictionary]:
 			return [{"skill": "stealth", "level": 2}, {"skill": "archery", "level": 1}]
 		"RANGER_STEALTH_ARCHER":
 			return [{"skill": "stealth", "level": 1}, {"skill": "archery", "level": 2}]
-		"LORE_MAGE", "BANISHMENT_MAGE":
-			return [{"skill": "lore", "level": 3}, {"skill": "will", "level": 1}]
+		"LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER":
+			return [{"skill": "lore", "level": 7}, {"skill": "will", "level": 2}]
 		"WARRIOR":
 			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
 		"POLEARM_MASTER":
@@ -2932,7 +3036,7 @@ func _should_fight(monster: Monster) -> bool:
 			return threat < 0.8
 		"TANK", "WARRIOR", "SHIELD_WALL", "POLEARM_MASTER", "WILL_TANK":
 			return threat < 2.0
-		"LORE_MAGE", "BANISHMENT_MAGE":
+		"LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER":
 			return threat < 1.5
 		_:
 			return threat < 1.2
@@ -2992,7 +3096,7 @@ func _get_archetype_explore_threshold() -> float:
 			return 0.30
 		"STEALTH_ASSASSIN", "STEALTH", "RANGER_STEALTH_ARCHER", "HOBBIT_BURGLAR":
 			return 0.40
-		"LORE_MAGE", "BANISHMENT_MAGE":
+		"LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER":
 			return 0.60
 		"GREENWOOD_RANGER", "HOBBIT_SNIPER":
 			return 0.50
@@ -3286,7 +3390,7 @@ func _finish_run(cause: String) -> void:
 		"total_forges_visited": _total_forges_visited,
 		"total_forge_successes": _total_create_successes + _total_reforge_successes + _total_reclaim_successes + _total_masterwork_successes,
 		"total_word_of_command": _total_word_of_command,
-		"total_lore_of_sleep": _total_lore_of_sleep,
+		"total_dominations": _total_dominations,
 		"total_deep_memory": _total_deep_memory,
 		"total_rest_turns": _total_rest_turns,
 		# v3 telemetry
@@ -3331,8 +3435,8 @@ func _finish_run(cause: String) -> void:
 		_total_flee_attempts, _total_consumables_used, _total_items_sought, _total_kite_shots])
 	print("Combats avoided: %d | Stealth kills: %d | Detections: %d | Rest turns: %d" % [
 		_total_combats_avoided, _total_stealth_kills, _total_detections, _total_rest_turns])
-	print("WoC: %d | Sleep: %d | Deep Memory: %d | Forges visited: %d" % [
-		_total_word_of_command, _total_lore_of_sleep, _total_deep_memory, _total_forges_visited])
+	print("WoC: %d | Dominations: %d | Deep Memory: %d | Forges visited: %d" % [
+		_total_word_of_command, _total_dominations, _total_deep_memory, _total_forges_visited])
 	print("Corridor fights: %d | Repositions: %d | Doors closed: %d | Threats avoided: %d" % [
 		_total_corridor_fights, _total_corridor_repositions, _total_doors_closed, _total_threats_avoided])
 	print("Assassinations: %d | Voice at death: %d | Materials: %d" % [

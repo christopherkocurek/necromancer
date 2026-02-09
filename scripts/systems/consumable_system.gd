@@ -159,9 +159,9 @@ static func eat_food(player: Player, item: Variant) -> bool:
 					player.remove_status("cut")
 				else:
 					player.status_fx.effects[Constants.EFFECT_CUT] = new_cut
-			# Heal 50% of max HP (with Herbcraft bonus)
+			# Heal 50% of max HP (with Herbcraft bonus — requires sustained song active)
 			var heal_amount: int = player.max_health / 2
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				heal_amount *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 			player.heal(heal_amount, player)
@@ -209,7 +209,7 @@ static func eat_food(player: Player, item: Variant) -> bool:
 			player.remove_status("confused")
 			player.remove_status("image")
 			var athelas_heal: int = player.max_health / 4
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				athelas_heal *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 			player.heal(athelas_heal, player)
@@ -228,7 +228,7 @@ static func eat_food(player: Player, item: Variant) -> bool:
 		13:  # Silverbark Moss - cure poison + minor heal
 			player.remove_status("poisoned")
 			var silver_heal: int = 10
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				silver_heal *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 			player.heal(silver_heal, player)
@@ -247,7 +247,7 @@ static func eat_food(player: Player, item: Variant) -> bool:
 			GameManager.log_message("Thorny vines harden beneath your skin, granting protection.", ThemeColors.SECONDARY)
 		16:  # Moonpetal - restore voice charges
 			var voice_restore: int = 5
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				voice_restore *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the effect!", ThemeColors.ABILITY_LEARNED)
 			player.voice_charges = mini(player.voice_charges + voice_restore, player.max_voice)
@@ -269,7 +269,7 @@ static func eat_food(player: Player, item: Variant) -> bool:
 		20:  # Concentrated Healer's Herb - cure ALL cuts + heal 75% HP
 			player.remove_status("cut")
 			var conc_heal: int = (player.max_health * 3) / 4
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				conc_heal *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 			player.heal(conc_heal, player)
@@ -285,7 +285,7 @@ static func eat_food(player: Player, item: Variant) -> bool:
 			player.remove_status("entranced")
 			player.remove_status("slow")
 			var potent_heal: int = player.max_health / 2
-			if player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_HERBCRAFT):
+			if _is_herbcraft_active(player):
 				potent_heal *= 2
 				GameManager.log_message("Your knowledge of herbs enhances the healing!", ThemeColors.ABILITY_LEARNED)
 			player.heal(potent_heal, player)
@@ -336,6 +336,10 @@ static func eat_food(player: Player, item: Variant) -> bool:
 # ============================================================================
 # HERB HELPER FUNCTIONS
 # ============================================================================
+
+## Check if Herbcraft sustained song is currently active (herb-doubling requires active singing)
+static func _is_herbcraft_active(player: Player) -> bool:
+	return player.active_song_id == 143 or player.active_song_id_2 == 143  # HERBCRAFT
 
 ## Roll NdS dice (e.g., 10d4 = roll 10 four-sided dice and sum)
 static func _roll_dice(num: int, sides: int) -> int:

@@ -676,24 +676,23 @@ D: items with only 2 Broken Strange items instead of 4.
 T:21:8:8   # Hafted (War Hammer only)
 T:31:0:99  # Gloves
 
-# Lore ---------------------------------------------
+# Lore (v4 Redesign) --------------------------------
 
-N:140:Word of Command
+N:140:Lore of Hidden Ways
 I:7:0:1
-D:Speaking a word of power causes fear in nearby servants of the Enemy.
-D: Your voice carries the authority of ancient knowledge.
+D:Your knowledge of concealment dampens all nearby sounds and senses,
+D: reducing monster perception temporarily. Uses status-based drain.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
-T:39:0:99  # Light Source
+T:30:0:99  # Boots
 
-N:141:Lore of Battle
+N:141:Word of Opening
 I:7:1:1
-D:Your knowledge of enemy tactics allows you to provoke weak-willed foes
-D: into attacking recklessly. Enemies with ranged weapons close to melee.
-T:32:0:99  # Helm
-T:21:0:99  # Hafted
-T:22:0:99  # Polearms
-T:23:0:99  # Swords
+D:Speaking the words of unbinding, you discover and overcome
+D: nearby doors, traps, and rubble. Grants freedom of movement.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+T:21:3:3   # Quarterstaves
 
 N:142:Deep Memory
 I:7:2:2
@@ -702,118 +701,147 @@ D: of your surroundings, sensing passages and chambers nearby.
 T:35:0:99  # Cloak
 T:20:0:99  # Shovels and Mattocks
 
-N:143:Word of Opening
+N:143:Herbcraft
 I:7:3:2
-D:Speaking the words of unbinding, you discover and overcome
-D: nearby doors, traps, and rubble. Grants freedom of movement.
-T:40:0:99  # Amulet
-T:35:0:99  # Cloak
-T:21:3:3   # Quarterstaves
-
-N:144:Lore of Silence
-I:7:4:3
-D:Your knowledge of stealth and concealment dampens all nearby sounds,
-D: making it harder for enemies to hear you and each other.
-T:40:0:99  # Amulet
-T:35:0:99  # Cloak
-T:30:0:99  # Boots
-
-N:145:Herbcraft
-I:7:5:3
-D:Your knowledge of healing herbs and remedies stops bleeding
-D: and speeds the healing of wounds. Doubles herb effectiveness.
+D:A sustained song of healing lore. While active, stops bleeding each
+D: turn, grants +50% rest regeneration, and doubles herb effectiveness.
+D: Drains 1 voice charge per turn.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:45:0:99  # Ring
 
-N:146:Word of Shutting
-I:7:6:4
-P:7/0:7/2
-D:Speaking words of warding, doors you close become sealed against
-D: your enemies, barring their passage.
+N:144:Lore of Naming
+I:7:4:3
+D:Your knowledge of the true names of creatures grants +2 to Will
+D: contests against types you have previously slain. Also reveals
+D: monster stats when you examine them.
 T:40:0:99  # Amulet
-T:35:0:99  # Cloak
+T:32:0:99  # Helm
 
-N:147:Inner Light
-I:7:7:5
-P:7/0:7/5
-D:Your spirit shines with inner radiance, increasing your light
-D: level by 1 point per 5 points of Lore.
+N:145:Light of the Eldar
+I:7:5:3
+D:Your spirit shines with inner radiance, increasing your light radius
+D: by 1 per 3 Lore. Shadow creatures suffer -2 attack and -2 evasion
+D: in your light. Wraiths take 1 damage per turn from your presence.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:39:0:99  # Light Source
 
-N:148:Deadly Lore
-I:7:8:6
-P:7/1:7/3
-D:Your knowledge of anatomy and weak points is lethal. Critical hits
-D: kill enemies outright if their health is at most twice your Lore score.
-T:22:0:99  # Polearms and axes
-T:23:0:99  # Swords
+N:146:Word of Command
+I:7:6:4
+D:Speaking a word of terrible power causes fear in nearby servants
+D: of the Enemy. 12-turn cooldown. Your voice carries ancient authority.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+T:39:0:99  # Light Source
+
+N:147:Song of Freedom
+I:7:7:4
+D:A sustained song granting +3 evasion while singing. When a status
+D: effect targets you, make a Will contest to resist it. If the contest
+D: fails, the song is disrupted. Drains 1 voice per turn.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+
+N:148:Song of Lorien
+I:7:8:5
+D:A sustained song of the dream-gardens of Lorien. Each turn, monsters
+D: within radius 5 lose alertness equal to Lore/3. When alertness reaches
+D: minimum, they fall asleep. Drains 1 voice per turn.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
 
 N:149:Lore of Endurance
-I:7:9:7
-P:7/1:7/5
-D:Ancient techniques of mental fortitude grant a bonus to Will
-D: equal to half your Lore score and [2d2] protection.
+I:7:9:5
+P:7/3
+D:Ancient techniques of mental fortitude grant a bonus to Will equal
+D: to half your Lore score, [2d2] protection, and +2 temporary Will
+D: for 3 turns whenever you take damage.
 T:32:0:99  # Helm
 T:34:0:99  # Shields
 T:35:0:99  # Cloak
 T:45:0:99  # Ring
 
-N:150:Lore of Sleep
-I:7:10:8
-P:7/4:7/2
-D:Drawing on the dreaming lore of the Eldar, you can gradually
-D: put nearby opponents into a deep slumber.
-T:40:0:99  # Amulet
-T:35:0:99  # Cloak
-
-N:151:Word of Mastery
-I:7:11:10
-P:7/3:7/4
-D:Speaking words of domination, you occasionally prevent nearby
-D: opponents from moving or acting against their will.
-T:40:0:99  # Amulet
-T:35:0:99  # Cloak
-
-N:152:Device Mastery
-I:7:12:11
-D:Your deep understanding of magical devices allows you to combine
-D: two lore effects at once, though the second is at half strength.
-T:40:0:99  # Amulet
-T:35:0:99  # Cloak
-
-N:153:Grace
-I:7:13:12
-D:You gain a point of grace.
-
-N:154:Song of Banishment
-I:7:14:6
-P:7/0:7/5
-D:You sing a song of power that drives undead away. Undead within
-D: radius 3 must save against your Grace + Lore or flee for 3 turns.
-D: This ignores their normal fear immunity. Usable once per floor.
+N:150:Song of Banishment
+I:7:10:6
+P:7/5
+D:You sing a song of banishment that deals [Lore/2]d6 damage to undead
+D: and forces them to flee for 5 turns. Ignores fear immunity.
+D: Usable once per floor.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 T:39:0:99  # Light Source
 
-# Sustained Songs (Sil-Q singing)
+N:151:Word of Domination
+I:7:11:6
+P:7/6
+D:Speaking words of binding, you attempt to dominate a monster's will.
+D: On success, the creature fights for you for Lore/2 turns. Uniques
+D: are immune. Dominated creatures attack nearby enemies.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
 
-N:155:Song of Freedom
-I:7:15:4
-D:A sustained song that grants +3 evasion while singing.
-D: Drains 1 voice charge per turn. Toggle on/off from the voice menu.
+N:152:Song of Aule
+I:7:12:7
+P:7/6
+D:A sustained song of the smith-god. Grants +1 weapon damage die and
+D: +1 armor protection die while singing. At a forge, grants +3 smithing.
+D: Drains 2 voice charges per turn.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
 
-N:156:Song of the Trees
-I:7:16:5
-P:7/4
-D:A sustained song that grants +5 stealth while singing.
-D: Drains 1 voice charge per turn. Requires Lore of Silence.
+N:153:Song of Healing
+I:7:13:7
+D:A sustained song of restoration. Heals Lore/2 HP per turn while
+D: singing. Also heals dominated allies within radius 3.
+D: Drains 1 voice charge per turn.
+T:40:0:99  # Amulet
+T:45:0:99  # Ring
 
-N:157:Song of Aule
-I:7:17:7
-P:7/0
-D:A sustained song of the smith-god that grants +2 melee while singing.
-D: Drains 2 voice charges per turn. Requires Word of Command.
+N:154:Word of Warding
+I:7:14:8
+P:7/6
+D:Speaking words of ancient warding, you inscribe a sigil on the floor
+D: that no monster can pass. Maximum 3 sigils active at once. Each
+D: lasts Lore*3 turns.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+
+N:155:Word of Authority
+I:7:15:8
+P:7/6
+D:Your commanding presence stuns all nearby enemies. Radius 2+Lore/4,
+D: Will contest against each target. Stunned for 2+Lore/4 turns.
+D: 20-turn cooldown.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+T:32:0:99  # Helm
+
+N:156:Word of Unmaking
+I:7:16:9
+P:7/6:7/14
+D:A word of terrible destruction. Dispels enchantment on target item,
+D: destroys rubble/walls in radius 2, deals [Lore]d6 to undead in
+D: radius 3, stuns living 2 turns. 50% chance to lose 1 max voice
+D: permanently. Usable once per floor.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+
+N:157:Mastery of Themes
+I:7:17:10
+P:7/7
+D:Your deep understanding of musical power allows you to sustain
+D: two songs simultaneously. The second song operates at full strength.
+T:40:0:99  # Amulet
+T:35:0:99  # Cloak
+
+N:158:Grace
+I:7:18:12
+D:You gain a point of grace.
+
+N:159:Song of the Trees
+I:7:19:3
+D:A sustained song of the ancient forests. Grants +5 stealth while
+D: singing. The trees themselves seem to hide your passage.
+D: Drains 1 voice charge per turn.
 

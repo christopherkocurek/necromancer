@@ -1707,6 +1707,9 @@ func _spawn_monsters(depth: int) -> void:
 		)
 
 	for _i in range(target_count):
+		if spawned >= target_count:
+			break
+
 		var spawn_pos: Vector2i = level.find_random_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
@@ -1731,15 +1734,18 @@ func _spawn_monsters(depth: int) -> void:
 			level.add_entity(monster)
 			spawned += 1
 
-			# Group spawning (FRIENDS flag): spawn 2-4 similar monsters nearby
-			if monster_data.has_flag("FRIENDS"):
-				spawned += _spawn_group(monster_scene, spawn_pos, monster_data, randi_range(2, 4))
+			# Group spawning (FRIENDS flag): spawn 1-2 similar monsters nearby
+			# Capped to prevent FRIENDS from overwhelming the level
+			if monster_data.has_flag("FRIENDS") and spawned < target_count:
+				var group_budget: int = mini(randi_range(1, 2), target_count - spawned)
+				spawned += _spawn_group(monster_scene, spawn_pos, monster_data, group_budget)
 
 			# Escort spawning (ESCORT flag): spawn 1-2 weaker escorts
-			if monster_data.has_flag("ESCORT") or monster_data.has_flag("ESCORTS"):
+			if (monster_data.has_flag("ESCORT") or monster_data.has_flag("ESCORTS")) and spawned < target_count:
 				var escort_data: DataManager.MonsterData = DataManager.get_random_monster_for_depth(maxi(1, depth - 2))
 				if escort_data:
-					spawned += _spawn_group(monster_scene, spawn_pos, escort_data, randi_range(1, 2))
+					var escort_budget: int = mini(randi_range(1, 2), target_count - spawned)
+					spawned += _spawn_group(monster_scene, spawn_pos, escort_data, escort_budget)
 
 	print("Spawned %d monsters at depth %d" % [spawned, depth])
 

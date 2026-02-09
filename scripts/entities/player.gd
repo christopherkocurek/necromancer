@@ -76,9 +76,12 @@ var max_voice: int = 20
 var ability_hotkeys: Array[int] = [-1, -1, -1, -1]
 var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
-# Sustained song system (Sil-Q singing)
+# Sustained song system (v4: dual song support via Mastery of Themes)
 var active_song_id: int = -1        # Currently sustained song ability ID (-1 = none)
 var song_voice_drain: int = 1       # Voice cost per turn while singing
+var active_song_id_2: int = -1      # Second sustained song (Mastery of Themes)
+var song_voice_drain_2: int = 0     # Voice cost per turn for second song
+var dominated_monsters: Array = []  # Monsters under Word of Domination
 
 # Hunger system - soft pressure mechanic
 var hunger: int = 2000  # Current hunger (counts down per turn)
@@ -324,7 +327,7 @@ func activate_sprinting() -> bool:
 	if _sprinting_turns > 0:
 		GameManager.log_message("You're already sprinting!", ThemeColors.MSG_SYSTEM)
 		return false
-	_sprinting_turns = 3 + get_skill("evasion") / 5
+	_sprinting_turns = 3 + get_effective_skill("evasion") / 5
 	apply_status("fast", _sprinting_turns)
 	# VFX: green speed flash + particles + floater
 	vfx_flash(ThemeColors.FLASH_SPRINT, 0.05, 0.15)
@@ -534,7 +537,7 @@ func trigger_rallying_cry() -> void:
 			continue
 		var monster: Monster = entity
 		var monster_will: int = monster.monster_data.will if monster.monster_data else 5
-		var player_roll: int = randi_range(1, 20) + get_skill("will")
+		var player_roll: int = randi_range(1, 20) + get_effective_skill("will")
 		var monster_roll: int = randi_range(1, 20) + monster_will
 		if player_roll > monster_roll:
 			monster.current_morale -= 20
@@ -798,8 +801,7 @@ func get_effective_constitution() -> int:
 func get_effective_grace() -> int:
 	return grace + _equip_gra_bonus
 
-func get_effective_skill(skill_name: String) -> int:
-	return skills.get(skill_name, 0) + equip_skill_bonuses.get(skill_name, 0)
+
 
 ## Try to drain a stat, blocked by SUST_* flags. Returns actual drain amount.
 func try_drain_stat(stat_name: String, drain_amount: int) -> int:
@@ -1123,8 +1125,23 @@ func invest_skill(skill_name: String) -> bool:
 	_recalculate_stats()
 	return true
 
+## Raw skill points only (for ability prerequisites, skill costs).
 func get_skill(skill_name: String) -> int:
 	return skills.get(skill_name, 0)
+
+## Sil-Q effective skill: raw skill + governing stat + equipment bonuses.
+## DEX governs: melee, archery, evasion, stealth.
+## GRA governs: hunting, will, smithing, lore.
+func get_effective_skill(skill_name: String) -> int:
+	var base: int = skills.get(skill_name, 0)
+	var equip: int = equip_skill_bonuses.get(skill_name, 0)
+	var stat_bonus: int = 0
+	match skill_name:
+		"melee", "archery", "evasion", "stealth":
+			stat_bonus = dexterity
+		"hunting", "will", "smithing", "lore":
+			stat_bonus = grace
+	return base + stat_bonus + equip
 
 # ============================================================================
 # LORE SYSTEM
@@ -1285,19 +1302,19 @@ func get_total_attack(target: Entity) -> int:
 	# Concentration: +MIN(consecutive_attacks, Hunting/2) when not moved last turn
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_CONCENTRATION):
 		if not moved_last_turn:
-			var per_bonus: int = get_skill("hunting") / 2
+			var per_bonus: int = get_effective_skill("hunting") / 2
 			att += mini(consecutive_attacks, maxi(per_bonus, 1))
 
 	# Focused Attack: +Hunting/2 (always active if learned)
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
-		att += get_skill("hunting") / 2
+		att += get_effective_skill("hunting") / 2
 
 	# Assassination: +Stealth skill vs unwary/sleeping targets
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_ASSASSINATION):
 		if is_instance_valid(target) and target is Monster:
 			var mon: Monster = target as Monster
 			if mon.alertness < Constants.ALERTNESS_ALERT:
-				att += get_skill("stealth")
+				att += get_effective_skill("stealth")
 
 	# Bane: +floor(log2(kills)) for kills >= 2 of that race
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
@@ -1318,7 +1335,7 @@ func get_total_attack(target: Entity) -> int:
 	# Opening Strike: +melee skill on first attack against each monster
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_OPENING_STRIKE):
 		if is_instance_valid(target) and not _opening_strike_used.has(target.get_instance_id()):
-			att += get_skill("melee")
+			att += get_effective_skill("melee")
 
 	# Strength in Adversity: +1 per 10% HP below 50%
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_STR):
@@ -1343,9 +1360,9 @@ func get_total_attack(target: Entity) -> int:
 		if off_hand != null and "tval" in off_hand and off_hand.tval == 34:
 			att += 1
 
-	# Song of Aule: +2 melee while singing
-	if active_song_id == 157:  # SONG_OF_AULE
-		att += 2
+	# Song of Aule: +1 melee while singing (v4: was +2, now +1 damage die)
+	if active_song_id == 152 or active_song_id_2 == 152:  # SONG_OF_AULE
+		att += 1
 
 	# ACCURATE equipment flag: +3 attack
 	if has_equip_flag("ACCURATE"):
@@ -1390,7 +1407,7 @@ func get_total_evasion(attacker: Entity) -> int:
 			evn += weapon.evasion_bonus  # Add weapon evn again (first add is in recalculate_stats)
 
 	# Song of Freedom: +3 evasion while singing
-	if active_song_id == 155:  # SONG_OF_FREEDOM
+	if active_song_id == 147 or active_song_id_2 == 147:  # SONG_OF_FREEDOM
 		evn += 3
 
 	# Heavy Armour Use: remove heavy armor evasion penalty
@@ -1400,7 +1417,7 @@ func get_total_evasion(attacker: Entity) -> int:
 
 	# Hardiness (Will): +1 protection-equivalent as evasion per 3 Will
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_FORMIDABLE):
-		evn += get_skill("will") / 3
+		evn += get_effective_skill("will") / 3
 
 	# Bane evasion bonus (same formula as attack bane)
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
@@ -1542,12 +1559,12 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 				target.vfx_flash(ThemeColors.FLASH_CHARGE, 0.06, 0.15)
 				target.vfx_particles(ThemeColors.PRIMARY, 6, 25.0, 0.3)
 
-	# Inner Light: bonus damage vs HURT_LITE enemies equal to Lore/3
-	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_INNER_LIGHT):
+	# Light of the Eldar: bonus damage vs HURT_LITE/SHADOW enemies equal to Lore/3
+	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
 		if is_instance_valid(target) and target is Monster and target.current_health > 0:
 			var mon: Monster = target as Monster
 			if mon.monster_data and mon.monster_data.has_flag("HURT_LITE"):
-				var light_dmg: int = maxi(1, get_skill("lore") / 3)
+				var light_dmg: int = maxi(1, get_effective_skill("lore") / 3)
 				target.take_damage(light_dmg, "light", self)
 				GameManager.log_message("Your inner light burns %s! (+%d)" % [target.entity_name, light_dmg], ThemeColors.ABILITY_LEARNED)
 
@@ -1704,17 +1721,17 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	att += _get_ranged_proficiency_bonus()
 	# Keen Eyes: +Hunting/2 to ranged attack
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_KEEN_EYES):
-		att += get_skill("hunting") / 2
+		att += get_effective_skill("hunting") / 2
 	# Ambush: +Stealth to ranged attack vs unwary targets
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_AMBUSH):
 		if is_instance_valid(target) and target is Monster:
 			var mon: Monster = target as Monster
 			if mon.alertness < Constants.ALERTNESS_ALERT:
-				att += get_skill("stealth")
+				att += get_effective_skill("stealth")
 	# Point Blank: +archery/2 at range 1 (melee range)
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_POINT_BLANK):
 		if distance <= 1:
-			att += get_skill("archery") / 2
+			att += get_effective_skill("archery") / 2
 	# Distance penalty: -1 per tile beyond 1
 	att -= maxi(0, distance - 1)
 
@@ -1773,7 +1790,7 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	# Puncture: ignore 1 point of protection per archery skill point
 	# (Applied as bonus damage since we can't modify protection here)
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_PUNCTURE):
-		damage += get_skill("archery") / 3
+		damage += get_effective_skill("archery") / 3
 
 	target.take_damage(damage, "physical", self)
 
@@ -1792,7 +1809,7 @@ func ranged_attack(target: Entity, distance: int) -> void:
 		if is_instance_valid(target) and target.is_alive and target is Monster:
 			var mon: Monster = target as Monster
 			if mon.morale < 0:
-				var rout_dmg: int = maxi(1, get_skill("archery") / 3)
+				var rout_dmg: int = maxi(1, get_effective_skill("archery") / 3)
 				target.take_damage(rout_dmg, "physical", self)
 				GameManager.log_message("Routing shot! (+%d)" % rout_dmg, ThemeColors.COMBAT_HIT)
 
@@ -1890,7 +1907,7 @@ func _get_master_hunter_bonus(target: Entity) -> int:
 	var kill_count: int = kills_by_name.get(mon_name, 0)
 	if kill_count < 1:
 		return 0
-	var per_cap: int = maxi(1, get_skill("hunting") / 2)
+	var per_cap: int = maxi(1, get_effective_skill("hunting") / 2)
 	return mini(kill_count, per_cap)
 
 ## Count adjacent allies attacking the same target (for flanking/overwhelming)
@@ -2005,7 +2022,7 @@ func direction_to_action(dir: Vector2i) -> int:
 
 ## Get current stealth score for this turn (canon section 2.2)
 func get_stealth_score() -> int:
-	var score: int = get_skill("stealth")
+	var score: int = get_effective_skill("stealth")
 	# Stealth mode bonus
 	if stealth_mode:
 		score += Constants.STEALTH_MODE_BONUS
@@ -2014,7 +2031,7 @@ func get_stealth_score() -> int:
 		score += 2
 	# Disguise: +Stealth/3 bonus to stealth
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
-		score += get_skill("stealth") / 3
+		score += get_effective_skill("stealth") / 3
 	# Fade bonus (temporary boost after kill)
 	score += _fade_bonus
 
@@ -2028,7 +2045,7 @@ func get_stealth_score() -> int:
 		score += 3
 
 	# Song of the Trees: +5 stealth while singing
-	if active_song_id == 156:  # SONG_OF_THE_TREES
+	if active_song_id == 159 or active_song_id_2 == 159:  # SONG_OF_THE_TREES
 		score += 5
 
 	# Noise penalty
@@ -2037,7 +2054,7 @@ func get_stealth_score() -> int:
 
 ## Get effective perception/hunting skill (enhanced by stealth mode awareness)
 func get_effective_perception() -> int:
-	var base: int = get_skill("hunting")
+	var base: int = get_effective_skill("hunting")
 	if stealth_mode:
 		base += Constants.STEALTH_MODE_PERCEPTION_BONUS
 	return base
@@ -2104,9 +2121,9 @@ func get_light_radius() -> int:
 	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_KEEN_SENSES):
 		base_radius += 1
 
-	# Inner Light ability: +1 per 5 Lore skill
-	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_INNER_LIGHT):
-		base_radius += get_skill("lore") / 5
+	# Light of the Eldar: +1 light per 3 Lore skill
+	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
+		base_radius += get_effective_skill("lore") / 3
 
 	# DARKENED: Reduce light radius by 2 (minimum 1)
 	if status_fx and status_fx.has_effect(Constants.EFFECT_DARKENED):
@@ -2343,7 +2360,7 @@ func _try_search() -> bool:
 	if not GameManager.current_level:
 		return false
 
-	var per: int = get_skill("hunting")
+	var per: int = get_effective_skill("hunting")
 	var found: int = GameManager.current_level.search_for_secrets(grid_position, per)
 	if found > 0:
 		GameManager.log_message("You discover a hidden passage!", ThemeColors.ABILITY_LEARNED)
@@ -2551,7 +2568,7 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	# Defy Death: chance to survive lethal hit at 1 HP (Will*3% chance)
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_DEFY_DEATH):
 		if current_health > 0 and current_health - amount <= 0:
-			var save_chance: int = get_skill("will") * 3
+			var save_chance: int = get_effective_skill("will") * 3
 			if randi_range(1, 100) <= save_chance:
 				# Survive at exactly 1 HP (set directly to bypass armor reduction)
 				current_health = 1

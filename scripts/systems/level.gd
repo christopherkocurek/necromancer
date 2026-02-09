@@ -331,7 +331,7 @@ func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
 	# Check for Hunting skill to potentially spot and avoid (50% + Hunting*5%)
 	var avoid_chance: int = 50
 	if is_instance_valid(entity) and entity.has_method("get_skill"):
-		var hunting: int = entity.get_effective_perception() if entity.has_method("get_effective_perception") else entity.get_skill("hunting")
+		var hunting: int = entity.get_effective_perception() if entity.has_method("get_effective_perception") else entity.get_effective_skill("hunting")
 		avoid_chance += hunting * 5
 
 	# Roll to avoid — trap stays active if avoided

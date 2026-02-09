@@ -183,28 +183,30 @@ enum SmithingAbility {
 }
 
 # ============================================================================
-# LORE ABILITIES (Phase 8)
+# LORE ABILITIES (v4 Redesign — 20 abilities, IDs 140-159)
 # ============================================================================
 
 enum LoreAbility {
-	LOR_WORD_OF_COMMAND = 0,    # 140: AOE fear/stun
-	LOR_LORE_OF_BATTLE = 1,     # 141: Provoke target
-	LOR_DEEP_MEMORY = 2,        # 142: Auto-identify monsters (passive)
-	LOR_WORD_OF_OPENING = 3,    # 143: Unlock doors, reveal traps
-	LOR_LORE_OF_SILENCE = 4,    # 144: Reduce monster perception
-	LOR_HERBCRAFT = 5,          # 145: Double healing from potions
-	LOR_WORD_OF_SHUTTING = 6,   # 146: Lock doors permanently
-	LOR_INNER_LIGHT = 7,        # 147: +light radius, bonus vs HURT_LITE
-	LOR_DEADLY_LORE = 8,        # 148: Instant kill if HP <= 2xLore
-	LOR_LORE_OF_ENDURANCE = 9,  # 149: +Will/2, +2d2 protection
-	LOR_LORE_OF_SLEEP = 10,     # 150: Put target to sleep
-	LOR_WORD_OF_MASTERY = 11,   # 151: Paralyze target
-	LOR_DEVICE_MASTERY = 12,    # 152: +50% wand/staff charges
-	LOR_GRACE = 13,             # 153: Passive +1 Grace stat
-	LOR_SONG_OF_BANISHMENT = 14, # 154: AOE undead flee, ignores NO_FEAR, 1/floor
-	LOR_SONG_OF_FREEDOM = 15,   # 155: Sustained +3 evasion (toggle, 1 voice/turn)
-	LOR_SONG_OF_THE_TREES = 16, # 156: Sustained +5 stealth (toggle, 1 voice/turn)
-	LOR_SONG_OF_AULE = 17,      # 157: Sustained +2 melee (toggle, 2 voice/turn)
+	LOR_HIDDEN_WAYS = 0,         # 140: Status-based perception drain (was Silence)
+	LOR_WORD_OF_OPENING = 1,     # 141: Unlock doors, reveal traps
+	LOR_DEEP_MEMORY = 2,         # 142: Progressive map reveal
+	LOR_HERBCRAFT = 3,           # 143: Sustained — stop bleeding, +50% rest regen, 2x herbs
+	LOR_LORE_OF_NAMING = 4,      # 144: +2 Will vs known types, reveal stats
+	LOR_LIGHT_OF_ELDAR = 5,      # 145: +1 light/3 Lore, shadow -2 atk/eva, wraith dmg
+	LOR_WORD_OF_COMMAND = 6,     # 146: AOE fear/stun, 12-turn CD
+	LOR_SONG_OF_FREEDOM = 7,     # 147: Sustained +3 evasion + Will contest status resist
+	LOR_SONG_OF_LORIEN = 8,      # 148: Sustained alertness drain -> sleep
+	LOR_LORE_OF_ENDURANCE = 9,   # 149: +lore/2 Will, [2d2] prot, +2 temp Will after dmg
+	LOR_SONG_OF_BANISHMENT = 10, # 150: [lore/2]d6 undead dmg + 5-turn flee
+	LOR_WORD_OF_DOMINATION = 11, # 151: Charm monster for lore/2 turns
+	LOR_SONG_OF_AULE = 12,       # 152: Sustained +1 weapon/armor die, +3 smithing
+	LOR_SONG_OF_HEALING = 13,    # 153: Sustained heal lore/2 HP/turn
+	LOR_WORD_OF_WARDING = 14,    # 154: Place impassable sigil tiles, max 3
+	LOR_WORD_OF_AUTHORITY = 15,   # 155: AOE stun via presence
+	LOR_WORD_OF_UNMAKING = 16,   # 156: Dispel + terrain + undead dmg, 50% -1 max voice
+	LOR_MASTERY_OF_THEMES = 17,  # 157: Dual sustained abilities
+	LOR_GRACE = 18,              # 158: +1 GRA
+	LOR_SONG_OF_THE_TREES = 19,  # 159: Sustained +5 stealth while singing
 }
 
 # ============================================================================
@@ -262,6 +264,7 @@ const RF3_NO_SLEEP: int = 0x01000000
 const RF3_NO_FEAR: int = 0x02000000
 const RF3_NO_STUN: int = 0x04000000
 const RF3_NO_CONF: int = 0x08000000
+const RF3_SHADOW: int = 0x10000000  # Shadow creature — penalized by Light of the Eldar
 
 # ============================================================================
 # MONSTER FLAGS (RF4 - spells/ranged)
@@ -332,6 +335,7 @@ const FLAG_MAP: Dictionary = {
 	"NO_FEAR": [3, RF3_NO_FEAR],
 	"NO_STUN": [3, RF3_NO_STUN],
 	"NO_CONF": [3, RF3_NO_CONF],
+	"SHADOW": [3, RF3_SHADOW],
 
 	# RF4 - Spells/Ranged
 	"ARROW1": [4, RF4_ARROW1],
@@ -515,6 +519,10 @@ const EFFECT_RAGE: StringName = &"rage"
 const EFFECT_DARKENED: StringName = &"darkened"
 const EFFECT_BURNING: StringName = &"burning"
 const EFFECT_PHOSPHOR: StringName = &"phosphor"  # +1 light radius from Phosphorescent Moss
+const EFFECT_PERCEPTION_DRAINED: StringName = &"perception_drained"  # Lore of Hidden Ways
+const EFFECT_ENDURANCE_WILL: StringName = &"endurance_will"  # Lore of Endurance +2 temp Will
+const EFFECT_DOMINATED: StringName = &"dominated"  # Word of Domination charm
+const EFFECT_HERBCRAFT: StringName = &"herbcraft"  # Herbcraft sustained healing
 
 # Stun thresholds
 const STUN_THRESHOLD_HEAVY: int = 50

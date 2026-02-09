@@ -442,27 +442,26 @@ func test_sprinting_grants_fast():
 # ============================================================================
 
 func test_lore_ability_voice_costs():
-	# From ability_system.gd voice cost table
+	# From ability_system.gd voice cost table (v4 redesign)
 	var costs: Dictionary = {
-		140: 3,  # Word of Command
-		141: 1,  # Lore of Battle
+		140: 2,  # Lore of Hidden Ways
+		141: 2,  # Word of Opening
 		142: 2,  # Deep Memory
-		143: 2,  # Word of Opening
-		144: 2,  # Lore of Silence
-		146: 2,  # Word of Shutting
-		147: 3,  # Inner Light
-		150: 3,  # Lore of Sleep
-		151: 4,  # Word of Mastery
-		154: 3,  # Song of Banishment
+		146: 3,  # Word of Command
+		150: 3,  # Song of Banishment
+		151: 4,  # Word of Domination
+		154: 3,  # Word of Warding
+		155: 4,  # Word of Authority
+		156: 5,  # Word of Unmaking
 	}
 
-	assert_eq(costs[140], 3, "Word of Command costs 3")
-	assert_eq(costs[141], 1, "Lore of Battle costs 1")
-	assert_eq(costs[151], 4, "Word of Mastery costs 4 (most expensive)")
+	assert_eq(costs[140], 2, "Lore of Hidden Ways costs 2")
+	assert_eq(costs[146], 3, "Word of Command costs 3")
+	assert_eq(costs[156], 5, "Word of Unmaking costs 5 (most expensive)")
 
 func test_passive_abilities_no_voice_cost():
 	# Passive abilities cost 0 voice
-	var passive_ids: Array[int] = [145, 148, 149, 152, 153]  # Herbcraft, Deadly Lore, Endurance, Device Mastery, Grace
+	var passive_ids: Array[int] = [144, 145, 149, 157, 158]  # Lore of Naming, Light of Eldar, Lore of Endurance, Mastery of Themes, Grace
 	for ability_id in passive_ids:
 		var cost: int = 0  # Passive = no cost
 		assert_eq(cost, 0, "Ability %d is passive (0 cost)" % ability_id)
