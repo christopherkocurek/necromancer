@@ -137,7 +137,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[5] = {"light": Vector2i(18, 18), "dark": Vector2i(19, 18)}    # STAIRS_DOWN -> DALL-E regen
 	terrain_coords[6] = {"light": Vector2i(0, 5), "dark": Vector2i(1, 5)}    # STAIRS_UP ->  (terrain 80)
 	terrain_coords[7] = {"light": Vector2i(2, 1), "dark": Vector2i(3, 1)}    # CHASM ->  (terrain 17)
-	terrain_coords[8] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # RUBBLE ->  (terrain 1)
+	terrain_coords[8] = {"light": Vector2i(2, 3), "dark": Vector2i(3, 3)}    # RUBBLE -> fallen_masonry (terrain 49)
 	terrain_coords[9] = {"light": Vector2i(2, 4), "dark": Vector2i(3, 4)}    # FORGE ->  (terrain 65)
 	terrain_coords[10] = {"light": Vector2i(6, 1), "dark": Vector2i(7, 1)}    # TRAP ->  (terrain 19)
 	terrain_coords[11] = {"light": Vector2i(16, 1), "dark": Vector2i(17, 1)}    # TRAP_TRIGGERED ->  (terrain 24)
