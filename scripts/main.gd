@@ -62,6 +62,11 @@ var _auto_exploring: bool = false
 # Wizard mode (Ctrl+W to toggle, then Ctrl+D/H/K/R for debug commands)
 var wizard_mode: bool = false
 
+# Free-camera pan mode (V to toggle)
+var _pan_mode: bool = false
+var _pan_offset: Vector2 = Vector2.ZERO
+const PAN_STEP: float = 64.0 * 3  # 3 tiles per key press
+
 # Systems (Phase 8C) - using Node/RefCounted to avoid load order issues
 var auto_explore: RefCounted = null  # AutoExplore
 var monster_memory: RefCounted = null
@@ -523,6 +528,8 @@ func _fade_from_black(duration: float = 0.3) -> void:
 	await tween.finished
 
 func _descend() -> void:
+	if _pan_mode:
+		_exit_pan_mode()
 	await _fade_to_black(0.15)
 
 	var previous_depth := GameManager.current_depth
@@ -573,6 +580,8 @@ func _descend() -> void:
 	await _fade_from_black(0.3)
 
 func _ascend() -> void:
+	if _pan_mode:
+		_exit_pan_mode()
 	await _fade_to_black(0.15)
 
 	var previous_depth := GameManager.current_depth
@@ -624,6 +633,17 @@ func _update_camera_zoom() -> void:
 	if camera:
 		camera.zoom = Vector2.ONE * GameManager.get_current_zoom()
 
+func _update_camera_pan() -> void:
+	var camera := player.get_node("Camera2D") as Camera2D
+	if camera:
+		camera.offset = _pan_offset
+
+func _exit_pan_mode() -> void:
+	_pan_mode = false
+	_pan_offset = Vector2.ZERO
+	_update_camera_pan()
+	GameManager.log_message("Free camera off.", ThemeColors.MSG_SYSTEM)
+
 func _unhandled_input(event: InputEvent) -> void:
 	# Wizard mode toggle (Ctrl+W) — works in any game state
 	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and event.keycode == KEY_W:
@@ -660,6 +680,47 @@ func _unhandled_input(event: InputEvent) -> void:
 				_wizard_xp()
 				get_viewport().set_input_as_handled()
 				return
+
+	# Keyboard zoom (+/- keys) — works in any game state
+	if event is InputEventKey and event.pressed and not event.echo and not event.ctrl_pressed:
+		if event.keycode == KEY_EQUAL or event.keycode == KEY_KP_ADD:  # + / =
+			GameManager.cycle_zoom()
+			_update_camera_zoom()
+			get_viewport().set_input_as_handled()
+			return
+		elif event.keycode == KEY_MINUS or event.keycode == KEY_KP_SUBTRACT:  # -
+			GameManager.cycle_zoom_reverse()
+			_update_camera_zoom()
+			get_viewport().set_input_as_handled()
+			return
+
+	# Free-camera pan mode (V to toggle, movement keys to pan, Escape to exit)
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_V and not event.ctrl_pressed and not event.shift_pressed:
+			if _pan_mode:
+				_exit_pan_mode()
+			else:
+				_pan_mode = true
+				GameManager.log_message("Free camera on. WASD/HJKL to pan, V or Escape to exit.", ThemeColors.MSG_SYSTEM)
+			get_viewport().set_input_as_handled()
+			return
+
+	if _pan_mode and event is InputEventKey and event.pressed:
+		var pan_dir := Vector2.ZERO
+		match event.keycode:
+			KEY_W, KEY_K, KEY_UP, KEY_KP_8: pan_dir = Vector2(0, -1)
+			KEY_S, KEY_J, KEY_DOWN, KEY_KP_2: pan_dir = Vector2(0, 1)
+			KEY_A, KEY_H, KEY_LEFT, KEY_KP_4: pan_dir = Vector2(-1, 0)
+			KEY_D, KEY_L, KEY_RIGHT, KEY_KP_6: pan_dir = Vector2(1, 0)
+			KEY_ESCAPE, KEY_ENTER:
+				_exit_pan_mode()
+				get_viewport().set_input_as_handled()
+				return
+		if pan_dir != Vector2.ZERO:
+			_pan_offset += pan_dir * PAN_STEP
+			_update_camera_pan()
+			get_viewport().set_input_as_handled()
+			return
 
 	if current_state != GameState.PLAYING:
 		return
