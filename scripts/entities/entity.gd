@@ -194,6 +194,11 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	EventBus.entity_damaged.emit(self, actual_damage, damage_type, source)
 	damaged.emit(actual_damage, source)
 
+	# Damage breaks entrancement
+	if actual_damage > 0 and status_fx and status_fx.has_effect(Constants.EFFECT_ENTRANCED):
+		status_fx.remove_effect(Constants.EFFECT_ENTRANCED)
+		GameManager.log_message("The blow breaks the trance!", ThemeColors.MSG_SYSTEM)
+
 	# Flash red on damage
 	_flash_damage()
 

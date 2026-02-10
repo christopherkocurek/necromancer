@@ -179,6 +179,10 @@ func generate(target_level: Level, depth: int) -> void:
 	# Spawn lore objects
 	_spawn_lore_objects(depth)
 
+	# Final safety sweep: clear monsters near stairs (catches everything including vaults/guards)
+	var stairs_up: Vector2i = level.find_stairs_up()
+	_clear_monsters_near_stairs(stairs_up)
+
 	level.generation_complete.emit(level.width, level.height)
 
 func _apply_layer_params(depth: int) -> void:
@@ -1117,9 +1121,41 @@ func _can_place_vault_at(pos: Vector2i, vault: DataManager.VaultData) -> bool:
 				return false
 	return true
 
+## Place a vault monster with proper alertness (sleeping by default, awake in greater vaults).
+func _place_vault_monster(monster_scene: PackedScene, pos: Vector2i, data: DataManager.MonsterData, is_greater_vault: bool) -> void:
+	# Don't stack monsters on occupied tiles
+	if level.get_entity_at(pos) != null:
+		return
+	# Unique cap check
+	if data.has_flag("UNIQUE"):
+		if DataManager.is_unique_already_spawned(data.name):
+			return
+		DataManager.mark_unique_spawned(data.name)
+	var monster: Monster = monster_scene.instantiate()
+	monster.grid_position = pos
+	monster.initialize_from_data(data)
+	if is_greater_vault:
+		monster.alertness = Constants.ALERTNESS_ALERT
+		monster.is_sleeping = false
+	else:
+		monster.alertness = Constants.ALERTNESS_MIN
+		monster.is_sleeping = true
+	level.add_entity(monster)
+
 func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> void:
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var item_scene := preload("res://scenes/entities/item.tscn")
+
+	# Compute effective vault depth based on vault type
+	var is_greater: bool = vault.has_flag("GREATER") or vault.rating >= 10
+	var vault_depth_bonus: int = 0
+	if is_greater:
+		vault_depth_bonus = Constants.VAULT_DEPTH_BONUS_GREATER
+	elif vault.has_flag("LESSER"):
+		vault_depth_bonus = Constants.VAULT_DEPTH_BONUS_LESSER
+	else:
+		vault_depth_bonus = Constants.VAULT_DEPTH_BONUS_INTERESTING
+	var effective_vault_depth: int = mini(depth + vault_depth_bonus, 20)
 
 	# Apply random rotation/flipping
 	var transformed_lines: Array[String] = _transform_vault(vault)
@@ -1200,17 +1236,15 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
 					_vault_connection_points.append(tile_pos)
 				"?":
-					# Random monster or item (50/50)
+					# Sil-Q d3 distribution: 33% monster, 33% both, 33% item
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
-					if randf() < 0.5:
-						var m_data := DataManager.get_themed_monster_for_depth(depth)
+					var d3_roll: int = randi_range(1, 3)
+					if d3_roll <= 2:  # 1=monster only, 2=both
+						var m_data := DataManager.get_themed_monster_for_depth(effective_vault_depth)
 						if m_data:
-							var m: Monster = monster_scene.instantiate()
-							m.grid_position = tile_pos
-							m.initialize_from_data(m_data)
-							level.add_entity(m)
-					else:
-						var i_data := DataManager.get_themed_item_for_depth(depth)
+							_place_vault_monster(monster_scene, tile_pos, m_data, is_greater)
+					if d3_roll >= 2:  # 2=both, 3=item only
+						var i_data := DataManager.get_themed_item_for_depth(effective_vault_depth)
 						if i_data:
 							var i_copy: DataManager.ItemData = DataManager.duplicate_item_data(i_data)
 							var itm: Item = item_scene.instantiate()
@@ -1238,35 +1272,26 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 						item.initialize_from_item_data(amp_copy)
 						level.add_item(item)
 				"1", "2", "3", "4":
-					# Monster at depth + N
+					# Monster at effective vault depth + N
 					level.set_tile(tile_pos, Level.Tile.FLOOR)
-					var monster_depth: int = depth + int(ch)
+					var monster_depth: int = mini(effective_vault_depth + int(ch), 20)
 					var monster_data := DataManager.get_themed_monster_for_depth(monster_depth)
 					if monster_data:
-						var monster: Monster = monster_scene.instantiate()
-						monster.grid_position = tile_pos
-						monster.initialize_from_data(monster_data)
-						level.add_entity(monster)
+						_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
 				_:
 					# Check for named monster characters
 					if ch.to_upper() == ch and ch != ch.to_lower():
 						# Uppercase letter - potentially a named monster
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
-						var monster_data := DataManager.get_monster_by_char(ch, depth)
+						var monster_data := DataManager.get_monster_by_char(ch, effective_vault_depth)
 						if monster_data:
-							var monster: Monster = monster_scene.instantiate()
-							monster.grid_position = tile_pos
-							monster.initialize_from_data(monster_data)
-							level.add_entity(monster)
+							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
 					elif ch.to_lower() == ch and ch != ch.to_upper():
 						# Lowercase letter - potentially a monster
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
-						var monster_data := DataManager.get_monster_by_char(ch, depth)
+						var monster_data := DataManager.get_monster_by_char(ch, effective_vault_depth)
 						if monster_data:
-							var monster: Monster = monster_scene.instantiate()
-							monster.grid_position = tile_pos
-							monster.initialize_from_data(monster_data)
-							level.add_entity(monster)
+							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
 					else:
 						# Unknown symbol, treat as floor
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
@@ -1381,14 +1406,16 @@ func _validate_connectivity() -> bool:
 	if start == Vector2i(-1, -1):
 		return false
 
-	# BFS flood fill
+	# BFS flood fill (index-based to avoid O(n) pop_front)
 	var visited: Dictionary = {}
 	var queue: Array[Vector2i] = [start]
+	var queue_idx: int = 0
 	visited[start] = true
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
-	while not queue.is_empty():
-		var current: Vector2i = queue.pop_front()
-		var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+	while queue_idx < queue.size():
+		var current: Vector2i = queue[queue_idx]
+		queue_idx += 1
 		for dir: Vector2i in dirs:
 			var next: Vector2i = current + dir
 			if level.is_in_bounds(next) and level.is_passable(next) and not visited.has(next):
@@ -1402,9 +1429,10 @@ func _validate_connectivity() -> bool:
 			if level.is_passable(Vector2i(x, y)):
 				total_passable += 1
 
-	# Allow small discrepancy (isolated 1-2 tile areas from decoration)
+	# Allow up to 5% disconnected tiles (large rooms can create small pockets)
 	var reachable: int = visited.size()
-	if total_passable - reachable > 2:
+	var max_disconnected: int = maxi(10, total_passable / 20)
+	if total_passable - reachable > max_disconnected:
 		print("Connectivity check failed: %d reachable of %d passable" % [reachable, total_passable])
 		return false
 	return true
@@ -1430,14 +1458,16 @@ func _ensure_stairs_connectivity(depth: int) -> void:
 	if stairs_up == Vector2i(-1, -1) or stairs_down == Vector2i(-1, -1):
 		return
 
-	# BFS from stairs_up to check if stairs_down is reachable
+	# BFS from stairs_up to check if stairs_down is reachable (index-based)
 	var visited: Dictionary = {}
 	var queue: Array[Vector2i] = [stairs_up]
+	var qi: int = 0
 	visited[stairs_up] = true
 	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
-	while not queue.is_empty():
-		var current: Vector2i = queue.pop_front()
+	while qi < queue.size():
+		var current: Vector2i = queue[qi]
+		qi += 1
 		if current == stairs_down:
 			return  # Already connected, nothing to do
 		for dir: Vector2i in dirs:
@@ -1447,13 +1477,15 @@ func _ensure_stairs_connectivity(depth: int) -> void:
 				queue.append(next)
 
 	# stairs_down is NOT reachable — carve a rescue corridor
-	# Use BFS through ALL tiles (including walls) to find the shortest path
+	# Use BFS through ALL tiles (including walls) to find the shortest path (index-based)
 	var parent: Dictionary = {}
 	var repair_queue: Array[Vector2i] = [stairs_up]
+	var ri: int = 0
 	parent[stairs_up] = stairs_up
 
-	while not repair_queue.is_empty():
-		var current: Vector2i = repair_queue.pop_front()
+	while ri < repair_queue.size():
+		var current: Vector2i = repair_queue[ri]
+		ri += 1
 		if current == stairs_down:
 			break
 		for dir: Vector2i in dirs:
@@ -1505,15 +1537,17 @@ func _relocate_stranded_entities() -> void:
 		print("Post-decoration: relocated %d monsters, %d items from non-passable tiles" % [
 			relocated_monsters, relocated_items])
 
-## Find the nearest passable tile to a given position using BFS.
+## Find the nearest passable tile to a given position using BFS (index-based).
 func _find_nearest_passable(from: Vector2i) -> Vector2i:
 	var visited: Dictionary = {}
 	var queue: Array[Vector2i] = [from]
+	var qi: int = 0
 	visited[from] = true
 	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
-	while not queue.is_empty():
-		var current: Vector2i = queue.pop_front()
+	while qi < queue.size():
+		var current: Vector2i = queue[qi]
+		qi += 1
 		if current != from and level.is_passable(current) and level.get_entity_at(current) == null:
 			return current
 		for dir: Vector2i in dirs:
@@ -1576,7 +1610,45 @@ func _ensure_forges(depth: int) -> void:
 		if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
 			level.set_tile(forge_pos, forge_tile)
 			level.init_forge_uses(forge_pos, forge_uses)
+			_spawn_forge_guardian(forge_pos, depth, forge_tile)
 			return
+
+## Spawn guardian monsters adjacent to a forge based on forge type.
+func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> void:
+	var monster_scene := preload("res://scenes/entities/monster.tscn")
+	var guard_count: int = 1
+	var guard_depth: int = depth
+	var guard_alertness: int = Constants.ALERTNESS_QUITE_ALERT
+
+	match forge_tile:
+		Level.Tile.FORGE_ENCHANTED:
+			guard_count = randi_range(1, 2)
+			guard_depth = mini(depth + 2, 20)
+		Level.Tile.FORGE_UNIQUE:
+			guard_count = randi_range(2, 3)
+			guard_depth = mini(depth + 4, 20)
+			guard_alertness = Constants.ALERTNESS_VERY_ALERT
+
+	var dirs: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)
+	]
+	dirs.shuffle()
+	var placed: int = 0
+	for dir: Vector2i in dirs:
+		if placed >= guard_count:
+			break
+		var pos: Vector2i = forge_pos + dir
+		if level.is_in_bounds(pos) and level.is_passable(pos) and level.get_entity_at(pos) == null:
+			var guard_data: DataManager.MonsterData = DataManager.get_themed_monster_for_depth(guard_depth)
+			if guard_data:
+				var guard: Monster = monster_scene.instantiate()
+				guard.grid_position = pos
+				guard.initialize_from_data(guard_data)
+				guard.alertness = guard_alertness
+				guard.is_sleeping = false
+				level.add_entity(guard)
+				placed += 1
 
 ## Spawn 1-3 smithing materials within 3 tiles of each forge (Sil-Q forge_item_placement)
 ## Depth determines material type: Mithril on all floors, Broken Glowing mid+, Broken Strange deep
@@ -1690,9 +1762,29 @@ func _connect_vault_corridor_points() -> void:
 	_vault_connection_points.clear()
 
 func _spawn_monsters(depth: int) -> void:
-	# Themed spawning: count based on room density + depth
-	var target_count: int = (rooms.size() + randi_range(1, maxi(1, rooms.size()))) / 2 + depth / 3
-	target_count = mini(target_count, 25)
+	# Count existing monsters already on the level (from vaults + door guards)
+	var existing_monsters: int = level.entities.size()
+
+	# Density formula: based on passable tiles, scales with depth
+	var passable: int = level.count_passable_tiles()
+	var divisor: float = lerpf(35.0, 25.0, clampf(float(depth - 1) / 19.0, 0.0, 1.0))
+	var max_total: int = clampi(int(passable / divisor), 4, 20)
+
+	# Ascent escalation: double monster count
+	if level.is_ascent:
+		max_total = mini(int(max_total * Constants.ASCENT_SPAWN_MULTIPLIER), 40)
+
+	# Layer transition smoothing: reduce effective depth by 1 at boundaries
+	var spawn_depth: int = depth
+	if LayerConfig.is_layer_boundary(depth):
+		spawn_depth = maxi(1, depth - 1)
+
+	# Subtract existing monsters from spawn budget
+	var target_count: int = maxi(0, max_total - existing_monsters)
+
+	if target_count == 0:
+		print("Spawned 0 monsters at depth %d (already %d from vaults/guards, cap %d)" % [depth, existing_monsters, max_total])
+		return
 
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var spawned: int = 0
@@ -1706,66 +1798,504 @@ func _spawn_monsters(depth: int) -> void:
 			first_room.position.y + first_room.size.y / 2
 		)
 
-	for _i in range(target_count):
+	# Get FOV radius for LOS placement check
+	var fov_radius: int = LayerConfig.get_fov_radius(depth)
+
+	# Try to spawn a unique lair before main loop
+	if depth >= Constants.UNIQUE_LAIR_MIN_DEPTH and randf() < Constants.UNIQUE_LAIR_CHANCE:
+		var lair_placed: int = _try_spawn_unique_lair(spawn_depth, monster_scene, stairs_up, fov_radius)
+		spawned += lair_placed
+
+	# Layer boundary telegraphing
+	if LayerConfig.is_layer_boundary(depth) and stairs_up != Vector2i(-1, -1):
+		_telegraph_layer_entry(depth, stairs_up)
+
+	# Phase 1: Room spawning (70% of budget)
+	var room_budget: int = int(target_count * 0.7)
+	# Distribute budget across rooms proportional to area
+	var room_areas: Array[int] = []
+	var total_area: int = 0
+	for room: Rect2i in rooms:
+		var area: int = room.size.x * room.size.y
+		room_areas.append(area)
+		total_area += area
+
+	var room_order: Array = range(rooms.size())
+	room_order.shuffle()
+
+	for room_idx in room_order:
+		if spawned >= room_budget:
+			break
+		var room: Rect2i = rooms[room_idx]
+		var room_share: int = maxi(1, int(float(room_areas[room_idx]) / maxf(float(total_area), 1.0) * room_budget))
+		room_share = mini(room_share, room_budget - spawned)
+
+		for _j in range(room_share):
+			if spawned >= room_budget:
+				break
+			var spawn_pos: Vector2i = level.find_random_floor_in_room(room)
+			if spawn_pos == Vector2i(-1, -1):
+				break
+
+			# 5-tile safe zone around stairs
+			if stairs_up != Vector2i(-1, -1):
+				var dist: int = maxi(absi(spawn_pos.x - stairs_up.x), absi(spawn_pos.y - stairs_up.y))
+				if dist < 7:
+					continue
+
+			# LOS check: no monsters visible from stairs_up at start
+			if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(spawn_pos, stairs_up, fov_radius):
+				continue
+
+			spawned += _place_monster_with_entourage(monster_scene, spawn_pos, spawn_depth, target_count - spawned)
+
+	# Phase 2: Corridor spawning (remaining budget)
+	var corridor_budget: int = target_count - spawned
+	for _i in range(corridor_budget * 3):  # Extra attempts since corridors are sparse
 		if spawned >= target_count:
 			break
-
-		var spawn_pos: Vector2i = level.find_random_floor()
+		var spawn_pos: Vector2i = level.find_random_corridor_floor()
 		if spawn_pos == Vector2i(-1, -1):
 			continue
 
-		# Don't spawn too close to player start (5-tile buffer)
+		# 5-tile safe zone
 		if stairs_up != Vector2i(-1, -1):
-			var dist: int = max(abs(spawn_pos.x - stairs_up.x), abs(spawn_pos.y - stairs_up.y))
-			if dist < 5:
+			var dist: int = maxi(absi(spawn_pos.x - stairs_up.x), absi(spawn_pos.y - stairs_up.y))
+			if dist < 7:
 				continue
 
-		# 70% themed, 30% random
-		var monster_data: DataManager.MonsterData = null
-		if randf() < 0.70:
-			monster_data = DataManager.get_themed_monster_for_depth(depth)
+		# LOS check
+		if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(spawn_pos, stairs_up, fov_radius):
+			continue
+
+		spawned += _place_monster_with_entourage(monster_scene, spawn_pos, spawn_depth, target_count - spawned)
+
+	# Post-placement: clear ALL monsters too close to stairs_up (catches vault/door guard monsters too)
+	_clear_monsters_near_stairs(stairs_up)
+
+	# Post-placement alertness pass
+	_apply_location_alertness(depth, stairs_up)
+
+	# Encounter type classification
+	_apply_encounter_types()
+
+	var final_count: int = 0
+	for e in level.entities:
+		if is_instance_valid(e) and e is Monster:
+			final_count += 1
+	print("Spawned %d monsters at depth %d (cap %d)" % [final_count, depth, max_total])
+
+## Remove ALL monsters within safe zone of stairs_up (catches vault/guard spawns too).
+func _clear_monsters_near_stairs(stairs_up: Vector2i) -> void:
+	if stairs_up == Vector2i(-1, -1):
+		return
+	const SAFE_RADIUS: int = 7
+	var to_remove: Array = []
+	for entity in level.entities:
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var dist: int = maxi(absi(entity.grid_position.x - stairs_up.x), absi(entity.grid_position.y - stairs_up.y))
+		if dist < SAFE_RADIUS:
+			to_remove.append(entity)
+	for monster in to_remove:
+		level.remove_entity(monster)
+		monster.queue_free()
+	if not to_remove.is_empty():
+		print("Cleared %d monsters within %d tiles of stairs_up" % [to_remove.size(), SAFE_RADIUS])
+
+## Check if a position is within starting FOV from stairs_up (LOS + radius).
+func _is_in_starting_fov(pos: Vector2i, stairs_up: Vector2i, fov_radius: int) -> bool:
+	var dist: int = maxi(absi(pos.x - stairs_up.x), absi(pos.y - stairs_up.y))
+	if dist > fov_radius:
+		return false
+	return level.has_los_to(stairs_up, pos)
+
+## Place a single monster with FRIENDS/ESCORT expansion. Returns total placed.
+func _place_monster_with_entourage(monster_scene: PackedScene, pos: Vector2i, depth: int, budget: int) -> int:
+	if budget <= 0:
+		return 0
+	# Safety: don't place on occupied or stair tiles
+	if level.get_entity_at(pos) != null:
+		return 0
+	var tile: int = level.get_tile(pos)
+	if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN:
+		return 0
+
+	# Apply OOD variance for random spawns
+	var effective_depth: int = DataManager.get_effective_monster_depth(depth)
+
+	# 70% themed, 30% random
+	var monster_data: DataManager.MonsterData = null
+	if randf() < 0.70:
+		monster_data = DataManager.get_themed_monster_for_depth(effective_depth)
+	else:
+		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
+
+	if not monster_data:
+		return 0
+
+	# Unique cap check
+	if monster_data.has_flag("UNIQUE"):
+		if DataManager.is_unique_already_spawned(monster_data.name):
+			# Try again without uniques
+			monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
+			if not monster_data:
+				return 0
 		else:
-			monster_data = DataManager.get_random_monster_for_depth(depth)
+			DataManager.mark_unique_spawned(monster_data.name)
 
-		if monster_data:
-			var monster: Monster = monster_scene.instantiate()
-			monster.grid_position = spawn_pos
-			monster.initialize_from_data(monster_data)
-			level.add_entity(monster)
-			spawned += 1
+	var monster: Monster = monster_scene.instantiate()
+	monster.grid_position = pos
+	monster.initialize_from_data(monster_data)
+	level.add_entity(monster)
+	var spawned: int = 1
 
-			# Group spawning (FRIENDS flag): spawn 1-2 similar monsters nearby
-			# Capped to prevent FRIENDS from overwhelming the level
-			if monster_data.has_flag("FRIENDS") and spawned < target_count:
-				var group_budget: int = mini(randi_range(1, 2), target_count - spawned)
-				spawned += _spawn_group(monster_scene, spawn_pos, monster_data, group_budget)
+	# FRIENDS pack expansion (BFS puddle)
+	if monster_data.has_flag("FRIENDS") and budget > spawned:
+		var pack_size: int = _get_friends_pack_size(monster_data)
+		var group_budget: int = mini(pack_size, budget - spawned)
+		spawned += _spawn_group_bfs(monster_scene, pos, monster_data, group_budget)
+	elif monster_data.has_flag("FRIEND") and budget > spawned:
+		var group_budget: int = mini(randi_range(1, 2), budget - spawned)
+		spawned += _spawn_group_bfs(monster_scene, pos, monster_data, group_budget)
 
-			# Escort spawning (ESCORT flag): spawn 1-2 weaker escorts
-			if (monster_data.has_flag("ESCORT") or monster_data.has_flag("ESCORTS")) and spawned < target_count:
-				var escort_data: DataManager.MonsterData = DataManager.get_random_monster_for_depth(maxi(1, depth - 2))
-				if escort_data:
-					var escort_budget: int = mini(randi_range(1, 2), target_count - spawned)
-					spawned += _spawn_group(monster_scene, spawn_pos, escort_data, escort_budget)
+	# ESCORT expansion (type-aware)
+	if monster_data.has_flag("ESCORTS") and budget > spawned:
+		var escort_count: int = mini(randi_range(2, 4), budget - spawned)
+		spawned += _spawn_escort_group(monster_scene, pos, monster_data, depth, escort_count)
+	elif monster_data.has_flag("ESCORT") and budget > spawned:
+		var escort_count: int = mini(randi_range(1, 2), budget - spawned)
+		spawned += _spawn_escort_group(monster_scene, pos, monster_data, depth, escort_count)
 
-	print("Spawned %d monsters at depth %d" % [spawned, depth])
+	return spawned
 
-func _spawn_group(monster_scene: PackedScene, center: Vector2i, data: DataManager.MonsterData, count: int) -> int:
+## Get FRIENDS pack size by monster type.
+func _get_friends_pack_size(data: DataManager.MonsterData) -> int:
+	var ch: String = data.display_char
+	if ch == "r" or ch == "I":  # rats, insects
+		return randi_range(2, 4)
+	if ch == "o" or ch == "O":  # orcs
+		return randi_range(2, 3)
+	if data.has_flag("UNDEAD") or ch == "z" or ch == "w":  # undead, wights, wolves
+		return randi_range(2, 3)
+	if ch == "G" or data.is_shadow:  # shadows
+		return randi_range(1, 2)
+	return randi_range(1, 2)  # default
+
+## BFS outward placement for pack monsters. Frontier shuffled for organic spread.
+func _spawn_group_bfs(monster_scene: PackedScene, center: Vector2i, data: DataManager.MonsterData, count: int) -> int:
 	var spawned: int = 0
-	var offsets: Array[Vector2i] = [
+	var visited: Dictionary = {center: true}
+	var frontier: Array[Vector2i] = []
+
+	# Seed frontier with adjacent tiles
+	var dirs: Array[Vector2i] = [
 		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
 		Vector2i(-1, 0), Vector2i(1, 0),
 		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
 	]
-	offsets.shuffle()
-	for i in range(mini(count, offsets.size())):
-		var pos: Vector2i = center + offsets[i]
-		if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR and level.get_entity_at(pos) == null:
+	for dir: Vector2i in dirs:
+		var next: Vector2i = center + dir
+		if level.is_in_bounds(next) and not visited.has(next):
+			frontier.append(next)
+			visited[next] = true
+	frontier.shuffle()
+
+	while spawned < count and not frontier.is_empty():
+		var pos: Vector2i = frontier.pop_front()
+		var btile: int = level.get_tile(pos)
+		if level.is_passable(pos) and level.get_entity_at(pos) == null and btile != Level.Tile.STAIRS_UP and btile != Level.Tile.STAIRS_DOWN:
 			var monster: Monster = monster_scene.instantiate()
 			monster.grid_position = pos
 			monster.initialize_from_data(data)
 			level.add_entity(monster)
 			spawned += 1
+
+			# Expand frontier
+			for dir: Vector2i in dirs:
+				var next: Vector2i = pos + dir
+				if level.is_in_bounds(next) and not visited.has(next):
+					frontier.append(next)
+					visited[next] = true
+			frontier.shuffle()
+
 	return spawned
+
+## Spawn type-aware escorts matching the leader's race/type.
+func _spawn_escort_group(monster_scene: PackedScene, leader_pos: Vector2i, leader_data: DataManager.MonsterData, depth: int, count: int) -> int:
+	var escort_depth: int = maxi(1, depth - 2)
+	var predicate: Callable = _get_escort_predicate(leader_data)
+
+	var spawned: int = 0
+	var dirs: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)
+	]
+	dirs.shuffle()
+
+	# BFS outward from leader
+	var visited: Dictionary = {leader_pos: true}
+	var frontier: Array[Vector2i] = []
+	for dir: Vector2i in dirs:
+		var next: Vector2i = leader_pos + dir
+		if level.is_in_bounds(next):
+			frontier.append(next)
+			visited[next] = true
+	frontier.shuffle()
+
+	while spawned < count and not frontier.is_empty():
+		var pos: Vector2i = frontier.pop_front()
+		var etile: int = level.get_tile(pos)
+		if level.is_passable(pos) and level.get_entity_at(pos) == null and etile != Level.Tile.STAIRS_UP and etile != Level.Tile.STAIRS_DOWN:
+			var escort_data: DataManager.MonsterData = DataManager._pick_monster_matching(escort_depth, predicate, true)
+			if escort_data:
+				var escort: Monster = monster_scene.instantiate()
+				escort.grid_position = pos
+				escort.initialize_from_data(escort_data)
+				level.add_entity(escort)
+				spawned += 1
+
+		# Expand frontier
+		for dir: Vector2i in dirs:
+			var next: Vector2i = pos + dir
+			if level.is_in_bounds(next) and not visited.has(next):
+				frontier.append(next)
+				visited[next] = true
+		frontier.shuffle()
+
+	return spawned
+
+## Get escort predicate matching leader's race/type.
+func _get_escort_predicate(leader_data: DataManager.MonsterData) -> Callable:
+	var ch: String = leader_data.display_char
+	if leader_data.has_flag("ORC") or ch == "o" or ch == "O":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("ORC") or m.display_char == "o"
+	if leader_data.has_flag("TROLL") or ch == "T" or ch == "t":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("TROLL") or m.display_char == "T" or m.display_char == "t"
+	if leader_data.has_flag("UNDEAD") or ch == "z" or ch == "Z" or ch == "w":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("UNDEAD") or m.display_char == "z" or m.display_char == "w"
+	if leader_data.has_flag("SPIDER") or ch == "s" or ch == "S":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("SPIDER") or m.display_char == "s"
+	if leader_data.has_flag("WOLF") or ch == "w" or ch == "W":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("WOLF") or m.display_char == "w"
+	if leader_data.has_flag("MAN") or ch == "p" or ch == "P" or ch == "h":
+		return func(m: DataManager.MonsterData) -> bool: return m.has_flag("MAN") or m.display_char == "p" or m.display_char == "h"
+	# Fallback: same display char
+	return func(m: DataManager.MonsterData) -> bool: return m.display_char == ch
+
+## Post-placement pass: adjust alertness based on location context.
+func _apply_location_alertness(depth: int, stairs_up: Vector2i) -> void:
+	var stairs_down: Vector2i = level.find_stairs_down()
+
+	for entity: Entity in level.entities:
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var monster: Monster = entity as Monster
+		var pos: Vector2i = monster.grid_position
+		var idx: int = pos.y * level.width + pos.x
+
+		# Check room_id for corridor/room classification
+		var rid: int = -1
+		if idx >= 0 and idx < level.room_id.size():
+			rid = level.room_id[idx]
+
+		# Corridor monsters: more alert, wake up
+		if rid == -1:
+			monster.alertness = maxi(monster.alertness + Constants.ALERTNESS_CORRIDOR_BONUS, Constants.ALERTNESS_ALERT)
+			monster.is_sleeping = false
+
+		# Near stairs: sentries are quite alert and never sleeping
+		var near_stairs: bool = false
+		if stairs_up != Vector2i(-1, -1):
+			var dist_up: int = maxi(absi(pos.x - stairs_up.x), absi(pos.y - stairs_up.y))
+			if dist_up <= Constants.ALERTNESS_STAIRS_RADIUS:
+				near_stairs = true
+		if stairs_down != Vector2i(-1, -1):
+			var dist_down: int = maxi(absi(pos.x - stairs_down.x), absi(pos.y - stairs_down.y))
+			if dist_down <= Constants.ALERTNESS_STAIRS_RADIUS:
+				near_stairs = true
+		if near_stairs:
+			monster.alertness = maxi(monster.alertness, Constants.ALERTNESS_QUITE_ALERT)
+			monster.is_sleeping = false
+
+		# Back room: far from any stair, sleep deeper
+		if not near_stairs and rid >= 0:
+			var min_stair_dist: int = 999
+			if stairs_up != Vector2i(-1, -1):
+				min_stair_dist = mini(min_stair_dist, maxi(absi(pos.x - stairs_up.x), absi(pos.y - stairs_up.y)))
+			if stairs_down != Vector2i(-1, -1):
+				min_stair_dist = mini(min_stair_dist, maxi(absi(pos.x - stairs_down.x), absi(pos.y - stairs_down.y)))
+			if min_stair_dist > 15:
+				monster.alertness += Constants.ALERTNESS_BACK_ROOM_PENALTY
+
+## Classify monsters by encounter type based on their spawn location and context.
+func _apply_encounter_types() -> void:
+	for entity: Entity in level.entities:
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var monster: Monster = entity as Monster
+		var pos: Vector2i = monster.grid_position
+		var idx: int = pos.y * level.width + pos.x
+		var rid: int = -1
+		if idx >= 0 and idx < level.room_id.size():
+			rid = level.room_id[idx]
+		var is_corridor: bool = (rid == -1)
+
+		if is_corridor:
+			if _is_near_door(pos):
+				monster.encounter_type = Constants.EncounterType.AMBUSH
+			elif monster.monster_data and monster.monster_data.speed >= 3:
+				monster.encounter_type = Constants.EncounterType.HUNTER
+			else:
+				monster.encounter_type = Constants.EncounterType.PATROL
+		else:
+			# In a room
+			if _is_near_special_tile(pos):
+				monster.encounter_type = Constants.EncounterType.GUARDIAN
+			elif _is_near_door(pos):
+				monster.encounter_type = Constants.EncounterType.WARDEN
+			elif _count_same_type_nearby(monster, 3) >= 3:
+				monster.encounter_type = Constants.EncounterType.NEST
+			else:
+				monster.encounter_type = Constants.EncounterType.WANDERER
+
+## Check if a position is adjacent to a door (any type).
+func _is_near_door(pos: Vector2i) -> bool:
+	var dirs: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+	]
+	for dir: Vector2i in dirs:
+		var check: Vector2i = pos + dir
+		if level.is_in_bounds(check):
+			var tile: int = level.get_tile(check)
+			if tile == Level.Tile.DOOR_CLOSED or tile == Level.Tile.DOOR_LOCKED or tile == Level.Tile.DOOR_JAMMED or tile == Level.Tile.DOOR_OPEN:
+				return true
+	return false
+
+## Check if a position is near a special tile (forge, stairs).
+func _is_near_special_tile(pos: Vector2i) -> bool:
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			var check: Vector2i = pos + Vector2i(dx, dy)
+			if not level.is_in_bounds(check):
+				continue
+			var tile: int = level.get_tile(check)
+			if tile == Level.Tile.FORGE or tile == Level.Tile.FORGE_ENCHANTED or tile == Level.Tile.FORGE_UNIQUE:
+				return true
+			if tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.STAIRS_UP:
+				return true
+	return false
+
+## Count same-type monsters within a radius (by display_char).
+func _count_same_type_nearby(monster: Monster, radius: int) -> int:
+	if not monster.monster_data:
+		return 0
+	var ch: String = monster.monster_data.display_char
+	var count: int = 0
+	for entity: Entity in level.entities:
+		if not is_instance_valid(entity) or entity == monster or not entity is Monster:
+			continue
+		var other: Monster = entity as Monster
+		if other.monster_data and other.monster_data.display_char == ch:
+			var dist: int = maxi(absi(other.grid_position.x - monster.grid_position.x), absi(other.grid_position.y - monster.grid_position.y))
+			if dist <= radius:
+				count += 1
+	return count
+
+## Try to spawn a unique monster lair in a large room. Returns monsters placed.
+func _try_spawn_unique_lair(depth: int, monster_scene: PackedScene, stairs_up: Vector2i, fov_radius: int) -> int:
+	# Find a large room (6x6+)
+	var large_rooms: Array[int] = []
+	for i in range(rooms.size()):
+		var room: Rect2i = rooms[i]
+		if room.size.x >= Constants.UNIQUE_LAIR_MIN_ROOM_SIZE and room.size.y >= Constants.UNIQUE_LAIR_MIN_ROOM_SIZE:
+			large_rooms.append(i)
+	if large_rooms.is_empty():
+		return 0
+
+	large_rooms.shuffle()
+	var room_idx: int = large_rooms[0]
+	var room: Rect2i = rooms[room_idx]
+	var center: Vector2i = Vector2i(room.position.x + room.size.x / 2, room.position.y + room.size.y / 2)
+
+	# Don't place lair in starting FOV
+	if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(center, stairs_up, fov_radius):
+		return 0
+
+	# Pick a unique monster for this depth
+	var unique_data: DataManager.MonsterData = null
+	for m in DataManager.monsters.values():
+		if m.has_flag("UNIQUE") and m.depth <= depth and m.depth >= maxi(1, depth - 4):
+			if not DataManager.is_unique_already_spawned(m.name):
+				unique_data = m
+				break
+	if not unique_data:
+		return 0
+
+	DataManager.mark_unique_spawned(unique_data.name)
+
+	# Place unique at room center
+	if level.get_entity_at(center) != null:
+		center = level.find_random_floor_in_room(room)
+		if center == Vector2i(-1, -1):
+			return 0
+
+	var unique_monster: Monster = monster_scene.instantiate()
+	unique_monster.grid_position = center
+	unique_monster.initialize_from_data(unique_data)
+	unique_monster.alertness = Constants.ALERTNESS_VERY_ALERT
+	unique_monster.is_sleeping = false
+	level.add_entity(unique_monster)
+	var spawned: int = 1
+
+	# Spawn thematic escorts
+	var escort_count: int = randi_range(2, 4)
+	var predicate: Callable = _get_escort_predicate(unique_data)
+	spawned += _spawn_escort_group(monster_scene, center, unique_data, depth, escort_count)
+
+	# Telegraph the lair with a flavor message
+	_telegraph_unique_presence(unique_data.name, center, stairs_up)
+
+	print("Spawned unique lair: %s with %d escorts at depth %d" % [unique_data.name, spawned - 1, depth])
+	return spawned
+
+## Place a flavor message between stairs and a unique's lair position.
+func _telegraph_unique_presence(monster_name: String, lair_pos: Vector2i, stairs_up: Vector2i) -> void:
+	if stairs_up == Vector2i(-1, -1):
+		return
+	# Place message roughly 1/3 of the way from stairs to lair
+	var mid: Vector2i = Vector2i(
+		stairs_up.x + (lair_pos.x - stairs_up.x) / 3,
+		stairs_up.y + (lair_pos.y - stairs_up.y) / 3
+	)
+	# Find nearest passable tile to midpoint
+	var msg_pos: Vector2i = _find_nearest_passable(mid)
+	if msg_pos != Vector2i(-1, -1):
+		level.flavor_messages[msg_pos] = "You sense a powerful presence nearby... (%s)" % monster_name
+
+## Place thematic layer entry flavor messages near stairs.
+func _telegraph_layer_entry(depth: int, stairs_up: Vector2i) -> void:
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	var messages: Dictionary = {
+		"lower_halls": "The tunnels widen into worked stone. Orc-marks scar the walls.",
+		"dark_halls": "An unnatural chill settles over you. The air tastes of old magic.",
+		"necropolis": "The stench of death grows overwhelming. Bones crunch underfoot.",
+		"pits_of_despair": "Shadows writhe at the edges of your vision. Despair gnaws at your will.",
+		"inner_sanctum": "Golden light flickers from deep within. The heart of Dol Guldur draws near.",
+		"throne_room": "The air burns with dark power. You stand at the threshold of Sauron's domain.",
+	}
+	var msg: String = messages.get(layer_name, "")
+	if msg.is_empty():
+		return
+	# Place 2 tiles from stairs_up (any direction that's passable)
+	var dirs: Array[Vector2i] = [Vector2i(0, 2), Vector2i(2, 0), Vector2i(0, -2), Vector2i(-2, 0)]
+	dirs.shuffle()
+	for dir: Vector2i in dirs:
+		var pos: Vector2i = stairs_up + dir
+		if level.is_in_bounds(pos) and level.is_passable(pos) and not level.flavor_messages.has(pos):
+			level.flavor_messages[pos] = msg
+			return
 
 func _spawn_items(depth: int) -> void:
 	# Item count: 75% of monster target formula, capped at 15
@@ -1908,18 +2438,19 @@ func _find_floor_near(center: Vector2i, max_radius: int) -> Vector2i:
 	return level.find_random_floor()
 
 ## Place themed guards adjacent to doors.
-## Chance scales with depth: (15 + 2*depth)%, capped at 50%. Max 4 per level.
+## Chance scales with depth: (15 + 2*depth)%, capped at 50%. Max 2 per level.
 func _place_door_guards(depth: int) -> void:
 	var guard_chance: float = minf(0.15 + 0.02 * depth, 0.50)
+	var max_guards: int = 2
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var guards_placed: int = 0
 	var cardinal_dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 	for y in range(1, level.height - 1):
-		if guards_placed >= 4:
+		if guards_placed >= max_guards:
 			break
 		for x in range(1, level.width - 1):
-			if guards_placed >= 4:
+			if guards_placed >= max_guards:
 				break
 			var pos := Vector2i(x, y)
 			var tile: int = level.get_tile(pos)
@@ -1940,6 +2471,8 @@ func _place_door_guards(depth: int) -> void:
 						var guard: Monster = monster_scene.instantiate()
 						guard.grid_position = guard_pos
 						guard.initialize_from_data(guard_data)
+						guard.alertness = Constants.ALERTNESS_QUITE_ALERT
+						guard.is_sleeping = false
 						level.add_entity(guard)
 						guards_placed += 1
 						placed = true
@@ -2901,21 +3434,21 @@ func _generate_throne_room_level(depth: int) -> void:
 		# No throne vault found — generate a basic large room
 		_fallback_throne_room(depth)
 
-	# Place stairs up in a corner — no stairs down on the final level
-	var up_pos := Vector2i(2, 2)
-	# Find a floor tile near corner
-	for y in range(1, level.height / 4):
-		for x in range(1, level.width / 4):
-			var pos := Vector2i(x, y)
-			if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
-				up_pos = pos
+	# Check if the vault already placed stairs_up (<)
+	var existing_stairs: Vector2i = level.find_stairs_up()
+	if existing_stairs == Vector2i(-1, -1):
+		# No stairs from vault — find a floor tile to place them
+		var up_pos := Vector2i(-1, -1)
+		for y in range(1, level.height - 1):
+			for x in range(1, level.width - 1):
+				var pos := Vector2i(x, y)
+				if level.is_in_bounds(pos) and level.get_tile(pos) == Level.Tile.FLOOR:
+					up_pos = pos
+					break
+			if up_pos != Vector2i(-1, -1):
 				break
-		if level.get_tile(up_pos) == Level.Tile.FLOOR:
-			break
-
-	if level.is_in_bounds(up_pos):
-		level.set_tile(up_pos, Level.Tile.FLOOR)
-		level.set_tile(up_pos, Level.Tile.STAIRS_UP)
+		if up_pos != Vector2i(-1, -1):
+			level.set_tile(up_pos, Level.Tile.STAIRS_UP)
 
 	# Assign room data
 	_assign_room_data(depth)
@@ -2928,6 +3461,10 @@ func _generate_throne_room_level(depth: int) -> void:
 	_spawn_items(depth)
 	_spawn_artifacts(depth)
 	_spawn_lore_objects(depth)
+
+	# Final safety sweep
+	var stairs_up: Vector2i = level.find_stairs_up()
+	_clear_monsters_near_stairs(stairs_up)
 
 	level.generation_complete.emit(level.width, level.height)
 

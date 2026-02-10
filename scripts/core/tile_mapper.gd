@@ -222,54 +222,54 @@ func _load_monster_coords() -> void:
 	monster_coords[85] = Vector2i(14, 25)  # Tunnel Crawler
 	# === Tier 4: Necropolis ===
 	monster_coords[86] = Vector2i(15, 25)  # Pale Crawler
-	monster_coords[87] = Vector2i(15, 24)  # Werewolf (uses Warg tile as placeholder)
-	monster_coords[91] = Vector2i(16, 25)  # Phantom
+	monster_coords[87] = Vector2i(16, 25)  # Werewolf
+	monster_coords[91] = Vector2i(17, 25)  # Phantom
 	# === Tier 5: Pits of Despair ===
-	monster_coords[92] = Vector2i(17, 25)  # Shadow
-	monster_coords[93] = Vector2i(18, 25)  # Whispering Shade
-	monster_coords[94] = Vector2i(19, 25)  # Wraith
-	monster_coords[95] = Vector2i(20, 25)  # Fell Spirit
-	monster_coords[96] = Vector2i(21, 25)  # Spectre
-	monster_coords[97] = Vector2i(22, 25)  # Vampire Thrall
-	monster_coords[98] = Vector2i(23, 25)  # Wailing Horror
-	monster_coords[99] = Vector2i(24, 25)  # Uvatha
+	monster_coords[92] = Vector2i(18, 25)  # Shadow
+	monster_coords[93] = Vector2i(19, 25)  # Whispering Shade
+	monster_coords[94] = Vector2i(20, 25)  # Wraith
+	monster_coords[95] = Vector2i(21, 25)  # Fell Spirit
+	monster_coords[96] = Vector2i(22, 25)  # Spectre
+	monster_coords[97] = Vector2i(23, 25)  # Vampire Thrall
+	monster_coords[98] = Vector2i(24, 25)  # Wailing Horror
+	monster_coords[99] = Vector2i(25, 25)  # Uvatha
 	# === Tier 4: Necropolis ===
-	monster_coords[100] = Vector2i(25, 25)  # BN Acolyte
+	monster_coords[100] = Vector2i(26, 25)  # BN Acolyte
 	# === Tier 5: Pits of Despair ===
-	monster_coords[101] = Vector2i(26, 25)  # Haradrim Assassin
-	monster_coords[102] = Vector2i(27, 25)  # Cave Worm
-	monster_coords[103] = Vector2i(28, 25)  # Oathbreaker
-	monster_coords[104] = Vector2i(29, 25)  # Morgul Sorcerer
-	monster_coords[111] = Vector2i(30, 25)  # Black Numenorean
+	monster_coords[101] = Vector2i(27, 25)  # Haradrim Assassin
+	monster_coords[102] = Vector2i(28, 25)  # Cave Worm
+	monster_coords[103] = Vector2i(29, 25)  # Oathbreaker
+	monster_coords[104] = Vector2i(30, 25)  # Morgul Sorcerer
+	monster_coords[111] = Vector2i(31, 25)  # Black Numenorean
 	# === Tier 6: Inner Sanctum ===
-	monster_coords[112] = Vector2i(31, 25)  # Olog-hai
-	monster_coords[113] = Vector2i(0, 26)  # Vampire
-	monster_coords[114] = Vector2i(1, 26)  # Greater Wraith
-	monster_coords[115] = Vector2i(2, 26)  # Vampire Lord
-	monster_coords[116] = Vector2i(3, 26)  # Shadow Lord
-	monster_coords[117] = Vector2i(4, 26)  # Maia Thrall
-	monster_coords[118] = Vector2i(5, 26)  # Khamul
-	monster_coords[131] = Vector2i(6, 26)  # Elite Olog-hai
+	monster_coords[112] = Vector2i(0, 26)  # Olog-hai
+	monster_coords[113] = Vector2i(1, 26)  # Vampire
+	monster_coords[114] = Vector2i(2, 26)  # Greater Wraith
+	monster_coords[115] = Vector2i(3, 26)  # Vampire Lord
+	monster_coords[116] = Vector2i(4, 26)  # Shadow Lord
+	monster_coords[117] = Vector2i(5, 26)  # Maia Thrall
+	monster_coords[118] = Vector2i(6, 26)  # Khamul
+	monster_coords[131] = Vector2i(7, 26)  # Elite Olog-hai
 	# === Tier 7: Throne Room ===
-	monster_coords[132] = Vector2i(7, 26)  # Greater Shadow
-	monster_coords[133] = Vector2i(8, 26)  # Void Wraith
-	monster_coords[134] = Vector2i(9, 26)  # Thrain's Shade
-	monster_coords[135] = Vector2i(10, 26)  # Sauron
+	monster_coords[132] = Vector2i(8, 26)  # Greater Shadow
+	monster_coords[133] = Vector2i(9, 26)  # Void Wraith
+	monster_coords[134] = Vector2i(10, 26)  # Thrain's Shade
+	monster_coords[135] = Vector2i(11, 26)  # Sauron
 	# === Tier 6: Inner Sanctum ===
-	monster_coords[136] = Vector2i(11, 26)  # BN Lord
+	monster_coords[136] = Vector2i(12, 26)  # BN Lord
 	# === Tier 7: Throne Room ===
-	monster_coords[137] = Vector2i(12, 26)  # Mouth of Sauron
+	monster_coords[137] = Vector2i(13, 26)  # Mouth of Sauron
 	# === Tier 8: Hallucinations ===
-	monster_coords[301] = Vector2i(13, 26)  # Gandalf
-	monster_coords[302] = Vector2i(14, 26)  # Thranduil
-	monster_coords[303] = Vector2i(15, 26)  # Galadriel
-	monster_coords[304] = Vector2i(16, 26)  # Elrond
-	monster_coords[305] = Vector2i(17, 26)  # Thorin
-	monster_coords[306] = Vector2i(18, 26)  # Beorn
-	monster_coords[307] = Vector2i(19, 26)  # Radagast
-	monster_coords[308] = Vector2i(20, 26)  # Eagle
-	monster_coords[309] = Vector2i(21, 26)  # Great Elk
-	monster_coords[310] = Vector2i(22, 26)  # Ent
+	monster_coords[301] = Vector2i(14, 26)  # Gandalf
+	monster_coords[302] = Vector2i(15, 26)  # Thranduil
+	monster_coords[303] = Vector2i(16, 26)  # Galadriel
+	monster_coords[304] = Vector2i(17, 26)  # Elrond
+	monster_coords[305] = Vector2i(18, 26)  # Thorin
+	monster_coords[306] = Vector2i(19, 26)  # Beorn
+	monster_coords[307] = Vector2i(20, 26)  # Radagast
+	monster_coords[308] = Vector2i(21, 26)  # Eagle
+	monster_coords[309] = Vector2i(22, 26)  # Great Elk
+	monster_coords[310] = Vector2i(23, 26)  # Ent
 
 func _load_item_coords() -> void:
 	item_coords[0] = Vector2i(0, 11)  # <pile>
@@ -297,8 +297,6 @@ func _load_item_coords() -> void:
 	item_coords[46] = Vector2i(22, 11)  # Mithril Shield
 	item_coords[56] = Vector2i(23, 11)  # Ranger's Knife
 	item_coords[57] = Vector2i(24, 11)  # Orc-blade
-	item_coords[58] = Vector2i(1, 17)  # Curved Sword (DALL-E regen)
-	item_coords[59] = Vector2i(2, 17)  # Sylvan Blade
 	item_coords[60] = Vector2i(25, 11)  # Woodland Blade
 	item_coords[64] = Vector2i(26, 11)  # Longsword
 	item_coords[67] = Vector2i(27, 11)  # Rohirrim Blade
@@ -349,12 +347,6 @@ func _load_item_coords() -> void:
 	item_coords[137] = Vector2i(8, 13)  # the Blessed Realm
 	item_coords[138] = Vector2i(9, 13)  # Haunted Dreams
 	item_coords[139] = Vector2i(10, 13)  # the Vigilant Eye
-	item_coords[140] = Vector2i(3, 13)  # the Hearth (shares Last Chances sprite)
-	item_coords[141] = Vector2i(5, 13)  # Clear Sight (shares Grace sprite)
-	item_coords[142] = Vector2i(4, 13)  # Fortitude (shares Constitution sprite)
-	item_coords[143] = Vector2i(8, 13)  # Starlight (shares Blessed Realm sprite)
-	item_coords[144] = Vector2i(7, 13)  # the Stoneheart (shares Preservation sprite)
-	item_coords[145] = Vector2i(8, 13)  # Lorien-light (shares Blessed Realm sprite)
 	item_coords[150] = Vector2i(11, 13)  # Secrets
 	item_coords[151] = Vector2i(12, 13)  # Ered Luin
 	item_coords[152] = Vector2i(13, 13)  # Evasion
@@ -369,15 +361,6 @@ func _load_item_coords() -> void:
 	item_coords[161] = Vector2i(22, 13)  # the Shadow's Vanguard
 	item_coords[162] = Vector2i(23, 13)  # Venom's End
 	item_coords[171] = Vector2i(24, 13)  # the Laiquendi
-	item_coords[173] = Vector2i(11, 13)  # the Watchful (shares Secrets sprite)
-	item_coords[174] = Vector2i(15, 13)  # Endurance (shares Strength sprite)
-	item_coords[175] = Vector2i(24, 13)  # the Forester (shares Laiquendi sprite)
-	item_coords[176] = Vector2i(12, 13)  # Iron Will (shares Ered Luin sprite)
-	item_coords[177] = Vector2i(23, 13)  # the Greenwood (shares Venom's End sprite)
-	item_coords[178] = Vector2i(15, 13)  # Durin's Folk (shares Strength sprite)
-	item_coords[179] = Vector2i(16, 13)  # Noldor Memory (shares Dexterity sprite)
-	item_coords[180] = Vector2i(9, 13)  # the Shadow-ward (shares Haunted Dreams sprite)
-	item_coords[181] = Vector2i(17, 13)  # Wrathful Fire (shares Frost sprite)
 	item_coords[191] = Vector2i(25, 13)  # Imprisonment
 	item_coords[192] = Vector2i(26, 13)  # Freedom
 	item_coords[193] = Vector2i(27, 13)  # Light
@@ -463,20 +446,12 @@ func _load_item_coords() -> void:
 	item_coords[420] = Vector2i(11, 16)  # Rusted Helm
 	item_coords[421] = Vector2i(12, 16)  # Worn Boots
 	item_coords[422] = Vector2i(13, 16)  # Shattered Shield
-	# Mirkwood herbs (tval 80, svals 13-18) — reuse closest existing herb sprites
-	item_coords[423] = Vector2i(8, 16)  # Silverbark Moss -> Phosphorescent Moss sprite (moss)
-	item_coords[424] = Vector2i(27, 15)  # Nightshade Berry -> Athelas sprite (dark herb)
-	item_coords[425] = Vector2i(20, 15)  # Thornvine Root -> Healer's Herb sprite (root/herb)
-	item_coords[426] = Vector2i(20, 15)  # Moonpetal -> Healer's Herb sprite (petal/herb)
-	item_coords[427] = Vector2i(17, 15)  # Spider-bane -> Orc-rage Mushroom sprite (potent herb)
-	item_coords[428] = Vector2i(8, 16)  # Gloomcap -> Phosphorescent Moss sprite (fungus/mushroom)
 	item_coords[451] = Vector2i(14, 16)  # Note
 	item_coords[491] = Vector2i(15, 16)  # Broken Glowing Weapon
 	item_coords[492] = Vector2i(16, 16)  # Shattered Elven Mail
 	item_coords[493] = Vector2i(17, 16)  # Broken Strange Weapon
 	item_coords[494] = Vector2i(18, 16)  # Twisted Shadow-plate
 	item_coords[495] = Vector2i(19, 16)  # Broken Strange Jewelry
-	item_coords[496] = Vector2i(20, 16)  # Broken Glowing Ring (jewelry)
 	item_coords[500] = Vector2i(20, 16)  # Thráin's Memory
 	item_coords[510] = Vector2i(21, 16)  # Shadow Fragment
 	item_coords[520] = Vector2i(22, 16)  # Ancient Glyph

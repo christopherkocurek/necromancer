@@ -35,6 +35,12 @@ func apply_effect(effect_id: StringName, duration: int, show_message: bool = tru
 			if new_total > current:
 				return false  # Anti-stacking at knockout level
 
+	# Entranced anti-stacking: cap at 5 turns, never extend beyond that
+	if effect_id == Constants.EFFECT_ENTRANCED:
+		var current: int = effects.get(effect_id, 0)
+		if current > 0:
+			return false  # Already entranced — can't re-entrance
+
 	# Calculate new duration (additive)
 	var current_dur: int = effects.get(effect_id, 0)
 	var new_dur: int = mini(current_dur + duration, max_dur)

@@ -38,7 +38,7 @@ BASE_DIR = Path(__file__).parent
 PROJECT_DIR = BASE_DIR.parent
 TILESET_PATH = PROJECT_DIR / "assets" / "sprites" / "necromancer_dcss_tileset.png"
 TILE_MAPPER_PATH = PROJECT_DIR / "scripts" / "core" / "tile_mapper.gd"
-MONSTER_DIR = BASE_DIR / "monster_v2"
+MONSTER_DIR = BASE_DIR / "monster_v3"
 ITEM_DIR = BASE_DIR / "item_v2"
 ITEM_PROGRESS_PATH = BASE_DIR / "item_v2_progress.json"
 MONSTER_PROGRESS_PATH = BASE_DIR / "monster_v2_progress.json"
@@ -57,7 +57,7 @@ OLD_MONSTER_ROWS = [8, 9, 10]  # Old DCSS monster rows to clear
 # MONSTER DATA
 # ============================================================================
 
-# All 87 monster IDs in display order (sorted by ID)
+# All 88 monster IDs in display order (sorted by ID)
 ALL_MONSTER_IDS = sorted([
     # Tier 1
     11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31,
@@ -66,7 +66,7 @@ ALL_MONSTER_IDS = sorted([
     # Tier 3
     52, 53, 54, 55, 56, 57, 58, 59, 60, 71, 73, 80, 85,
     # Tier 4
-    72, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 86, 91, 100,
+    72, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87, 91, 100,
     # Tier 5
     92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 111,
     # Tier 6
@@ -91,7 +91,7 @@ MONSTER_NAMES = {
     76: "Necromancer Adept", 77: "Barrow-wight", 78: "Bone Golem",
     79: "Grishnakh", 80: "Easterling Infiltrator", 81: "Cave Troll",
     82: "Dark Ritualist", 83: "Corsair of Umbar", 84: "Dunlending",
-    85: "Tunnel Crawler", 86: "Pale Crawler", 91: "Phantom", 92: "Shadow",
+    85: "Tunnel Crawler", 86: "Pale Crawler", 87: "Werewolf", 91: "Phantom", 92: "Shadow",
     93: "Whispering Shade", 94: "Wraith", 95: "Fell Spirit", 96: "Spectre",
     97: "Vampire Thrall", 98: "Wailing Horror", 99: "Uvatha",
     100: "BN Acolyte", 101: "Haradrim Assassin", 102: "Cave Worm",
@@ -110,7 +110,7 @@ TIER_IDS = {
     1: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31],
     2: [32, 33, 34, 35, 36, 37, 38, 39, 40, 51],
     3: [52, 53, 54, 55, 56, 57, 58, 59, 60, 71, 73, 80, 85],
-    4: [72, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 86, 91, 100],
+    4: [72, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87, 91, 100],
     5: [92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 111],
     6: [112, 113, 114, 115, 116, 117, 118, 131, 136],
     7: [132, 133, 134, 135, 137],

@@ -220,6 +220,7 @@ func _on_creation_cancelled() -> void:
 func _start_new_game(character_data: Dictionary = {}) -> void:
 	current_state = GameState.PLAYING
 	GameManager.start_new_game()
+	DataManager.reset_spawned_uniques()
 
 	# Generate first level
 	_generate_level(1)
@@ -282,6 +283,20 @@ func _generate_level(depth: int) -> void:
 	# Try to spawn Thrain on appropriate depths
 	if quest_system:
 		generator.spawn_thrain_if_appropriate(depth, quest_system)
+
+	# Final safety: clear any entities that ended up near stairs_up (including Thrain escorts)
+	var stairs_up: Vector2i = current_level.find_stairs_up()
+	if stairs_up != Vector2i(-1, -1):
+		var to_remove: Array = []
+		for entity in current_level.entities:
+			if not is_instance_valid(entity) or not entity is Monster:
+				continue
+			var dist: int = maxi(absi(entity.grid_position.x - stairs_up.x), absi(entity.grid_position.y - stairs_up.y))
+			if dist < 7:
+				to_remove.append(entity)
+		for monster in to_remove:
+			current_level.remove_entity(monster)
+			monster.queue_free()
 
 	# Store reference
 	GameManager.current_level = current_level
@@ -568,6 +583,10 @@ func _ascend() -> void:
 
 	_generate_level(GameManager.current_depth)
 
+	# Ascent escalation: set flag when player has quest items and is going up
+	if quest_system and quest_system.has_quest_items():
+		current_level.is_ascent = true
+
 	var start_pos := current_level.find_stairs_down()
 	if start_pos == Vector2i(-1, -1):
 		start_pos = current_level.find_random_floor()
@@ -606,10 +625,7 @@ func _update_camera_zoom() -> void:
 		camera.zoom = Vector2.ONE * GameManager.get_current_zoom()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if current_state != GameState.PLAYING:
-		return
-
-	# Wizard mode toggle (Ctrl+W)
+	# Wizard mode toggle (Ctrl+W) — works in any game state
 	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and event.keycode == KEY_W:
 		wizard_mode = not wizard_mode
 		var state_str: String = "ENABLED" if wizard_mode else "DISABLED"
@@ -617,14 +633,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Wizard mode commands (Ctrl+D/H/K/R)
+	# Wizard mode commands (Ctrl+D/H/K/R/J) — works in any game state
 	if wizard_mode and event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed:
-		match event.keycode:
+		# macOS Ctrl+H sends backspace — check both keycode and physical_keycode
+		var key: Key = event.keycode
+		if key == KEY_BACKSPACE and event.physical_keycode == KEY_H:
+			key = KEY_H
+		match key:
 			KEY_D:  # Descend
 				_wizard_descend()
 				get_viewport().set_input_as_handled()
 				return
-			KEY_H:  # Full heal
+			KEY_H:  # Full heal / resurrect
 				_wizard_heal()
 				get_viewport().set_input_as_handled()
 				return
@@ -632,7 +652,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_wizard_kill_all()
 				get_viewport().set_input_as_handled()
 				return
-			KEY_R:  # Reveal map
+			KEY_R:  # Reveal map + all monsters
 				_wizard_reveal()
 				get_viewport().set_input_as_handled()
 				return
@@ -640,6 +660,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_wizard_xp()
 				get_viewport().set_input_as_handled()
 				return
+
+	if current_state != GameState.PLAYING:
+		return
 
 	# Horn directional prompt intercept (must come before UI/movement checks)
 	if ConsumableSystem.has_pending_horn():
@@ -1679,10 +1702,18 @@ func _wizard_descend() -> void:
 	_descend()
 
 func _wizard_heal() -> void:
-	if not player or not player.is_alive:
+	if not player:
 		return
+	# Resurrect if dead
+	if not player.is_alive:
+		player.is_alive = true
+		current_state = GameState.PLAYING
+		GameManager.log_message("[WIZARD] Resurrected!", Color.YELLOW)
 	player.hp = player.max_hp
 	player.voice = player.max_voice
+	# Clear all negative status effects
+	if player.status_fx:
+		player.status_fx.effects.clear()
 	GameManager.log_message("[WIZARD] Fully healed. HP: %d/%d, Voice: %d/%d" % [player.hp, player.max_hp, player.voice, player.max_voice], Color.YELLOW)
 	hud.update_player_stats(player)
 
@@ -1708,8 +1739,14 @@ func _wizard_xp() -> void:
 func _wizard_reveal() -> void:
 	if not current_level:
 		return
+	# Mark all tiles as explored AND visible so monsters/items are shown everywhere
 	for y in range(current_level.height):
 		for x in range(current_level.width):
-			current_level.set_explored(Vector2i(x, y), true)
-	current_level.update_visibility(player.grid_position)
-	GameManager.log_message("[WIZARD] Map revealed.", Color.YELLOW)
+			var pos := Vector2i(x, y)
+			current_level.set_explored(pos, true)
+			current_level.set_tile_visible(pos, true)
+	# Update entity visibility (monsters + items) based on new tile_visibility
+	current_level.update_entity_visibility()
+	# Redraw tilemap with all tiles lit
+	current_level.apply_fov_to_tilemap()
+	GameManager.log_message("[WIZARD] Map and all monsters revealed.", Color.YELLOW)

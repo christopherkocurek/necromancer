@@ -53,6 +53,9 @@ var domination_turns: int = 0  # Remaining turns of domination
 # Song noise perception bonus (applied by ability_system.gd each turn)
 var song_noise_perception_bonus: int = 0
 
+# Encounter type (spawn system classification)
+var encounter_type: int = Constants.EncounterType.WANDERER
+
 # Werewolf shapeshifting
 var werewolf_form: String = "human"  # "human" or "wolf"
 var _shift_cooldown: int = 0  # Turns until can shift again

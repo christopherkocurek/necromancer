@@ -237,6 +237,9 @@ func _end_round() -> void:
 		# Decay floor-wide alertness
 		current_level.tick_floor_alertness()
 
+		# Periodic spawning (Brogue clock)
+		_tick_periodic_spawn()
+
 	current_state = TurnState.PROCESSING
 
 func _wait_for_animation() -> void:
@@ -304,3 +307,74 @@ func _on_entity_died(entity: Entity, _killer: Entity) -> void:
 
 func _handle_player_death() -> void:
 	GameManager.game_over(false, "You have perished in the depths.")
+
+# ============================================================================
+# PERIODIC SPAWNING (Brogue clock)
+# ============================================================================
+
+func _tick_periodic_spawn() -> void:
+	if not current_level or not player or not player.is_alive:
+		return
+
+	# Determine interval — ascent doubles spawn rate
+	var interval: int = Constants.PERIODIC_SPAWN_INTERVAL
+	if current_level.is_ascent:
+		interval = interval / 2
+
+	if current_round % interval != 0:
+		return
+
+	# Population cap check
+	var monster_count: int = current_level.get_monsters().size()
+	if monster_count >= Constants.PERIODIC_SPAWN_MAX_MONSTERS:
+		return
+
+	# Find a spawn position outside player FOV, min distance away
+	var spawn_pos: Vector2i = _find_periodic_spawn_pos()
+	if spawn_pos == Vector2i(-1, -1):
+		return
+
+	# Select monster with OOD
+	var depth: int = GameManager.current_depth
+	if current_level.is_ascent:
+		depth = mini(depth + 5, 20)
+	var effective_depth: int = DataManager.get_effective_monster_depth(depth)
+
+	# 70% themed, 30% random — no uniques
+	var monster_data: DataManager.MonsterData = null
+	if randf() < 0.70:
+		monster_data = DataManager.get_themed_monster_for_depth(effective_depth)
+	else:
+		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
+
+	if not monster_data or monster_data.has_flag("UNIQUE"):
+		return
+
+	var monster_scene := preload("res://scenes/entities/monster.tscn")
+	var monster: Monster = monster_scene.instantiate()
+	monster.grid_position = spawn_pos
+	monster.initialize_from_data(monster_data)
+	monster.alertness = Constants.ALERTNESS_ALERT
+	monster.is_sleeping = false
+	monster.encounter_type = Constants.EncounterType.HUNTER
+	current_level.add_entity(monster)
+
+## Find a valid periodic spawn position: passable, not in FOV, min distance from player.
+func _find_periodic_spawn_pos() -> Vector2i:
+	if not current_level or not player:
+		return Vector2i(-1, -1)
+	var player_pos: Vector2i = player.grid_position
+	for _attempt in range(50):
+		var pos: Vector2i = current_level.find_random_floor()
+		if pos == Vector2i(-1, -1):
+			continue
+		# Check distance
+		var dist: int = maxi(absi(pos.x - player_pos.x), absi(pos.y - player_pos.y))
+		if dist < Constants.PERIODIC_SPAWN_MIN_PLAYER_DIST:
+			continue
+		# Check not in FOV
+		var idx: int = pos.y * current_level.width + pos.x
+		if idx >= 0 and idx < current_level.tile_in_fov.size() and current_level.tile_in_fov[idx]:
+			continue
+		return pos
+	return Vector2i(-1, -1)

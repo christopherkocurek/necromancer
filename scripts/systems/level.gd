@@ -9,6 +9,7 @@ signal generation_complete(width: int, height: int)
 @export var height: int = 40
 @export var depth: int = 1
 var layer_name: String = ""  # Current dungeon layer (e.g. "outer_pits", "dark_halls")
+var is_ascent: bool = false  # True when player is ascending with quest items (escalated spawning)
 
 # Tile data
 var terrain: Array[int] = []  # Flat array, index = y * width + x
@@ -353,6 +354,8 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 	if not is_instance_valid(entity):
 		return
 
+	# Only show messages if player can see the entity
+	var show_msg: bool = (entity == GameManager.player or is_tile_visible(entity.grid_position))
 	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 	var verb: String = "trigger" if entity == GameManager.player else "triggers"
 
@@ -360,7 +363,8 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 		TrapType.BASIC:
 			var dmg: int = randi_range(1, 4) + depth / 3
 			entity.take_damage(dmg, "physical", null)
-			GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+			if show_msg:
+				GameManager.log_message("%s %s a trap! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
@@ -368,7 +372,8 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 			var dmg: int = randi_range(2, 8)  # 2d4
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("stunned", 1)
-			GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], ThemeColors.MSG_ERROR)
+			if show_msg:
+				GameManager.log_message("%s %s into a pit! (%d damage)" % [entity_name, "fall" if entity == GameManager.player else "falls", dmg], ThemeColors.MSG_ERROR)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
@@ -376,19 +381,22 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 			var dmg: int = randi_range(1, 6)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("poisoned", 5 + randi_range(1, 5))
-			GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+			if show_msg:
+				GameManager.log_message("%s %s a dart trap! (%d damage, poisoned)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.GAS:
 			entity.apply_status("confused", 3 + randi_range(0, 2))
-			GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), ThemeColors.STATUS_CONFUSED)
+			if show_msg:
+				GameManager.log_message("A cloud of gas engulfs %s!" % entity_name.to_lower(), ThemeColors.STATUS_CONFUSED)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.ALARM:
 			add_floor_noise(15)
-			GameManager.log_message("An alarm sounds! The dungeon stirs...", ThemeColors.COMBAT_CRIT)
+			if show_msg:
+				GameManager.log_message("An alarm sounds! The dungeon stirs...", ThemeColors.COMBAT_CRIT)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
@@ -396,13 +404,15 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 			var new_pos: Vector2i = find_random_floor()
 			if new_pos != Vector2i(-1, -1) and entity.has_method("teleport_to"):
 				entity.teleport_to(new_pos)
-				GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_INFO)
+				if show_msg:
+					GameManager.log_message("%s %s teleported!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_INFO)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.FLASH:
 			entity.apply_status("blind", 3 + randi_range(0, 2))
-			GameManager.log_message("A blinding flash of light!", ThemeColors.MSG_WARNING)
+			if show_msg:
+				GameManager.log_message("A blinding flash of light!", ThemeColors.MSG_WARNING)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
@@ -410,13 +420,15 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 			var dmg: int = randi_range(1, 4)
 			entity.take_damage(dmg, "physical", null)
 			entity.apply_status("slow", 3)
-			GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], ThemeColors.MSG_ERROR)
+			if show_msg:
+				GameManager.log_message("%s %s caltrops! (%d damage, slowed)" % [entity_name, "step on" if entity == GameManager.player else "steps on", dmg], ThemeColors.MSG_ERROR)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_FALL)
 
 		TrapType.WEB:
 			entity.apply_status("slow", 5)
-			GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_WARNING)
+			if show_msg:
+				GameManager.log_message("%s %s caught in a web!" % [entity_name, "are" if entity == GameManager.player else "is"], ThemeColors.MSG_WARNING)
 			if entity.has_method("add_noise"):
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
@@ -425,9 +437,10 @@ func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 		return false
 	var dmg: int = randi_range(2, 8) + depth / 2  # 2d4 + depth/2
 	entity.take_damage(dmg, "fire", null)
-	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-	var verb: String = "burn" if entity == GameManager.player else "burns"
-	GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], ThemeColors.COMBAT_CRIT)
+	if entity == GameManager.player or is_tile_visible(entity.grid_position):
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		var verb: String = "burn" if entity == GameManager.player else "burns"
+		GameManager.log_message("%s %s in the lava! (%d fire damage)" % [entity_name, verb, dmg], ThemeColors.COMBAT_CRIT)
 	return true
 
 func _poison_stream_damage(entity: Entity, _pos: Vector2i) -> bool:
@@ -436,9 +449,10 @@ func _poison_stream_damage(entity: Entity, _pos: Vector2i) -> bool:
 	var dmg: int = randi_range(1, 4)  # 1d4 poison damage
 	entity.take_damage(dmg, "poison", null)
 	entity.apply_status("poisoned", 3)
-	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-	var verb: String = "wade" if entity == GameManager.player else "wades"
-	GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	if entity == GameManager.player or is_tile_visible(entity.grid_position):
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		var verb: String = "wade" if entity == GameManager.player else "wades"
+		GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 	return true
 
 func _web_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -474,9 +488,10 @@ func _morgul_rune_effect(entity: Entity, _pos: Vector2i) -> bool:
 		return false
 	var dmg: int = randi_range(1, 4)  # 1d4 dark damage
 	entity.take_damage(dmg, "dark", null)
-	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-	var verb: String = "step" if entity == GameManager.player else "steps"
-	GameManager.log_message("%s %s on a Morgul rune! (%d dark damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	if entity == GameManager.player or is_tile_visible(entity.grid_position):
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		var verb: String = "step" if entity == GameManager.player else "steps"
+		GameManager.log_message("%s %s on a Morgul rune! (%d dark damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 	return true
 
 func _glyph_of_warding_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -1006,6 +1021,50 @@ func find_random_floor() -> Vector2i:
 		if get_tile(pos) == Tile.FLOOR and get_entity_at(pos) == null:
 			return pos
 		attempts -= 1
+	return Vector2i(-1, -1)
+
+# ============================================================================
+# SPATIAL HELPERS (Spawn System)
+# ============================================================================
+
+## Find a random passable floor tile inside a room rectangle (excludes stairs).
+func find_random_floor_in_room(room: Rect2i, max_attempts: int = 50) -> Vector2i:
+	for _i in range(max_attempts):
+		var x: int = _floor_rng.randi_range(room.position.x, room.position.x + room.size.x - 1)
+		var y: int = _floor_rng.randi_range(room.position.y, room.position.y + room.size.y - 1)
+		var pos := Vector2i(x, y)
+		if not is_in_bounds(pos):
+			continue
+		var tile: int = get_tile(pos)
+		if tile == Tile.STAIRS_UP or tile == Tile.STAIRS_DOWN:
+			continue
+		if is_passable(pos) and get_entity_at(pos) == null:
+			return pos
+	return Vector2i(-1, -1)
+
+## Count all passable (walkable) tiles on the level.
+func count_passable_tiles() -> int:
+	var count: int = 0
+	for i in range(width * height):
+		var tile: int = terrain[i]
+		match tile:
+			Tile.FLOOR, Tile.DOOR_OPEN, Tile.STAIRS_DOWN, Tile.STAIRS_UP, Tile.TRAP, Tile.TRAP_TRIGGERED, Tile.WATER, Tile.LAVA, Tile.FORGE, Tile.FORGE_ENCHANTED, Tile.FORGE_UNIQUE, Tile.VINE_FLOOR, Tile.POISON_STREAM, Tile.WEB, Tile.DARK_POOL, Tile.MORGUL_RUNE, Tile.GLYPH_OF_WARDING, Tile.BONE_PILE, Tile.SHADOW_FLOOR, Tile.THRONE_DAIS, Tile.INSCRIPTION:
+				count += 1
+	return count
+
+## Find a random passable floor tile in a corridor (room_id == -1, excludes stairs).
+func find_random_corridor_floor(max_attempts: int = 100) -> Vector2i:
+	for _i in range(max_attempts):
+		var pos := Vector2i(_floor_rng.randi_range(1, width - 2), _floor_rng.randi_range(1, height - 2))
+		if not is_in_bounds(pos):
+			continue
+		var tile: int = get_tile(pos)
+		if tile == Tile.STAIRS_UP or tile == Tile.STAIRS_DOWN:
+			continue
+		if is_passable(pos) and get_entity_at(pos) == null:
+			var idx: int = pos.y * width + pos.x
+			if idx < room_id.size() and room_id[idx] == -1:
+				return pos
 	return Vector2i(-1, -1)
 
 # ============================================================================

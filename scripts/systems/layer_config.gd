@@ -137,8 +137,8 @@ const LAYERS = {
 		"depths": [19, 20],
 		"tint": Color(0.5, 0.45, 0.3, 1.0),  # Dark + Bright Gold
 		"tint_strength": 0.4,
-		"fov_radius": 5,
-		"darkness_modifier": -3,
+		"fov_radius": 8,
+		"darkness_modifier": 0,
 		"room_count_min": 2,
 		"room_count_max": 5,
 		"room_size_min": 10,
@@ -344,6 +344,12 @@ static func get_tint_color(depth: int) -> Color:
 static func get_tint_strength(depth: int) -> float:
 	var layer := get_layer_for_depth(depth)
 	return layer.get("tint_strength", 0.0)
+
+## Check if this depth is a layer boundary (different layer than depth-1).
+static func is_layer_boundary(depth: int) -> bool:
+	if depth <= 1:
+		return false
+	return get_layer_name(depth) != get_layer_name(depth - 1)
 
 ## Get the entry message for a specific depth (only at layer boundaries)
 static func get_entry_message(depth: int, previous_depth: int) -> String:

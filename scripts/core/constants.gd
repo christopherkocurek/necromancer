@@ -617,6 +617,60 @@ const EFFECT_FAIRY_MIST: StringName = &"fairy_mist"
 const HORN_DIRECTIONAL_SVALS: Array[int] = [0, 1, 2, 3]
 
 # ============================================================================
+# VAULT DEPTH BONUSES
+# ============================================================================
+
+const VAULT_DEPTH_BONUS_LESSER: int = 1
+const VAULT_DEPTH_BONUS_GREATER: int = 3
+const VAULT_DEPTH_BONUS_INTERESTING: int = 2
+
+# ============================================================================
+# LOCATION-BASED ALERTNESS MODIFIERS
+# ============================================================================
+
+const ALERTNESS_CORRIDOR_BONUS: int = 5
+const ALERTNESS_BACK_ROOM_PENALTY: int = -5
+const ALERTNESS_NEAR_STAIRS_BONUS: int = 8
+const ALERTNESS_STAIRS_RADIUS: int = 3
+
+# ============================================================================
+# PERIODIC SPAWNING
+# ============================================================================
+
+const PERIODIC_SPAWN_INTERVAL: int = 150
+const PERIODIC_SPAWN_MAX_MONSTERS: int = 40
+const PERIODIC_SPAWN_MIN_PLAYER_DIST: int = 8
+
+# ============================================================================
+# ENCOUNTER TYPES
+# ============================================================================
+
+enum EncounterType {
+	WANDERER = 0,
+	PATROL = 1,
+	NEST = 2,
+	AMBUSH = 3,
+	GUARDIAN = 4,
+	WARDEN = 5,
+	HUNTER = 6,
+}
+
+# ============================================================================
+# ASCENT ESCALATION
+# ============================================================================
+
+const ASCENT_MONSTER_DEPTH_BONUS: int = 5
+const ASCENT_SPAWN_MULTIPLIER: float = 2.0
+
+# ============================================================================
+# UNIQUE LAIR
+# ============================================================================
+
+const UNIQUE_LAIR_CHANCE: float = 0.15
+const UNIQUE_LAIR_MIN_DEPTH: int = 6
+const UNIQUE_LAIR_MIN_ROOM_SIZE: int = 6
+
+# ============================================================================
 # ITEM STACKING
 # ============================================================================
 

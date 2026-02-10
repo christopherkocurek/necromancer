@@ -1085,19 +1085,23 @@ func get_house(name: String) -> HouseData:
 func get_terrain_by_char(ch: String) -> TerrainData:
 	return terrain.get(ch)
 
-func get_random_monster_for_depth(depth: int) -> MonsterData:
+func get_random_monster_for_depth(depth: int, exclude_uniques: bool = false) -> MonsterData:
 	var valid_monsters: Array[MonsterData] = []
 	for m in monsters.values():
 		if m.depth <= depth and m.depth >= depth - 3:
+			if exclude_uniques and m.has_flag("UNIQUE"):
+				continue
 			valid_monsters.append(m)
 	if valid_monsters.is_empty():
 		# Fallback: any monster at or below depth
 		for m in monsters.values():
 			if m.depth <= depth:
+				if exclude_uniques and m.has_flag("UNIQUE"):
+					continue
 				valid_monsters.append(m)
 	if valid_monsters.is_empty():
 		return null
-	return valid_monsters.pick_random()
+	return _weighted_pick_monster(valid_monsters)
 
 func get_random_item_for_depth(depth: int) -> ItemData:
 	var valid_items: Array[ItemData] = []
@@ -1431,22 +1435,77 @@ func _pick_elite_for_depth(depth: int) -> MonsterData:
 	# Elite: any monster at depth+2 for extra challenge
 	return get_random_monster_for_depth(mini(depth + 2, 20))
 
-## Generic helper: pick a random monster matching a predicate at depth
-func _pick_monster_matching(depth: int, predicate: Callable) -> MonsterData:
+## Generic helper: pick a random monster matching a predicate at depth (rarity-weighted)
+func _pick_monster_matching(depth: int, predicate: Callable, exclude_uniques: bool = false) -> MonsterData:
 	var candidates: Array[MonsterData] = []
 	for m in monsters.values():
 		if m.depth <= depth and m.depth >= maxi(1, depth - 4):
+			if exclude_uniques and m.has_flag("UNIQUE"):
+				continue
 			if predicate.call(m):
 				candidates.append(m)
 	if candidates.is_empty():
 		# Broaden search
 		for m in monsters.values():
 			if m.depth <= depth:
+				if exclude_uniques and m.has_flag("UNIQUE"):
+					continue
 				if predicate.call(m):
 					candidates.append(m)
 	if candidates.is_empty():
-		return get_random_monster_for_depth(depth)
-	return candidates.pick_random()
+		return get_random_monster_for_depth(depth, exclude_uniques)
+	return _weighted_pick_monster(candidates)
+
+## Rarity-weighted random pick from a monster candidate list.
+## Lower rarity = more common. Weight = 1.0 / max(rarity, 1).
+func _weighted_pick_monster(candidates: Array[MonsterData]) -> MonsterData:
+	if candidates.is_empty():
+		return null
+	if candidates.size() == 1:
+		return candidates[0]
+	var weights: Array[float] = []
+	var total_weight: float = 0.0
+	for m in candidates:
+		var w: float = 1.0 / maxf(float(maxi(m.rarity, 1)), 1.0)
+		weights.append(w)
+		total_weight += w
+	if total_weight <= 0.0:
+		return candidates.pick_random()
+	var roll: float = randf() * total_weight
+	var cumulative: float = 0.0
+	for i in range(candidates.size()):
+		cumulative += weights[i]
+		if roll <= cumulative:
+			return candidates[i]
+	return candidates[candidates.size() - 1]
+
+# ============================================================================
+# OUT-OF-DEPTH SYSTEM
+# ============================================================================
+
+## Roll an effective depth for monster selection with OOD variance.
+## 12% chance of +1d3 depth, capped at +5 and max 20.
+## Called by spawn loop — vaults/escorts use base depth directly.
+func get_effective_monster_depth(base_depth: int) -> int:
+	if randf() < 0.12:
+		var bonus: int = randi_range(1, 3)
+		return mini(base_depth + mini(bonus, 5), 20)
+	return base_depth
+
+# ============================================================================
+# UNIQUE POPULATION CAPS
+# ============================================================================
+
+var _spawned_uniques: Dictionary = {}
+
+func reset_spawned_uniques() -> void:
+	_spawned_uniques.clear()
+
+func mark_unique_spawned(monster_name: String) -> void:
+	_spawned_uniques[monster_name] = true
+
+func is_unique_already_spawned(monster_name: String) -> bool:
+	return _spawned_uniques.has(monster_name)
 
 func get_monster_by_char(ch: String, depth: int) -> MonsterData:
 	# Full vault symbol alphabet for monster spawning
