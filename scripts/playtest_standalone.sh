@@ -21,8 +21,8 @@ fi
 MODE="standalone"
 DETACH=1
 KILL_EXISTING=1
-OPEN_APP=1
-COMPATIBILITY=0
+OPEN_APP=0
+COMPATIBILITY=1
 LOG_DIR="$PROJECT_DIR/.playtest_logs"
 mkdir -p "$LOG_DIR"
 PID_FILE="$LOG_DIR/standalone.pid"
@@ -35,7 +35,8 @@ Options:
   --editor            Launch editor for this project instead of game.
   --foreground        Keep process attached to current terminal.
   --no-kill           Do not stop previously launched playtest process.
-  --no-open           Do not bring Godot app to foreground.
+  --focus             Bring Godot app to foreground after launch.
+  --forward-plus      Use Forward+ renderer instead of compatibility.
   --compatibility     Use compatibility renderer (OpenGL 3) for stability.
   --help              Show this help.
 USAGE
@@ -55,12 +56,16 @@ while [[ $# -gt 0 ]]; do
       KILL_EXISTING=0
       shift
       ;;
-    --no-open)
-      OPEN_APP=0
+    --focus)
+      OPEN_APP=1
       shift
       ;;
     --compatibility)
       COMPATIBILITY=1
+      shift
+      ;;
+    --forward-plus)
+      COMPATIBILITY=0
       shift
       ;;
     --help|-h)
@@ -102,7 +107,7 @@ if [[ "$DETACH" -eq 1 ]]; then
   nohup "${CMD[@]}" >>"$LOG_FILE" 2>&1 &
   NEW_PID=$!
   echo "$NEW_PID" > "$PID_FILE"
-  if [[ "$OPEN_APP" -eq 1 ]]; then
+  if [[ "$OPEN_APP" -eq 1 && "$MODE" == "standalone" ]]; then
     open -a Godot >/dev/null 2>&1 || true
   fi
   echo "Launched $MODE (PID $NEW_PID)"

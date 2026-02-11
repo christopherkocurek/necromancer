@@ -29,6 +29,7 @@ var current_level: Level = null
 var player: Player = null
 var transition_overlay: ColorRect = null
 var _cleanup_done: bool = false
+var _starting_new_game: bool = false
 
 # Quest system (using Node type to avoid load order issues)
 var quest_system: Node = null
@@ -209,6 +210,7 @@ func _setup_ui_panels() -> void:
 
 func _show_character_creation() -> void:
 	current_state = GameState.CHARACTER_CREATION
+	_starting_new_game = false
 
 	character_creation = CHARACTER_CREATION_SCENE.instantiate()
 	character_creation.creation_complete.connect(_on_character_created)
@@ -219,13 +221,17 @@ func _show_character_creation() -> void:
 	hud.visible = false
 
 func _on_character_created(character_data: Dictionary) -> void:
+	if _starting_new_game or current_state == GameState.PLAYING:
+		return
+	_starting_new_game = true
+
 	# Remove character creation screen
 	if character_creation:
 		character_creation.queue_free()
 		character_creation = null
 
 	# Start the game with created character
-	_start_new_game(character_data)
+	call_deferred("_start_new_game", character_data)
 
 func _on_creation_cancelled() -> void:
 	# For now, just restart character creation
@@ -233,6 +239,10 @@ func _on_creation_cancelled() -> void:
 	pass
 
 func _start_new_game(character_data: Dictionary = {}) -> void:
+	if current_state == GameState.PLAYING and player and is_instance_valid(player):
+		_starting_new_game = false
+		return
+
 	current_state = GameState.PLAYING
 	GameManager.start_new_game()
 	DataManager.reset_spawned_uniques()
@@ -279,6 +289,8 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	var entry_msg := LayerConfig.get_entry_message(1, 0)
 	if not entry_msg.is_empty():
 		GameManager.log_message(entry_msg, ThemeColors.MSG_WARNING)
+
+	_starting_new_game = false
 
 func _generate_level(depth: int) -> void:
 	# Clean up old level

@@ -216,7 +216,8 @@ func _on_ability_used(entity: Node, _ability: Resource, targets: Array) -> void:
 ## Called from main.gd after ability_system is created.
 func connect_ability_system(ability_sys: Node) -> void:
 	if ability_sys.has_signal("ability_activated"):
-		ability_sys.ability_activated.connect(_on_ability_activated)
+		if not ability_sys.ability_activated.is_connected(_on_ability_activated):
+			ability_sys.ability_activated.connect(_on_ability_activated)
 
 func _on_ability_activated(ability_id: int, _ability_name: String) -> void:
 	var player: Node = GameManager.player

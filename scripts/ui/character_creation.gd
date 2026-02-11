@@ -23,6 +23,7 @@ var character_age: int = 0
 var character_history: String = ""
 var selected_difficulty: int = GameManager.Difficulty.NORMAL
 var _pending_race_selection: String = ""
+var _finishing_creation: bool = false
 
 # Skill shopping state (pre-creation investments)
 var skill_investments: Dictionary = {
@@ -1656,11 +1657,7 @@ func _show_confirmation() -> void:
 		"age": character_age,
 	}
 	var backstory: String = BackstoryGeneratorScript.generate(backstory_data)
-	# Merge backstory into history (parentage chain + backstory)
-	if not character_history.is_empty():
-		character_history = character_history + "\n\n" + backstory
-	else:
-		character_history = backstory
+	var full_history: String = _combine_history_and_backstory(backstory)
 
 	var gold := ThemeColors.PRIMARY.to_html(false)
 	var warm_gold: String = ThemeColors.GOLD_WARM.to_html(false)
@@ -1690,7 +1687,7 @@ func _show_confirmation() -> void:
 	backstory_label.scroll_active = false
 	backstory_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ThemeColors.apply_rich_body_font(backstory_label)
-	backstory_label.text = "[color=#%s]%s[/color]" % [warm_gold, character_history]
+	backstory_label.text = "[color=#%s]%s[/color]" % [warm_gold, full_history]
 	backstory_panel.add_child(backstory_label)
 
 	info_label.text = summary + "\n\n[color=#%s]Press 'Start Game' to begin your quest.[/color]" % gold
@@ -1746,9 +1743,27 @@ func _on_next_pressed() -> void:
 		_finish_creation()
 
 func _finish_creation() -> void:
+	if _finishing_creation:
+		return
+	_finishing_creation = true
+	next_button.disabled = true
+	back_button.disabled = true
+
 	# Apply difficulty setting to GameManager before game starts
 	if GameManager:
 		GameManager.set_difficulty(selected_difficulty)
+
+	# Generate backstory once at finish time; do not mutate character_history during confirm redraws.
+	var backstory_data: Dictionary = {
+		"race": selected_race,
+		"house": selected_house,
+		"gender": selected_gender,
+		"trait": selected_trait,
+		"base_stats": base_stats,
+		"age": character_age,
+	}
+	var backstory: String = BackstoryGeneratorScript.generate(backstory_data)
+	var final_history: String = _combine_history_and_backstory(backstory)
 
 	# Build non-zero skill investments for output
 	var nonzero_skills: Dictionary = {}
@@ -1764,13 +1779,21 @@ func _finish_creation() -> void:
 		"base_stats": base_stats.duplicate(),
 		"name": character_name,
 		"age": character_age,
-		"history": character_history,
+		"history": final_history,
 		"difficulty": selected_difficulty,
 		"skill_investments": nonzero_skills,
 		"ability_purchases": ability_purchases.duplicate(),
 		"xp_spent_precreation": _precreation_xp_spent,
 	}
 	creation_complete.emit(character_data)
+
+func _combine_history_and_backstory(backstory: String) -> String:
+	var trimmed_backstory: String = backstory.strip_edges()
+	if character_history.is_empty():
+		return trimmed_backstory
+	if trimmed_backstory.is_empty():
+		return character_history
+	return character_history + "\n\n" + trimmed_backstory
 
 # ============================================================================
 # UTILITY
