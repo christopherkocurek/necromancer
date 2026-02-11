@@ -95,7 +95,7 @@ const BASE_CONTENT_SIZE: Vector2i = Vector2i(1440, 810)
 func _ready() -> void:
 	# Scale all content uniformly when the game window is resized.
 	get_window().set_flag(Window.FLAG_RESIZE_DISABLED, false)
-	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	get_tree().root.content_scale_size = BASE_CONTENT_SIZE
 	_setup_ui_panels()

@@ -89,13 +89,17 @@ LOG_FILE="$LOG_DIR/${MODE}-${TIMESTAMP}.log"
 CMD=("$GODOT_BIN" "--path" "$PROJECT_DIR")
 if [[ "$MODE" == "editor" ]]; then
   CMD+=("-e")
+else
+  # Force direct game launch instead of project manager.
+  CMD+=("--scene" "res://scenes/main.tscn")
 fi
 if [[ "$COMPATIBILITY" -eq 1 ]]; then
   CMD+=("--rendering-driver" "opengl3")
 fi
+CMD+=("--log-file" "$LOG_FILE")
 
 if [[ "$DETACH" -eq 1 ]]; then
-  nohup "${CMD[@]}" >"$LOG_FILE" 2>&1 &
+  nohup "${CMD[@]}" >>"$LOG_FILE" 2>&1 &
   NEW_PID=$!
   echo "$NEW_PID" > "$PID_FILE"
   if [[ "$OPEN_APP" -eq 1 ]]; then

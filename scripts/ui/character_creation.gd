@@ -82,7 +82,7 @@ var _tileset_texture: Texture2D = null
 
 # Safety toggles for stability on some systems
 const USE_CREATION_TRANSITIONS: bool = false
-const USE_CREATION_PREVIEW: bool = false
+const USE_CREATION_PREVIEW: bool = true
 
 # Name list loaded from file (legacy fallback)
 var _name_list: PackedStringArray = []
@@ -141,8 +141,15 @@ func _load_names_file() -> void:
 func _load_tileset() -> void:
 	if not USE_CREATION_PREVIEW:
 		return
-	if FileAccess.file_exists("res://assets/sprites/necromancer_dcss_tileset.png"):
-		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
+	var candidate_paths: Array[String] = [
+		"res://assets/sprites/necromancer_dcss_tileset.png",
+		"res://assets/sprites/necromancer_dcss_tileset_pre_outer_pits_v2.png",
+	]
+	for path in candidate_paths:
+		if FileAccess.file_exists(path):
+			_tileset_texture = load(path)
+			if _tileset_texture:
+				return
 
 func _load_history_data() -> void:
 	## Parse history.txt into chain lookup tables for parentage generation.
@@ -1482,6 +1489,12 @@ func _update_character_preview() -> void:
 		house_id = house_data.index
 	var gender: String = selected_gender if not selected_gender.is_empty() else "male"
 	var coords: Vector2i = TileMapper.get_player_coords_v2(selected_race, house_id, gender)
+	if coords.x < 0 or coords.y < 0:
+		return
+	var tex_size: Vector2i = _tileset_texture.get_size()
+	var tile_px: int = 64
+	if (coords.x + 1) * tile_px > tex_size.x or (coords.y + 1) * tile_px > tex_size.y:
+		coords = Vector2i(0, 6)  # Safe fallback tile
 
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _tileset_texture
