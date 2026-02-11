@@ -65,6 +65,10 @@ func _determine_next_actor() -> void:
 		var priority_monsters := _get_monsters_above_energy(player.energy + 1)
 
 		if priority_monsters.is_empty():
+			# Start-of-turn action flags must be reset before input so
+			# "stand still this turn" abilities are usable immediately.
+			player.moved_this_turn = false
+			player.attacked_this_turn = false
 			current_state = TurnState.PLAYER_INPUT
 			EventBus.player_turn_started.emit()
 		else:
