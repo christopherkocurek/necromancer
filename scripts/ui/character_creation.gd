@@ -239,9 +239,44 @@ func _setup_ui() -> void:
 	if is_instance_valid(ThemeColors):
 		ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
 		ThemeColors.apply_rich_body_font(info_label)
-		ThemeColors.apply_button_theme(back_button)
-		ThemeColors.apply_button_theme(next_button)
+		_apply_creation_button_theme(back_button)
+		_apply_creation_button_theme(next_button)
 	info_label.visible = true
+
+func _apply_creation_button_theme(button: Button) -> void:
+	if not is_instance_valid(ThemeColors):
+		return
+
+	# Safer than textured themes during high-churn UI rebuilds in character creation.
+	var body_font: Font = ThemeColors.get_font("body")
+	if body_font:
+		button.add_theme_font_override("font", body_font)
+	button.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_BODY)
+	button.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+	button.add_theme_color_override("font_hover_color", ThemeColors.GOLD_WARM)
+	button.add_theme_color_override("font_pressed_color", ThemeColors.GOLD_BRIGHT)
+
+	var normal_style := ThemeColors.create_panel_stylebox(
+		Color(ThemeColors.IRON_LIGHT, 0.95),
+		ThemeColors.IRON_HIGHLIGHT,
+		1,
+		4
+	)
+	var hover_style := ThemeColors.create_panel_stylebox(
+		Color(ThemeColors.IRON_LIGHT, 1.0).lightened(0.08),
+		ThemeColors.GOLD_DIM,
+		1,
+		4
+	)
+	var pressed_style := ThemeColors.create_panel_stylebox(
+		ThemeColors.IRON_SHADOW,
+		ThemeColors.GOLD_WARM,
+		1,
+		4
+	)
+	button.add_theme_stylebox_override("normal", normal_style)
+	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("pressed", pressed_style)
 
 func _show_stage(stage: Stage, direction: int = 0) -> void:
 	if _transitioning:
@@ -339,7 +374,7 @@ func _show_race_selection() -> void:
 			btn.button_pressed = true
 
 		if is_instance_valid(ThemeColors):
-			ThemeColors.apply_button_theme(btn)
+			_apply_creation_button_theme(btn)
 		content_container.add_child(btn)
 
 	_update_race_info()
@@ -414,7 +449,7 @@ func _show_house_selection() -> void:
 		if selected_house == house_name:
 			btn.button_pressed = true
 
-		ThemeColors.apply_button_theme(btn)
+		_apply_creation_button_theme(btn)
 		content_container.add_child(btn)
 
 	_update_house_info()
@@ -477,7 +512,7 @@ func _show_gender_selection() -> void:
 		if selected_gender == gender.to_lower():
 			btn.button_pressed = true
 
-		ThemeColors.apply_button_theme(btn)
+		_apply_creation_button_theme(btn)
 		content_container.add_child(btn)
 
 	# Note about portraits
@@ -592,7 +627,7 @@ func _show_trait_selection() -> void:
 			btn.pressed.connect(_on_trait_selected.bind(trait_name))
 			if selected_trait == trait_name:
 				btn.button_pressed = true
-			ThemeColors.apply_button_theme(btn)
+			_apply_creation_button_theme(btn)
 			col.add_child(btn)
 
 	_update_trait_info()
@@ -650,7 +685,7 @@ func _show_stat_allocation() -> void:
 		minus_btn.text = "-"
 		minus_btn.custom_minimum_size = Vector2(45, 45)
 		minus_btn.pressed.connect(_on_stat_decrease.bind(stat_name))
-		ThemeColors.apply_button_theme(minus_btn)
+		_apply_creation_button_theme(minus_btn)
 		row.add_child(minus_btn)
 		stat_buttons[stat_name + "_minus"] = minus_btn
 
@@ -665,7 +700,7 @@ func _show_stat_allocation() -> void:
 		plus_btn.text = "+"
 		plus_btn.custom_minimum_size = Vector2(45, 45)
 		plus_btn.pressed.connect(_on_stat_increase.bind(stat_name))
-		ThemeColors.apply_button_theme(plus_btn)
+		_apply_creation_button_theme(plus_btn)
 		row.add_child(plus_btn)
 		stat_buttons[stat_name + "_plus"] = plus_btn
 
@@ -923,7 +958,7 @@ func _show_skills_stage() -> void:
 		minus_btn.custom_minimum_size = Vector2(40, 40)
 		minus_btn.disabled = skill_investments[skill_name] <= 0
 		minus_btn.pressed.connect(_on_skill_decrement.bind(i))
-		ThemeColors.apply_button_theme(minus_btn)
+		_apply_creation_button_theme(minus_btn)
 		row.add_child(minus_btn)
 		stat_buttons["skill_%s_minus" % skill_name] = minus_btn
 
@@ -942,7 +977,7 @@ func _show_skills_stage() -> void:
 		plus_btn.text = "+"
 		plus_btn.custom_minimum_size = Vector2(40, 40)
 		plus_btn.pressed.connect(_on_skill_increment.bind(i))
-		ThemeColors.apply_button_theme(plus_btn)
+		_apply_creation_button_theme(plus_btn)
 		row.add_child(plus_btn)
 		stat_buttons["skill_%s_plus" % skill_name] = plus_btn
 
@@ -961,7 +996,7 @@ func _show_skills_stage() -> void:
 		expand_btn.text = "Abilities..."
 		expand_btn.custom_minimum_size = Vector2(100, 40)
 		expand_btn.pressed.connect(_on_skill_expand_toggle.bind(i))
-		ThemeColors.apply_button_theme(expand_btn)
+		_apply_creation_button_theme(expand_btn)
 		row.add_child(expand_btn)
 
 		skills_vbox.add_child(row)
@@ -1130,7 +1165,7 @@ func _populate_ability_list(skill_idx: int, container: VBoxContainer) -> void:
 			learn_btn.custom_minimum_size = Vector2(130, 30)
 			learn_btn.disabled = not can_afford
 			learn_btn.pressed.connect(_on_ability_learn.bind(skill_idx, ability, xp_cost))
-			ThemeColors.apply_button_theme(learn_btn)
+			_apply_creation_button_theme(learn_btn)
 			ab_row.add_child(learn_btn)
 
 		# Description tooltip (small text after the row)
@@ -1268,7 +1303,7 @@ func _show_name_entry() -> void:
 	var random_btn := Button.new()
 	random_btn.text = "Random Name"
 	random_btn.pressed.connect(_on_random_name)
-	ThemeColors.apply_button_theme(random_btn)
+	_apply_creation_button_theme(random_btn)
 	name_row.add_child(random_btn)
 	content_container.add_child(name_row)
 
@@ -1289,7 +1324,7 @@ func _show_name_entry() -> void:
 	var reroll_btn := Button.new()
 	reroll_btn.text = "(r)eroll"
 	reroll_btn.pressed.connect(_on_reroll_age)
-	ThemeColors.apply_button_theme(reroll_btn)
+	_apply_creation_button_theme(reroll_btn)
 	age_row.add_child(reroll_btn)
 
 	content_container.add_child(age_row)
