@@ -41,12 +41,16 @@ var _listen_revealed: Array = []
 var _defensive_stance_active: bool = false
 var _defensive_stance_duration: int = 0
 var _defensive_stance_cooldown: int = 0
+const DEFENSIVE_STANCE_DURATION_TURNS: int = 3
 
 # Parry toggle state
 var _parry_ready: bool = false
 var _parry_ready_window: int = 0
 var _parry_active_turns: int = 0
 var _parry_cooldown: int = 0
+const PARRY_READY_WINDOW_TURNS: int = 1
+const PARRY_ACTIVE_TURNS: int = 1
+const PARRY_COOLDOWN_TURNS: int = 5
 
 # Patient Stalker: ambush buildup
 var _stalker_turns: int = 0
@@ -660,11 +664,14 @@ func activate_defensive_stance() -> bool:
 	if _defensive_stance_cooldown > 0:
 		GameManager.log_message("Defensive Stance is on cooldown (%d turns)." % _defensive_stance_cooldown, ThemeColors.MSG_SYSTEM)
 		return false
+	if moved_last_turn:
+		GameManager.log_message("You must hold position for a turn before bracing.", ThemeColors.MSG_SYSTEM)
+		return false
 	if moved_this_turn or attacked_this_turn:
-		GameManager.log_message("You must stand still to brace for impact.", ThemeColors.MSG_SYSTEM)
+		GameManager.log_message("You must stand still this turn to brace for impact.", ThemeColors.MSG_SYSTEM)
 		return false
 	_defensive_stance_active = true
-	_defensive_stance_duration = 2
+	_defensive_stance_duration = DEFENSIVE_STANCE_DURATION_TURNS
 	_defensive_stance_cooldown = 5
 	vfx_floater("Defend", ThemeColors.SECONDARY, 14)
 	GameManager.log_message("You brace for impact.", ThemeColors.MSG_SYSTEM)
@@ -685,11 +692,9 @@ func ready_parry() -> bool:
 	if _parry_cooldown > 0:
 		GameManager.log_message("Parry is on cooldown (%d turns)." % _parry_cooldown, ThemeColors.MSG_SYSTEM)
 		return false
-	if moved_this_turn or attacked_this_turn:
-		GameManager.log_message("You must stand still to ready a parry.", ThemeColors.MSG_SYSTEM)
-		return false
 	_parry_ready = true
-	_parry_ready_window = 2
+	_parry_ready_window = PARRY_READY_WINDOW_TURNS
+	_parry_cooldown = PARRY_COOLDOWN_TURNS
 	vfx_floater("Parry Ready", ThemeColors.ABILITY_LEARNED, 14)
 	GameManager.log_message("You ready a parry stance.", ThemeColors.MSG_SYSTEM)
 	return true
@@ -697,8 +702,8 @@ func ready_parry() -> bool:
 func _resolve_parry_hit(damage: int) -> int:
 	_parry_ready = false
 	_parry_ready_window = 0
-	_parry_active_turns = 2
-	_parry_cooldown = 6
+	_parry_active_turns = PARRY_ACTIVE_TURNS
+	_parry_cooldown = maxi(_parry_cooldown, PARRY_COOLDOWN_TURNS)
 	vfx_floater("Parry!", ThemeColors.GOLD_BRIGHT, 16)
 	GameManager.log_message("You parry the blow!", ThemeColors.MSG_PRIMARY)
 	return maxi(1, int(damage / 2))
@@ -713,48 +718,29 @@ func get_parry_active_bonus() -> int:
 func get_combat_stance_indicators() -> Array[Dictionary]:
 	var indicators: Array[Dictionary] = []
 
-	if _parry_ready and _parry_ready_window > 0:
+	# PARRY card: show if any parry lifecycle state is currently relevant.
+	var parry_active_turns: int = _parry_active_turns
+	if parry_active_turns <= 0 and _parry_ready and _parry_ready_window > 0:
+		parry_active_turns = _parry_ready_window
+	if parry_active_turns > 0 or _parry_cooldown > 0:
 		indicators.append({
-			"id": "parry_ready",
-			"title": "Parry Ready",
-			"state": "ready",
-			"turns": _parry_ready_window,
-			"detail": "Next hit: -50% dmg"
+			"id": "parry",
+			"title": "PARRY",
+			"icon": "parry",
+			"bonus_text": "+%d Evasion" % get_parry_active_bonus(),
+			"active_turns": parry_active_turns,
+			"cooldown_turns": _parry_cooldown,
 		})
 
-	if _parry_active_turns > 0:
-		var parry_bonus: int = get_parry_active_bonus()
+	# DEFEND card: show if active or cooling down.
+	if (_defensive_stance_active and _defensive_stance_duration > 0) or _defensive_stance_cooldown > 0:
 		indicators.append({
-			"id": "parry_active",
-			"title": "Parry",
-			"state": "active",
-			"turns": _parry_active_turns,
-			"detail": "+%d EVN" % parry_bonus
-		})
-	elif _parry_cooldown > 0:
-		indicators.append({
-			"id": "parry_cd",
-			"title": "Parry CD",
-			"state": "cooldown",
-			"turns": _parry_cooldown,
-			"detail": "Recharging"
-		})
-
-	if _defensive_stance_active and _defensive_stance_duration > 0:
-		indicators.append({
-			"id": "defend_active",
-			"title": "Defend",
-			"state": "active",
-			"turns": _defensive_stance_duration,
-			"detail": "+5 EVN"
-		})
-	elif _defensive_stance_cooldown > 0:
-		indicators.append({
-			"id": "defend_cd",
-			"title": "Defend CD",
-			"state": "cooldown",
-			"turns": _defensive_stance_cooldown,
-			"detail": "Recharging"
+			"id": "defend",
+			"title": "DEFEND",
+			"icon": "defend",
+			"bonus_text": "+5 Evasion",
+			"active_turns": _defensive_stance_duration if _defensive_stance_active else 0,
+			"cooldown_turns": _defensive_stance_cooldown,
 		})
 
 	return indicators
