@@ -22,6 +22,16 @@ var _pending_sprite_index: int = -1  # Store sprite index until ready
 static var _tileset_texture: Texture2D = null
 static var _magenta_shader: ShaderMaterial = null
 
+const DEFAULT_WORLD_ITEM_SCALE: float = 0.86
+const WORLD_ITEM_SCALE_BY_TVAL: Dictionary = {
+	# Ammo
+	16: 0.72, 17: 0.72,
+	# Jewelry/lights/lore objects
+	2: 0.68, 39: 0.70, 40: 0.62, 45: 0.62, 46: 0.62,
+	# Consumables and small interactables
+	55: 0.58, 56: 0.58, 66: 0.60, 75: 0.50, 77: 0.50, 80: 0.58
+}
+
 func _ready() -> void:
 	_setup_sprite()
 	_update_visual_position()
@@ -45,6 +55,7 @@ func _setup_sprite() -> void:
 	sprite.texture = _tileset_texture
 	sprite.region_enabled = true
 	sprite.material = _magenta_shader
+	_apply_world_item_scale()
 
 	# Apply pending sprite if set before ready
 	if _pending_sprite_index >= 0:
@@ -75,12 +86,38 @@ func _apply_sprite_region(sprite_index: int) -> void:
 func _update_visual_position() -> void:
 	position = Vector2(grid_position) * GameManager.TILE_SIZE
 
+func _apply_world_item_scale() -> void:
+	if not sprite:
+		return
+	var scale_factor: float = _resolve_world_item_scale()
+	sprite.scale = Vector2.ONE * scale_factor
+
+	# Keep smaller pickup icons sitting on the floor instead of floating in the tile center.
+	var tile_size: float = float(GameManager.TILE_SIZE)
+	var center: float = tile_size * 0.5
+	var bottom_lock_offset: float = tile_size * (1.0 - scale_factor) * 0.5
+	sprite.position = Vector2(center, center + bottom_lock_offset)
+
+func _resolve_world_item_scale() -> float:
+	var tval: int = _get_item_tval()
+	if WORLD_ITEM_SCALE_BY_TVAL.has(tval):
+		return WORLD_ITEM_SCALE_BY_TVAL[tval]
+	return DEFAULT_WORLD_ITEM_SCALE
+
+func _get_item_tval() -> int:
+	if artifact_data != null and "tval" in artifact_data:
+		return int(artifact_data.tval)
+	if item_data != null and "tval" in item_data:
+		return int(item_data.tval)
+	return -1
+
 func initialize_from_item_data(data: DataManager.ItemData) -> void:
 	if not data:
 		return
 	item_data = data
 	# Use the item's index to select sprite from object tiles
 	_update_sprite_region(data.index)
+	_apply_world_item_scale()
 
 func initialize_from_artifact_data(data: DataManager.ArtifactData) -> void:
 	if not data:
@@ -88,6 +125,7 @@ func initialize_from_artifact_data(data: DataManager.ArtifactData) -> void:
 	artifact_data = data
 	# Use the artifact's index to select sprite from object tiles
 	_update_sprite_region(data.index)
+	_apply_world_item_scale()
 
 func get_display_name() -> String:
 	if artifact_data:
