@@ -37,6 +37,17 @@ var _whisper_revealed: Array = []
 var _listen_turns: int = 0
 var _listen_revealed: Array = []
 
+# Defensive stance toggle state
+var _defensive_stance_active: bool = false
+var _defensive_stance_duration: int = 0
+var _defensive_stance_cooldown: int = 0
+
+# Parry toggle state
+var _parry_ready: bool = false
+var _parry_ready_window: int = 0
+var _parry_active_turns: int = 0
+var _parry_cooldown: int = 0
+
 # Patient Stalker: ambush buildup
 var _stalker_turns: int = 0
 var _stalker_double_ready: bool = false
@@ -283,6 +294,23 @@ func reset_turn_state() -> void:
 			_listen_turns = 0
 			_listen_revealed.clear()
 
+	# Defensive Stance + Parry countdowns
+	if _defensive_stance_active:
+		_defensive_stance_duration -= 1
+		if _defensive_stance_duration <= 0:
+			_break_defensive_stance()
+	if _defensive_stance_cooldown > 0:
+		_defensive_stance_cooldown -= 1
+
+	if _parry_ready_window > 0:
+		_parry_ready_window -= 1
+		if _parry_ready_window <= 0:
+			_parry_ready = false
+	if _parry_active_turns > 0:
+		_parry_active_turns -= 1
+	if _parry_cooldown > 0:
+		_parry_cooldown -= 1
+
 	# Patient Stalker: build up ambush turns while stealthing undetected
 	if trait_effect_id == "patient_stalker":
 		if stealth_mode and not _any_adjacent_alert_enemy():
@@ -296,6 +324,7 @@ func reset_turn_state() -> void:
 	moved_last_turn = moved_this_turn  # Preserve for Dodging/Concentration
 	ripostes_this_turn = 0
 	attacks_this_turn = 0
+	attacked_this_turn = false
 	moved_this_turn = false
 	knocked_back = false
 	noise_this_turn = 0
@@ -618,6 +647,56 @@ func _apply_listen_reveal() -> void:
 	for entity in entities:
 		if is_instance_valid(entity) and entity is Monster and entity.is_alive:
 			_listen_revealed.append(entity.get_instance_id())
+
+func activate_defensive_stance() -> bool:
+	if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_DEFENSIVE_STANCE):
+		GameManager.log_message("You haven't learned Defensive Stance.", ThemeColors.MSG_ERROR)
+		return false
+	if _defensive_stance_active:
+		GameManager.log_message("You're already braced.", ThemeColors.MSG_SYSTEM)
+		return false
+	if _defensive_stance_cooldown > 0:
+		GameManager.log_message("Defensive Stance is on cooldown (%d turns)." % _defensive_stance_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	if moved_this_turn or attacks_this_turn > 0:
+		GameManager.log_message("You must stand still to brace for impact.", ThemeColors.MSG_SYSTEM)
+		return false
+	_defensive_stance_active = true
+	_defensive_stance_duration = 2
+	_defensive_stance_cooldown = 5
+	GameManager.log_message("You brace for impact.", ThemeColors.MSG_SYSTEM)
+	return true
+
+func _break_defensive_stance() -> void:
+	if _defensive_stance_active:
+		_defensive_stance_active = false
+		_defensive_stance_duration = 0
+
+func ready_parry() -> bool:
+	if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
+		GameManager.log_message("You haven't learned Parry.", ThemeColors.MSG_ERROR)
+		return false
+	if _parry_ready:
+		GameManager.log_message("You're already readying a parry.", ThemeColors.MSG_SYSTEM)
+		return false
+	if _parry_cooldown > 0:
+		GameManager.log_message("Parry is on cooldown (%d turns)." % _parry_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	if moved_this_turn or attacks_this_turn > 0:
+		GameManager.log_message("You must stand still to ready a parry.", ThemeColors.MSG_SYSTEM)
+		return false
+	_parry_ready = true
+	_parry_ready_window = 2
+	GameManager.log_message("You ready a parry stance.", ThemeColors.MSG_SYSTEM)
+	return true
+
+func _resolve_parry_hit(damage: int) -> int:
+	_parry_ready = false
+	_parry_ready_window = 0
+	_parry_active_turns = 2
+	_parry_cooldown = 6
+	GameManager.log_message("You parry the blow!", ThemeColors.MSG_PRIMARY)
+	return maxi(1, int(damage / 2))
 
 ## Nimble Striker: check if free move is available after kill
 func has_nimble_free_move() -> bool:
@@ -1408,6 +1487,7 @@ func get_total_attack(target: Entity) -> int:
 ## Player evasion modifier stack per NECROMANCER_DESIGN_CANON section 1.4
 func get_total_evasion(attacker: Entity) -> int:
 	var evn: int = evasion_bonus
+	var weapon = equipment.get("weapon")
 
 	# Dodging: +3 if moved last turn and has EVN_DODGING
 	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_DODGING):
@@ -1428,7 +1508,6 @@ func get_total_evasion(attacker: Entity) -> int:
 
 	# Parry: double weapon's evasion contribution (Sil-Q: skill_equip_mod[S_EVN] += o_ptr->evn)
 	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
-		var weapon = equipment.get("weapon")
 		if weapon != null and "evasion_bonus" in weapon:
 			evn += weapon.evasion_bonus  # Add weapon evn again (first add is in recalculate_stats)
 
@@ -1440,6 +1519,18 @@ func get_total_evasion(attacker: Entity) -> int:
 	# (The base evasion_bonus already includes armor penalty; this adds back the penalty amount)
 	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_HEAVY_ARMOUR):
 		evn += _get_heavy_armor_penalty()
+
+	# Defensive stance toggle
+	if _defensive_stance_active:
+		evn += 5
+
+	# Parry active window: grant weapon-scaled bonus
+	if _parry_active_turns > 0:
+		var parry_weapon_evn: int = 0
+		if weapon != null and "evasion_bonus" in weapon:
+			parry_weapon_evn = weapon.evasion_bonus
+		var parry_bonus: int = maxi(4, parry_weapon_evn * 2)
+		evn += parry_bonus
 
 	# Hardiness (Will): +1 protection-equivalent as evasion per 3 Will
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_FORMIDABLE):
@@ -2501,6 +2592,10 @@ func can_move_to(target: Vector2i) -> bool:
 
 	return true
 
+func move_to(target: Vector2i, animate: bool = true) -> void:
+	if _defensive_stance_active:
+		_break_defensive_stance()
+	super.move_to(target, animate)
 func _interact_with_npc(npc: Entity) -> void:
 	"""Initiate dialogue with an NPC (uses Entity type to avoid cyclic dependency)."""
 	if not is_instance_valid(npc):
@@ -2562,7 +2657,11 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 				run_stats.last_damage_source_id = -1
 		else:
 			run_stats.last_damage_source_name = ""
-			run_stats.last_damage_source_id = -1
+		run_stats.last_damage_source_id = -1
+
+	# Parry reaction
+	if _parry_ready:
+		amount = _resolve_parry_hit(amount)
 
 	# Elemental resistance: halve matching damage types
 	if damage_type == "fire" and has_equip_flag("RES_FIRE"):
