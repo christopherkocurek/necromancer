@@ -39,8 +39,8 @@ PROJECT_DIR = BASE_DIR.parent
 TILESET_PATH = PROJECT_DIR / "assets" / "sprites" / "necromancer_dcss_tileset.png"
 TILE_MAPPER_PATH = PROJECT_DIR / "scripts" / "core" / "tile_mapper.gd"
 MONSTER_DIR = BASE_DIR / "monster_v3"
-ITEM_DIR = BASE_DIR / "item_v2"
-ITEM_PROGRESS_PATH = BASE_DIR / "item_v2_progress.json"
+ITEM_DIR = BASE_DIR / "item_v3"
+ITEM_PROGRESS_PATH = BASE_DIR / "item_v3_progress.json"
 MONSTER_PROGRESS_PATH = BASE_DIR / "monster_v2_progress.json"
 
 TILE_SIZE = 64

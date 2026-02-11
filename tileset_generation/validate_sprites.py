@@ -61,6 +61,15 @@ MAGENTA_HUE_MAX = 0.944
 MAGENTA_SAT_MIN = 0.3
 MAGENTA_VAL_MIN = 0.3
 
+# Green contamination (% of opaque pixels in green HSV zone)
+GREEN_HIGH = 0.05
+GREEN_MEDIUM = 0.02
+# HSV zone: hue 80-160 deg (0.222-0.444 normalized), sat > 0.3, val > 0.3
+GREEN_HUE_MIN = 0.222
+GREEN_HUE_MAX = 0.444
+GREEN_SAT_MIN = 0.3
+GREEN_VAL_MIN = 0.3
+
 # Edge thinning (bounding box of opaque pixels)
 THIN_HIGH = 12
 THIN_MEDIUM = 20
@@ -215,6 +224,47 @@ def check_magenta(rgba: np.ndarray, opaque_count: int) -> tuple:
     return magenta_pct, issues
 
 
+def check_green(rgba: np.ndarray, opaque_count: int) -> tuple:
+    """Check for residual green contamination in opaque pixels using vectorized HSV."""
+    if opaque_count == 0:
+        return 0.0, []
+
+    alpha = rgba[:, :, 3]
+    mask = alpha > 0
+    rgb_opaque = rgba[mask][:, :3].astype(np.float64) / 255.0
+
+    r, g, b = rgb_opaque[:, 0], rgb_opaque[:, 1], rgb_opaque[:, 2]
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    diff = maxc - minc
+
+    val = maxc
+    sat = np.where(maxc > 0, diff / maxc, 0.0)
+
+    hue = np.zeros_like(maxc)
+    mask_r = (maxc == r) & (diff > 0)
+    mask_g = (maxc == g) & (diff > 0)
+    mask_b = (maxc == b) & (diff > 0)
+    hue[mask_r] = ((g[mask_r] - b[mask_r]) / diff[mask_r]) % 6.0
+    hue[mask_g] = ((b[mask_g] - r[mask_g]) / diff[mask_g]) + 2.0
+    hue[mask_b] = ((r[mask_b] - g[mask_b]) / diff[mask_b]) + 4.0
+    hue = hue / 6.0
+
+    in_green = (
+        (hue >= GREEN_HUE_MIN) & (hue <= GREEN_HUE_MAX) &
+        (sat > GREEN_SAT_MIN) & (val > GREEN_VAL_MIN)
+    )
+    green_count = int(np.sum(in_green))
+    green_pct = round((green_count / opaque_count) * 100, 2)
+
+    issues = []
+    if green_count / opaque_count > GREEN_HIGH:
+        issues.append(("Green contamination", "HIGH", f"{green_pct}%"))
+    elif green_count / opaque_count > GREEN_MEDIUM:
+        issues.append(("Green contamination", "MEDIUM", f"{green_pct}%"))
+    return green_pct, issues
+
+
 def check_bounding_box(alpha: np.ndarray) -> tuple:
     """Check for edge thinning via bounding box of opaque pixels."""
     opaque_coords = np.argwhere(alpha > 0)
@@ -284,6 +334,28 @@ def check_magenta_background(rgba: np.ndarray) -> list:
     return issues
 
 
+def check_green_background(rgba: np.ndarray) -> list:
+    """
+    Check if the sprite still has a solid green background (pre-removal).
+    Samples corner pixels — if 3+ corners are green, BG removal hasn't run.
+    """
+    corners = [
+        rgba[0, 0], rgba[0, -1],
+        rgba[-1, 0], rgba[-1, -1]
+    ]
+    green_corners = 0
+    for px in corners:
+        r, g, b, a = int(px[0]), int(px[1]), int(px[2]), int(px[3])
+        if a > 200 and g > 180 and r < 80 and b < 80:
+            green_corners += 1
+
+    issues = []
+    if green_corners >= 3:
+        issues.append(("Green BG present", "HIGH",
+                        f"{green_corners}/4 corners are green — BG removal not run"))
+    return issues
+
+
 # ─── Main Validator ───
 
 def validate_sprite(path: Path) -> dict:
@@ -321,8 +393,9 @@ def validate_sprite(path: Path) -> dict:
             "metrics": metrics,
         }
 
-    # 3. Magenta background still present (pre-removal check)
+    # 3. Background still present (pre-removal check)
     all_issues.extend(check_magenta_background(rgba))
+    all_issues.extend(check_green_background(rgba))
 
     # 4. Interior holes
     holes, issues = check_interior_holes(alpha)
@@ -343,6 +416,11 @@ def validate_sprite(path: Path) -> dict:
     magenta_pct, issues = check_magenta(rgba, opaque_count)
     all_issues.extend(issues)
     metrics["magenta_pct"] = magenta_pct
+
+    # 7b. Green contamination
+    green_pct, issues = check_green(rgba, opaque_count)
+    all_issues.extend(issues)
+    metrics["green_pct"] = green_pct
 
     # 8. Bounding box / edge thinning
     bbox_w, bbox_h, issues = check_bounding_box(alpha)
