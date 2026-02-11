@@ -22,6 +22,7 @@ var character_name: String = ""
 var character_age: int = 0
 var character_history: String = ""
 var selected_difficulty: int = GameManager.Difficulty.NORMAL
+var _pending_race_selection: String = ""
 
 # Skill shopping state (pre-creation investments)
 var skill_investments: Dictionary = {
@@ -79,6 +80,11 @@ var _progress_container: HBoxContainer = null
 var _preview_rect: TextureRect = null
 var _tileset_texture: Texture2D = null
 
+# Safety toggles for stability on some systems
+const USE_CREATION_TRANSITIONS: bool = false
+const USE_CREATION_PREVIEW: bool = false
+const CREATION_SAFE_MODE: bool = true
+
 # Name list loaded from file (legacy fallback)
 var _name_list: PackedStringArray = []
 const NAMES_FILE_PATH := "res://data/names.txt"
@@ -134,6 +140,8 @@ func _load_names_file() -> void:
 				_name_list.append(name_str.capitalize())
 
 func _load_tileset() -> void:
+	if not USE_CREATION_PREVIEW:
+		return
 	if FileAccess.file_exists("res://assets/sprites/necromancer_dcss_tileset.png"):
 		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
 
@@ -227,11 +235,20 @@ func _setup_ui() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	next_button.pressed.connect(_on_next_pressed)
 
-	# Apply Diablo-themed fonts and buttons
-	ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
-	ThemeColors.apply_rich_body_font(info_label)
-	ThemeColors.apply_button_theme(back_button)
-	ThemeColors.apply_button_theme(next_button)
+	if CREATION_SAFE_MODE:
+		# Avoid custom fonts/themes to reduce crash risk
+		stage_label.theme = null
+		info_label.theme = null
+		back_button.theme = null
+		next_button.theme = null
+		info_label.bbcode_enabled = false
+		info_label.visible = false
+	else:
+		# Apply Diablo-themed fonts and buttons
+		ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
+		ThemeColors.apply_rich_body_font(info_label)
+		ThemeColors.apply_button_theme(back_button)
+		ThemeColors.apply_button_theme(next_button)
 
 func _show_stage(stage: Stage, direction: int = 0) -> void:
 	if _transitioning:
@@ -240,7 +257,7 @@ func _show_stage(stage: Stage, direction: int = 0) -> void:
 	var old_stage: Stage = current_stage
 	current_stage = stage
 
-	if direction != 0 and content_container.get_child_count() > 0:
+	if USE_CREATION_TRANSITIONS and direction != 0 and content_container.get_child_count() > 0:
 		_transitioning = true
 		await _slide_transition(direction)
 		_transitioning = false
@@ -321,20 +338,31 @@ func _show_race_selection() -> void:
 
 		var btn := Button.new()
 		btn.text = race_name
-		btn.toggle_mode = true
-		btn.button_group = _get_or_create_button_group("race")
+		if not CREATION_SAFE_MODE:
+			btn.toggle_mode = true
+			btn.button_group = _get_or_create_button_group("race")
 		btn.pressed.connect(_on_race_selected.bind(race_name))
 
 		if selected_race == race_name:
-			btn.button_pressed = true
+			if not CREATION_SAFE_MODE:
+				btn.button_pressed = true
 
-		ThemeColors.apply_button_theme(btn)
+		if not CREATION_SAFE_MODE:
+			ThemeColors.apply_button_theme(btn)
 		content_container.add_child(btn)
 
 	_update_race_info()
 
 func _on_race_selected(race_name: String) -> void:
-	selected_race = race_name
+	# Defer UI updates to avoid potential input/rebuild re-entrancy crashes
+	_pending_race_selection = race_name
+	call_deferred("_apply_race_selection")
+
+func _apply_race_selection() -> void:
+	if _pending_race_selection.is_empty():
+		return
+	selected_race = _pending_race_selection
+	_pending_race_selection = ""
 	selected_house = ""  # Reset house when race changes
 	selected_gender = ""  # Reset gender when race changes
 	_reset_skill_investments()  # Affinity changes invalidate costs
@@ -342,6 +370,8 @@ func _on_race_selected(race_name: String) -> void:
 	_update_navigation()
 
 func _update_race_info() -> void:
+	if CREATION_SAFE_MODE:
+		return
 	if selected_race.is_empty():
 		info_label.text = "Select a race to see details."
 		return
@@ -350,19 +380,30 @@ func _update_race_info() -> void:
 	if not race:
 		return
 
-	var stats_text := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
-		race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
-	]
+	if CREATION_SAFE_MODE:
+		var stats_text := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
+			race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
+		]
+		var flags_text := ""
+		if not race.flags.is_empty():
+			flags_text = "\nTraits: " + ", ".join(race.flags)
+		info_label.bbcode_enabled = false
+		info_label.text = "%s\n%s%s\n\n%s" % [
+			selected_race, stats_text, flags_text, race.description
+		]
+	else:
+		var stats_text2 := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
+			race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
+		]
+		var flags_text2 := ""
+		if not race.flags.is_empty():
+			var gold := ThemeColors.PRIMARY.to_html(false)
+			flags_text2 = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(race.flags)
 
-	var flags_text := ""
-	if not race.flags.is_empty():
-		var gold := ThemeColors.PRIMARY.to_html(false)
-		flags_text = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(race.flags)
-
-	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
-		selected_race, stats_text, flags_text, race.description
-	]
+		info_label.bbcode_enabled = true
+		info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
+			selected_race, stats_text2, flags_text2, race.description
+		]
 
 # ============================================================================
 # HOUSE SELECTION

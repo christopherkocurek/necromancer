@@ -831,6 +831,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		_start_rest(20)
 		get_viewport().set_input_as_handled()
 
+	# Defensive stance (Shift+F)
+	if event.is_action_pressed("defensive_stance"):
+		if player and player.is_alive and GameManager.is_player_turn:
+			if player.activate_defensive_stance():
+				player.consume_energy()
+				turn_system._after_player_action()
+				hud.update_player_stats(player)
+		get_viewport().set_input_as_handled()
+
+	# Ready parry (Shift+P)
+	if event.is_action_pressed("ready_parry"):
+		if player and player.is_alive and GameManager.is_player_turn:
+			if player.ready_parry():
+				player.consume_energy()
+				turn_system._after_player_action()
+				hud.update_player_stats(player)
+		get_viewport().set_input_as_handled()
+
 	# F key: Forge if on forge tile, else fire (archery) if bow equipped
 	if event.is_action_pressed("forge"):
 		if player and current_level and current_level.is_forge_tile(player.grid_position):
@@ -1828,12 +1846,12 @@ func _wizard_heal() -> void:
 		player.is_alive = true
 		current_state = GameState.PLAYING
 		GameManager.log_message("[WIZARD] Resurrected!", Color.YELLOW)
-	player.hp = player.max_hp
-	player.voice = player.max_voice
+	player.current_health = player.max_health
+	player.voice_charges = player.max_voice
 	# Clear all negative status effects
 	if player.status_fx:
 		player.status_fx.effects.clear()
-	GameManager.log_message("[WIZARD] Fully healed. HP: %d/%d, Voice: %d/%d" % [player.hp, player.max_hp, player.voice, player.max_voice], Color.YELLOW)
+	GameManager.log_message("[WIZARD] Fully healed. HP: %d/%d, Voice: %d/%d" % [player.current_health, player.max_health, player.voice_charges, player.max_voice], Color.YELLOW)
 	hud.update_player_stats(player)
 
 func _wizard_kill_all() -> void:
@@ -1842,7 +1860,7 @@ func _wizard_kill_all() -> void:
 	var monsters: Array[Monster] = current_level.get_monsters()
 	var count: int = monsters.size()
 	for monster in monsters:
-		monster.hp = 0
+		monster.current_health = 0
 		monster.is_alive = false
 		current_level.remove_entity(monster)
 		monster.queue_free()

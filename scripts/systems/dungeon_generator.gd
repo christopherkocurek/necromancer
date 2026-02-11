@@ -31,6 +31,8 @@ var vault_chance := 0.1
 var level: Level
 var rooms: Array[Rect2i] = []
 var _vault_connection_points: Array[Vector2i] = []
+var _vault_room_ids: Dictionary = {}
+var _vault_rects: Array[Rect2i] = []
 
 class Room:
 	var rect: Rect2i
@@ -93,6 +95,8 @@ func generate(target_level: Level, depth: int) -> void:
 	level = target_level
 	rooms.clear()
 	_vault_connection_points.clear()
+	_vault_room_ids.clear()
+	_vault_rects.clear()
 
 	# Special levels override normal generation
 	if depth == 20:
@@ -107,6 +111,8 @@ func generate(target_level: Level, depth: int) -> void:
 	for _gen_attempt in range(10):
 		rooms.clear()
 		_vault_connection_points.clear()
+		_vault_room_ids.clear()
+		_vault_rects.clear()
 
 		# Fill with walls
 		for y in range(level.height):
@@ -226,6 +232,8 @@ func _generate_rooms() -> void:
 				if not overlaps:
 					room_list.append(vault_room)
 					rooms.append(vault_room.rect)
+					_vault_room_ids[rooms.size() - 1] = true
+					_vault_rects.append(vault_room.rect)
 					if room_type == RoomType.VAULT_GREATER:
 						greater_vault_placed = true
 			continue
@@ -559,6 +567,8 @@ func _connect_rooms() -> void:
 
 func _assign_room_data(depth: int) -> void:
 	level.rooms = rooms.duplicate()
+	level.vault_room_ids = _vault_room_ids.duplicate()
+	level.vault_rects = _vault_rects.duplicate()
 	for room_idx in range(rooms.size()):
 		var room: Rect2i = rooms[room_idx]
 		level.set_room_id_by_rect(room, room_idx)
@@ -1034,30 +1044,10 @@ func _place_doors(depth: int) -> void:
 
 ## Try to place a vault room of the specified type. Returns Room or null.
 func _try_place_vault_room(room_type: int, depth: int) -> Room:
-	# Get all vaults valid for this depth
-	var matching: Array[DataManager.VaultData] = DataManager.get_vaults_for_depth(depth)
-	if matching.is_empty():
+	# Select a vault that matches the requested vault type and depth rating.
+	var vault: DataManager.VaultData = DataManager.get_weighted_vault(room_type, depth)
+	if vault == null:
 		return null
-
-	# Weighted random selection by inverse rarity
-	var total_weight: float = 0.0
-	var weights: Array[float] = []
-	for v: DataManager.VaultData in matching:
-		var w: float = 1.0 / maxf(float(v.rarity), 1.0)
-		weights.append(w)
-		total_weight += w
-
-	if total_weight <= 0.0:
-		return null
-
-	var roll: float = randf() * total_weight
-	var cumulative: float = 0.0
-	var vault: DataManager.VaultData = matching[0]
-	for i in range(matching.size()):
-		cumulative += weights[i]
-		if roll <= cumulative:
-			vault = matching[i]
-			break
 
 	if vault.map_lines.is_empty():
 		return null
@@ -1094,7 +1084,8 @@ func _try_place_vaults(depth: int) -> void:
 	if randf() > vault_chance:
 		return
 
-	var vault := DataManager.get_random_vault_for_depth(depth)
+	# Only use "interesting" vaults for the random vault pass.
+	var vault := DataManager.get_weighted_vault(RoomType.VAULT_INTERESTING, depth)
 	if not vault or vault.map_lines.is_empty():
 		return
 
@@ -1106,6 +1097,7 @@ func _try_place_vaults(depth: int) -> void:
 
 		if _can_place_vault_at(Vector2i(start_x, start_y), vault):
 			_carve_vault(Vector2i(start_x, start_y), vault, depth)
+			_vault_rects.append(Rect2i(start_x, start_y, vault.width, vault.height))
 			return
 
 func _can_place_vault_at(pos: Vector2i, vault: DataManager.VaultData) -> bool:
@@ -1763,7 +1755,7 @@ func _connect_vault_corridor_points() -> void:
 
 func _spawn_monsters(depth: int) -> void:
 	# Count existing monsters already on the level (from vaults + door guards)
-	var existing_monsters: int = level.entities.size()
+	var existing_monsters: int = level.get_monsters().size()
 
 	# Density formula: based on passable tiles, scales with depth
 	var passable: int = level.count_passable_tiles()
@@ -1781,10 +1773,6 @@ func _spawn_monsters(depth: int) -> void:
 
 	# Subtract existing monsters from spawn budget
 	var target_count: int = maxi(0, max_total - existing_monsters)
-
-	if target_count == 0:
-		print("Spawned 0 monsters at depth %d (already %d from vaults/guards, cap %d)" % [depth, existing_monsters, max_total])
-		return
 
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var spawned: int = 0
@@ -1810,65 +1798,68 @@ func _spawn_monsters(depth: int) -> void:
 	if LayerConfig.is_layer_boundary(depth) and stairs_up != Vector2i(-1, -1):
 		_telegraph_layer_entry(depth, stairs_up)
 
-	# Phase 1: Room spawning (70% of budget)
-	var room_budget: int = int(target_count * 0.7)
-	# Distribute budget across rooms proportional to area
-	var room_areas: Array[int] = []
-	var total_area: int = 0
-	for room: Rect2i in rooms:
-		var area: int = room.size.x * room.size.y
-		room_areas.append(area)
-		total_area += area
+	if target_count == 0:
+		print("Spawned 0 monsters at depth %d (already %d from vaults/guards, cap %d)" % [depth, existing_monsters, max_total])
+	else:
+		# Phase 1: Room spawning (70% of budget)
+		var room_budget: int = int(target_count * 0.7)
+		# Distribute budget across rooms proportional to area
+		var room_areas: Array[int] = []
+		var total_area: int = 0
+		for room: Rect2i in rooms:
+			var area: int = room.size.x * room.size.y
+			room_areas.append(area)
+			total_area += area
 
-	var room_order: Array = range(rooms.size())
-	room_order.shuffle()
+		var room_order: Array = range(rooms.size())
+		room_order.shuffle()
 
-	for room_idx in room_order:
-		if spawned >= room_budget:
-			break
-		var room: Rect2i = rooms[room_idx]
-		var room_share: int = maxi(1, int(float(room_areas[room_idx]) / maxf(float(total_area), 1.0) * room_budget))
-		room_share = mini(room_share, room_budget - spawned)
-
-		for _j in range(room_share):
+		for room_idx in room_order:
 			if spawned >= room_budget:
 				break
-			var spawn_pos: Vector2i = level.find_random_floor_in_room(room)
-			if spawn_pos == Vector2i(-1, -1):
-				break
+			var room: Rect2i = rooms[room_idx]
+			var room_share: int = maxi(1, int(float(room_areas[room_idx]) / maxf(float(total_area), 1.0) * room_budget))
+			room_share = mini(room_share, room_budget - spawned)
 
-			# 5-tile safe zone around stairs
+			for _j in range(room_share):
+				if spawned >= room_budget:
+					break
+				var spawn_pos: Vector2i = level.find_random_floor_in_room(room)
+				if spawn_pos == Vector2i(-1, -1):
+					break
+
+				# 5-tile safe zone around stairs
+				if stairs_up != Vector2i(-1, -1):
+					var dist: int = maxi(absi(spawn_pos.x - stairs_up.x), absi(spawn_pos.y - stairs_up.y))
+					if dist < 7:
+						continue
+
+				# LOS check: no monsters visible from stairs_up at start
+				if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(spawn_pos, stairs_up, fov_radius):
+					continue
+
+				spawned += _place_monster_with_entourage(monster_scene, spawn_pos, spawn_depth, target_count - spawned)
+
+		# Phase 2: Corridor spawning (remaining budget)
+		var corridor_budget: int = target_count - spawned
+		for _i in range(corridor_budget * 3):  # Extra attempts since corridors are sparse
+			if spawned >= target_count:
+				break
+			var spawn_pos: Vector2i = level.find_random_corridor_floor()
+			if spawn_pos == Vector2i(-1, -1):
+				continue
+
+			# 5-tile safe zone
 			if stairs_up != Vector2i(-1, -1):
 				var dist: int = maxi(absi(spawn_pos.x - stairs_up.x), absi(spawn_pos.y - stairs_up.y))
 				if dist < 7:
 					continue
 
-			# LOS check: no monsters visible from stairs_up at start
+			# LOS check
 			if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(spawn_pos, stairs_up, fov_radius):
 				continue
 
 			spawned += _place_monster_with_entourage(monster_scene, spawn_pos, spawn_depth, target_count - spawned)
-
-	# Phase 2: Corridor spawning (remaining budget)
-	var corridor_budget: int = target_count - spawned
-	for _i in range(corridor_budget * 3):  # Extra attempts since corridors are sparse
-		if spawned >= target_count:
-			break
-		var spawn_pos: Vector2i = level.find_random_corridor_floor()
-		if spawn_pos == Vector2i(-1, -1):
-			continue
-
-		# 5-tile safe zone
-		if stairs_up != Vector2i(-1, -1):
-			var dist: int = maxi(absi(spawn_pos.x - stairs_up.x), absi(spawn_pos.y - stairs_up.y))
-			if dist < 7:
-				continue
-
-		# LOS check
-		if stairs_up != Vector2i(-1, -1) and _is_in_starting_fov(spawn_pos, stairs_up, fov_radius):
-			continue
-
-		spawned += _place_monster_with_entourage(monster_scene, spawn_pos, spawn_depth, target_count - spawned)
 
 	# Post-placement: clear ALL monsters too close to stairs_up (catches vault/door guard monsters too)
 	_clear_monsters_near_stairs(stairs_up)
@@ -1879,11 +1870,47 @@ func _spawn_monsters(depth: int) -> void:
 	# Encounter type classification
 	_apply_encounter_types()
 
+	# Hard safety cap: prevent runaway vault/guard spawns.
+	var pre_trim_count: int = level.get_monsters().size()
+	_trim_monsters_to_cap(Constants.PERIODIC_SPAWN_MAX_MONSTERS)
+	if pre_trim_count > Constants.PERIODIC_SPAWN_MAX_MONSTERS:
+		print("Monster cap applied at depth %d: %d -> %d (cap %d)" % [
+			depth, pre_trim_count, level.get_monsters().size(), Constants.PERIODIC_SPAWN_MAX_MONSTERS
+		])
+
 	var final_count: int = 0
 	for e in level.entities:
 		if is_instance_valid(e) and e is Monster:
 			final_count += 1
 	print("Spawned %d monsters at depth %d (cap %d)" % [final_count, depth, max_total])
+
+## Enforce a hard cap on total monsters (vaults/guards can exceed spawn budget).
+func _trim_monsters_to_cap(cap: int) -> void:
+	if cap <= 0:
+		return
+	var monsters: Array[Monster] = level.get_monsters()
+	if monsters.size() <= cap:
+		return
+
+	var keep: Array[Monster] = []
+	var removable: Array[Monster] = []
+	for m in monsters:
+		if m.monster_data and m.monster_data.has_flag("UNIQUE"):
+			keep.append(m)
+		else:
+			removable.append(m)
+
+	removable.shuffle()
+	var to_remove: int = monsters.size() - cap
+	var removed: int = 0
+	for m in removable:
+		if removed >= to_remove:
+			break
+		level.remove_entity(m)
+		m.queue_free()
+		removed += 1
+	if removed > 0:
+		print("Trimmed %d monsters to enforce cap %d" % [removed, cap])
 
 ## Remove ALL monsters within safe zone of stairs_up (catches vault/guard spawns too).
 func _clear_monsters_near_stairs(stairs_up: Vector2i) -> void:
@@ -1978,7 +2005,7 @@ func _get_friends_pack_size(data: DataManager.MonsterData) -> int:
 		return randi_range(2, 3)
 	if data.has_flag("UNDEAD") or ch == "z" or ch == "w":  # undead, wights, wolves
 		return randi_range(2, 3)
-	if ch == "G" or data.is_shadow:  # shadows
+	if ch == "G" or data.has_flag("SHADOW"):  # shadows
 		return randi_range(1, 2)
 	return randi_range(1, 2)  # default
 
@@ -3426,6 +3453,7 @@ func _generate_throne_room_level(depth: int) -> void:
 
 		if _can_place_vault_at(vault_pos, throne_vault):
 			_carve_vault(vault_pos, throne_vault, depth)
+			_vault_rects.append(Rect2i(vault_pos.x, vault_pos.y, throne_vault.width, throne_vault.height))
 			print("Placed Sauron's throne vault at depth %d" % depth)
 		else:
 			# Vault doesn't fit — fall through to normal generation
@@ -3520,6 +3548,8 @@ func _try_place_transition_vault(depth: int) -> void:
 		if _can_place_vault_at(pos, vault):
 			_carve_vault(pos, vault, depth)
 			rooms.append(Rect2i(pos.x, pos.y, vault.width, vault.height))
+			_vault_room_ids[rooms.size() - 1] = true
+			_vault_rects.append(Rect2i(pos.x, pos.y, vault.width, vault.height))
 			print("Placed transition vault %d at depth %d" % [vault_index, depth])
 			return
 

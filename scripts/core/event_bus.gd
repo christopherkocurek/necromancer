@@ -27,11 +27,11 @@ signal enemy_turn_started()
 signal round_completed(round_number: int)
 
 # Item events
-signal item_picked_up(entity: Node, item: Resource)
-signal item_dropped(entity: Node, item: Resource, position: Vector2i)
-signal item_equipped(entity: Node, item: Resource, slot: String)
-signal item_unequipped(entity: Node, item: Resource, slot: String)
-signal item_used(entity: Node, item: Resource)
+signal item_picked_up(entity: Node, item: Variant)
+signal item_dropped(entity: Node, item: Variant, position: Vector2i)
+signal item_equipped(entity: Node, item: Variant, slot: String)
+signal item_unequipped(entity: Node, item: Variant, slot: String)
+signal item_used(entity: Node, item: Variant)
 signal item_identified(item_data: Variant)
 
 # Ability events

@@ -359,16 +359,16 @@ func _on_entity_died(entity: Node, _killer: Node) -> void:
 func _on_attack_missed(_attacker: Node, _defender: Node) -> void:
 	play_sfx(["miss", "miss1"].pick_random())
 
-func _on_item_picked_up(_entity: Node, _item: Resource) -> void:
+func _on_item_picked_up(_entity: Node, _item: Variant) -> void:
 	play_ui_sound("clunk")
 
-func _on_item_dropped(_entity: Node, _item: Resource, _position: Vector2i) -> void:
+func _on_item_dropped(_entity: Node, _item: Variant, _position: Vector2i) -> void:
 	play_ui_sound("drop")
 
-func _on_item_equipped(_entity: Node, _item: Resource, _slot: String) -> void:
+func _on_item_equipped(_entity: Node, _item: Variant, _slot: String) -> void:
 	play_ui_sound("clunk")
 
-func _on_item_used(_entity: Node, _item: Resource) -> void:
+func _on_item_used(_entity: Node, _item: Variant) -> void:
 	play_ui_sound("eat")
 
 func _on_level_entered(depth: int) -> void:
