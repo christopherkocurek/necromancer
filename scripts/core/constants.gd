@@ -369,6 +369,7 @@ const NOISE_DIGGING: int = 10      # Noise from tunnelling/digging
 const NOISE_BASH: int = 15         # Noise from bashing doors
 const NOISE_TRAP_FALL: int = 3     # Noise from falling into a trap
 const NOISE_TRAP_STEP: int = 1     # Noise from stepping on a minor trap
+const NOISE_COMBAT_KILL: int = 6   # Noise burst when a kill is not silent
 
 # Energy gained per tick based on speed (0-7)
 # Speed 2 is normal (100 energy = 1 action per tick)

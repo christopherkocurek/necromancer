@@ -28,6 +28,7 @@ var character_panel: Control = null  # CharacterPanel for player stats (C key)
 var current_level: Level = null
 var player: Player = null
 var transition_overlay: ColorRect = null
+var _cleanup_done: bool = false
 
 # Quest system (using Node type to avoid load order issues)
 var quest_system: Node = null
@@ -98,6 +99,14 @@ func _ready() -> void:
 	get_tree().root.content_scale_size = Vector2i(1920, 1080)
 	_setup_ui_panels()
 	_show_character_creation()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_cleanup_before_exit()
+		get_tree().quit()
+
+func _exit_tree() -> void:
+	_cleanup_before_exit()
 
 func _setup_ui_panels() -> void:
 	# Create UI layer if it doesn't exist
@@ -1341,7 +1350,48 @@ func _on_new_game_requested() -> void:
 	_show_character_creation()
 
 func _on_quit_requested() -> void:
+	_cleanup_before_exit()
 	get_tree().quit()
+
+func _cleanup_before_exit() -> void:
+	if _cleanup_done:
+		return
+	_cleanup_done = true
+
+	# Disconnect global signals first to avoid callbacks during teardown.
+	if EventBus.npc_interacted.is_connected(_on_npc_interacted):
+		EventBus.npc_interacted.disconnect(_on_npc_interacted)
+	if EventBus.item_dropped.is_connected(_on_item_dropped_to_ground):
+		EventBus.item_dropped.disconnect(_on_item_dropped_to_ground)
+
+	var nodes_to_free: Array = [
+		character_creation, inventory_panel, tome_panel, death_screen, look_panel,
+		dialogue_panel, smithing_panel, target_panel, bestiary_panel, settings_panel,
+		character_panel, transition_overlay, voice_menu, item_menu, ability_system,
+		quest_system, current_level, player
+	]
+	for node in nodes_to_free:
+		if is_instance_valid(node):
+			node.queue_free()
+
+	character_creation = null
+	inventory_panel = null
+	tome_panel = null
+	death_screen = null
+	look_panel = null
+	dialogue_panel = null
+	smithing_panel = null
+	target_panel = null
+	bestiary_panel = null
+	settings_panel = null
+	character_panel = null
+	transition_overlay = null
+	voice_menu = null
+	item_menu = null
+	ability_system = null
+	quest_system = null
+	current_level = null
+	player = null
 
 
 # ============================================================================
@@ -1650,6 +1700,8 @@ func _observe_visible_monsters() -> void:
 	# Whisper of the Valar: check if player has active whisper reveals
 	var has_whisper: bool = player != null and "_whisper_turns" in player and player._whisper_turns > 0
 	var whisper_revealed: Array = player._whisper_revealed if has_whisper and "_whisper_revealed" in player else []
+	var has_listen: bool = player != null and "_listen_turns" in player and player._listen_turns > 0
+	var listen_revealed: Array = player._listen_revealed if has_listen and "_listen_revealed" in player else []
 
 	# Record observations for all visible monsters and update health bars
 	for entity in current_level.entities:
@@ -1663,6 +1715,12 @@ func _observe_visible_monsters() -> void:
 				if entity.get_instance_id() in whisper_revealed:
 					is_visible = true
 					# Make entity sprite visible so player can see it
+					entity.visible = true
+
+			# Listen (Perception): reveals nearby monsters through walls while stationary
+			if not is_visible and has_listen:
+				if entity.get_instance_id() in listen_revealed:
+					is_visible = true
 					entity.visible = true
 
 			if is_visible:

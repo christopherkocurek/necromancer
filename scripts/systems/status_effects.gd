@@ -228,8 +228,15 @@ func _check_resistance(effect_id: StringName) -> bool:
 
 	# For Player, also check equipment flags
 	if owner is Player:
-		# TODO: Check equipment for resistance flags
-		pass
+		var player_owner: Player = owner as Player
+		var equip_flag_map: Dictionary = {
+			"resist_fire": "RES_FIRE",
+			"resist_fear": "RES_FEAR",
+			"free_act": "FREE_ACT",
+		}
+		var equip_flag: String = equip_flag_map.get(resist_prop, "")
+		if not equip_flag.is_empty() and player_owner.has_equip_flag(equip_flag):
+			return true
 
 	# Rage immunity to fear
 	if effect_id == Constants.EFFECT_AFRAID and has_effect(Constants.EFFECT_RAGE):

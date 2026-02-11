@@ -61,6 +61,7 @@ var werewolf_form: String = "human"  # "human" or "wolf"
 var _shift_cooldown: int = 0  # Turns until can shift again
 var _wolf_speed_bonus: int = 0  # Temporary speed bonus applied in wolf form
 var _wolf_attack_bonus: int = 0  # Temporary attack bonus applied in wolf form
+var last_attack_effect: String = ""
 
 var health_bar: EntityHealthBar = null
 
@@ -842,6 +843,7 @@ func _on_successful_hit(target: Entity, _hit_result: int, _damage: int) -> void:
 		return
 
 	var attack: DataManager.AttackData = monster_data.attacks[0]
+	last_attack_effect = attack.effect if "effect" in attack else "HURT"
 	_resolve_attack_effect(target, attack.effect)
 
 func _resolve_attack_effect(target: Entity, effect: String) -> void:
@@ -1026,8 +1028,10 @@ func die(killer: Entity = null) -> void:
 	# Process rewards BEFORE calling super.die() which triggers signals
 	# Check validity before using 'is' operator to avoid freed instance errors
 	if killer != null and is_instance_valid(killer) and killer is Player:
-		var was_silent := alertness < Constants.ALERTNESS_ALERT  # Monster wasn't fully aware
-		var stealth_kill_xp: int = experience_value * 2 if was_silent else experience_value
+		var stealth_kill: bool = alertness < Constants.ALERTNESS_ALERT  # Monster wasn't fully aware
+		var has_silent_kill_ability: bool = killer.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_SILENT_KILL)
+		var was_silent: bool = stealth_kill or has_silent_kill_ability
+		var stealth_kill_xp: int = experience_value * 2 if stealth_kill else experience_value
 		killer.gain_experience(stealth_kill_xp, "kill")
 
 		# Track in run stats
@@ -1043,10 +1047,14 @@ func die(killer: Entity = null) -> void:
 				if memory and memory.has_method("record_kill"):
 					memory.record_kill(monster_data.index)
 
-		if was_silent:
+		if stealth_kill:
 			GameManager.log_message("You silently dispatch the %s! (+%d XP, stealth bonus!)" % [entity_name, stealth_kill_xp], ThemeColors.ABILITY_LEARNED)
+		elif was_silent:
+			GameManager.log_message("You silently dispatch the %s! (+%d XP)" % [entity_name, stealth_kill_xp], ThemeColors.ABILITY_LEARNED)
 		else:
 			GameManager.log_message("You have slain the %s! (+%d XP)" % [entity_name, stealth_kill_xp], ThemeColors.ABILITY_LEARNED)
+			if GameManager.current_level and GameManager.current_level.has_method("add_floor_noise"):
+				GameManager.current_level.add_floor_noise(Constants.NOISE_COMBAT_KILL)
 
 		# Fade (Stealth ability): +10 stealth for 3 turns after kill
 		if killer.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_FADE):
@@ -1345,6 +1353,7 @@ func _spell_breath(cast_target: Entity, element: String, distance: int) -> bool:
 
 	var element_name: String = element.capitalize()
 	GameManager.log_message("The %s breathes %s! (%d damage)" % [entity_name, element_name, dmg], ThemeColors.COMBAT_CRIT)
+	last_attack_effect = "BREATH_%s" % element.to_upper()
 	cast_target.take_damage(dmg, element, self)
 
 	# Target may have died from the damage
@@ -1383,6 +1392,7 @@ func _spell_ranged_attack(cast_target: Entity, distance: int, tier: int) -> bool
 
 	var proj_name: String = "arrow" if tier == 1 else ("arrow" if tier == 2 else "boulder")
 	GameManager.log_message("The %s hits you with a %s! (%d damage)" % [entity_name, proj_name, dmg], ThemeColors.MSG_ERROR)
+	last_attack_effect = "RANGED_%s" % proj_name.to_upper()
 	cast_target.take_damage(dmg, "physical", self)
 	return true
 

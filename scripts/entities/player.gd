@@ -34,6 +34,8 @@ var _nimble_free_move: bool = false
 var _whisper_used: bool = false
 var _whisper_turns: int = 0
 var _whisper_revealed: Array = []
+var _listen_turns: int = 0
+var _listen_revealed: Array = []
 
 # Patient Stalker: ambush buildup
 var _stalker_turns: int = 0
@@ -268,6 +270,18 @@ func reset_turn_state() -> void:
 		_whisper_turns -= 1
 		if _whisper_turns <= 0:
 			_whisper_revealed.clear()
+
+	# Listen (Perception): reveal nearby monsters through walls while stationary
+	if _listen_turns > 0:
+		_listen_turns -= 1
+		if _listen_turns <= 0:
+			_listen_revealed.clear()
+	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_LISTEN):
+		if not moved_this_turn and attacks_this_turn == 0:
+			_apply_listen_reveal()
+		else:
+			_listen_turns = 0
+			_listen_revealed.clear()
 
 	# Patient Stalker: build up ambush turns while stealthing undetected
 	if trait_effect_id == "patient_stalker":
@@ -592,6 +606,25 @@ func is_whisper_revealed(entity: Entity) -> bool:
 	if not is_instance_valid(entity):
 		return false
 	return entity.get_instance_id() in _whisper_revealed
+
+## Listen (Perception): reveal nearby monsters through walls while stationary
+func _apply_listen_reveal() -> void:
+	if not GameManager.current_level:
+		return
+	var radius: int = 3 + get_effective_skill("hunting") / 4
+	_listen_turns = 1
+	_listen_revealed.clear()
+	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(grid_position, radius)
+	for entity in entities:
+		if is_instance_valid(entity) and entity is Monster and entity.is_alive:
+			_listen_revealed.append(entity.get_instance_id())
+
+func is_listen_revealed(entity: Entity) -> bool:
+	if _listen_turns <= 0:
+		return false
+	if not is_instance_valid(entity):
+		return false
+	return entity.get_instance_id() in _listen_revealed
 
 ## Nimble Striker: check if free move is available after kill
 func has_nimble_free_move() -> bool:
@@ -2525,6 +2558,19 @@ func apply_status(status_name: String, duration: int, data: Variant = null) -> v
 func take_damage(amount: int, damage_type: String = "physical", source: Entity = null) -> void:
 	was_attacked_this_turn = true
 
+	# Record last damage source for telemetry
+	if run_stats:
+		run_stats.last_damage_type = damage_type
+		if is_instance_valid(source):
+			run_stats.last_damage_source_name = source.entity_name
+			if source is Monster and source.monster_data and "id" in source.monster_data:
+				run_stats.last_damage_source_id = source.monster_data.id
+			else:
+				run_stats.last_damage_source_id = -1
+		else:
+			run_stats.last_damage_source_name = ""
+			run_stats.last_damage_source_id = -1
+
 	# Elemental resistance: halve matching damage types
 	if damage_type == "fire" and has_equip_flag("RES_FIRE"):
 		amount = maxi(1, amount / 2)
@@ -2604,6 +2650,10 @@ func die(killer: Entity = null) -> void:
 		cause = killer_name
 		if killer is Monster and killer.monster_data:
 			killer_id = killer.monster_data.id if "id" in killer.monster_data else -1
+			if run_stats and "last_attack_effect" in killer:
+				run_stats.killer_attack_effect = str(killer.last_attack_effect)
+	elif run_stats and not run_stats.last_damage_type.is_empty():
+		run_stats.killer_attack_effect = "DAMAGE_%s" % run_stats.last_damage_type.to_upper()
 
 	run_stats.record_death(cause, killer_name, killer_id)
 
