@@ -83,7 +83,6 @@ var _tileset_texture: Texture2D = null
 # Safety toggles for stability on some systems
 const USE_CREATION_TRANSITIONS: bool = false
 const USE_CREATION_PREVIEW: bool = false
-const CREATION_SAFE_MODE: bool = true
 
 # Name list loaded from file (legacy fallback)
 var _name_list: PackedStringArray = []
@@ -235,20 +234,14 @@ func _setup_ui() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	next_button.pressed.connect(_on_next_pressed)
 
-	if CREATION_SAFE_MODE:
-		# Avoid custom fonts/themes to reduce crash risk
-		stage_label.theme = null
-		info_label.theme = null
-		back_button.theme = null
-		next_button.theme = null
-		info_label.bbcode_enabled = false
-		info_label.visible = false
-	else:
-		# Apply Diablo-themed fonts and buttons
+	# Keep presentation robust: if ThemeColors fails to load for any reason,
+	# controls still render with default Godot theme instead of hard-failing.
+	if is_instance_valid(ThemeColors):
 		ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
 		ThemeColors.apply_rich_body_font(info_label)
 		ThemeColors.apply_button_theme(back_button)
 		ThemeColors.apply_button_theme(next_button)
+	info_label.visible = true
 
 func _show_stage(stage: Stage, direction: int = 0) -> void:
 	if _transitioning:
@@ -338,16 +331,14 @@ func _show_race_selection() -> void:
 
 		var btn := Button.new()
 		btn.text = race_name
-		if not CREATION_SAFE_MODE:
-			btn.toggle_mode = true
-			btn.button_group = _get_or_create_button_group("race")
+		btn.toggle_mode = true
+		btn.button_group = _get_or_create_button_group("race")
 		btn.pressed.connect(_on_race_selected.bind(race_name))
 
 		if selected_race == race_name:
-			if not CREATION_SAFE_MODE:
-				btn.button_pressed = true
+			btn.button_pressed = true
 
-		if not CREATION_SAFE_MODE:
+		if is_instance_valid(ThemeColors):
 			ThemeColors.apply_button_theme(btn)
 		content_container.add_child(btn)
 
@@ -370,8 +361,6 @@ func _apply_race_selection() -> void:
 	_update_navigation()
 
 func _update_race_info() -> void:
-	if CREATION_SAFE_MODE:
-		return
 	if selected_race.is_empty():
 		info_label.text = "Select a race to see details."
 		return
@@ -380,30 +369,21 @@ func _update_race_info() -> void:
 	if not race:
 		return
 
-	if CREATION_SAFE_MODE:
-		var stats_text := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
-			race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
-		]
-		var flags_text := ""
-		if not race.flags.is_empty():
-			flags_text = "\nTraits: " + ", ".join(race.flags)
-		info_label.bbcode_enabled = false
-		info_label.text = "%s\n%s%s\n\n%s" % [
-			selected_race, stats_text, flags_text, race.description
-		]
-	else:
-		var stats_text2 := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
-			race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
-		]
-		var flags_text2 := ""
-		if not race.flags.is_empty():
+	var stats_text := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
+		race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
+	]
+	var flags_text := ""
+	if not race.flags.is_empty():
+		if is_instance_valid(ThemeColors):
 			var gold := ThemeColors.PRIMARY.to_html(false)
-			flags_text2 = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(race.flags)
+			flags_text = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(race.flags)
+		else:
+			flags_text = "\nTraits: " + ", ".join(race.flags)
 
-		info_label.bbcode_enabled = true
-		info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
-			selected_race, stats_text2, flags_text2, race.description
-		]
+	info_label.bbcode_enabled = true
+	info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
+		selected_race, stats_text, flags_text, race.description
+	]
 
 # ============================================================================
 # HOUSE SELECTION

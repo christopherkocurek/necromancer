@@ -90,15 +90,33 @@ const BestiaryPanelScript := preload("res://scripts/ui/bestiary_panel.gd")
 const CharacterPanelScript := preload("res://scripts/ui/character_panel.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
+const BASE_CONTENT_SIZE: Vector2i = Vector2i(1920, 1080)
+const REFERENCE_WINDOW_SIZE: Vector2 = Vector2(1440.0, 810.0)
+const MIN_CONTENT_SCALE_FACTOR: float = 0.85
+const MAX_CONTENT_SCALE_FACTOR: float = 1.35
 
 func _ready() -> void:
-	# Scale all content uniformly when window is resized
+	# Scale all content uniformly and keep UI readable across common desktop sizes.
 	get_window().set_flag(Window.FLAG_RESIZE_DISABLED, false)
 	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-	get_tree().root.content_scale_size = Vector2i(1920, 1080)
+	get_tree().root.content_scale_size = BASE_CONTENT_SIZE
+	_apply_window_scaling()
+	get_window().size_changed.connect(_on_window_size_changed)
 	_setup_ui_panels()
 	_show_character_creation()
+
+func _on_window_size_changed() -> void:
+	_apply_window_scaling()
+
+func _apply_window_scaling() -> void:
+	var window_size: Vector2i = get_window().size
+	if window_size.x <= 0 or window_size.y <= 0:
+		return
+	var scale_x: float = float(window_size.x) / REFERENCE_WINDOW_SIZE.x
+	var scale_y: float = float(window_size.y) / REFERENCE_WINDOW_SIZE.y
+	var target_scale: float = clampf(minf(scale_x, scale_y), MIN_CONTENT_SCALE_FACTOR, MAX_CONTENT_SCALE_FACTOR)
+	get_tree().root.content_scale_factor = target_scale
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
