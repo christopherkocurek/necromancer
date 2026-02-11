@@ -20,6 +20,7 @@ var stealth_label: Label
 var song_label: Label                # Active song indicator
 var hunger_label: Label              # Hunger state indicator
 var status_container: HBoxContainer
+var stance_container: HBoxContainer
 var stats_container: HBoxContainer   # Center column stats
 var quick_slots_container: HBoxContainer  # 6 equipment slot panels
 
@@ -53,6 +54,7 @@ const MAX_MESSAGES := 200
 var messages: Array[Dictionary] = []
 var _active_filter: String = "all"
 var _turn_count: int = 0
+var _stance_signature: String = ""
 
 const DANGER_STATUSES := ["poisoned", "burning", "stunned", "confused"]
 const EQUIP_SLOTS := ["weapon", "off_hand", "armor", "head", "light", "amulet"]
@@ -173,6 +175,10 @@ func _build_action_bar() -> void:
 	status_container = HBoxContainer.new()
 	status_container.add_theme_constant_override("separation", 4)
 	stats_container.add_child(status_container)
+
+	stance_container = HBoxContainer.new()
+	stance_container.add_theme_constant_override("separation", 4)
+	stats_container.add_child(stance_container)
 
 	# Row 2: Quick slots (6 equipment icons)
 	quick_slots_container = HBoxContainer.new()
@@ -642,6 +648,9 @@ func update_player_stats(player: Player) -> void:
 	# Equipment quick-view
 	_update_equip_icons(player)
 
+	# Active melee stance/parry indicators
+	_update_combat_stance_gems(player)
+
 	# Ability hotbar
 	update_hotbar(player, _ability_system_ref)
 
@@ -729,6 +738,78 @@ func _update_hunger_display(player: Player) -> void:
 	if state != "starving" and hunger_label.has_meta("starving_blink"):
 		hunger_label.remove_meta("starving_blink")
 		hunger_label.modulate.a = 1.0
+
+func _update_combat_stance_gems(player: Player) -> void:
+	if not stance_container:
+		return
+
+	if not player or not player.has_method("get_combat_stance_indicators"):
+		if _stance_signature.is_empty():
+			return
+		_stance_signature = ""
+		for child in stance_container.get_children():
+			child.queue_free()
+		return
+
+	var indicators: Array[Dictionary] = player.get_combat_stance_indicators()
+	var new_signature: String = JSON.stringify(indicators)
+	if new_signature == _stance_signature:
+		return
+	_stance_signature = new_signature
+
+	for child in stance_container.get_children():
+		child.queue_free()
+
+	for info in indicators:
+		var badge := PanelContainer.new()
+		badge.custom_minimum_size = Vector2(112, 30)
+
+		var state: String = str(info.get("state", "active"))
+		var style: StyleBoxFlat
+		match state:
+			"ready":
+				style = ThemeColors.create_panel_stylebox(
+					Color(ThemeColors.ABILITY_LEARNED.r, ThemeColors.ABILITY_LEARNED.g, ThemeColors.ABILITY_LEARNED.b, 0.18),
+					ThemeColors.ABILITY_LEARNED, 1, 4
+				)
+			"cooldown":
+				style = ThemeColors.create_panel_stylebox(
+					Color(ThemeColors.IRON_SHADOW.r, ThemeColors.IRON_SHADOW.g, ThemeColors.IRON_SHADOW.b, 0.8),
+					ThemeColors.IRON_HIGHLIGHT, 1, 4
+				)
+			_:
+				style = ThemeColors.create_panel_stylebox(
+					Color(ThemeColors.SECONDARY.r, ThemeColors.SECONDARY.g, ThemeColors.SECONDARY.b, 0.18),
+					ThemeColors.SECONDARY, 1, 4
+				)
+		badge.add_theme_stylebox_override("panel", style)
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 4)
+		badge.add_child(row)
+
+		var title := Label.new()
+		title.text = str(info.get("title", "Buff"))
+		ThemeColors.apply_body_font(title, ThemeColors.FONT_SIZE_HINT)
+		title.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(title)
+
+		var turns := int(info.get("turns", 0))
+		var turns_label := Label.new()
+		turns_label.text = "%dt" % turns
+		ThemeColors.apply_body_font(turns_label, ThemeColors.FONT_SIZE_HINT)
+		turns_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		row.add_child(turns_label)
+
+		var detail := Label.new()
+		detail.text = str(info.get("detail", ""))
+		ThemeColors.apply_body_font(detail, ThemeColors.FONT_SIZE_HINT)
+		detail.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		badge.tooltip_text = "%s: %s" % [str(info.get("title", "")), detail.text]
+		badge.add_child(detail)
+
+		stance_container.add_child(badge)
 
 # ============================================================================
 # DETECTION EYE INDICATOR

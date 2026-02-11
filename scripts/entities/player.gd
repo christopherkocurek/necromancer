@@ -222,6 +222,7 @@ func _ready() -> void:
 	current_health = max_health
 	EventBus.level_entered.connect(_on_level_entered)
 	EventBus.attack_missed.connect(_on_attack_evaded)
+	EventBus.player_turn_started.connect(_on_player_turn_started)
 
 func _init_ability_arrays() -> void:
 	# Initialize ability tracking arrays (S_MAX x ABILITIES_MAX)
@@ -294,23 +295,6 @@ func reset_turn_state() -> void:
 			_listen_turns = 0
 			_listen_revealed.clear()
 
-	# Defensive Stance + Parry countdowns
-	if _defensive_stance_active:
-		_defensive_stance_duration -= 1
-		if _defensive_stance_duration <= 0:
-			_break_defensive_stance()
-	if _defensive_stance_cooldown > 0:
-		_defensive_stance_cooldown -= 1
-
-	if _parry_ready_window > 0:
-		_parry_ready_window -= 1
-		if _parry_ready_window <= 0:
-			_parry_ready = false
-	if _parry_active_turns > 0:
-		_parry_active_turns -= 1
-	if _parry_cooldown > 0:
-		_parry_cooldown -= 1
-
 	# Patient Stalker: build up ambush turns while stealthing undetected
 	if trait_effect_id == "patient_stalker":
 		if stealth_mode and not _any_adjacent_alert_enemy():
@@ -339,6 +323,24 @@ func _on_level_entered(_depth: int) -> void:
 		_fade_turns -= 1
 		if _fade_turns <= 0:
 			_fade_bonus = 0
+
+func _on_player_turn_started() -> void:
+	# Tick short-duration combat stance/parry windows on player turns for predictable UX.
+	if _defensive_stance_active:
+		_defensive_stance_duration -= 1
+		if _defensive_stance_duration <= 0:
+			_break_defensive_stance()
+	if _defensive_stance_cooldown > 0:
+		_defensive_stance_cooldown -= 1
+
+	if _parry_ready_window > 0:
+		_parry_ready_window -= 1
+		if _parry_ready_window <= 0:
+			_parry_ready = false
+	if _parry_active_turns > 0:
+		_parry_active_turns -= 1
+	if _parry_cooldown > 0:
+		_parry_cooldown -= 1
 
 ## Riposte: free counterattack when evading an adjacent monster's attack (1/turn)
 func _on_attack_evaded(attacker: Node, defender: Node) -> void:
@@ -658,12 +660,13 @@ func activate_defensive_stance() -> bool:
 	if _defensive_stance_cooldown > 0:
 		GameManager.log_message("Defensive Stance is on cooldown (%d turns)." % _defensive_stance_cooldown, ThemeColors.MSG_SYSTEM)
 		return false
-	if moved_this_turn or attacks_this_turn > 0:
+	if moved_this_turn or attacked_this_turn:
 		GameManager.log_message("You must stand still to brace for impact.", ThemeColors.MSG_SYSTEM)
 		return false
 	_defensive_stance_active = true
 	_defensive_stance_duration = 2
 	_defensive_stance_cooldown = 5
+	vfx_floater("Defend", ThemeColors.SECONDARY, 14)
 	GameManager.log_message("You brace for impact.", ThemeColors.MSG_SYSTEM)
 	return true
 
@@ -682,11 +685,12 @@ func ready_parry() -> bool:
 	if _parry_cooldown > 0:
 		GameManager.log_message("Parry is on cooldown (%d turns)." % _parry_cooldown, ThemeColors.MSG_SYSTEM)
 		return false
-	if moved_this_turn or attacks_this_turn > 0:
+	if moved_this_turn or attacked_this_turn:
 		GameManager.log_message("You must stand still to ready a parry.", ThemeColors.MSG_SYSTEM)
 		return false
 	_parry_ready = true
 	_parry_ready_window = 2
+	vfx_floater("Parry Ready", ThemeColors.ABILITY_LEARNED, 14)
 	GameManager.log_message("You ready a parry stance.", ThemeColors.MSG_SYSTEM)
 	return true
 
@@ -695,8 +699,65 @@ func _resolve_parry_hit(damage: int) -> int:
 	_parry_ready_window = 0
 	_parry_active_turns = 2
 	_parry_cooldown = 6
+	vfx_floater("Parry!", ThemeColors.GOLD_BRIGHT, 16)
 	GameManager.log_message("You parry the blow!", ThemeColors.MSG_PRIMARY)
 	return maxi(1, int(damage / 2))
+
+func get_parry_active_bonus() -> int:
+	var weapon = equipment.get("weapon")
+	var parry_weapon_evn: int = 0
+	if weapon != null and "evasion_bonus" in weapon:
+		parry_weapon_evn = weapon.evasion_bonus
+	return maxi(4, parry_weapon_evn * 2)
+
+func get_combat_stance_indicators() -> Array[Dictionary]:
+	var indicators: Array[Dictionary] = []
+
+	if _parry_ready and _parry_ready_window > 0:
+		indicators.append({
+			"id": "parry_ready",
+			"title": "Parry Ready",
+			"state": "ready",
+			"turns": _parry_ready_window,
+			"detail": "Next hit: -50% dmg"
+		})
+
+	if _parry_active_turns > 0:
+		var parry_bonus: int = get_parry_active_bonus()
+		indicators.append({
+			"id": "parry_active",
+			"title": "Parry",
+			"state": "active",
+			"turns": _parry_active_turns,
+			"detail": "+%d EVN" % parry_bonus
+		})
+	elif _parry_cooldown > 0:
+		indicators.append({
+			"id": "parry_cd",
+			"title": "Parry CD",
+			"state": "cooldown",
+			"turns": _parry_cooldown,
+			"detail": "Recharging"
+		})
+
+	if _defensive_stance_active and _defensive_stance_duration > 0:
+		indicators.append({
+			"id": "defend_active",
+			"title": "Defend",
+			"state": "active",
+			"turns": _defensive_stance_duration,
+			"detail": "+5 EVN"
+		})
+	elif _defensive_stance_cooldown > 0:
+		indicators.append({
+			"id": "defend_cd",
+			"title": "Defend CD",
+			"state": "cooldown",
+			"turns": _defensive_stance_cooldown,
+			"detail": "Recharging"
+		})
+
+	return indicators
 
 ## Nimble Striker: check if free move is available after kill
 func has_nimble_free_move() -> bool:
@@ -1526,11 +1587,7 @@ func get_total_evasion(attacker: Entity) -> int:
 
 	# Parry active window: grant weapon-scaled bonus
 	if _parry_active_turns > 0:
-		var parry_weapon_evn: int = 0
-		if weapon != null and "evasion_bonus" in weapon:
-			parry_weapon_evn = weapon.evasion_bonus
-		var parry_bonus: int = maxi(4, parry_weapon_evn * 2)
-		evn += parry_bonus
+		evn += get_parry_active_bonus()
 
 	# Hardiness (Will): +1 protection-equivalent as evasion per 3 Will
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_FORMIDABLE):
