@@ -619,13 +619,6 @@ func _apply_listen_reveal() -> void:
 		if is_instance_valid(entity) and entity is Monster and entity.is_alive:
 			_listen_revealed.append(entity.get_instance_id())
 
-func is_listen_revealed(entity: Entity) -> bool:
-	if _listen_turns <= 0:
-		return false
-	if not is_instance_valid(entity):
-		return false
-	return entity.get_instance_id() in _listen_revealed
-
 ## Nimble Striker: check if free move is available after kill
 func has_nimble_free_move() -> bool:
 	return trait_effect_id == "nimble_striker" and _nimble_free_move
