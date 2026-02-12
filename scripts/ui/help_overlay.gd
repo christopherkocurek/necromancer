@@ -66,6 +66,11 @@ func _setup_ui() -> void:
   (bump into enemy) ....... Melee attack
   F ........................ Fire bow / Use forge
   ; (semicolon) ........... Toggle stealth mode
+  Shift+F .................. Defensive stance
+  Shift+P .................. Ready parry
+  Shift+H .................. Mark quarry (Hunting)
+  Shift+X .................. Expose weakness (Hunting)
+  Shift+E .................. Exploit opening (Hunting)
   Shift+T .................. Tunnel / dig rubble
   Shift+S .................. Search for secrets
   C ........................ Close adjacent door

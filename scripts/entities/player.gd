@@ -52,6 +52,26 @@ const PARRY_READY_WINDOW_TURNS: int = 1
 const PARRY_ACTIVE_TURNS: int = 1
 const PARRY_COOLDOWN_TURNS: int = 5
 
+# Hunting duel system (Mark -> Rhythm -> Exploit)
+var _hunting_mark_target_id: int = -1
+var _hunting_mark_duration: int = 0
+var _hunting_mark_cooldown: int = 0
+var _hunting_focus_stacks: int = 0
+var _hunting_had_pressure_last_turn: bool = false
+var _hunting_focus_gained_this_turn: bool = false
+var _hunting_exploit_armed: bool = false
+var _hunting_exploit_bonus_dice: int = 0
+var _hunting_exploit_crit_bonus: int = 0
+
+const HUNTING_MARK_DURATION_TURNS: int = 8
+const HUNTING_MARK_COOLDOWN_TURNS: int = 11
+const HUNTING_MARK_ATTACK_BONUS: int = 2
+const HUNTING_MARK_EVASION_BONUS: int = 2
+const HUNTING_FOCUS_MAX: int = 3
+const HUNTING_EXPOSE_DURATION_TURNS: int = 4
+const HUNTING_EXPOSE_COOLDOWN_TURNS: int = 8
+var _hunting_expose_cooldown: int = 0
+
 # Patient Stalker: ambush buildup
 var _stalker_turns: int = 0
 var _stalker_double_ready: bool = false
@@ -227,6 +247,7 @@ func _ready() -> void:
 	EventBus.level_entered.connect(_on_level_entered)
 	EventBus.attack_missed.connect(_on_attack_evaded)
 	EventBus.player_turn_started.connect(_on_player_turn_started)
+	EventBus.entity_died.connect(_on_any_entity_died)
 
 func _init_ability_arrays() -> void:
 	# Initialize ability tracking arrays (S_MAX x ABILITIES_MAX)
@@ -322,6 +343,9 @@ func _on_level_entered(_depth: int) -> void:
 	reset_per_floor_traits()
 	attacked_this_turn = false
 	_vengeance_active = false
+	_clear_hunting_mark()
+	_hunting_mark_cooldown = 0
+	_hunting_expose_cooldown = 0
 	# Tick Fade bonus
 	if _fade_turns > 0:
 		_fade_turns -= 1
@@ -345,6 +369,30 @@ func _on_player_turn_started() -> void:
 		_parry_active_turns -= 1
 	if _parry_cooldown > 0:
 		_parry_cooldown -= 1
+
+	# Hunting duel loop timing
+	if _hunting_mark_cooldown > 0:
+		_hunting_mark_cooldown -= 1
+	if _hunting_expose_cooldown > 0:
+		_hunting_expose_cooldown -= 1
+
+	# Focus decays if we failed to pressure our marked quarry last turn.
+	if _hunting_mark_target_id != -1:
+		if _hunting_mark_duration > 0:
+			_hunting_mark_duration -= 1
+		if _hunting_mark_duration <= 0:
+			_clear_hunting_mark()
+		elif not _hunting_had_pressure_last_turn and _hunting_focus_stacks > 0:
+			_hunting_focus_stacks -= 1
+
+	_hunting_had_pressure_last_turn = false
+	_hunting_focus_gained_this_turn = false
+
+func _on_any_entity_died(entity: Entity, _killer: Entity) -> void:
+	if entity == null:
+		return
+	if entity.get_instance_id() == _hunting_mark_target_id:
+		_clear_hunting_mark()
 
 ## Riposte: free counterattack when evading an adjacent monster's attack (1/turn)
 func _on_attack_evaded(attacker: Node, defender: Node) -> void:
@@ -743,7 +791,161 @@ func get_combat_stance_indicators() -> Array[Dictionary]:
 			"cooldown_turns": _defensive_stance_cooldown,
 		})
 
+	# HUNT card: show while quarry is marked, focused, or cooling down.
+	var marked_target: Monster = _get_marked_quarry()
+	if marked_target != null or _hunting_focus_stacks > 0 or _hunting_mark_cooldown > 0:
+		var hunt_title: String = "HUNT"
+		if marked_target != null:
+			hunt_title = "HUNT: %s" % marked_target.entity_name
+		indicators.append({
+			"id": "hunt",
+			"title": hunt_title,
+			"icon": "hunt",
+			"bonus_text": "Focus %d/%d" % [_hunting_focus_stacks, HUNTING_FOCUS_MAX],
+			"active_turns": _hunting_mark_duration,
+			"cooldown_turns": _hunting_mark_cooldown,
+		})
+
 	return indicators
+
+func activate_mark_quarry() -> bool:
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
+		GameManager.log_message("You haven't learned Mark Quarry.", ThemeColors.MSG_ERROR)
+		return false
+	if _hunting_mark_cooldown > 0:
+		GameManager.log_message("Mark Quarry is on cooldown (%d turns)." % _hunting_mark_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+
+	var target: Monster = _find_best_hunt_target()
+	if target == null:
+		GameManager.log_message("No visible quarry to mark.", ThemeColors.MSG_SYSTEM)
+		return false
+
+	_hunting_mark_target_id = target.get_instance_id()
+	_hunting_mark_duration = HUNTING_MARK_DURATION_TURNS
+	_hunting_mark_cooldown = HUNTING_MARK_COOLDOWN_TURNS
+	_hunting_focus_stacks = 0
+	_hunting_had_pressure_last_turn = false
+	_hunting_focus_gained_this_turn = false
+	_hunting_exploit_armed = false
+	_hunting_exploit_bonus_dice = 0
+	_hunting_exploit_crit_bonus = 0
+
+	vfx_floater("Marked", ThemeColors.PRIMARY_BRIGHT, 15)
+	target.vfx_floater("Quarry", ThemeColors.PRIMARY_BRIGHT, 14)
+	GameManager.log_message("You mark %s as your quarry." % target.entity_name, ThemeColors.MSG_INFO)
+	return true
+
+func activate_expose_weakness() -> bool:
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
+		GameManager.log_message("You haven't learned Expose Weakness.", ThemeColors.MSG_ERROR)
+		return false
+	if _hunting_expose_cooldown > 0:
+		GameManager.log_message("Expose Weakness is on cooldown (%d turns)." % _hunting_expose_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	var target: Monster = _get_marked_quarry()
+	if target == null:
+		GameManager.log_message("You need a marked quarry first.", ThemeColors.MSG_SYSTEM)
+		return false
+
+	var player_roll: int = randi_range(1, 20) + get_effective_skill("hunting")
+	var target_will: int = target.monster_data.will if target.monster_data else 5
+	var monster_roll: int = randi_range(1, 20) + target_will
+
+	_hunting_expose_cooldown = HUNTING_EXPOSE_COOLDOWN_TURNS
+	if player_roll >= monster_roll:
+		target.apply_hunter_exposure(HUNTING_EXPOSE_DURATION_TURNS, 3, 1)
+		_register_hunting_pressure(target)
+		vfx_floater("Exposed!", ThemeColors.COMBAT_CRIT, 15)
+		GameManager.log_message("You expose %s's weakness!" % target.entity_name, ThemeColors.COMBAT_CRIT)
+	else:
+		# Partial fail-soft to keep this tactical rather than punishing dead turns.
+		target.apply_hunter_exposure(2, 1, 0)
+		GameManager.log_message("%s partially resists your reading of its stance." % target.entity_name, ThemeColors.MSG_WARNING)
+
+	return true
+
+func activate_exploit_opening() -> bool:
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_MASTER_HUNTER):
+		GameManager.log_message("You haven't learned Exploit Opening.", ThemeColors.MSG_ERROR)
+		return false
+	if _hunting_focus_stacks <= 0:
+		GameManager.log_message("You need Focus to exploit an opening.", ThemeColors.MSG_SYSTEM)
+		return false
+	var target: Monster = _get_marked_quarry()
+	if target == null:
+		GameManager.log_message("You need a marked quarry first.", ThemeColors.MSG_SYSTEM)
+		return false
+
+	_hunting_exploit_armed = true
+	_hunting_exploit_bonus_dice = _hunting_focus_stacks
+	_hunting_exploit_crit_bonus = 1 if _hunting_focus_stacks >= 3 else 0
+	_hunting_focus_stacks = 0
+	vfx_floater("Exploit!", ThemeColors.GOLD_BRIGHT, 16)
+	GameManager.log_message("You prepare to exploit %s's opening." % target.entity_name, ThemeColors.MSG_INFO)
+	return true
+
+func _find_best_hunt_target() -> Monster:
+	if not GameManager.current_level:
+		return null
+	var best: Monster = null
+	var best_score: int = -99999
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		var mon: Monster = entity as Monster
+		if not GameManager.current_level.is_tile_visible(mon.grid_position):
+			continue
+		var dist: int = maxi(absi(mon.grid_position.x - grid_position.x), absi(mon.grid_position.y - grid_position.y))
+		var score: int = 0
+		if mon.is_unique:
+			score += 100
+		score += mon.max_health / 3
+		score += mon.melee_bonus
+		score += mon.evasion_bonus
+		score -= dist
+		if score > best_score:
+			best_score = score
+			best = mon
+	return best
+
+func _get_marked_quarry() -> Monster:
+	if _hunting_mark_target_id == -1 or _hunting_mark_duration <= 0:
+		return null
+	var obj: Object = instance_from_id(_hunting_mark_target_id)
+	if obj == null or not is_instance_valid(obj) or not obj is Monster:
+		_clear_hunting_mark()
+		return null
+	var mon: Monster = obj as Monster
+	if not mon.is_alive:
+		_clear_hunting_mark()
+		return null
+	return mon
+
+func _clear_hunting_mark() -> void:
+	_hunting_mark_target_id = -1
+	_hunting_mark_duration = 0
+	_hunting_focus_stacks = 0
+	_hunting_had_pressure_last_turn = false
+	_hunting_focus_gained_this_turn = false
+	_hunting_exploit_armed = false
+	_hunting_exploit_bonus_dice = 0
+	_hunting_exploit_crit_bonus = 0
+
+func _register_hunting_pressure(target: Entity) -> void:
+	var marked: Monster = _get_marked_quarry()
+	if marked == null:
+		return
+	if target == null or not is_instance_valid(target) or target != marked:
+		return
+	_hunting_had_pressure_last_turn = true
+	if _hunting_focus_gained_this_turn:
+		return
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_CONCENTRATION):
+		return
+	if _hunting_focus_stacks < HUNTING_FOCUS_MAX:
+		_hunting_focus_stacks += 1
+		_hunting_focus_gained_this_turn = true
 
 ## Nimble Striker: check if free move is available after kill
 func has_nimble_free_move() -> bool:
@@ -1451,16 +1653,6 @@ func get_total_attack(target: Entity) -> int:
 	# Rapid Attack penalty: -3 when doing rapid double-attacks
 	att += _rapid_attack_penalty
 
-	# Concentration: +MIN(consecutive_attacks, Hunting/2) when not moved last turn
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_CONCENTRATION):
-		if not moved_last_turn:
-			var per_bonus: int = get_effective_skill("hunting") / 2
-			att += mini(consecutive_attacks, maxi(per_bonus, 1))
-
-	# Focused Attack: +Hunting/2 (always active if learned)
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
-		att += get_effective_skill("hunting") / 2
-
 	# Assassination: +Stealth skill vs unwary/sleeping targets
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_ASSASSINATION):
 		if is_instance_valid(target) and target is Monster:
@@ -1468,13 +1660,11 @@ func get_total_attack(target: Entity) -> int:
 			if mon.alertness < Constants.ALERTNESS_ALERT:
 				att += get_effective_skill("stealth")
 
-	# Bane: +floor(log2(kills)) for kills >= 2 of that race
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
-		att += _get_bane_bonus(target)
-
-	# Master Hunter: +MIN(kills_of_type, Perception/2)
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_MASTER_HUNTER):
-		att += _get_master_hunter_bonus(target)
+	# Hunting duel loop: Mark Quarry + Focus stacks (target-locked).
+	var marked: Monster = _get_marked_quarry()
+	if marked != null and target == marked:
+		att += HUNTING_MARK_ATTACK_BONUS
+		att += _hunting_focus_stacks
 
 	# Flanking: +1 per adjacent ally attacking same target
 	att += _count_adjacent_allies_to(target)
@@ -1579,9 +1769,11 @@ func get_total_evasion(attacker: Entity) -> int:
 	if has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_FORMIDABLE):
 		evn += get_effective_skill("will") / 3
 
-	# Bane evasion bonus (same formula as attack bane)
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
-		evn += _get_bane_bonus(attacker)
+	# Hunting duel loop: marked quarry pressure grants mirrored defensive edge.
+	var marked: Monster = _get_marked_quarry()
+	if marked != null and attacker == marked:
+		evn += HUNTING_MARK_EVASION_BONUS
+		evn += _hunting_focus_stacks
 
 	# Nimble Striker: evasion bonus from hit-and-run
 	evn += _nimble_evn_bonus
@@ -1694,6 +1886,10 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 	# Track Opening Strike usage
 	if is_instance_valid(target):
 		_opening_strike_used[target.get_instance_id()] = true
+		_register_hunting_pressure(target)
+
+	# Exploit Opening: spend prepared burst on first successful hit against marked quarry.
+	_apply_hunting_exploit_on_hit(target)
 
 	# Throat Slit: instant kill if target unwary and damage >= target current_health / 2
 	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_THROAT_SLIT):
@@ -1879,6 +2075,11 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	var att: int = skills["archery"] + (dexterity / 2)
 	# Weapon proficiency bonus (BOW_PROFICIENCY or SLING_PROFICIENCY)
 	att += _get_ranged_proficiency_bonus()
+	# Hunting duel loop: mark pressure applies to ranged shots against your quarry.
+	var marked: Monster = _get_marked_quarry()
+	if marked != null and target == marked:
+		att += HUNTING_MARK_ATTACK_BONUS
+		att += _hunting_focus_stacks
 	# Keen Eyes: +Hunting/2 to ranged attack
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_KEEN_EYES):
 		att += get_effective_skill("hunting") / 2
@@ -1894,6 +2095,10 @@ func ranged_attack(target: Entity, distance: int) -> void:
 			att += get_effective_skill("archery") / 2
 	# Distance penalty: -1 per tile beyond 1
 	att -= maxi(0, distance - 1)
+	# Steady Aim: +3 attack and +1 crit die when stationary and readied.
+	var steady_aim_active: bool = trait_effect_id == "steady_aim" and _steady_aim_ready
+	if steady_aim_active:
+		att += 3
 
 	# Ranged evasion is halved
 	var evn: int = target.get_total_evasion(self) / 2
@@ -1925,10 +2130,8 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	var crit_dice: int = (hit_result * 10 + 4) / (crit_threshold + bow_weight)
 	crit_dice = _apply_crit_resistance(target, crit_dice)
 
-	# Steady Aim: +3 attack (already applied above would be ideal, but spec says
-	# add after crit calc) and +1 crit die when stationary
-	if trait_effect_id == "steady_aim" and _steady_aim_ready:
-		att += 3
+	# Steady Aim: +1 crit die when stationary/readied.
+	if steady_aim_active:
 		crit_dice += 1
 		_steady_aim_ready = false
 		GameManager.log_message("Steady aim!", ThemeColors.ABILITY_LEARNED)
@@ -1953,6 +2156,8 @@ func ranged_attack(target: Entity, distance: int) -> void:
 		damage += get_effective_skill("archery") / 3
 
 	target.take_damage(damage, "physical", self)
+	_register_hunting_pressure(target)
+	_apply_hunting_exploit_on_hit(target)
 
 	# Crippling Shot: apply slow on ranged crit
 	if crit_dice > 0 and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
@@ -1968,14 +2173,14 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_ROUT):
 		if is_instance_valid(target) and target.is_alive and target is Monster:
 			var mon: Monster = target as Monster
-			if mon.morale < 0:
+			if mon.current_morale < 0:
 				var rout_dmg: int = maxi(1, get_effective_skill("archery") / 3)
 				target.take_damage(rout_dmg, "physical", self)
 				GameManager.log_message("Routing shot! (+%d)" % rout_dmg, ThemeColors.COMBAT_HIT)
 
 ## Get proficiency bonus for equipped ranged weapon
 func _get_ranged_proficiency_bonus() -> int:
-	var ranged_weapon = equipment.get("off_hand")
+	var ranged_weapon = equipment.get("bow")
 	if ranged_weapon == null or not "tval" in ranged_weapon:
 		return 0
 	var race_data: DataManager.RaceData = DataManager.get_race(race_name)
@@ -1992,6 +2197,25 @@ func _get_ranged_proficiency_bonus() -> int:
 	if "ARC_PENALTY" in race_data.flags:
 		return -1
 	return 0
+
+func _apply_hunting_exploit_on_hit(target: Entity) -> void:
+	if not _hunting_exploit_armed or not is_instance_valid(target):
+		return
+	var marked: Monster = _get_marked_quarry()
+	if marked == null or target != marked or target.current_health <= 0:
+		return
+	var exploit_bonus: int = 0
+	var dice_str: String = get_weapon_damage_dice()
+	for i in range(_hunting_exploit_bonus_dice):
+		exploit_bonus += DataManager.roll_dice(dice_str)
+	if _hunting_exploit_crit_bonus > 0:
+		exploit_bonus += DataManager.roll_dice(dice_str)
+	target.take_damage(exploit_bonus, "physical", self)
+	GameManager.log_message("You exploit the opening! (+%d)" % exploit_bonus, ThemeColors.COMBAT_CRIT)
+	target.vfx_floater("Exploit!", ThemeColors.GOLD_BRIGHT, 16)
+	_hunting_exploit_armed = false
+	_hunting_exploit_bonus_dice = 0
+	_hunting_exploit_crit_bonus = 0
 
 ## Check if player can fire (has bow+arrows or sling+stones)
 func can_fire_ranged() -> bool:
@@ -2047,28 +2271,6 @@ func consume_arrow() -> bool:
 				inventory.remove_at(i)
 			return true
 	return false
-
-## Bane bonus: floor(log2(kills)) for kills >= 2 of target's race
-func _get_bane_bonus(target: Entity) -> int:
-	if not is_instance_valid(target) or not target is Monster:
-		return 0
-	var mon_name: String = target.entity_name
-	var kill_count: int = kills_by_name.get(mon_name, 0)
-	if kill_count < 2:
-		return 0
-	# +floor(log2(kills)) for 2+ kills
-	return int(log(kill_count) / log(2.0))
-
-## Master Hunter: +MIN(kills_of_type, Hunting/2)
-func _get_master_hunter_bonus(target: Entity) -> int:
-	if not is_instance_valid(target) or not target is Monster:
-		return 0
-	var mon_name: String = target.entity_name
-	var kill_count: int = kills_by_name.get(mon_name, 0)
-	if kill_count < 1:
-		return 0
-	var per_cap: int = maxi(1, get_effective_skill("hunting") / 2)
-	return mini(kill_count, per_cap)
 
 ## Count adjacent allies attacking the same target (for flanking/overwhelming)
 func _count_adjacent_allies_to(target: Entity) -> int:
@@ -2685,9 +2887,17 @@ func apply_status(status_name: String, duration: int, data: Variant = null) -> v
 			return
 
 	super.apply_status(status_name, reduced_dur, data)
+	if run_stats:
+		run_stats.record_forensic_event(
+			GameManager.turn_count,
+			"status",
+			"Afflicted: %s (%d turns)" % [status_name, reduced_dur],
+			"warning"
+		)
 
 func take_damage(amount: int, damage_type: String = "physical", source: Entity = null) -> void:
 	was_attacked_this_turn = true
+	var incoming_amount: int = amount
 
 	# Record last damage source for telemetry
 	if run_stats:
@@ -2700,21 +2910,25 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 				run_stats.last_damage_source_id = -1
 		else:
 			run_stats.last_damage_source_name = ""
-		run_stats.last_damage_source_id = -1
+			run_stats.last_damage_source_id = -1
 
 	# Parry reaction
 	if _parry_ready:
 		amount = _resolve_parry_hit(amount)
 
 	# Elemental resistance: halve matching damage types
+	var mitigation_reason: String = ""
 	if damage_type == "fire" and has_equip_flag("RES_FIRE"):
 		amount = maxi(1, amount / 2)
+		mitigation_reason = "RES_FIRE"
 		GameManager.log_message("Your fire resistance absorbs the heat!", ThemeColors.PRIMARY)
 	elif damage_type == "cold" and has_equip_flag("RES_COLD"):
 		amount = maxi(1, amount / 2)
+		mitigation_reason = "RES_COLD"
 		GameManager.log_message("Your cold resistance wards off the chill!", ThemeColors.PRIMARY)
 	elif damage_type == "poison" and has_equip_flag("RES_POIS"):
 		amount = maxi(1, amount / 2)
+		mitigation_reason = "RES_POIS"
 		GameManager.log_message("Your poison resistance filters the venom!", ThemeColors.PRIMARY)
 
 	# Vengeance: track that we were hit for +2 attack next turn
@@ -2764,6 +2978,17 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 		amount = maxi(1, int(amount * (1.0 - god_reduction)))
 
 	super.take_damage(amount, damage_type, source)
+	if run_stats:
+		var src_name: String = source.entity_name if is_instance_valid(source) else "unknown source"
+		var details: String = ""
+		if not mitigation_reason.is_empty():
+			details = " mitigated by %s" % mitigation_reason
+		run_stats.record_forensic_event(
+			GameManager.turn_count,
+			"damage",
+			"Took %d %s damage from %s (incoming %d)%s" % [amount, damage_type, src_name, incoming_amount, details],
+			"critical" if current_health <= 0 else "warning"
+		)
 
 # ============================================================================
 # DEATH OVERRIDE (Phase 7)
@@ -2791,6 +3016,12 @@ func die(killer: Entity = null) -> void:
 		run_stats.killer_attack_effect = "DAMAGE_%s" % run_stats.last_damage_type.to_upper()
 
 	run_stats.record_death(cause, killer_name, killer_id)
+	run_stats.record_forensic_event(
+		GameManager.turn_count,
+		"death",
+		"Fatal blow by %s" % cause,
+		"critical"
+	)
 
 	# Log death
 	GameManager.log_message("You have been slain by %s!" % cause, ThemeColors.MSG_ERROR)

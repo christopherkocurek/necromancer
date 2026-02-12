@@ -25,6 +25,9 @@ DataManager="*res://scripts/core/data_manager.gd"
 TileMapper="*res://scripts/core/tile_mapper.gd"
 ThemeColors="*res://scripts/core/theme_colors.gd"
 AccessibilityManager="*res://scripts/systems/accessibility_manager.gd"
+ChronicleManager="*res://scripts/systems/chronicle_manager.gd"
+TelemetryLogger="*res://scripts/systems/telemetry_logger.gd"
+RunGoalsManager="*res://scripts/systems/run_goals_manager.gd"
 PanelTransition="*res://scripts/ui/panel_transition.gd"
 TooltipManager="*res://scripts/ui/tooltip_manager.gd"
 TutorialManager="*res://scripts/ui/tutorial_manager.gd"
@@ -224,6 +227,21 @@ defensive_stance={
 ready_parry={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":80,"key_label":0,"unicode":80,"location":0,"echo":false,"script":null)
+]
+}
+mark_quarry={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":72,"key_label":0,"unicode":72,"location":0,"echo":false,"script":null)
+]
+}
+expose_weakness={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":88,"key_label":0,"unicode":88,"location":0,"echo":false,"script":null)
+]
+}
+exploit_opening={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":true,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":69,"location":0,"echo":false,"script":null)
 ]
 }
 

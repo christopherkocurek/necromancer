@@ -63,7 +63,21 @@ var _wolf_speed_bonus: int = 0  # Temporary speed bonus applied in wolf form
 var _wolf_attack_bonus: int = 0  # Temporary attack bonus applied in wolf form
 var last_attack_effect: String = ""
 
+# Hunting duel debuff (Expose Weakness)
+var _hunter_exposed_turns: int = 0
+var _hunter_exposed_evasion_penalty: int = 0
+var _hunter_exposed_protection_shred: int = 0
+
 var health_bar: EntityHealthBar = null
+
+# Intent readout (focus-first telegraphing)
+const INTENT_MELEE := "melee"
+const INTENT_RANGED := "ranged"
+const INTENT_CAST := "cast"
+const INTENT_MOVE := "move"
+const INTENT_FLEE := "flee"
+const INTENT_IDLE := "idle"
+const INTENT_UNCERTAIN := "uncertain"
 
 func _ready() -> void:
 	super._ready()
@@ -162,6 +176,14 @@ func take_turn() -> void:
 	if not is_alive or never_moves:
 		return
 
+	# Tick Expose Weakness debuff on this monster's own turn.
+	if _hunter_exposed_turns > 0:
+		_hunter_exposed_turns -= 1
+		if _hunter_exposed_turns <= 0:
+			_hunter_exposed_turns = 0
+			_hunter_exposed_evasion_penalty = 0
+			_hunter_exposed_protection_shred = 0
+
 	# Check if monster has energy to act (energy consumed by TurnSystem)
 	if not can_act():
 		return
@@ -216,6 +238,255 @@ func take_turn() -> void:
 			_flee_behavior()
 
 	EventBus.turn_ended.emit(self)
+
+## Build a hunting-gated intent readout for Look/Target/HUD.
+## Returns:
+## {
+##   "type": String, "icon": String, "summary": String, "detail": String,
+##   "eta": int, "targets_player": bool, "certainty": String
+## }
+func get_intent_readout_for_viewer(viewer: Player) -> Dictionary:
+	var tier: int = _get_intent_read_tier(viewer)
+	var base: Dictionary = _predict_intent_base()
+
+	var intent_type: String = str(base.get("type", INTENT_UNCERTAIN))
+	var icon: String = _intent_icon(intent_type)
+	var eta: int = int(base.get("eta", 1))
+	var targets_player: bool = bool(base.get("targets_player", false))
+	var spell: String = str(base.get("spell", ""))
+	var certainty: String = "Unclear"
+	var summary: String = "Intent unknown"
+	var detail: String = ""
+
+	if tier <= 0:
+		return {
+			"type": INTENT_UNCERTAIN,
+			"icon": _intent_icon(INTENT_UNCERTAIN),
+			"summary": "Behavior unreadable",
+			"detail": "",
+			"eta": eta,
+			"targets_player": targets_player,
+			"certainty": certainty,
+		}
+
+	if tier <= 2:
+		# Coarse behavior only.
+		match intent_type:
+			INTENT_FLEE:
+				summary = "Defensive movement"
+			INTENT_IDLE:
+				summary = "Inactive / waiting"
+			INTENT_MOVE:
+				summary = "Aggressive movement"
+			INTENT_MELEE, INTENT_RANGED, INTENT_CAST:
+				summary = "Hostile action likely"
+			_:
+				summary = "Behavior uncertain"
+		return {
+			"type": intent_type,
+			"icon": icon,
+			"summary": summary,
+			"detail": "",
+			"eta": eta,
+			"targets_player": targets_player,
+			"certainty": "Likely",
+		}
+
+	if tier <= 5:
+		match intent_type:
+			INTENT_MELEE:
+				summary = "Melee attack"
+			INTENT_RANGED:
+				summary = "Ranged attack"
+			INTENT_CAST:
+				summary = "Cast a spell"
+			INTENT_MOVE:
+				summary = "Advance"
+			INTENT_FLEE:
+				summary = "Retreat"
+			INTENT_IDLE:
+				summary = "Wait"
+			_:
+				summary = "Uncertain"
+		return {
+			"type": intent_type,
+			"icon": icon,
+			"summary": summary,
+			"detail": "",
+			"eta": eta,
+			"targets_player": targets_player,
+			"certainty": "Likely",
+		}
+
+	if tier <= 8:
+		certainty = "Likely"
+		summary = _intent_summary(intent_type, spell)
+		var eta_text: String = "now" if eta <= 0 else ("%d turn" % eta if eta == 1 else "%d turns" % eta)
+		var target_text: String = "you" if targets_player else "other"
+		detail = "ETA: %s | Target: %s" % [eta_text, target_text]
+		return {
+			"type": intent_type,
+			"icon": icon,
+			"summary": summary,
+			"detail": detail,
+			"eta": eta,
+			"targets_player": targets_player,
+			"certainty": certainty,
+		}
+
+	# 9+: specific known action where possible.
+	certainty = "High"
+	summary = _intent_summary(intent_type, spell)
+	if intent_type == INTENT_CAST and not spell.is_empty():
+		detail = "Read action: %s" % _spell_label(spell)
+	else:
+		detail = "Read action: %s" % summary
+	if targets_player:
+		detail += " | Target: you"
+	if eta > 0:
+		detail += " | ETA: %d" % eta
+	return {
+		"type": intent_type,
+		"icon": icon,
+		"summary": summary,
+		"detail": detail,
+		"eta": eta,
+		"targets_player": targets_player,
+		"certainty": certainty,
+	}
+
+func _get_intent_read_tier(viewer: Player) -> int:
+	if not is_instance_valid(viewer):
+		return 0
+	if not viewer.has_method("get_effective_skill"):
+		return 0
+	return int(viewer.get_effective_skill("hunting"))
+
+func _predict_intent_base() -> Dictionary:
+	var player_ref: Player = GameManager.player
+	if not is_alive:
+		return {"type": INTENT_IDLE, "eta": 1, "targets_player": false}
+
+	if status_fx and status_fx.is_confused():
+		return {"type": INTENT_UNCERTAIN, "eta": 1, "targets_player": false}
+	if status_fx and status_fx.is_afraid():
+		return {"type": INTENT_FLEE, "eta": 0, "targets_player": false}
+	if is_sleeping:
+		return {"type": INTENT_IDLE, "eta": 1, "targets_player": false}
+
+	var state: int = ai_state
+	if status_fx and status_fx.is_blind() and state == AIState.HUNTING:
+		state = AIState.WANDERING
+
+	if state == AIState.IDLE:
+		return {"type": INTENT_IDLE, "eta": 1, "targets_player": false}
+	if state == AIState.WANDERING:
+		return {"type": INTENT_MOVE, "eta": 1, "targets_player": false}
+	if state == AIState.FLEEING:
+		return {"type": INTENT_FLEE, "eta": 0, "targets_player": false}
+
+	# Hunting state.
+	var tgt: Entity = target
+	if not is_instance_valid(tgt):
+		tgt = player_ref
+	if not is_instance_valid(tgt):
+		return {"type": INTENT_MOVE, "eta": 1, "targets_player": false}
+
+	var dist: int = _grid_distance(grid_position, tgt.grid_position)
+	var targeting_player: bool = (is_instance_valid(player_ref) and tgt == player_ref)
+
+	if dist <= 1:
+		return {"type": INTENT_MELEE, "eta": 0, "targets_player": targeting_player}
+
+	if GameManager.current_level and GameManager.current_level.has_los_to(grid_position, tgt.grid_position) and dist <= perception_range:
+		var spell_choice: String = _choose_intent_spell(_get_available_spells())
+		if not spell_choice.is_empty():
+			var ranged_spells: Array[String] = ["ARROW1", "ARROW2", "BOULDER"]
+			if spell_choice in ranged_spells:
+				return {"type": INTENT_RANGED, "spell": spell_choice, "eta": 0, "targets_player": targeting_player}
+			return {"type": INTENT_CAST, "spell": spell_choice, "eta": 0, "targets_player": targeting_player}
+
+	return {"type": INTENT_MOVE, "eta": 1, "targets_player": targeting_player}
+
+func _choose_intent_spell(spells: Array[String]) -> String:
+	if spells.is_empty():
+		return ""
+	# Deterministic threat-ordered choice for telegraph readability.
+	var priority: Array[String] = [
+		"HOLD", "CONF", "SCARE", "SLOW",
+		"BR_DARK", "BR_POIS", "BR_COLD", "BR_FIRE",
+		"ARROW2", "BOULDER", "ARROW1",
+		"DARKNESS", "SHRIEK"
+	]
+	for key in priority:
+		if key in spells:
+			return key
+	return spells[0]
+
+func _intent_icon(intent_type: String) -> String:
+	match intent_type:
+		INTENT_MELEE:
+			return "sword"
+		INTENT_RANGED:
+			return "bow"
+		INTENT_CAST:
+			return "spark"
+		INTENT_MOVE:
+			return "steps"
+		INTENT_FLEE:
+			return "retreat"
+		INTENT_IDLE:
+			return "wait"
+		_:
+			return "?"
+
+func _intent_summary(intent_type: String, spell: String = "") -> String:
+	match intent_type:
+		INTENT_MELEE:
+			return "Melee attack"
+		INTENT_RANGED:
+			return "Ranged attack"
+		INTENT_CAST:
+			return "Cast %s" % _spell_label(spell) if not spell.is_empty() else "Cast a spell"
+		INTENT_MOVE:
+			return "Advance"
+		INTENT_FLEE:
+			return "Retreat"
+		INTENT_IDLE:
+			return "Wait"
+		_:
+			return "Uncertain"
+
+func _spell_label(spell: String) -> String:
+	match spell:
+		"HOLD":
+			return "Hold"
+		"CONF":
+			return "Confuse"
+		"SCARE":
+			return "Scare"
+		"SLOW":
+			return "Slow"
+		"DARKNESS":
+			return "Darkness"
+		"SHRIEK":
+			return "Shriek"
+		"ARROW1":
+			return "Shot"
+		"ARROW2":
+			return "Heavy shot"
+		"BOULDER":
+			return "Boulder"
+		"BR_FIRE":
+			return "Fire breath"
+		"BR_COLD":
+			return "Cold breath"
+		"BR_POIS":
+			return "Poison breath"
+		"BR_DARK":
+			return "Dark breath"
+		_:
+			return spell.capitalize()
 
 func _confused_behavior() -> void:
 	# Random movement when confused
@@ -825,7 +1096,24 @@ func get_total_evasion(attacker: Entity) -> int:
 			if off_hand_item != null and "tval" in off_hand_item and off_hand_item.tval == 34:
 				evn -= 1
 
+	# Expose Weakness debuff from hunter abilities.
+	if _hunter_exposed_turns > 0:
+		evn -= _hunter_exposed_evasion_penalty
+
 	return evn
+
+## Apply temporary hunter duel debuff.
+func apply_hunter_exposure(turns: int, evasion_penalty: int, protection_shred: int) -> void:
+	_hunter_exposed_turns = maxi(_hunter_exposed_turns, turns)
+	_hunter_exposed_evasion_penalty = maxi(_hunter_exposed_evasion_penalty, evasion_penalty)
+	_hunter_exposed_protection_shred = maxi(_hunter_exposed_protection_shred, protection_shred)
+
+## Override protection roll so Expose Weakness can shave mitigation.
+func roll_protection(_damage_type: int = 1) -> int:
+	var prot: int = super.roll_protection(_damage_type)
+	if _hunter_exposed_turns > 0 and _hunter_exposed_protection_shred > 0:
+		prot = maxi(0, prot - _hunter_exposed_protection_shred)
+	return prot
 
 ## Override damage dice for werewolf human form (reduced to 1d6 unarmed)
 func _get_attack_damage_dice() -> String:

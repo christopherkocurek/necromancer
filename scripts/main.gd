@@ -57,6 +57,9 @@ var _mining_turns_required: int = 4
 var _mining_target: Vector2i = Vector2i(-1, -1)
 var _mining_hp_before: int = 0
 var _pending_tunnel: bool = false
+var _pending_stairs_confirm: bool = false
+var _pending_stairs_turn: int = -1
+var _pending_stairs_dir: int = 0  # -1 up, +1 down
 
 # Auto-explore state (flag-based loop)
 var _auto_exploring: bool = false
@@ -498,10 +501,11 @@ func _process(_delta: float) -> void:
 
 	# Tutorial hints (self-throttles via _is_showing check)
 	if player and player.is_alive:
-		TutorialManager.check_hints(player)
-		if current_level:
-			var hint_tile: int = current_level.get_tile(player.grid_position)
-			TutorialManager.check_tile_hints(player, hint_tile)
+		if AccessibilityManager.is_assist_enabled():
+			TutorialManager.check_hints(player)
+			if current_level:
+				var hint_tile: int = current_level.get_tile(player.grid_position)
+				TutorialManager.check_tile_hints(player, hint_tile)
 
 	# Handle zoom
 	if Input.is_action_just_pressed("zoom_in"):
@@ -530,10 +534,35 @@ func _check_stairs() -> void:
 	if Input.is_action_just_pressed("ui_accept"):  # Enter key
 		match tile:
 			Level.Tile.STAIRS_DOWN:
+				if _needs_stairs_confirmation(1):
+					return
 				_descend()
 			Level.Tile.STAIRS_UP:
 				if GameManager.current_depth > 1:
+					if _needs_stairs_confirmation(-1):
+						return
 					_ascend()
+
+func _needs_stairs_confirmation(direction: int) -> bool:
+	# Safety confirm for high-risk transition at low HP.
+	var hp_pct: float = float(player.current_health) / float(maxi(1, player.max_health))
+	var risky: bool = hp_pct <= 0.25
+	if not risky:
+		_pending_stairs_confirm = false
+		_pending_stairs_turn = -1
+		_pending_stairs_dir = 0
+		return false
+	if _pending_stairs_confirm and _pending_stairs_turn == GameManager.turn_count and _pending_stairs_dir == direction:
+		_pending_stairs_confirm = false
+		_pending_stairs_turn = -1
+		_pending_stairs_dir = 0
+		return false
+	_pending_stairs_confirm = true
+	_pending_stairs_turn = GameManager.turn_count
+	_pending_stairs_dir = direction
+	var dir_text: String = "descend" if direction > 0 else "ascend"
+	GameManager.log_message("You are badly wounded. Press Enter again to %s." % dir_text, ThemeColors.MSG_WARNING)
+	return true
 
 func _fade_to_black(duration: float = 0.15) -> void:
 	if not transition_overlay:
@@ -857,6 +886,33 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ready_parry"):
 		if player and player.is_alive and GameManager.is_player_turn:
 			if player.ready_parry():
+				player.consume_energy()
+				turn_system._after_player_action()
+				hud.update_player_stats(player)
+		get_viewport().set_input_as_handled()
+
+	# Mark quarry (Shift+H)
+	if event.is_action_pressed("mark_quarry"):
+		if player and player.is_alive and GameManager.is_player_turn:
+			if player.activate_mark_quarry():
+				player.consume_energy()
+				turn_system._after_player_action()
+				hud.update_player_stats(player)
+		get_viewport().set_input_as_handled()
+
+	# Expose weakness (Shift+X)
+	if event.is_action_pressed("expose_weakness"):
+		if player and player.is_alive and GameManager.is_player_turn:
+			if player.activate_expose_weakness():
+				player.consume_energy()
+				turn_system._after_player_action()
+				hud.update_player_stats(player)
+		get_viewport().set_input_as_handled()
+
+	# Exploit opening (Shift+E)
+	if event.is_action_pressed("exploit_opening"):
+		if player and player.is_alive and GameManager.is_player_turn:
+			if player.activate_exploit_opening():
 				player.consume_energy()
 				turn_system._after_player_action()
 				hud.update_player_stats(player)
@@ -1355,6 +1411,8 @@ func _on_player_died(cause: String, killer_name: String) -> void:
 	player.run_stats.killer_name = killer_name
 	player.run_stats.max_depth_reached = maxi(player.run_stats.max_depth_reached, GameManager.current_depth)
 	player.run_stats.total_turns = GameManager.turn_count
+	if ChronicleManager:
+		ChronicleManager.record_run(player, player.run_stats, "death")
 
 	# Show death screen
 	death_screen.show_death(player, player.run_stats)
