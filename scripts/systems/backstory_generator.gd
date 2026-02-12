@@ -351,8 +351,12 @@ static func _get_low_stat_text(stat: String) -> String:
 			"Your body is fragile, but your will drives it beyond its limits.",
 		],
 		"gra": [
-			"The subtle arts of persuasion have never been your strength.",
+			"Courts and councils never came naturally to you; you prefer plain speech and hard truths.",
 			"You are blunt where others are graceful, but at least you are honest.",
+			"You do not charm a room by entering it; you win trust only after deeds are done.",
+			"Etiquette was never your weapon, and you have little patience for pretty lies.",
+			"Your manner is direct and unvarnished, better suited to danger than diplomacy.",
+			"You are no silver-tongued courtier; your convictions speak louder than your voice.",
 		],
 	}
 	var texts: Array = options.get(stat, options["str"])
@@ -370,6 +374,8 @@ static func generate(character_data: Dictionary) -> String:
 	var trait_name: String = character_data.get("trait", "")
 	var stats: Dictionary = character_data.get("base_stats", {})
 	var age: int = character_data.get("age", 30)
+	var skill_investments: Dictionary = character_data.get("skill_investments", {})
+	var ability_purchases: Array = character_data.get("ability_purchases", [])
 
 	# Get alternate house name for narrative use
 	var house_display: String = house
@@ -390,8 +396,61 @@ static func generate(character_data: Dictionary) -> String:
 	var stat_flavor: String = _generate_stat_flavor(stats)
 	if not stat_flavor.is_empty():
 		parts.append(stat_flavor)
+	var build_flavor: String = _generate_build_flavor(skill_investments, ability_purchases)
+	if not build_flavor.is_empty():
+		parts.append(build_flavor)
 
 	return "\n\n".join(parts)
+
+static func _generate_build_flavor(skill_investments: Dictionary, ability_purchases: Array) -> String:
+	var ranked: Array[Dictionary] = []
+	for key in skill_investments.keys():
+		var val: int = int(skill_investments.get(key, 0))
+		if val > 0:
+			ranked.append({"skill": str(key), "points": val})
+	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if int(a["points"]) == int(b["points"]):
+			return str(a["skill"]) < str(b["skill"])
+		return int(a["points"]) > int(b["points"])
+	)
+
+	var focus_phrase: String = ""
+	if ranked.size() > 0:
+		var primary: String = str(ranked[0]["skill"])
+		match primary:
+			"melee":
+				focus_phrase = "You drilled endlessly in close-quarters forms, until each strike became instinct."
+			"archery":
+				focus_phrase = "You trained with bow and sightline in all weather, measuring distance by breath and heartbeat."
+			"evasion":
+				focus_phrase = "You learned to survive by movement, never where the enemy expects you to be."
+			"stealth":
+				focus_phrase = "You favored shadow and patience, striking only when the moment could not fail."
+			"hunting":
+				focus_phrase = "You studied tracks, wind, and silence, making the wild itself your tutor."
+			"will":
+				focus_phrase = "You hardened mind and spirit, mastering fear before facing it in battle."
+			"smithing":
+				focus_phrase = "You spent long hours at hammer and anvil, learning the language of steel and flaw."
+			"lore":
+				focus_phrase = "You gathered old songs and dangerous words, believing knowledge could wound the Shadow."
+			_:
+				focus_phrase = ""
+
+	var notable_abilities: Array[String] = []
+	for purchase in ability_purchases:
+		if purchase is Dictionary:
+			var nm: String = str(purchase.get("name", "")).strip_edges()
+			if not nm.is_empty() and not notable_abilities.has(nm):
+				notable_abilities.append(nm)
+	if notable_abilities.size() > 3:
+		notable_abilities = notable_abilities.slice(0, 3)
+
+	if focus_phrase.is_empty() and notable_abilities.is_empty():
+		return ""
+	if notable_abilities.is_empty():
+		return focus_phrase
+	return "%s You are already known for %s." % [focus_phrase, ", ".join(notable_abilities)]
 
 
 # ============================================================================

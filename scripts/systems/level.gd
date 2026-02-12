@@ -18,6 +18,8 @@ var tile_visibility: Array[bool] = []
 var room_lit: Array[bool] = []       # True if tile is in a lit room (CAVE_GLOW equivalent)
 var room_id: Array[int] = []         # Which room each tile belongs to (-1 = none/corridor)
 var rooms: Array[Rect2i] = []        # Room rectangles from generation
+var vault_room_ids: Dictionary = {}  # room_id -> true for vault rooms
+var vault_rects: Array[Rect2i] = []  # Rects for all carved vaults (including non-room vaults)
 var tile_in_fov: Array[bool] = []    # Geometric line of sight (FOV only, before lighting)
 var tile_lit: Array[bool] = []       # Has light (player torch + room glow)
 var _newly_explored_count: int = 0   # Tiles explored this FOV update (for stealth XP)
@@ -66,6 +68,7 @@ enum Tile {
 
 # Track which traps have been triggered (to avoid re-triggering)
 var triggered_traps: Dictionary = {}  # Vector2i -> bool
+var revealed_traps: Dictionary = {}  # Vector2i -> bool (detected but not yet triggered/disarmed)
 
 # Forge use tracking — each forge has limited uses
 var forge_uses: Dictionary = {}  # Vector2i -> int
@@ -89,6 +92,8 @@ var secret_doors: Dictionary = {}  # Vector2i -> bool (true if still hidden)
 
 # Dark zones: rooms with no ambient light (depth 10+)
 var dark_zone_rooms: Dictionary = {}  # room_id -> true for rooms that are dark zones
+var room_tags: Dictionary = {}  # room_id -> Array[String]
+var room_event_seeds: Dictionary = {}  # room_id -> int
 
 # Glowing items on the ground: positions of items that emit light
 var glowing_items: Array[Vector2i] = []
@@ -99,6 +104,8 @@ var floor_alertness: int = 0  # 0-50+, rises with noise, decays over time
 # Environmental storytelling: position -> flavor message (displayed once when player steps on tile)
 var flavor_messages: Dictionary = {}  # Vector2i -> String
 var _seen_flavor_positions: Dictionary = {}  # Vector2i -> bool (already displayed)
+var _seen_inscription_rewards: Dictionary = {}  # Vector2i -> bool (XP already granted)
+var _seen_room_events: Dictionary = {}  # room_id -> true (drama event triggered)
 
 # Child nodes
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
@@ -211,6 +218,8 @@ func disarm_trap(pos: Vector2i, hunting_skill: int) -> Dictionary:
 	var tile: int = get_tile(pos)
 	if tile != Tile.TRAP and tile != Tile.TRAP_TRIGGERED:
 		return {"success": false, "message": "There is no visible trap here."}
+	if tile == Tile.TRAP and not revealed_traps.has(pos):
+		return {"success": false, "message": "There is no visible trap here."}
 
 	var chance: float = 0.40 + 0.05 * hunting_skill
 	if randf() < chance:
@@ -220,6 +229,8 @@ func disarm_trap(pos: Vector2i, hunting_skill: int) -> Dictionary:
 			trap_types.erase(pos)
 		if triggered_traps.has(pos):
 			triggered_traps.erase(pos)
+		if revealed_traps.has(pos):
+			revealed_traps.erase(pos)
 		return {"success": true, "message": "You carefully disarm the trap."}
 	else:
 		return {"success": false, "message": "You fumble the disarm attempt!"}
@@ -227,6 +238,14 @@ func disarm_trap(pos: Vector2i, hunting_skill: int) -> Dictionary:
 ## Called when an entity steps on a tile. Returns true if something happened.
 func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 	var tile := get_tile(pos)
+
+	if entity is Player:
+		var perception: int = entity.get_effective_perception() if entity.has_method("get_effective_perception") else 0
+		_try_reveal_nearby_traps(pos, perception)
+		var rid: int = get_room_id(pos)
+		if rid >= 0 and not _seen_room_events.has(rid):
+			_seen_room_events[rid] = true
+			_trigger_room_drama_event(rid, entity as Player)
 
 	if tile == Tile.TRAP and not triggered_traps.has(pos):
 		return _trigger_trap(entity, pos)
@@ -236,9 +255,13 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 
 	if tile == Tile.WATER and entity is Player:
 		GameManager.log_message("You wade through shallow water.", ThemeColors.SECONDARY)
+		if AudioManager and AudioManager.has_method("play_sfx"):
+			AudioManager.play_sfx("terrain_water_step")
 
 	if tile == Tile.VINE_FLOOR and entity is Player:
 		EventBus.message_logged.emit("You push through tangled vines.", ThemeColors.TEXT_MUTED)
+		if AudioManager and AudioManager.has_method("play_sfx"):
+			AudioManager.play_sfx("terrain_vine_step")
 
 	if tile == Tile.POISON_STREAM:
 		return _poison_stream_damage(entity, pos)
@@ -269,6 +292,11 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 		if pos in flavor_messages and pos not in _seen_flavor_positions:
 			_seen_flavor_positions[pos] = true
 			EventBus.message_logged.emit(flavor_messages[pos], ThemeColors.MSG_INFO)
+		if pos not in _seen_inscription_rewards:
+			_seen_inscription_rewards[pos] = true
+			var xp_reward: int = 500
+			entity.gain_experience(xp_reward, "encounter")
+			EventBus.message_logged.emit("The inscription steels your resolve. (+%d XP)" % xp_reward, ThemeColors.MSG_XP)
 
 	return false
 
@@ -337,11 +365,13 @@ func _trigger_trap(entity: Entity, pos: Vector2i) -> bool:
 
 	# Roll to avoid — trap stays active if avoided
 	if randi_range(1, 100) <= avoid_chance:
+		revealed_traps[pos] = true
 		if entity == GameManager.player:
 			GameManager.log_message("You notice a trap and step carefully over it.", ThemeColors.MSG_WARNING)
 		return true
 
 	# Mark trap as triggered only after failing to avoid
+	revealed_traps[pos] = true
 	triggered_traps[pos] = true
 	set_tile(pos, Tile.TRAP_TRIGGERED)
 
@@ -446,13 +476,28 @@ func _lava_damage(entity: Entity, _pos: Vector2i) -> bool:
 func _poison_stream_damage(entity: Entity, _pos: Vector2i) -> bool:
 	if not is_instance_valid(entity):
 		return false
+
 	var dmg: int = randi_range(1, 4)  # 1d4 poison damage
 	entity.take_damage(dmg, "poison", null)
-	entity.apply_status("poisoned", 3)
+	var apply_poison: bool = true
+	if entity is Player:
+		var p: Player = entity as Player
+		var con_roll: int = randi_range(1, 20) + p.get_effective_constitution()
+		var poison_dc: int = 12 + int(depth / 3)
+		apply_poison = con_roll < poison_dc
+		if not apply_poison:
+			GameManager.log_message("You resist the stream's venom.", ThemeColors.ABILITY_LEARNED)
+	if apply_poison:
+		entity.apply_status("poisoned", 3)
 	if entity == GameManager.player or is_tile_visible(entity.grid_position):
 		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 		var verb: String = "wade" if entity == GameManager.player else "wades"
-		GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+		if apply_poison:
+			GameManager.log_message("%s %s through a poisonous stream! (%d damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+		else:
+			GameManager.log_message("%s %s through a poisonous stream! (%d damage, no poison)" % [entity_name, verb, dmg], ThemeColors.MSG_WARNING)
+	if entity == GameManager.player and AudioManager and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("terrain_poison_stream_step")
 	return true
 
 func _web_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -462,9 +507,12 @@ func _web_effect(entity: Entity, _pos: Vector2i) -> bool:
 	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("SPIDER"):
 		return false
 	entity.apply_status("slow", 3)
-	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-	var verb: String = "get" if entity == GameManager.player else "gets"
-	GameManager.log_message("%s %s tangled in thick webs!" % [entity_name, verb], ThemeColors.MSG_WARNING)
+	if entity == GameManager.player or is_tile_visible(entity.grid_position):
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		var verb: String = "get" if entity == GameManager.player else "gets"
+		GameManager.log_message("%s %s tangled in thick webs!" % [entity_name, verb], ThemeColors.MSG_WARNING)
+	if entity == GameManager.player and AudioManager and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("terrain_web_step")
 	return true
 
 func _dark_pool_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -475,9 +523,10 @@ func _dark_pool_effect(entity: Entity, _pos: Vector2i) -> bool:
 	# 20% chance of blindness
 	if randf() < 0.20:
 		entity.apply_status("blind", 2)
-	var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-	var verb: String = "wade" if entity == GameManager.player else "wades"
-	GameManager.log_message("%s %s through a dark, freezing pool! (%d cold damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	if entity == GameManager.player or is_tile_visible(entity.grid_position):
+		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+		var verb: String = "wade" if entity == GameManager.player else "wades"
+		GameManager.log_message("%s %s through a dark, freezing pool! (%d cold damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
 	return true
 
 func _morgul_rune_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -501,7 +550,8 @@ func _glyph_of_warding_effect(entity: Entity, _pos: Vector2i) -> bool:
 	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("UNDEAD"):
 		var dmg: int = randi_range(2, 12)  # 2d6 damage to undead
 		entity.take_damage(dmg, "holy", null)
-		GameManager.log_message("The glyph of warding flares! (%d holy damage to %s)" % [dmg, entity.entity_name], ThemeColors.ABILITY_LEARNED)
+		if is_tile_visible(entity.grid_position):
+			GameManager.log_message("The glyph of warding flares! (%d holy damage to %s)" % [dmg, entity.entity_name], ThemeColors.ABILITY_LEARNED)
 		return true
 	if entity is Player:
 		EventBus.message_logged.emit("You feel the protective ward beneath your feet.", ThemeColors.ABILITY_LEARNED)
@@ -514,8 +564,9 @@ func _shadow_floor_effect(entity: Entity, pos: Vector2i) -> bool:
 	if is_tile_lit(pos):
 		var dmg: int = randi_range(1, 4)  # 1d4 shadow damage
 		entity.take_damage(dmg, "dark", null)
-		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
-		GameManager.log_message("Light disturbs the shadows, lashing out at %s! (%d damage)" % [entity_name.to_lower(), dmg], ThemeColors.MSG_ERROR)
+		if entity == GameManager.player or is_tile_visible(entity.grid_position):
+			var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
+			GameManager.log_message("Light disturbs the shadows, lashing out at %s! (%d damage)" % [entity_name.to_lower(), dmg], ThemeColors.MSG_ERROR)
 		return true
 	return false
 
@@ -579,6 +630,78 @@ func set_room_id_by_rect(rect: Rect2i, id: int) -> void:
 		for x in range(rect.position.x, rect.end.x):
 			if is_in_bounds(Vector2i(x, y)):
 				room_id[y * width + x] = id
+
+func set_room_metadata(id: int, tags: Array[String], event_seed: int) -> void:
+	room_tags[id] = tags.duplicate()
+	room_event_seeds[id] = event_seed
+
+func get_room_tags_at(pos: Vector2i) -> Array[String]:
+	var rid: int = get_room_id(pos)
+	if rid < 0:
+		return []
+	var tags: Variant = room_tags.get(rid, [])
+	return tags.duplicate() if tags is Array else []
+
+func get_room_event_seed_at(pos: Vector2i) -> int:
+	var rid: int = get_room_id(pos)
+	if rid < 0:
+		return 0
+	return int(room_event_seeds.get(rid, 0))
+
+func _trigger_room_drama_event(room_idx: int, player_ref: Player) -> void:
+	var tags: Array[String] = room_tags.get(room_idx, [])
+	var seed: int = int(room_event_seeds.get(room_idx, 0))
+	if tags.is_empty() or seed == 0:
+		return
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var msg_pool: Array[String] = []
+	var noise_boost: int = 0
+
+	if "vault" in tags:
+		msg_pool.append("A cold hush settles. This chamber remembers slaughter.")
+		msg_pool.append("Broken standards and old blood mark a forgotten last stand.")
+		noise_boost += 8
+	if "entry" in tags:
+		msg_pool.append("The stones behind you feel farther away than they should.")
+		noise_boost += 2
+	if "exit" in tags:
+		msg_pool.append("The air tightens. Something waits between you and the stairs.")
+		noise_boost += 4
+	if "grand" in tags:
+		msg_pool.append("The hall opens like a tomb. Your footsteps sound too loud.")
+		noise_boost += 3
+	if "deep" in tags:
+		msg_pool.append("A watcher stirs in the dark. You feel its attention.")
+		noise_boost += 6
+	if "terror" in tags:
+		msg_pool.append("Every instinct says turn back. Nothing here will be merciful.")
+		noise_boost += 10
+
+	if msg_pool.is_empty():
+		return
+
+	var chosen: String = msg_pool[rng.randi_range(0, msg_pool.size() - 1)]
+	EventBus.message_logged.emit(chosen, ThemeColors.MSG_WARNING)
+	if noise_boost > 0:
+		add_floor_noise(noise_boost)
+		if player_ref and player_ref.run_stats:
+			player_ref.run_stats.record_forensic_event(
+				GameManager.turn_count,
+				"room_event",
+				"Room drama triggered: %s (+%d pursuit)" % [chosen, noise_boost],
+				"info"
+			)
+
+func find_open_door_near(center: Vector2i, radius: int = 8, max_attempts: int = 64) -> Vector2i:
+	for _i in range(max_attempts):
+		var x: int = _floor_rng.randi_range(maxi(1, center.x - radius), mini(width - 2, center.x + radius))
+		var y: int = _floor_rng.randi_range(maxi(1, center.y - radius), mini(height - 2, center.y + radius))
+		var pos := Vector2i(x, y)
+		if get_tile(pos) == Tile.DOOR_OPEN:
+			return pos
+	return Vector2i(-1, -1)
 
 # ============================================================================
 # ENTITY MANAGEMENT
@@ -851,13 +974,17 @@ func apply_fov_to_tilemap() -> void:
 			if tile == Tile.VOID:
 				terrain_layer.erase_cell(pos)
 				continue
+			# Traps are invisible until triggered — render as floor
+			var render_tile: int = tile
+			if tile == Tile.TRAP and not revealed_traps.has(pos):
+				render_tile = Tile.FLOOR
 			if tile_visibility[idx]:
 				# Currently visible — lit variant
-				var atlas_coords := _get_atlas_coords_for_tile(tile, true)
+				var atlas_coords := _get_atlas_coords_for_tile(render_tile, true)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
 			elif explored[idx]:
 				# Explored but not visible — dark/remembered variant
-				var atlas_coords := _get_atlas_coords_for_tile(tile, false)
+				var atlas_coords := _get_atlas_coords_for_tile(render_tile, false)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
 			else:
 				# Unexplored: erase cell so black background shows through
@@ -1141,16 +1268,48 @@ func search_for_secrets(center: Vector2i, perception: int) -> int:
 func place_trap(pos: Vector2i, trap_type: int) -> void:
 	set_tile(pos, Tile.TRAP)
 	trap_types[pos] = trap_type
+	revealed_traps.erase(pos)
+
+func reveal_trap(pos: Vector2i) -> void:
+	if not is_in_bounds(pos):
+		return
+	if get_tile(pos) != Tile.TRAP and get_tile(pos) != Tile.TRAP_TRIGGERED:
+		return
+	revealed_traps[pos] = true
+	set_explored(pos, true)
+	set_tile_visible(pos, true)
+
+func is_trap_revealed(pos: Vector2i) -> bool:
+	return revealed_traps.has(pos) or get_tile(pos) == Tile.TRAP_TRIGGERED
+
+func _try_reveal_nearby_traps(center: Vector2i, perception: int) -> int:
+	var found: int = 0
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var pos: Vector2i = center + Vector2i(dx, dy)
+			if not is_in_bounds(pos):
+				continue
+			if get_tile(pos) != Tile.TRAP:
+				continue
+			if revealed_traps.has(pos):
+				continue
+			var chance: int = clampi(12 + perception * 9, 12, 88)
+			if randi_range(1, 100) <= chance:
+				reveal_trap(pos)
+				found += 1
+	if found > 0:
+		GameManager.log_message("Your senses pick out %d hidden trap%s nearby." % [found, "s" if found != 1 else ""], ThemeColors.MSG_WARNING)
+	return found
 
 ## Reveal all traps on the floor (used by Easy difficulty).
-## Changes TRAP tiles to TRAP_TRIGGERED visually but keeps them active via triggered_traps tracking.
 func reveal_all_traps() -> void:
 	for y in range(height):
 		for x in range(width):
 			var pos := Vector2i(x, y)
 			if get_tile(pos) == Tile.TRAP:
-				set_tile(pos, Tile.TRAP_TRIGGERED)
-				set_explored(pos, true)
+				reveal_trap(pos)
 
 # ============================================================================
 # WAYFARER'S INSTINCT (Trait: reveal nearby traps, doors, stairs on floor entry)
@@ -1174,8 +1333,7 @@ func reveal_for_wayfarer(center: Vector2i, trap_radius: int, feature_radius: int
 			# Reveal traps within trap_radius
 			if dist <= trap_radius:
 				if tile == Tile.TRAP:
-					set_explored(pos, true)
-					set_tile_visible(pos, true)
+					reveal_trap(pos)
 					traps_found += 1
 
 			# Reveal doors and stairs within feature_radius

@@ -572,6 +572,11 @@ func _assign_room_data(depth: int) -> void:
 	for room_idx in range(rooms.size()):
 		var room: Rect2i = rooms[room_idx]
 		level.set_room_id_by_rect(room, room_idx)
+		var tags: Array[String] = _build_room_tags(room_idx, room, depth)
+		var event_seed: int = int(depth * 100000 + room_idx * 97 + room.position.x * 31 + room.position.y * 17)
+		level.set_room_metadata(room_idx, tags, event_seed)
+		if EventBus:
+			EventBus.room_event_seeded.emit(depth, room_idx, event_seed, tags)
 
 	# Room lighting probability (Sil-Q style: shallow=lit, deep=dark)
 	var lit_chance: float = clampf(0.80 - depth * 0.04, 0.10, 0.80)
@@ -586,6 +591,29 @@ func _assign_room_data(depth: int) -> void:
 		for room_idx in range(rooms.size()):
 			if randf() < dark_zone_chance:
 				level.set_dark_zone(room_idx)
+
+func _build_room_tags(room_idx: int, room: Rect2i, depth: int) -> Array[String]:
+	var tags: Array[String] = []
+	var area: int = room.size.x * room.size.y
+	var layer: String = LayerConfig.get_layer_name(depth)
+	tags.append("layer:%s" % layer)
+	if room_idx == 0:
+		tags.append("entry")
+	if room_idx == rooms.size() - 1:
+		tags.append("exit")
+	if _vault_room_ids.has(room_idx):
+		tags.append("vault")
+	if area <= 36:
+		tags.append("compact")
+	elif area >= 120:
+		tags.append("grand")
+	else:
+		tags.append("standard")
+	if depth >= 10:
+		tags.append("deep")
+	if depth >= 15:
+		tags.append("terror")
+	return tags
 
 func _carve_h_corridor(x1: int, x2: int, y: int) -> void:
 	var start := mini(x1, x2)
@@ -1563,11 +1591,20 @@ func _ensure_forges(depth: int) -> void:
 		return
 
 	# Check if a forge already exists (placed by vaults or decoration)
+	var existing_forge_pos: Vector2i = Vector2i(-1, -1)
+	var existing_forge_tile: int = Level.Tile.FLOOR
 	for y in range(level.height):
 		for x in range(level.width):
 			var tile: int = level.get_tile(Vector2i(x, y))
 			if tile == Level.Tile.FORGE or tile == Level.Tile.FORGE_ENCHANTED or tile == Level.Tile.FORGE_UNIQUE:
-				return  # Already have one
+				existing_forge_pos = Vector2i(x, y)
+				existing_forge_tile = tile
+				break
+		if existing_forge_pos != Vector2i(-1, -1):
+			break
+	if existing_forge_pos != Vector2i(-1, -1):
+		_spawn_forge_guardian(existing_forge_pos, depth, existing_forge_tile)
+		return  # Already have one
 
 	# Determine forge type (Task 7)
 	var forge_tile: int = Level.Tile.FORGE
@@ -1609,15 +1646,15 @@ func _ensure_forges(depth: int) -> void:
 func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> void:
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var guard_count: int = 1
-	var guard_depth: int = depth
+	var guard_depth: int = mini(depth + 1, 20)
 	var guard_alertness: int = Constants.ALERTNESS_QUITE_ALERT
 
 	match forge_tile:
 		Level.Tile.FORGE_ENCHANTED:
-			guard_count = randi_range(1, 2)
+			guard_count = randi_range(2, 3)
 			guard_depth = mini(depth + 2, 20)
 		Level.Tile.FORGE_UNIQUE:
-			guard_count = randi_range(2, 3)
+			guard_count = randi_range(3, 4)
 			guard_depth = mini(depth + 4, 20)
 			guard_alertness = Constants.ALERTNESS_VERY_ALERT
 
@@ -1642,8 +1679,10 @@ func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> 
 				level.add_entity(guard)
 				placed += 1
 
-## Spawn 1-3 smithing materials within 3 tiles of each forge (Sil-Q forge_item_placement)
-## Depth determines material type: Mithril on all floors, Broken Glowing mid+, Broken Strange deep
+## Spawn 3 smithing materials per forge.
+## Early forges (depth 1-5) are Broken Glowing only.
+## From depth 6+, each spawn rolls Broken Glowing vs Broken Strange
+## using a depth-scaled curve so deeper floors reward higher-tier smithing loops.
 func _spawn_forge_materials(depth: int) -> void:
 	# Find all forge positions (any forge type)
 	var forge_positions: Array[Vector2i] = []
@@ -1658,30 +1697,27 @@ func _spawn_forge_materials(depth: int) -> void:
 
 	var item_scene := preload("res://scenes/entities/item.tscn")
 
-	# Build pool of smithing material IDs based on depth
-	# Broken Glowing (enchanted reforging) available from first forge (depth 2)
-	# Broken Strange (artifact reclaim) appears in deep forges
-	# Mithril spawns naturally at depth 15+ via loot tables — not placed at forges
-	var material_pool: Array[int] = []
-	var glowing_pool: Array[int] = []
-	if depth >= 2:
-		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_WEAPON_ID)  # 491
-		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_ARMOR_ID)   # 492
-	if depth >= 4:
-		glowing_pool.append(SmithingSystem.BROKEN_GLOWING_JEWELRY_ID) # 496
-	if depth >= 6:
-		material_pool.append(SmithingSystem.BROKEN_STRANGE_WEAPON_ID)  # 493
-	if depth >= 8:
-		material_pool.append(SmithingSystem.BROKEN_STRANGE_ARMOR_ID)   # 494
-	if depth >= 10:
-		material_pool.append(SmithingSystem.BROKEN_STRANGE_JEWELRY_ID) # 495
-	# Merge glowing into general pool for random picks
-	material_pool.append_array(glowing_pool)
+	var glowing_by_category: Dictionary = {
+		"weapon": SmithingSystem.BROKEN_GLOWING_WEAPON_ID,
+		"armor": SmithingSystem.BROKEN_GLOWING_ARMOR_ID,
+		"jewelry": SmithingSystem.BROKEN_GLOWING_JEWELRY_ID,
+	}
+	var strange_by_category: Dictionary = {
+		"weapon": SmithingSystem.BROKEN_STRANGE_WEAPON_ID,
+		"armor": SmithingSystem.BROKEN_STRANGE_ARMOR_ID,
+		"jewelry": SmithingSystem.BROKEN_STRANGE_JEWELRY_ID,
+	}
+	# Only keep categories that exist in both glowing and strange sets.
+	var categories: Array[String] = []
+	for cat in ["weapon", "armor", "jewelry"]:
+		var glow_id: int = int(glowing_by_category.get(cat, -1))
+		var strange_id: int = int(strange_by_category.get(cat, -1))
+		if DataManager.get_item_by_index(glow_id) != null and DataManager.get_item_by_index(strange_id) != null:
+			categories.append(cat)
+	if categories.is_empty():
+		return
 
 	for forge_pos: Vector2i in forge_positions:
-		var mat_count: int = randi_range(3, 5)  # More materials per forge (was 2-3)
-		var spawned: int = 0
-
 		# Collect valid passable tiles within 3 tiles of forge (not just FLOOR)
 		var nearby_floors: Array[Vector2i] = []
 		for dy in range(-3, 4):
@@ -1693,22 +1729,22 @@ func _spawn_forge_materials(depth: int) -> void:
 					nearby_floors.append(pos)
 
 		nearby_floors.shuffle()
+		if nearby_floors.size() < 3:
+			continue
 
 		var spawned_names: Array[String] = []
 		var spawn_ids: Array[int] = []
+		var strange_chance: float = _get_forge_strange_spawn_chance(depth)
+		for _j in range(3):
+			var category: String = categories.pick_random()  # 33/33/33 when all 3 categories are present.
+			var roll_strange: bool = depth >= 6 and randf() < strange_chance
+			var chosen_id: int = int(
+				strange_by_category.get(category, -1) if roll_strange else glowing_by_category.get(category, -1)
+			)
+			if chosen_id >= 0:
+				spawn_ids.append(chosen_id)
 
-		# Guarantee a matching pair of Broken Glowing for reforging (if available)
-		if not glowing_pool.is_empty() and nearby_floors.size() >= 2:
-			var pair_type: int = glowing_pool.pick_random()
-			spawn_ids.append(pair_type)
-			spawn_ids.append(pair_type)
-
-		# Fill remaining slots with random materials
-		var remaining: int = mat_count - spawn_ids.size()
-		for _j in range(remaining):
-			spawn_ids.append(material_pool.pick_random())
-
-		for i in range(mini(spawn_ids.size(), nearby_floors.size())):
+		for i in range(spawn_ids.size()):
 			var mat_id: int = spawn_ids[i]
 			var mat_template: DataManager.ItemData = DataManager.get_item_by_index(mat_id)
 			if mat_template == null:
@@ -1720,10 +1756,27 @@ func _spawn_forge_materials(depth: int) -> void:
 			mat_item.grid_position = nearby_floors[i]
 			mat_item.initialize_from_item_data(mat_copy)
 			level.add_item(mat_item)
-			spawned += 1
 			spawned_names.append(mat_copy.name.replace("& ", "").replace("~", ""))
-		if spawned > 0:
+		if not spawned_names.is_empty():
 			print("Forge materials at depth %d: %s" % [depth, ", ".join(spawned_names)])
+
+## Depth-scaled chance that a forge material rolls Broken Strange.
+## Interpreting "depth 100-500 feet = glowing only" as game depths 1-5.
+## Curve ramps meaningfully in the mid/deep game.
+func _get_forge_strange_spawn_chance(depth: int) -> float:
+	if depth <= 5:
+		return 0.0
+	if depth <= 7:
+		return 0.12
+	if depth <= 9:
+		return 0.25
+	if depth <= 11:
+		return 0.40
+	if depth <= 13:
+		return 0.56
+	if depth <= 16:
+		return 0.72
+	return 0.85
 
 ## Connect vault corridor points ($) to nearest room centers
 func _connect_vault_corridor_points() -> void:
@@ -2768,7 +2821,8 @@ func _scatter_poison_streams() -> void:
 			if not level.is_in_bounds(pos):
 				break
 			var tile: int = level.get_tile(pos)
-			if tile == Level.Tile.FLOOR or tile == Level.Tile.VINE_FLOOR:
+			# Do not overwrite themed vine/web floor; poison streams should be visually and mechanically distinct.
+			if tile == Level.Tile.FLOOR:
 				level.set_tile(pos, Level.Tile.POISON_STREAM)
 			if randf() < 0.40:
 				current_dir = cardinal_dirs[randi() % cardinal_dirs.size()]
@@ -3192,7 +3246,7 @@ const STORYTELLING_MESSAGES: Dictionary = {
 }
 
 ## Scatter environmental storytelling flavor messages across the level.
-## Places 2-5 messages per floor on random walkable tiles.
+## Places 2-5 messages per floor in high-impact rooms first, then fallback.
 func _scatter_storytelling(depth: int) -> void:
 	var layer_name: String = LayerConfig.get_layer_name(depth)
 	if layer_name not in STORYTELLING_MESSAGES:
@@ -3213,9 +3267,11 @@ func _scatter_storytelling(depth: int) -> void:
 	var available: Array = messages.duplicate()
 	available.shuffle()
 
+	# Build preferred room order: vault/terror/deep/grand/exit, then everything else.
+	var preferred_rooms: Array[int] = _get_storytelling_room_order()
 	var placed: int = 0
 	for i in range(mini(msg_count, available.size())):
-		var pos: Vector2i = level.find_random_floor()
+		var pos: Vector2i = _find_storytelling_position(preferred_rooms)
 		if pos == Vector2i(-1, -1):
 			continue
 		level.set_tile(pos, Level.Tile.INSCRIPTION)
@@ -3224,6 +3280,69 @@ func _scatter_storytelling(depth: int) -> void:
 
 	if placed > 0:
 		print("Placed %d storytelling messages at depth %d" % [placed, depth])
+
+func _get_storytelling_room_order() -> Array[int]:
+	var weighted: Array[Dictionary] = []
+	for room_idx in range(rooms.size()):
+		var tags_raw: Variant = level.room_tags.get(room_idx, [])
+		var tags: Array[String] = []
+		if tags_raw is Array:
+			for tag in tags_raw:
+				tags.append(str(tag))
+		var score: int = 0
+		if "vault" in tags:
+			score += 5
+		if "terror" in tags:
+			score += 4
+		if "deep" in tags:
+			score += 3
+		if "grand" in tags:
+			score += 2
+		if "exit" in tags:
+			score += 1
+		weighted.append({"room": room_idx, "score": score + randi_range(0, 2)})
+	weighted.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.score) > int(b.score)
+	)
+	var out: Array[int] = []
+	for w in weighted:
+		out.append(int(w.room))
+	return out
+
+func _find_storytelling_position(room_order: Array[int]) -> Vector2i:
+	var stairs_up: Vector2i = level.find_stairs_up()
+	var stairs_down: Vector2i = level.find_stairs_down()
+
+	for room_idx in room_order:
+		if room_idx < 0 or room_idx >= rooms.size():
+			continue
+		var room: Rect2i = rooms[room_idx]
+		for _attempt in range(20):
+			var x: int = randi_range(room.position.x + 1, room.end.x - 2)
+			var y: int = randi_range(room.position.y + 1, room.end.y - 2)
+			var pos := Vector2i(x, y)
+			if not level.is_in_bounds(pos):
+				continue
+			if not level.is_passable(pos):
+				continue
+			if level.get_entity_at(pos) != null:
+				continue
+			if level.flavor_messages.has(pos):
+				continue
+			if stairs_up != Vector2i(-1, -1) and pos.distance_to(stairs_up) < 4.0:
+				continue
+			if stairs_down != Vector2i(-1, -1) and pos.distance_to(stairs_down) < 4.0:
+				continue
+			return pos
+
+	# Fallback to generic random floor if no room-qualified tile found.
+	for _i in range(20):
+		var fallback: Vector2i = level.find_random_floor()
+		if fallback == Vector2i(-1, -1):
+			continue
+		if not level.flavor_messages.has(fallback):
+			return fallback
+	return Vector2i(-1, -1)
 
 # ============================================================================
 # LORE OBJECT SPAWNING

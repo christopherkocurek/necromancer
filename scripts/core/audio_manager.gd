@@ -59,6 +59,10 @@ const MUSIC_FILES: Dictionary = {
 const SFX_FILES: Dictionary = {
 	"hit": "res://assets/audio/sfx/hit.wav",
 	"hit1": "res://assets/audio/sfx/hit1.wav",
+	"dmg_poison": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/clothBelt.ogg",
+	"dmg_cold": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak1.ogg",
+	"dmg_fire": "res://assets/audio/sfx/destroy.wav",
+	"dmg_dark": "res://assets/audio/sfx/hallu.wav",
 	"miss": "res://assets/audio/sfx/miss.wav",
 	"miss1": "res://assets/audio/sfx/miss1.wav",
 	"kill": "res://assets/audio/sfx/kill.wav",
@@ -75,6 +79,10 @@ const SFX_FILES: Dictionary = {
 	"thump": "res://assets/audio/sfx/thump.wav",
 	"flee": "res://assets/audio/sfx/flee.wav",
 	"breath": "res://assets/audio/sfx/breath.wav",
+	"terrain_water_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/footstep08.ogg",
+	"terrain_vine_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/footstep03.ogg",
+	"terrain_web_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/cloth2.ogg",
+	"terrain_poison_stream_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/clothBelt2.ogg",
 }
 
 # Settings file
@@ -151,22 +159,31 @@ func _preload_audio() -> void:
 	# Load music tracks
 	for track_name in MUSIC_FILES:
 		var path: String = MUSIC_FILES[track_name]
-		if ResourceLoader.exists(path):
-			var stream: AudioStream = load(path)
-			if stream:
-				music_tracks[track_name] = stream
+		var stream: AudioStream = _load_audio_stream(path)
+		if stream:
+			music_tracks[track_name] = stream
 		else:
 			push_warning("AudioManager: Music file not found: %s" % path)
 
 	# Load SFX
 	for sfx_name in SFX_FILES:
 		var path: String = SFX_FILES[sfx_name]
-		if ResourceLoader.exists(path):
-			var stream: AudioStream = load(path)
-			if stream:
-				sfx_sounds[sfx_name] = stream
+		var stream: AudioStream = _load_audio_stream(path)
+		if stream:
+			sfx_sounds[sfx_name] = stream
 		else:
 			push_warning("AudioManager: SFX file not found: %s" % path)
+
+func _load_audio_stream(path: String) -> AudioStream:
+	if ResourceLoader.exists(path):
+		var loaded := load(path)
+		if loaded is AudioStream:
+			return loaded as AudioStream
+	var rel_path := path.trim_prefix("res://")
+	if FileAccess.file_exists(rel_path):
+		if path.to_lower().ends_with(".ogg"):
+			return AudioStreamOggVorbis.load_from_file(path)
+	return null
 
 func _connect_signals() -> void:
 	if not EventBus:
@@ -342,9 +359,21 @@ func _start_combat_music() -> void:
 # SIGNAL HANDLERS
 # ============================================================================
 
-func _on_entity_damaged(entity: Node, _damage: int, _damage_type: String, source: Node) -> void:
-	# Play hit sound
-	play_sfx(["hit", "hit1"].pick_random())
+func _on_entity_damaged(entity: Node, _damage: int, damage_type: String, source: Node) -> void:
+	# Reduce noisy offscreen spam: play impact SFX only when player involved or target is visible.
+	if not (_is_player(entity) or _is_player(source) or _is_entity_visible(entity)):
+		return
+	match damage_type:
+		"poison":
+			play_sfx("dmg_poison")
+		"cold":
+			play_sfx("dmg_cold")
+		"fire":
+			play_sfx("dmg_fire")
+		"dark":
+			play_sfx("dmg_dark")
+		_:
+			play_sfx(["hit", "hit1"].pick_random())
 
 	# Start combat music if player is involved
 	if _is_player(entity) or _is_player(source):
@@ -381,6 +410,15 @@ func _is_player(node: Node) -> bool:
 	if not is_instance_valid(node):
 		return false
 	return node is Player
+
+func _is_entity_visible(node: Node) -> bool:
+	if not is_instance_valid(node):
+		return false
+	if not GameManager or not GameManager.current_level:
+		return false
+	if node is Entity:
+		return GameManager.current_level.is_tile_visible(node.grid_position)
+	return false
 
 # ============================================================================
 # SETTINGS PERSISTENCE

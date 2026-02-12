@@ -144,18 +144,18 @@ func _load_terrain_coords() -> void:
 	terrain_coords[12] = {"light": Vector2i(0, 2), "dark": Vector2i(1, 2)}    # DOOR_LOCKED -> same as DOOR_CLOSED (iron door)
 	terrain_coords[13] = {"light": Vector2i(0, 2), "dark": Vector2i(1, 2)}    # DOOR_JAMMED -> same as DOOR_CLOSED (iron door)
 	terrain_coords[14] = {"light": Vector2i(22, 0), "dark": Vector2i(23, 0)}    # DOOR_SECRET ->  (terrain 11)
-	terrain_coords[15] = {"light": Vector2i(6, 3), "dark": Vector2i(7, 3)}    # WATER ->  (terrain 51)
+	terrain_coords[15] = {"light": Vector2i(22, 18), "dark": Vector2i(23, 18)}    # WATER -> DALL-E regen (blue water)
 	terrain_coords[16] = {"light": Vector2i(26, 0), "dark": Vector2i(27, 0)}    # LAVA ->  (terrain 13)
 	terrain_coords[17] = {"light": Vector2i(16, 18), "dark": Vector2i(17, 18)}    # VINE_FLOOR -> DALL-E regen
 	terrain_coords[18] = {"light": Vector2i(20, 18), "dark": Vector2i(21, 18)}    # POISON_STREAM -> DALL-E regen
 	# Stream D: New layer terrain types (row 18)
 	# These use placeholder coords until DALL-E sprites are generated
-	terrain_coords[19] = {"light": Vector2i(0, 18), "dark": Vector2i(1, 18)}    # WEB -> DALL-E regen
+	terrain_coords[19] = {"light": Vector2i(6, 1), "dark": Vector2i(7, 1)}    # WEB -> neutral web tile (no layer-1 floor bake)
 	terrain_coords[20] = {"light": Vector2i(2, 18), "dark": Vector2i(3, 18)}    # DARK_POOL
 	terrain_coords[21] = {"light": Vector2i(4, 18), "dark": Vector2i(5, 18)}    # MORGUL_RUNE
 	terrain_coords[22] = {"light": Vector2i(6, 18), "dark": Vector2i(7, 18)}    # SHADOW_BRAZIER
 	terrain_coords[23] = {"light": Vector2i(8, 18), "dark": Vector2i(9, 18)}    # GLYPH_OF_WARDING
-	terrain_coords[24] = {"light": Vector2i(2, 0), "dark": Vector2i(3, 0)}    # BONE_PILE -> reuses RUBBLE sprite (row 18 placeholder blank)
+	terrain_coords[24] = {"light": Vector2i(2, 3), "dark": Vector2i(3, 3)}    # BONE_PILE -> reuses RUBBLE sprite (fallen_masonry at terrain 49)
 	terrain_coords[25] = {"light": Vector2i(12, 18), "dark": Vector2i(13, 18)}  # SHADOW_FLOOR
 	terrain_coords[26] = {"light": Vector2i(14, 18), "dark": Vector2i(15, 18)}  # THRONE_DAIS
 	terrain_coords[27] = {"light": Vector2i(10, 18), "dark": Vector2i(11, 18)}  # INSCRIPTION -> row 18 slot (was BONE_PILE placeholder)
@@ -843,6 +843,20 @@ func _load_layer_tile_kits() -> void:
 		kit[13] = kit[3].duplicate()  # DOOR_JAMMED -> door_closed
 		kit[14] = kit[2].duplicate()  # DOOR_SECRET -> wall (hidden)
 		layer_tile_kits[layout["name"]] = kit
+
+	# Per-layer RUBBLE overrides (tile ID 8) — rubble painted on each layer's floor
+	var rubble_slots: Dictionary = {
+		"outer_pits":      {"light": Vector2i(24, 20), "dark": Vector2i(25, 20)},
+		"lower_halls":     {"light": Vector2i(26, 20), "dark": Vector2i(27, 20)},
+		"dark_halls":      {"light": Vector2i(24, 21), "dark": Vector2i(25, 21)},
+		"necropolis":      {"light": Vector2i(26, 21), "dark": Vector2i(27, 21)},
+		"pits_of_despair": {"light": Vector2i(24, 22), "dark": Vector2i(25, 22)},
+		"inner_sanctum":   {"light": Vector2i(26, 22), "dark": Vector2i(27, 22)},
+		"throne_room":     {"light": Vector2i(12, 23), "dark": Vector2i(13, 23)},
+	}
+	for layer_name: String in rubble_slots:
+		if layer_name in layer_tile_kits:
+			layer_tile_kits[layer_name][8] = rubble_slots[layer_name]  # 8 = RUBBLE
 
 # ============================================================================
 # PUBLIC API
