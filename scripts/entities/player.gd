@@ -52,6 +52,32 @@ const PARRY_READY_WINDOW_TURNS: int = 1
 const PARRY_ACTIVE_TURNS: int = 1
 const PARRY_COOLDOWN_TURNS: int = 5
 
+# Ability stance/action state (active remaster)
+var _disguise_active: bool = false
+var _disguise_cooldown: int = 0
+const DISGUISE_RECAST_COOLDOWN_TURNS: int = 2
+
+var _power_stance_active: bool = false
+var _finesse_stance_active: bool = false
+
+var _circular_guard_turns: int = 0
+var _circular_guard_cooldown: int = 0
+const CIRCULAR_GUARD_DURATION_TURNS: int = 3
+const CIRCULAR_GUARD_COOLDOWN_TURNS: int = 6
+
+var _swift_strikes_armed: bool = false
+var _swift_strikes_cooldown: int = 0
+const SWIFT_STRIKES_COOLDOWN_TURNS: int = 6
+
+var _crippling_shot_armed: bool = false
+var _crippling_shot_cooldown: int = 0
+const CRIPPLING_SHOT_COOLDOWN_TURNS: int = 5
+
+var _keen_senses_turns: int = 0
+var _keen_senses_cooldown: int = 0
+const KEEN_SENSES_DURATION_TURNS: int = 2
+const KEEN_SENSES_COOLDOWN_TURNS: int = 4
+
 # Hunting duel system (Mark -> Rhythm -> Exploit)
 var _hunting_mark_target_id: int = -1
 var _hunting_mark_duration: int = 0
@@ -109,8 +135,9 @@ var lore_known: Dictionary = {}  # monster_type -> Array of lore abilities
 var voice_charges: int = 20  # For song/voice abilities (starts full)
 var max_voice: int = 20
 
-# Ability hotkeys (4 slots for quick-cast via 1-4 keys, -1 = empty)
-var ability_hotkeys: Array[int] = [-1, -1, -1, -1]
+# Ability gem slots (8 slots, -1 = empty)
+var ability_hotkeys: Array[int] = [-1, -1, -1, -1, -1, -1, -1, -1]
+var utility_hotkeys: Array[Dictionary] = [{}, {}, {}, {}, {}, {}]  # 6 item utility slots
 var _voice_regen_accumulator: float = 0.0  # Fractional regen tracking
 
 # Sustained song system (v4: dual song support via Mastery of Themes)
@@ -210,8 +237,8 @@ var _shield_sides: int = 0
 # Opening Strike tracking: monsters we've already attacked
 var _opening_strike_used: Dictionary = {}  # entity instance_id -> bool
 
-# Rapid Attack state
-var _rapid_attack_penalty: int = 0  # -3 when doing rapid attacks, 0 otherwise
+# Rapid attack state
+var _rapid_attack_penalty: int = 0  # Temporary attack penalty while executing a flurry
 
 # Vengeance (Will): +2 attack on turn after being hit
 var _vengeance_active: bool = false
@@ -225,6 +252,8 @@ var _in_follow_through: bool = false
 
 # Sprinting state
 var _sprinting_turns: int = 0  # Turns remaining at double speed
+var _sprint_charge_steps: int = 0
+var _sprint_charge_dir: Vector2i = Vector2i.ZERO
 
 # Vanish state
 var _vanish_turns: int = 0  # Turns remaining invisible
@@ -280,6 +309,10 @@ func reset_turn_state() -> void:
 		consecutive_attacks += 1
 	elif moved_this_turn:
 		consecutive_attacks = 0
+	else:
+		# Sprint momentum requires consecutive movement with no idle/action breaks.
+		_sprint_charge_steps = 0
+		_sprint_charge_dir = Vector2i.ZERO
 	# Vanish turn decay
 	if _vanish_turns > 0:
 		_vanish_turns -= 1
@@ -344,8 +377,15 @@ func _on_level_entered(_depth: int) -> void:
 	attacked_this_turn = false
 	_vengeance_active = false
 	_clear_hunting_mark()
-	_hunting_mark_cooldown = 0
-	_hunting_expose_cooldown = 0
+	_break_disguise("You reset your disguise.")
+	_power_stance_active = false
+	_finesse_stance_active = false
+	_circular_guard_turns = 0
+	_swift_strikes_armed = false
+	_crippling_shot_armed = false
+	_keen_senses_turns = 0
+	_sprint_charge_steps = 0
+	_sprint_charge_dir = Vector2i.ZERO
 	# Tick Fade bonus
 	if _fade_turns > 0:
 		_fade_turns -= 1
@@ -369,6 +409,20 @@ func _on_player_turn_started() -> void:
 		_parry_active_turns -= 1
 	if _parry_cooldown > 0:
 		_parry_cooldown -= 1
+	if _disguise_cooldown > 0:
+		_disguise_cooldown -= 1
+	if _circular_guard_cooldown > 0:
+		_circular_guard_cooldown -= 1
+	if _swift_strikes_cooldown > 0:
+		_swift_strikes_cooldown -= 1
+	if _crippling_shot_cooldown > 0:
+		_crippling_shot_cooldown -= 1
+	if _keen_senses_cooldown > 0:
+		_keen_senses_cooldown -= 1
+	if _circular_guard_turns > 0:
+		_circular_guard_turns -= 1
+	if _keen_senses_turns > 0:
+		_keen_senses_turns -= 1
 
 	# Hunting duel loop timing
 	if _hunting_mark_cooldown > 0:
@@ -424,11 +478,17 @@ func activate_sprinting() -> bool:
 	if _sprinting_turns > 0:
 		GameManager.log_message("You're already sprinting!", ThemeColors.MSG_SYSTEM)
 		return false
+	if _sprint_charge_steps < 3 or _sprint_charge_dir == Vector2i.ZERO:
+		GameManager.log_message("Build momentum first: move 3 tiles in one direction.", ThemeColors.MSG_SYSTEM)
+		return false
 	_sprinting_turns = 3 + get_effective_skill("evasion") / 5
+	_sprint_charge_steps = 0
+	_sprint_charge_dir = Vector2i.ZERO
 	apply_status("fast", _sprinting_turns)
 	# VFX: green speed flash + particles + floater
 	vfx_flash(ThemeColors.FLASH_SPRINT, 0.05, 0.15)
 	vfx_particles(ThemeColors.ABILITY_LEARNED, 4, 20.0, 0.3)
+	vfx_sprite_spell("wings")
 	vfx_floater("Sprint!", ThemeColors.ABILITY_LEARNED, 16)
 	GameManager.log_message("You break into a sprint!", ThemeColors.ABILITY_LEARNED)
 	return true
@@ -441,18 +501,379 @@ func activate_vanish() -> bool:
 	if _vanish_turns > 0:
 		GameManager.log_message("You're already hidden!", ThemeColors.MSG_SYSTEM)
 		return false
+	if GameManager.current_level:
+		for entity in GameManager.current_level.entities:
+			if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+				continue
+			var mon: Monster = entity as Monster
+			if mon.alertness >= Constants.ALERTNESS_ALERT and GameManager.current_level.is_tile_visible(mon.grid_position):
+				GameManager.log_message("You need to break line of sight before vanishing.", ThemeColors.MSG_SYSTEM)
+				return false
 	_vanish_turns = 3
 	# Massive stealth bonus while vanished
 	_fade_bonus += 20
 	# VFX: fade sprite to semi-transparent + dark smoke particles + floater
 	vfx_flash(ThemeColors.FLASH_VANISH, 0.06, 0.2)
 	vfx_particles(ThemeColors.BG_RAISED, 6, 20.0, 0.5)
+	vfx_sprite_spell("smoke_glow")
 	vfx_floater("Vanish!", ThemeColors.SKILL_STEALTH, 16)
 	if sprite:
 		var vanish_tween := create_tween()
 		vanish_tween.tween_property(sprite, "modulate:a", 0.35, 0.25).set_ease(Tween.EASE_IN)
 	GameManager.log_message("You vanish from sight!", ThemeColors.ABILITY_LEARNED)
 	return true
+
+func activate_disguise_stance() -> bool:
+	if not has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
+		GameManager.log_message("You haven't learned Disguise.", ThemeColors.MSG_ERROR)
+		return false
+	if _disguise_active:
+		_break_disguise("You drop your disguise.")
+		return true
+	if _disguise_cooldown > 0:
+		GameManager.log_message("Disguise is not ready (%d turns)." % _disguise_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	_disguise_active = true
+	vfx_flash(ThemeColors.SKILL_STEALTH, 0.05, 0.15)
+	vfx_sprite_spell("smoke", 0.34)
+	vfx_floater("Disguised", ThemeColors.SKILL_STEALTH, 14)
+	GameManager.log_message("You settle into a false gait and hidden profile.", ThemeColors.MSG_INFO)
+	return true
+
+func _break_disguise(reason: String = "") -> void:
+	if not _disguise_active:
+		return
+	_disguise_active = false
+	_disguise_cooldown = DISGUISE_RECAST_COOLDOWN_TURNS
+	if not reason.is_empty():
+		GameManager.log_message(reason, ThemeColors.MSG_SYSTEM)
+	vfx_floater("Revealed", ThemeColors.MSG_WARNING, 14)
+
+func is_disguise_active() -> bool:
+	return _disguise_active
+
+func activate_power_stance() -> bool:
+	if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_POWER):
+		GameManager.log_message("You haven't learned Power.", ThemeColors.MSG_ERROR)
+		return false
+	_power_stance_active = not _power_stance_active
+	if _power_stance_active:
+		_finesse_stance_active = false
+		vfx_flash(ThemeColors.DMG_PHYSICAL, 0.05, 0.12)
+		vfx_sprite_spell("fire_yellow", 0.52)
+		vfx_floater("Power", ThemeColors.DMG_PHYSICAL, 14)
+		GameManager.log_message("You adopt a crushing stance.", ThemeColors.MSG_INFO)
+	else:
+		GameManager.log_message("You relax your power stance.", ThemeColors.MSG_SYSTEM)
+	return true
+
+func activate_finesse_stance() -> bool:
+	if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_FINESSE):
+		GameManager.log_message("You haven't learned Finesse.", ThemeColors.MSG_ERROR)
+		return false
+	_finesse_stance_active = not _finesse_stance_active
+	if _finesse_stance_active:
+		_power_stance_active = false
+		vfx_flash(ThemeColors.SECONDARY, 0.05, 0.12)
+		vfx_sprite_spell("feather", 1.0)
+		vfx_floater("Finesse", ThemeColors.SECONDARY, 14)
+		GameManager.log_message("You shift into a precise duelist stance.", ThemeColors.MSG_INFO)
+	else:
+		GameManager.log_message("You relax your finesse stance.", ThemeColors.MSG_SYSTEM)
+	return true
+
+func _break_weapon_stances(reason: String = "") -> void:
+	var changed: bool = _power_stance_active or _finesse_stance_active
+	_power_stance_active = false
+	_finesse_stance_active = false
+	_swift_strikes_armed = false
+	if changed and not reason.is_empty():
+		GameManager.log_message(reason, ThemeColors.MSG_SYSTEM)
+
+func activate_circular_guard() -> bool:
+	if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_CROWD_FIGHTING):
+		GameManager.log_message("You haven't learned Circular Guard.", ThemeColors.MSG_ERROR)
+		return false
+	if _circular_guard_turns > 0:
+		GameManager.log_message("Circular Guard is already active.", ThemeColors.MSG_SYSTEM)
+		return false
+	if _circular_guard_cooldown > 0:
+		GameManager.log_message("Circular Guard cooldown (%d turns)." % _circular_guard_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	_circular_guard_turns = CIRCULAR_GUARD_DURATION_TURNS
+	_circular_guard_cooldown = CIRCULAR_GUARD_COOLDOWN_TURNS
+	vfx_ring_particles(ThemeColors.SECONDARY, 6, 10.0, 0.5)
+	vfx_sprite_spell("sphere", 0.52)
+	vfx_floater("Guard Ring", ThemeColors.SECONDARY, 14)
+	GameManager.log_message("You set a circular guard and control the crush.", ThemeColors.MSG_INFO)
+	return true
+
+func activate_swift_strikes() -> bool:
+	if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_RAPID_ATTACK):
+		GameManager.log_message("You haven't learned Swift Strikes.", ThemeColors.MSG_ERROR)
+		return false
+	if _swift_strikes_armed:
+		GameManager.log_message("Swift Strikes is already readied.", ThemeColors.MSG_SYSTEM)
+		return false
+	if _swift_strikes_cooldown > 0:
+		GameManager.log_message("Swift Strikes cooldown (%d turns)." % _swift_strikes_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	_swift_strikes_armed = true
+	vfx_sprite_spell("arrows_yellow", 0.58)
+	vfx_floater("Flurry Ready", ThemeColors.ABILITY_LEARNED, 14)
+	GameManager.log_message("You ready a flurry of swift strikes.", ThemeColors.MSG_INFO)
+	return true
+
+func activate_crippling_shot() -> bool:
+	if not has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
+		GameManager.log_message("You haven't learned Crippling Shot.", ThemeColors.MSG_ERROR)
+		return false
+	if _crippling_shot_armed:
+		GameManager.log_message("Crippling Shot is already readied.", ThemeColors.MSG_SYSTEM)
+		return false
+	if _crippling_shot_cooldown > 0:
+		GameManager.log_message("Crippling Shot cooldown (%d turns)." % _crippling_shot_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	_crippling_shot_armed = true
+	vfx_sprite_spell("arrows_green", 0.58)
+	vfx_floater("Hamstring", ThemeColors.STATUS_SLOW, 14)
+	GameManager.log_message("You line up a hamstringing shot.", ThemeColors.MSG_INFO)
+	return true
+
+func activate_keen_senses() -> bool:
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_KEEN_SENSES):
+		GameManager.log_message("You haven't learned Keen Senses.", ThemeColors.MSG_ERROR)
+		return false
+	if _keen_senses_cooldown > 0:
+		GameManager.log_message("Keen Senses cooldown (%d turns)." % _keen_senses_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	_keen_senses_turns = KEEN_SENSES_DURATION_TURNS
+	_keen_senses_cooldown = KEEN_SENSES_COOLDOWN_TURNS
+	_apply_listen_reveal()
+	vfx_ring_particles(ThemeColors.PRIMARY_BRIGHT, 7, 12.0, 0.55)
+	vfx_sprite_spell("flash02")
+	vfx_floater("Sense Pulse", ThemeColors.PRIMARY_BRIGHT, 14)
+	GameManager.log_message("Your senses flare, tracing movement in the dark.", ThemeColors.MSG_INFO)
+	return true
+
+func activate_curse_breaking() -> bool:
+	if not has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_CURSE_BREAKING):
+		GameManager.log_message("You haven't learned Curse Breaking.", ThemeColors.MSG_ERROR)
+		return false
+	var voice_cost: int = 5
+	if voice_charges < voice_cost:
+		GameManager.log_message("Curse Breaking needs %d voice (%d available)." % [voice_cost, voice_charges], ThemeColors.MSG_ERROR)
+		return false
+	var removed: int = 0
+	var clearable: Array[StringName] = [
+		Constants.EFFECT_AFRAID,
+		Constants.EFFECT_CONFUSED,
+		Constants.EFFECT_ENTRANCED,
+		Constants.EFFECT_STUNNED,
+		Constants.EFFECT_SLOW,
+		Constants.EFFECT_DARKENED,
+	]
+	for effect_id in clearable:
+		if status_fx and status_fx.has_effect(effect_id):
+			status_fx.remove_effect(effect_id, true)
+			removed += 1
+	if removed <= 0:
+		GameManager.log_message("No afflictions answer your curse-breaking rite.", ThemeColors.MSG_SYSTEM)
+		return false
+	voice_charges = maxi(0, voice_charges - voice_cost)
+	vfx_flash(ThemeColors.GOLD_BRIGHT, 0.06, 0.18)
+	vfx_particles(ThemeColors.GOLD_BRIGHT, 8, 28.0, 0.45)
+	vfx_sprite_spell("heal", 0.42)
+	vfx_floater("Cleansed", ThemeColors.GOLD_BRIGHT, 16)
+	GameManager.log_message("Your will sunders lingering curses (%d removed).", ThemeColors.ABILITY_LEARNED)
+	return true
+
+# ============================================================================
+# GEM ABILITY IDS / HELPERS
+# ============================================================================
+
+const GEM_DEFENSIVE_STANCE: int = 1000
+const GEM_READY_PARRY: int = 1001
+const GEM_MARK_QUARRY: int = 1002
+const GEM_EXPOSE_WEAKNESS: int = 1003
+const GEM_EXPLOIT_OPENING: int = 1004
+const GEM_DISGUISE: int = 1005
+const GEM_CIRCULAR_GUARD: int = 1006
+const GEM_SWIFT_STRIKES: int = 1007
+const GEM_CRIPPLING_SHOT: int = 1008
+const GEM_KEEN_SENSES: int = 1009
+const GEM_CURSE_BREAKING: int = 1010
+const GEM_POWER_STANCE: int = 1011
+const GEM_FINESSE_STANCE: int = 1012
+const GEM_VANISH: int = 1013
+const GEM_SPRINTING: int = 1014
+
+func get_hotbar_ability_display_name(ability_id: int) -> String:
+	match ability_id:
+		GEM_DEFENSIVE_STANCE: return "Defensive Stance"
+		GEM_READY_PARRY: return "Parry"
+		GEM_MARK_QUARRY: return "Mark Quarry"
+		GEM_EXPOSE_WEAKNESS: return "Expose Weakness"
+		GEM_EXPLOIT_OPENING: return "Exploit Opening"
+		GEM_DISGUISE: return "Disguise"
+		GEM_CIRCULAR_GUARD: return "Circular Guard"
+		GEM_SWIFT_STRIKES: return "Swift Strikes"
+		GEM_CRIPPLING_SHOT: return "Crippling Shot"
+		GEM_KEEN_SENSES: return "Keen Senses"
+		GEM_CURSE_BREAKING: return "Curse Breaking"
+		GEM_POWER_STANCE: return "Power Stance"
+		GEM_FINESSE_STANCE: return "Finesse Stance"
+		GEM_VANISH: return "Vanish"
+		GEM_SPRINTING: return "Sprinting"
+		_: return "Unknown"
+
+func get_hotbar_ability_cost(ability_id: int, ability_system: Node = null) -> int:
+	if ability_id >= 140 and ability_id <= 159 and ability_system and ability_system.has_method("get_effective_voice_cost"):
+		return int(ability_system.get_effective_voice_cost(ability_id))
+	match ability_id:
+		GEM_CURSE_BREAKING:
+			return 5
+		_:
+			return 0
+
+func is_hotbar_ability_targeted(ability_id: int, ability_system: Node = null) -> bool:
+	if ability_id == GEM_MARK_QUARRY:
+		return true
+	if ability_id >= 140 and ability_id <= 159 and ability_system and ability_system.has_method("_ability_needs_target"):
+		return bool(ability_system._ability_needs_target(ability_id))
+	return false
+
+func can_use_hotbar_ability(ability_id: int, ability_system: Node = null) -> Dictionary:
+	if ability_id >= 140 and ability_id <= 159:
+		if ability_system and ability_system.has_method("can_use_ability"):
+			return ability_system.can_use_ability(ability_id)
+		return {"can_use": false, "reason": "Ability system unavailable."}
+	match ability_id:
+		GEM_DEFENSIVE_STANCE:
+			if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_DEFENSIVE_STANCE):
+				return {"can_use": false, "reason": "Not learned."}
+			if _defensive_stance_active:
+				return {"can_use": false, "reason": "Already active."}
+			if _defensive_stance_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _defensive_stance_cooldown}
+			if moved_last_turn or moved_this_turn or attacked_this_turn:
+				return {"can_use": false, "reason": "Hold position first."}
+			return {"can_use": true, "reason": ""}
+		GEM_READY_PARRY:
+			if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
+				return {"can_use": false, "reason": "Not learned."}
+			if _parry_ready:
+				return {"can_use": false, "reason": "Already readied."}
+			if _parry_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _parry_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_MARK_QUARRY:
+			if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
+				return {"can_use": false, "reason": "Not learned."}
+			if _hunting_mark_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _hunting_mark_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_EXPOSE_WEAKNESS:
+			if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_BANE):
+				return {"can_use": false, "reason": "Not learned."}
+			if _hunting_expose_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _hunting_expose_cooldown}
+			if _get_marked_quarry() == null:
+				return {"can_use": false, "reason": "No marked quarry."}
+			return {"can_use": true, "reason": ""}
+		GEM_EXPLOIT_OPENING:
+			if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_MASTER_HUNTER):
+				return {"can_use": false, "reason": "Not learned."}
+			if _hunting_focus_stacks <= 0:
+				return {"can_use": false, "reason": "Need focus."}
+			if _get_marked_quarry() == null:
+				return {"can_use": false, "reason": "No marked quarry."}
+			return {"can_use": true, "reason": ""}
+		GEM_DISGUISE:
+			if not has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
+				return {"can_use": false, "reason": "Not learned."}
+			if _disguise_active:
+				return {"can_use": true, "reason": "Drop disguise"}
+			if _disguise_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _disguise_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_CIRCULAR_GUARD:
+			if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_CROWD_FIGHTING):
+				return {"can_use": false, "reason": "Not learned."}
+			if _circular_guard_turns > 0:
+				return {"can_use": false, "reason": "Already active."}
+			if _circular_guard_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _circular_guard_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_SWIFT_STRIKES:
+			if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_RAPID_ATTACK):
+				return {"can_use": false, "reason": "Not learned."}
+			if _swift_strikes_armed:
+				return {"can_use": false, "reason": "Already armed."}
+			if _swift_strikes_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _swift_strikes_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_CRIPPLING_SHOT:
+			if not has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
+				return {"can_use": false, "reason": "Not learned."}
+			if _crippling_shot_armed:
+				return {"can_use": false, "reason": "Already armed."}
+			if _crippling_shot_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _crippling_shot_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_KEEN_SENSES:
+			if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_KEEN_SENSES):
+				return {"can_use": false, "reason": "Not learned."}
+			if _keen_senses_cooldown > 0:
+				return {"can_use": false, "reason": "Cooldown (%d)." % _keen_senses_cooldown}
+			return {"can_use": true, "reason": ""}
+		GEM_CURSE_BREAKING:
+			if not has_ability(Constants.Skill.S_WIL, Constants.WillAbility.WIL_CURSE_BREAKING):
+				return {"can_use": false, "reason": "Not learned."}
+			if voice_charges < 5:
+				return {"can_use": false, "reason": "Need 5 voice."}
+			return {"can_use": true, "reason": ""}
+		GEM_POWER_STANCE:
+			if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_POWER):
+				return {"can_use": false, "reason": "Not learned."}
+			return {"can_use": true, "reason": "Toggle"}
+		GEM_FINESSE_STANCE:
+			if not has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_FINESSE):
+				return {"can_use": false, "reason": "Not learned."}
+			return {"can_use": true, "reason": "Toggle"}
+		GEM_VANISH:
+			if not has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_VANISH):
+				return {"can_use": false, "reason": "Not learned."}
+			if _vanish_turns > 0:
+				return {"can_use": false, "reason": "Already hidden."}
+			return {"can_use": true, "reason": ""}
+		GEM_SPRINTING:
+			if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_SPRINTING):
+				return {"can_use": false, "reason": "Not learned."}
+			if _sprinting_turns > 0:
+				return {"can_use": false, "reason": "Already sprinting."}
+			if _sprint_charge_steps < 3 or _sprint_charge_dir == Vector2i.ZERO:
+				return {"can_use": false, "reason": "Need 3 same-direction moves."}
+			return {"can_use": true, "reason": ""}
+	return {"can_use": false, "reason": "Unknown ability."}
+
+func is_hotbar_ability_active(ability_id: int) -> bool:
+	match ability_id:
+		GEM_DISGUISE:
+			return _disguise_active
+		GEM_POWER_STANCE:
+			return _power_stance_active
+		GEM_FINESSE_STANCE:
+			return _finesse_stance_active
+		GEM_DEFENSIVE_STANCE:
+			return _defensive_stance_active and _defensive_stance_duration > 0
+		GEM_VANISH:
+			return _vanish_turns > 0
+		GEM_SPRINTING:
+			return _sprinting_turns > 0
+		GEM_CIRCULAR_GUARD:
+			return _circular_guard_turns > 0
+	return false
 
 func has_ability(skill: int, ability: int) -> bool:
 	if skill < 0 or skill >= Constants.S_MAX:
@@ -488,7 +909,8 @@ func _setup_player_sprite() -> void:
 	# V2: Look up sprite by race + house + gender
 	var house_data: DataManager.HouseData = DataManager.get_house(house_name)
 	if house_data:
-		set_sprite_from_player_v2(race_name, house_data.index, "male")
+		var sprite_gender: String = gender if not gender.is_empty() else "male"
+		set_sprite_from_player_v2(race_name, house_data.index, sprite_gender)
 		return
 	# Legacy fallback: race only
 	var race_to_sprite: Dictionary[String, int] = {
@@ -721,6 +1143,7 @@ func activate_defensive_stance() -> bool:
 	_defensive_stance_active = true
 	_defensive_stance_duration = DEFENSIVE_STANCE_DURATION_TURNS
 	_defensive_stance_cooldown = 5
+	vfx_sprite_spell("sphere_yellow", 0.52)
 	vfx_floater("Defend", ThemeColors.SECONDARY, 14)
 	GameManager.log_message("You brace for impact.", ThemeColors.MSG_SYSTEM)
 	return true
@@ -743,6 +1166,9 @@ func ready_parry() -> bool:
 	_parry_ready = true
 	_parry_ready_window = PARRY_READY_WINDOW_TURNS
 	_parry_cooldown = PARRY_COOLDOWN_TURNS
+	vfx_flash(ThemeColors.FLASH_RIPOSTE, 0.05, 0.14)
+	vfx_sprite_spell("flash", 0.72)
+	vfx_ring_particles(ThemeColors.SECONDARY, 5, 9.0, 0.35)
 	vfx_floater("Parry Ready", ThemeColors.ABILITY_LEARNED, 14)
 	GameManager.log_message("You ready a parry stance.", ThemeColors.MSG_SYSTEM)
 	return true
@@ -752,6 +1178,9 @@ func _resolve_parry_hit(damage: int) -> int:
 	_parry_ready_window = 0
 	_parry_active_turns = PARRY_ACTIVE_TURNS
 	_parry_cooldown = maxi(_parry_cooldown, PARRY_COOLDOWN_TURNS)
+	vfx_flash(ThemeColors.GOLD_BRIGHT, 0.06, 0.16)
+	vfx_particles(ThemeColors.GOLD_BRIGHT, 7, 22.0, 0.35)
+	vfx_sprite_spell("cauterize", 0.36)
 	vfx_floater("Parry!", ThemeColors.GOLD_BRIGHT, 16)
 	GameManager.log_message("You parry the blow!", ThemeColors.MSG_PRIMARY)
 	return maxi(1, int(damage / 2))
@@ -806,6 +1235,36 @@ func get_combat_stance_indicators() -> Array[Dictionary]:
 			"cooldown_turns": _hunting_mark_cooldown,
 		})
 
+	if _circular_guard_turns > 0 or _circular_guard_cooldown > 0:
+		indicators.append({
+			"id": "circle",
+			"title": "CIRCULAR GUARD",
+			"icon": "circle",
+			"bonus_text": "+2 Evasion, no surround penalty",
+			"active_turns": _circular_guard_turns,
+			"cooldown_turns": _circular_guard_cooldown,
+		})
+
+	if _swift_strikes_armed or _swift_strikes_cooldown > 0:
+		indicators.append({
+			"id": "swift",
+			"title": "SWIFT STRIKES",
+			"icon": "swift",
+			"bonus_text": "2 attacks @ -2",
+			"active_turns": 1 if _swift_strikes_armed else 0,
+			"cooldown_turns": _swift_strikes_cooldown,
+		})
+
+	if _disguise_active or _disguise_cooldown > 0:
+		indicators.append({
+			"id": "disguise",
+			"title": "DISGUISE",
+			"icon": "disguise",
+			"bonus_text": "+stealth, lower sight profile",
+			"active_turns": 1 if _disguise_active else 0,
+			"cooldown_turns": _disguise_cooldown,
+		})
+
 	return indicators
 
 func activate_mark_quarry() -> bool:
@@ -820,6 +1279,27 @@ func activate_mark_quarry() -> bool:
 	if target == null:
 		GameManager.log_message("No visible quarry to mark.", ThemeColors.MSG_SYSTEM)
 		return false
+	return activate_mark_quarry_on_target(target)
+
+func can_mark_quarry_now() -> bool:
+	return has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK) and _hunting_mark_cooldown <= 0
+
+func get_mark_quarry_cooldown_turns() -> int:
+	return _hunting_mark_cooldown
+
+func activate_mark_quarry_on_target(target: Monster) -> bool:
+	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
+		GameManager.log_message("You haven't learned Mark Quarry.", ThemeColors.MSG_ERROR)
+		return false
+	if _hunting_mark_cooldown > 0:
+		GameManager.log_message("Mark Quarry is on cooldown (%d turns)." % _hunting_mark_cooldown, ThemeColors.MSG_SYSTEM)
+		return false
+	if target == null or not is_instance_valid(target) or not target.is_alive:
+		GameManager.log_message("No valid quarry selected.", ThemeColors.MSG_SYSTEM)
+		return false
+	if not GameManager.current_level or not GameManager.current_level.is_tile_visible(target.grid_position):
+		GameManager.log_message("You can only mark a visible quarry.", ThemeColors.MSG_SYSTEM)
+		return false
 
 	_hunting_mark_target_id = target.get_instance_id()
 	_hunting_mark_duration = HUNTING_MARK_DURATION_TURNS
@@ -831,9 +1311,11 @@ func activate_mark_quarry() -> bool:
 	_hunting_exploit_bonus_dice = 0
 	_hunting_exploit_crit_bonus = 0
 
+	vfx_sprite_spell("fire_green", 0.54)
 	vfx_floater("Marked", ThemeColors.PRIMARY_BRIGHT, 15)
+	target.vfx_sprite_spell("flash03", 0.72)
 	target.vfx_floater("Quarry", ThemeColors.PRIMARY_BRIGHT, 14)
-	GameManager.log_message("You mark %s as your quarry." % target.entity_name, ThemeColors.MSG_INFO)
+	GameManager.log_message("You mark %s as your quarry. Cooldown: %d turns." % [target.entity_name, _hunting_mark_cooldown], ThemeColors.MSG_INFO)
 	return true
 
 func activate_expose_weakness() -> bool:
@@ -856,6 +1338,7 @@ func activate_expose_weakness() -> bool:
 	if player_roll >= monster_roll:
 		target.apply_hunter_exposure(HUNTING_EXPOSE_DURATION_TURNS, 3, 1)
 		_register_hunting_pressure(target)
+		target.vfx_sprite_spell("skull_smoke_green", 0.42)
 		vfx_floater("Exposed!", ThemeColors.COMBAT_CRIT, 15)
 		GameManager.log_message("You expose %s's weakness!" % target.entity_name, ThemeColors.COMBAT_CRIT)
 	else:
@@ -881,6 +1364,7 @@ func activate_exploit_opening() -> bool:
 	_hunting_exploit_bonus_dice = _hunting_focus_stacks
 	_hunting_exploit_crit_bonus = 1 if _hunting_focus_stacks >= 3 else 0
 	_hunting_focus_stacks = 0
+	vfx_sprite_spell("fireball_blue", 0.34)
 	vfx_floater("Exploit!", ThemeColors.GOLD_BRIGHT, 16)
 	GameManager.log_message("You prepare to exploit %s's opening." % target.entity_name, ThemeColors.MSG_INFO)
 	return true
@@ -939,10 +1423,6 @@ func _register_hunting_pressure(target: Entity) -> void:
 	if target == null or not is_instance_valid(target) or target != marked:
 		return
 	_hunting_had_pressure_last_turn = true
-	if _hunting_focus_gained_this_turn:
-		return
-	if not has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_CONCENTRATION):
-		return
 	if _hunting_focus_stacks < HUNTING_FOCUS_MAX:
 		_hunting_focus_stacks += 1
 		_hunting_focus_gained_this_turn = true
@@ -1589,10 +2069,12 @@ func drop_item(item_data: Variant) -> bool:
 			drop_copy.description = item_data.description
 			drop_copy.stack_count = 1
 		EventBus.item_dropped.emit(self, drop_copy, grid_position)
+		_cleanup_missing_utility_bindings()
 		return true
 
 	inventory.remove_at(idx)
 	EventBus.item_dropped.emit(self, item_data, grid_position)
+	_cleanup_missing_utility_bindings()
 	return true
 
 func equip_item(item_data: Variant, slot: String) -> bool:
@@ -1610,7 +2092,11 @@ func equip_item(item_data: Variant, slot: String) -> bool:
 		GameManager.identify_item(item_data)
 		GameManager.log_message("Forge Intuition: You recognize the %s." % item_data.name, ThemeColors.MSG_INFO)
 	EventBus.item_equipped.emit(self, item_data, slot)
+	if slot == "weapon" or slot == "off_hand":
+		_break_weapon_stances("Your stance resets with the weapon change.")
+		_break_disguise("Your disguise slips as you adjust your gear.")
 	_recalculate_stats()
+	_cleanup_missing_utility_bindings()
 	return true
 
 func unequip_slot(slot: String) -> bool:
@@ -1625,8 +2111,76 @@ func unequip_slot(slot: String) -> bool:
 		EventBus.item_dropped.emit(self, item, grid_position)
 
 	EventBus.item_unequipped.emit(self, item, slot)
+	if slot == "weapon" or slot == "off_hand":
+		_break_weapon_stances("Your stance resets with the weapon change.")
+		_break_disguise("Your disguise slips as you adjust your gear.")
 	_recalculate_stats()
+	_cleanup_missing_utility_bindings()
 	return true
+
+func bind_utility_item(slot_index: int, item_data: Variant) -> bool:
+	if slot_index < 0 or slot_index >= utility_hotkeys.size():
+		return false
+	if item_data == null or not ("index" in item_data) or not ("tval" in item_data):
+		return false
+	var descriptor: Dictionary = {
+		"index": int(item_data.index),
+		"tval": int(item_data.tval),
+		"sval": int(item_data.sval) if "sval" in item_data else -1,
+		"name": str(item_data.name) if "name" in item_data else "",
+	}
+	utility_hotkeys[slot_index] = descriptor
+	return true
+
+func clear_utility_item(slot_index: int) -> void:
+	if slot_index < 0 or slot_index >= utility_hotkeys.size():
+		return
+	utility_hotkeys[slot_index] = {}
+
+func get_utility_descriptor(slot_index: int) -> Dictionary:
+	if slot_index < 0 or slot_index >= utility_hotkeys.size():
+		return {}
+	var desc: Variant = utility_hotkeys[slot_index]
+	return desc if desc is Dictionary else {}
+
+func resolve_utility_item(slot_index: int) -> Variant:
+	var descriptor: Dictionary = get_utility_descriptor(slot_index)
+	if descriptor.is_empty():
+		return null
+
+	# Prefer inventory first for consumables/hotswap handling.
+	for item in inventory:
+		if _matches_utility_descriptor(item, descriptor):
+			return item
+	for slot_key in equipment.keys():
+		var eq_item = equipment.get(slot_key)
+		if eq_item != null and _matches_utility_descriptor(eq_item, descriptor):
+			return eq_item
+	return null
+
+func _matches_utility_descriptor(item_data: Variant, descriptor: Dictionary) -> bool:
+	if item_data == null or descriptor.is_empty():
+		return false
+	if not ("index" in item_data) or not ("tval" in item_data):
+		return false
+	if int(item_data.index) != int(descriptor.get("index", -1)):
+		return false
+	if int(item_data.tval) != int(descriptor.get("tval", -1)):
+		return false
+	var descriptor_sval: int = int(descriptor.get("sval", -1))
+	if descriptor_sval >= 0:
+		var item_sval: int = int(item_data.sval) if "sval" in item_data else -2
+		if item_sval != descriptor_sval:
+			return false
+	return true
+
+func _cleanup_missing_utility_bindings() -> void:
+	for i in range(utility_hotkeys.size()):
+		var descriptor: Dictionary = get_utility_descriptor(i)
+		if descriptor.is_empty():
+			continue
+		if resolve_utility_item(i) == null:
+			utility_hotkeys[i] = {}
 
 func _get_weapon_weight() -> int:
 	# Get weight of equipped weapon for crit calculation
@@ -1649,6 +2203,9 @@ func get_weapon_damage_dice() -> String:
 ## Player attack modifier stack per NECROMANCER_DESIGN_CANON section 1.2
 func get_total_attack(target: Entity) -> int:
 	var att: int = melee_bonus
+
+	if _finesse_stance_active:
+		att += 1
 
 	# Rapid Attack penalty: -3 when doing rapid double-attacks
 	att += _rapid_attack_penalty
@@ -1736,12 +2293,17 @@ func get_total_evasion(attacker: Entity) -> int:
 		if not moved_last_turn:
 			evn += 3
 
-	# Crowd Fighting: negate -1 evasion penalty per adjacent monster beyond 1
-	# (Without this ability, each adjacent monster beyond the first gives -1 evn)
-	if not has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_CROWD_FIGHTING):
+	# Surround pressure: -1 evasion per adjacent hostile beyond the first.
+	# Circular Guard suppresses this penalty while active.
+	if _circular_guard_turns <= 0:
 		var adjacent_hostiles: int = _count_adjacent_monsters()
 		if adjacent_hostiles > 1:
-			evn -= (adjacent_hostiles - 1)
+			var surround_penalty: int = adjacent_hostiles - 1
+			if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_CROWD_FIGHTING):
+				surround_penalty = maxi(0, surround_penalty / 2)
+			evn -= surround_penalty
+	else:
+		evn += 2
 
 	# Parry: double weapon's evasion contribution (Sil-Q: skill_equip_mod[S_EVN] += o_ptr->evn)
 	if has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_PARRY):
@@ -1802,18 +2364,18 @@ func get_total_evasion(attacker: Entity) -> int:
 ## Player crit threshold modified by abilities per DESIGN_CANON section 1.6
 func _get_crit_threshold() -> int:
 	var threshold: int = 70
-	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_FINESSE):
-		threshold -= 20
+	if _finesse_stance_active:
+		threshold -= 30
 	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_CONTROL):
 		threshold -= 20
-	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_POWER):
+	if _power_stance_active:
 		threshold += 10
 	return threshold
 
 ## Power ability: extra damage die per hit
 func _get_bonus_damage_dice() -> int:
-	if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_POWER):
-		return 1
+	if _power_stance_active:
+		return 2
 	return 0
 
 ## Get slay bonus damage dice vs target based on equipped SLAY_* flags
@@ -1915,8 +2477,8 @@ func _on_successful_hit(target: Entity, hit_result: int, damage: int) -> void:
 				target.vfx_flash(ThemeColors.FLASH_CHARGE, 0.06, 0.15)
 				target.vfx_particles(ThemeColors.PRIMARY, 6, 25.0, 0.3)
 
-	# Light of the Eldar: bonus damage vs HURT_LITE/SHADOW enemies equal to Lore/3
-	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
+	# Light of the Eldar: bonus damage while the aura is active.
+	if _is_light_of_eldar_active():
 		if is_instance_valid(target) and target is Monster and target.current_health > 0:
 			var mon: Monster = target as Monster
 			if mon.monster_data and mon.monster_data.has_flag("HURT_LITE"):
@@ -2071,6 +2633,8 @@ func _get_bow_weight() -> int:
 
 ## Override ranged attack to use archery skill instead of melee
 func ranged_attack(target: Entity, distance: int) -> void:
+	attacked_this_turn = true
+	_break_disguise("Your disguise breaks as you fire.")
 	# Archery-based attack: archery skill + DEX/2 + proficiency
 	var att: int = skills["archery"] + (dexterity / 2)
 	# Weapon proficiency bonus (BOW_PROFICIENCY or SLING_PROFICIENCY)
@@ -2159,8 +2723,8 @@ func ranged_attack(target: Entity, distance: int) -> void:
 	_register_hunting_pressure(target)
 	_apply_hunting_exploit_on_hit(target)
 
-	# Crippling Shot: apply slow on ranged crit
-	if crit_dice > 0 and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
+	# Crippling Shot (active): armed shot applies slow on hit then goes on cooldown.
+	if _crippling_shot_armed and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_CRIPPLING_SHOT):
 		if is_instance_valid(target) and target.is_alive:
 			# VFX: icy blue-white flash on target + impact particles + floater
 			target.vfx_flash(ThemeColors.FLASH_CRIPPLE, 0.06, 0.2)
@@ -2168,6 +2732,8 @@ func ranged_attack(target: Entity, distance: int) -> void:
 			target.vfx_floater("Crippled!", ThemeColors.STATUS_SLOW, 16)
 			target.apply_status("slow", 3 + randi_range(1, 3))
 			GameManager.log_message("Your shot cripples %s!" % target.entity_name, ThemeColors.COMBAT_CRIT)
+		_crippling_shot_armed = false
+		_crippling_shot_cooldown = CRIPPLING_SHOT_COOLDOWN_TURNS
 
 	# Rout: fleeing enemies take extra damage from ranged attacks
 	if has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_ROUT):
@@ -2391,8 +2957,8 @@ func get_stealth_score() -> int:
 	# SMALL_STATURE: +2 stealth (enemies overlook small folk)
 	if has_racial_flag("SMALL_STATURE"):
 		score += 2
-	# Disguise: +Stealth/3 bonus to stealth
-	if has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
+	# Disguise (active stance): +Stealth/3 bonus while maintained.
+	if _disguise_active:
 		score += get_effective_skill("stealth") / 3
 	# Fade bonus (temporary boost after kill)
 	score += _fade_bonus
@@ -2433,6 +2999,8 @@ func get_combat_noise() -> int:
 ## Add noise from a specific action
 func add_noise(amount: int) -> void:
 	noise_this_turn += amount
+	if _disguise_active and amount >= 2:
+		_break_disguise("The noise gives away your disguise.")
 	# Also raise floor alertness
 	if GameManager.current_level and GameManager.current_level.has_method("add_floor_noise"):
 		GameManager.current_level.add_floor_noise(amount)
@@ -2479,12 +3047,12 @@ func get_light_radius() -> int:
 			_:  # Unknown light source
 				base_radius += 2
 
-	# Keen Senses: +1 light radius (see slightly beyond light pool)
-	if has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_KEEN_SENSES):
+	# Keen Senses (active pulse): +1 light radius while active.
+	if _keen_senses_turns > 0:
 		base_radius += 1
 
-	# Light of the Eldar: +1 light per 3 Lore skill
-	if has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
+	# Light of the Eldar (active aura): +1 light per 3 Lore while sustained.
+	if _is_light_of_eldar_active():
 		base_radius += get_effective_skill("lore") / 3
 
 	# DARKENED: Reduce light radius by 2 (minimum 1)
@@ -2549,6 +3117,12 @@ func has_light() -> bool:
 	if "fuel" in light_item and light_item.fuel <= 0:
 		return false
 	return true
+
+func _is_light_of_eldar_active() -> bool:
+	return has_meta("light_of_eldar_active") and bool(get_meta("light_of_eldar_active"))
+
+func on_enemy_detected() -> void:
+	_break_disguise("Your disguise fails as enemies lock onto you.")
 
 # ============================================================================
 # INPUT HANDLING
@@ -2816,21 +3390,24 @@ func can_move_to(target: Vector2i) -> bool:
 	if GameManager.current_level.has_method("get_entity_at"):
 		var blocker = GameManager.current_level.get_entity_at(target)
 		if is_instance_valid(blocker) and blocker != self:
-			# Bump attack if it's a monster
+			# Bump attack if it's a monster.
 			if blocker is Monster:
 				attacked_this_turn = true
-				# Rapid Attack: two attacks at -3 each
-				if has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_RAPID_ATTACK):
-					_rapid_attack_penalty = -3
+				_break_disguise("Your disguise breaks as you strike.")
+				# Swift Strikes: armed flurry, two attacks at -2 each with cooldown.
+				if _swift_strikes_armed and has_ability(Constants.Skill.S_MEL, Constants.MeleeAbility.MEL_RAPID_ATTACK):
+					_rapid_attack_penalty = -2
 					attack_entity(blocker)
 					if is_instance_valid(blocker) and blocker.is_alive:
 						attack_entity(blocker)
 					_rapid_attack_penalty = 0
+					_swift_strikes_armed = false
+					_swift_strikes_cooldown = SWIFT_STRIKES_COOLDOWN_TURNS
 				else:
 					attack_entity(blocker)
 				return false
-			# Talk to NPC if bumped (use duck typing to avoid cyclic dependency)
-			if blocker.has_method("start_dialogue"):
+			# Talk to NPC if bumped (duck-typing: NPCs expose interact()).
+			if blocker.has_method("interact"):
 				_interact_with_npc(blocker)
 				return false
 			return false
@@ -2838,9 +3415,21 @@ func can_move_to(target: Vector2i) -> bool:
 	return true
 
 func move_to(target: Vector2i, animate: bool = true) -> void:
+	var move_dir: Vector2i = target - grid_position
 	if _defensive_stance_active:
 		_break_defensive_stance()
 	super.move_to(target, animate)
+	_register_sprint_momentum(move_dir)
+
+func _register_sprint_momentum(move_dir: Vector2i) -> void:
+	if move_dir == Vector2i.ZERO:
+		return
+	var step_dir: Vector2i = Vector2i(int(sign(move_dir.x)), int(sign(move_dir.y)))
+	if _sprint_charge_dir == step_dir:
+		_sprint_charge_steps = mini(_sprint_charge_steps + 1, 3)
+	else:
+		_sprint_charge_dir = step_dir
+		_sprint_charge_steps = 1
 func _interact_with_npc(npc: Entity) -> void:
 	"""Initiate dialogue with an NPC (uses Entity type to avoid cyclic dependency)."""
 	if not is_instance_valid(npc):
@@ -2897,7 +3486,9 @@ func apply_status(status_name: String, duration: int, data: Variant = null) -> v
 
 func take_damage(amount: int, damage_type: String = "physical", source: Entity = null) -> void:
 	was_attacked_this_turn = true
+	_break_disguise("A sudden threat exposes your disguise.")
 	var incoming_amount: int = amount
+	var hp_before: int = current_health
 
 	# Record last damage source for telemetry
 	if run_stats:
@@ -2983,10 +3574,11 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 		var details: String = ""
 		if not mitigation_reason.is_empty():
 			details = " mitigated by %s" % mitigation_reason
+		var hp_after: int = current_health
 		run_stats.record_forensic_event(
 			GameManager.turn_count,
 			"damage",
-			"Took %d %s damage from %s (incoming %d)%s" % [amount, damage_type, src_name, incoming_amount, details],
+			"Took %d %s damage from %s (incoming %d, HP %d->%d)%s" % [amount, damage_type, src_name, incoming_amount, hp_before, hp_after, details],
 			"critical" if current_health <= 0 else "warning"
 		)
 
@@ -3014,6 +3606,23 @@ func die(killer: Entity = null) -> void:
 				run_stats.killer_attack_effect = str(killer.last_attack_effect)
 	elif run_stats and not run_stats.last_damage_type.is_empty():
 		run_stats.killer_attack_effect = "DAMAGE_%s" % run_stats.last_damage_type.to_upper()
+
+	if run_stats:
+		var floor_alert: int = 0
+		var visible_hostiles: int = 0
+		if GameManager.current_level:
+			if GameManager.current_level.has_method("get_floor_alertness"):
+				floor_alert = int(GameManager.current_level.get_floor_alertness())
+			for entity in GameManager.current_level.entities:
+				if is_instance_valid(entity) and entity is Monster and entity.is_alive and GameManager.current_level.is_tile_visible(entity.grid_position):
+					visible_hostiles += 1
+		var stealth_state: String = "Hidden" if stealth_mode else "Revealed"
+		run_stats.record_forensic_event(
+			GameManager.turn_count,
+			"context",
+			"Final state: HP %d/%d, %s, visible hostiles %d, floor alert %d" % [current_health, max_health, stealth_state, visible_hostiles, floor_alert],
+			"critical"
+		)
 
 	run_stats.record_death(cause, killer_name, killer_id)
 	run_stats.record_forensic_event(
@@ -3046,7 +3655,7 @@ func record_damage_dealt(amount: int) -> void:
 	run_stats.record_damage_dealt(amount)
 
 func record_kill(monster: Monster) -> void:
-	var was_silent: bool = false  # TODO: Detect silent kills
+	var was_silent: bool = monster != null and monster.alertness < Constants.ALERTNESS_ALERT
 	run_stats.record_kill(monster.entity_name, monster.experience_value, was_silent)
 
 	# Oath of Enmity: lock onto first kill's type as oath target

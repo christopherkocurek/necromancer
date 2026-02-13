@@ -8,6 +8,7 @@ const DEFAULT_MIN_ROOM_SIZE := 4
 const DEFAULT_MAX_ROOM_SIZE := 12
 const DEFAULT_MAX_ROOMS := 30
 const ROOM_PLACEMENT_ATTEMPTS := 100
+const MAX_FORGES_PER_FLOOR := 2
 
 enum RoomType {
 	STANDARD = 0,
@@ -149,7 +150,7 @@ func generate(target_level: Level, depth: int) -> void:
 	# Place stairs
 	_place_stairs(depth)
 
-	# Ensure forges on appropriate levels (before features so rubble doesn't block them)
+	# Place baseline forges before features so later decoration works around them.
 	_ensure_forges(depth)
 
 	# Add features based on depth (rubble/traps avoid forge tiles)
@@ -160,6 +161,7 @@ func generate(target_level: Level, depth: int) -> void:
 
 	# Apply layer-specific decoration
 	_apply_layer_decoration(depth)
+	_finalize_forges(depth)
 
 	# Spawn smithing materials near forges LAST (finds passable tiles after all decoration)
 	_spawn_forge_materials(depth)
@@ -1578,56 +1580,89 @@ func _find_nearest_passable(from: Vector2i) -> Vector2i:
 
 	return Vector2i(-1, -1)
 
-## Guarantee forges every 2 floors up to depth 10 (Sil-Q style).
-## After depth 10, forges appear with 25% chance per floor.
+## Place baseline forges:
+## - guaranteed 1 forge on depths 2/4/6/8/10
+## - additional per-floor scarcity roll can add a second forge
+## - hard cap is enforced in _finalize_forges() after decoration/vault passes
 func _ensure_forges(depth: int) -> void:
-	var should_have_forge: bool = false
-	if depth <= 10 and depth % 2 == 0:
-		should_have_forge = true  # Guaranteed: depths 2, 4, 6, 8, 10
-	elif depth > 10 and randf() < 0.25:
-		should_have_forge = true  # 25% chance after depth 10
+	var guaranteed_min: int = 1 if _is_guaranteed_forge_depth(depth) else 0
+	var target_count: int = guaranteed_min
+	if randf() < _get_additional_forge_roll_chance(depth):
+		target_count += 1
+	target_count = clampi(target_count, guaranteed_min, MAX_FORGES_PER_FLOOR)
 
-	if not should_have_forge:
-		return
+	var existing: Array[Vector2i] = _collect_forge_positions()
+	var needed: int = maxi(0, target_count - existing.size())
+	for _i in range(needed):
+		if not _place_random_forge(depth):
+			break
 
-	# Check if a forge already exists (placed by vaults or decoration)
-	var existing_forge_pos: Vector2i = Vector2i(-1, -1)
-	var existing_forge_tile: int = Level.Tile.FLOOR
+func _finalize_forges(depth: int) -> void:
+	var forge_positions: Array[Vector2i] = _collect_forge_positions()
+	if forge_positions.size() > MAX_FORGES_PER_FLOOR:
+		var to_remove: int = forge_positions.size() - MAX_FORGES_PER_FLOOR
+		for _i in range(to_remove):
+			if forge_positions.is_empty():
+				break
+			var remove_pos: Vector2i = forge_positions.pop_back()
+			level.set_tile(remove_pos, Level.Tile.FLOOR)
+			level.forge_uses.erase(remove_pos)
+
+	# If decoration removed guaranteed forge placement, restore it.
+	forge_positions = _collect_forge_positions()
+	if forge_positions.is_empty() and _is_guaranteed_forge_depth(depth):
+		_place_random_forge(depth)
+		forge_positions = _collect_forge_positions()
+
+	# Ensure every retained forge has usable charges.
+	for forge_pos: Vector2i in forge_positions:
+		var tile: int = level.get_tile(forge_pos)
+		if level.get_forge_uses(forge_pos) <= 0:
+			level.init_forge_uses(forge_pos, _roll_forge_uses(depth, tile))
+
+func _collect_forge_positions() -> Array[Vector2i]:
+	var forge_positions: Array[Vector2i] = []
 	for y in range(level.height):
 		for x in range(level.width):
-			var tile: int = level.get_tile(Vector2i(x, y))
-			if tile == Level.Tile.FORGE or tile == Level.Tile.FORGE_ENCHANTED or tile == Level.Tile.FORGE_UNIQUE:
-				existing_forge_pos = Vector2i(x, y)
-				existing_forge_tile = tile
-				break
-		if existing_forge_pos != Vector2i(-1, -1):
-			break
-	if existing_forge_pos != Vector2i(-1, -1):
-		_spawn_forge_guardian(existing_forge_pos, depth, existing_forge_tile)
-		return  # Already have one
+			var pos := Vector2i(x, y)
+			if level.is_forge_tile(pos):
+				forge_positions.append(pos)
+	return forge_positions
 
-	# Determine forge type (Task 7)
-	var forge_tile: int = Level.Tile.FORGE
-	var forge_uses: int = randi_range(2, 4)
+func _is_guaranteed_forge_depth(depth: int) -> bool:
+	return (depth <= 10 and depth % 2 == 0) or depth == 20
+
+func _get_additional_forge_roll_chance(depth: int) -> float:
+	if depth <= 10:
+		return 0.15
+	if depth <= 14:
+		return 0.25
+	if depth <= 17:
+		return 0.30
+	return 0.50
+
+func _roll_forge_tile(depth: int) -> int:
 	var roll: int = randi_range(0, 999)
-	if roll >= 1000:
-		# Unique forge — extremely rare, max 1 per game
-		forge_tile = Level.Tile.FORGE_UNIQUE
-		forge_uses = 3
-	elif roll >= 990:
-		# Enchanted forge — rare
-		forge_tile = Level.Tile.FORGE_ENCHANTED
-		forge_uses = randi_range(3, 4)
-	else:
-		# Normal forge
-		forge_tile = Level.Tile.FORGE
-		forge_uses = randi_range(2, 4)
-		if depth <= 4:
-			forge_uses = 3  # Guaranteed 3 uses early
+	if depth >= 12 and roll >= 996:
+		return Level.Tile.FORGE_UNIQUE
+	if roll >= 960:
+		return Level.Tile.FORGE_ENCHANTED
+	return Level.Tile.FORGE
 
-	# Place forge - try rooms in random order until successful
+func _roll_forge_uses(depth: int, forge_tile: int) -> int:
+	match forge_tile:
+		Level.Tile.FORGE_UNIQUE:
+			return 3
+		Level.Tile.FORGE_ENCHANTED:
+			return randi_range(3, 4)
+		_:
+			if depth <= 4:
+				return 3
+			return randi_range(2, 4)
+
+func _place_random_forge(depth: int) -> bool:
 	if rooms.is_empty():
-		return
+		return false
 	var room_order: Array = range(rooms.size())
 	room_order.shuffle()
 	for idx in room_order:
@@ -1636,11 +1671,17 @@ func _ensure_forges(depth: int) -> void:
 			room.position.x + room.size.x / 2,
 			room.position.y + room.size.y / 2
 		)
-		if level.is_in_bounds(forge_pos) and level.get_tile(forge_pos) == Level.Tile.FLOOR:
-			level.set_tile(forge_pos, forge_tile)
-			level.init_forge_uses(forge_pos, forge_uses)
-			_spawn_forge_guardian(forge_pos, depth, forge_tile)
-			return
+		if not level.is_in_bounds(forge_pos):
+			continue
+		if level.get_tile(forge_pos) != Level.Tile.FLOOR:
+			continue
+		var forge_tile: int = _roll_forge_tile(depth)
+		var forge_uses: int = _roll_forge_uses(depth, forge_tile)
+		level.set_tile(forge_pos, forge_tile)
+		level.init_forge_uses(forge_pos, forge_uses)
+		_spawn_forge_guardian(forge_pos, depth, forge_tile)
+		return true
+	return false
 
 ## Spawn guardian monsters adjacent to a forge based on forge type.
 func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> void:
@@ -1684,13 +1725,7 @@ func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> 
 ## From depth 6+, each spawn rolls Broken Glowing vs Broken Strange
 ## using a depth-scaled curve so deeper floors reward higher-tier smithing loops.
 func _spawn_forge_materials(depth: int) -> void:
-	# Find all forge positions (any forge type)
-	var forge_positions: Array[Vector2i] = []
-	for y in range(level.height):
-		for x in range(level.width):
-			var pos := Vector2i(x, y)
-			if level.is_forge_tile(pos):
-				forge_positions.append(pos)
+	var forge_positions: Array[Vector2i] = _collect_forge_positions()
 
 	if forge_positions.is_empty():
 		return
@@ -1760,23 +1795,11 @@ func _spawn_forge_materials(depth: int) -> void:
 		if not spawned_names.is_empty():
 			print("Forge materials at depth %d: %s" % [depth, ", ".join(spawned_names)])
 
-## Depth-scaled chance that a forge material rolls Broken Strange.
-## Interpreting "depth 100-500 feet = glowing only" as game depths 1-5.
-## Curve ramps meaningfully in the mid/deep game.
+## Broken Strange materials are reserved for deeper floors.
+## Depths <=10: all Broken Glowing.
+## Depths >=11: all Broken Strange.
 func _get_forge_strange_spawn_chance(depth: int) -> float:
-	if depth <= 5:
-		return 0.0
-	if depth <= 7:
-		return 0.12
-	if depth <= 9:
-		return 0.25
-	if depth <= 11:
-		return 0.40
-	if depth <= 13:
-		return 0.56
-	if depth <= 16:
-		return 0.72
-	return 0.85
+	return 1.0 if depth >= 11 else 0.0
 
 ## Connect vault corridor points ($) to nearest room centers
 func _connect_vault_corridor_points() -> void:
@@ -3394,29 +3417,43 @@ func spawn_thrain_if_appropriate(depth: int, quest_system: Node) -> bool:
 	if not quest_system.can_spawn_thrain(depth):
 		return false
 
-	# Find a good room for Thrain (preferably not the first or last room)
-	if rooms.size() < 3:
-		return false
+	var spawn_pos := Vector2i(-1, -1)
+	var stairs_up: Vector2i = level.find_stairs_up()
+	var stairs_down: Vector2i = level.find_stairs_down()
 
-	# Pick a room in the middle of the dungeon
-	var room_index := randi_range(1, rooms.size() - 2)
-	var thrain_room := rooms[room_index]
+	# Depth 20: deterministic placement 2 tiles north of Sauron.
+	if depth >= 20:
+		spawn_pos = _find_depth20_thrain_near_sauron_position()
 
-	# Find center of room
-	var spawn_pos := Vector2i(
-		thrain_room.position.x + thrain_room.size.x / 2,
-		thrain_room.position.y + thrain_room.size.y / 2
-	)
+	# Prefer a middle room when possible, but don't hard-fail on small room counts
+	# (depth 20 throne generation often has <3 rooms).
+	if spawn_pos == Vector2i(-1, -1) and rooms.size() >= 3:
+		var room_index := randi_range(1, rooms.size() - 2)
+		var thrain_room := rooms[room_index]
+		spawn_pos = Vector2i(
+			thrain_room.position.x + thrain_room.size.x / 2,
+			thrain_room.position.y + thrain_room.size.y / 2
+		)
+	elif spawn_pos == Vector2i(-1, -1) and not rooms.is_empty():
+		var room_index := randi_range(0, rooms.size() - 1)
+		var thrain_room := rooms[room_index]
+		spawn_pos = Vector2i(
+			thrain_room.position.x + thrain_room.size.x / 2,
+			thrain_room.position.y + thrain_room.size.y / 2
+		)
 
 	# Make sure the position is valid
-	if level.get_tile(spawn_pos) != Level.Tile.FLOOR:
-		# Try to find a floor tile in the room
-		for y in range(thrain_room.position.y, thrain_room.position.y + thrain_room.size.y):
-			for x in range(thrain_room.position.x, thrain_room.position.x + thrain_room.size.x):
-				var check_pos := Vector2i(x, y)
-				if level.get_tile(check_pos) == Level.Tile.FLOOR and level.get_entity_at(check_pos) == null:
-					spawn_pos = check_pos
-					break
+	if spawn_pos == Vector2i(-1, -1) or level.get_tile(spawn_pos) != Level.Tile.FLOOR or level.get_entity_at(spawn_pos) != null:
+		# Room center failed; fallback to random floor.
+		spawn_pos = level.find_random_floor()
+		if spawn_pos == Vector2i(-1, -1):
+			return false
+
+	# Don't place Thrain directly on stairs.
+	if spawn_pos == stairs_up or spawn_pos == stairs_down:
+		var alt_pos: Vector2i = level.find_random_floor()
+		if alt_pos != Vector2i(-1, -1):
+			spawn_pos = alt_pos
 
 	# Load ThrainNPC script at runtime to avoid circular dependency issues
 	var thrain_script: GDScript = load("res://scripts/entities/thrain_npc.gd")
@@ -3426,12 +3463,81 @@ func spawn_thrain_if_appropriate(depth: int, quest_system: Node) -> bool:
 
 	# Create Thrain using the static factory method
 	var thrain: Node = thrain_script.create_at_position(spawn_pos, quest_system)
+	# Set identifying fields immediately so callers can detect him before _ready runs.
+	if thrain.has_method("set"):
+		thrain.set("npc_id", "thrain_ii")
+		thrain.set("entity_name", "Thrain II, Son of Thror")
 	level.add_entity(thrain)
 
 	quest_system.mark_thrain_spawned()
 	print("Spawned Thrain II at depth %d, position %s" % [depth, spawn_pos])
 
 	return true
+
+func _find_depth20_thrain_near_sauron_position() -> Vector2i:
+	var sauron_pos: Vector2i = _find_depth20_sauron_position()
+	if sauron_pos == Vector2i(-1, -1):
+		return Vector2i(-1, -1)
+	var target := sauron_pos + Vector2i(0, -2)
+	return _force_or_find_valid_thrain_tile(target)
+
+func _find_depth20_sauron_position() -> Vector2i:
+	const SAURON_ID: int = 135
+	for entity in level.entities:
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var m: Monster = entity as Monster
+		if m.monster_data and m.monster_data.index == SAURON_ID:
+			return m.grid_position
+	# Fallback to throne-boss target if entity not yet instantiated.
+	return _find_throne_boss_position()
+
+func _force_or_find_valid_thrain_tile(target: Vector2i) -> Vector2i:
+	if level.is_in_bounds(target):
+		var tile: int = level.get_tile(target)
+		if tile != Level.Tile.STAIRS_UP and tile != Level.Tile.STAIRS_DOWN and tile != Level.Tile.THRONE_DAIS and not level.is_passable(target):
+			level.set_tile(target, Level.Tile.FLOOR)
+
+		var blocker: Entity = level.get_entity_at(target)
+		if blocker != null:
+			var moved: bool = false
+			for r in range(1, 13):
+				for y in range(target.y - r, target.y + r + 1):
+					for x in range(target.x - r, target.x + r + 1):
+						var pos := Vector2i(x, y)
+						if not _is_valid_thrain_spawn_tile(pos):
+							continue
+						blocker.grid_position = pos
+						moved = true
+						break
+					if moved:
+						break
+				if moved:
+					break
+			if not moved:
+				level.remove_entity(blocker)
+				blocker.queue_free()
+		if _is_valid_thrain_spawn_tile(target):
+			return target
+
+	# Nearby fallback if exact target can't be made valid.
+	for r in range(1, 13):
+		for y in range(target.y - r, target.y + r + 1):
+			for x in range(target.x - r, target.x + r + 1):
+				var pos := Vector2i(x, y)
+				if _is_valid_thrain_spawn_tile(pos):
+					return pos
+	return Vector2i(-1, -1)
+
+func _is_valid_thrain_spawn_tile(pos: Vector2i) -> bool:
+	if not level.is_in_bounds(pos):
+		return false
+	if not level.is_passable(pos):
+		return false
+	var tile: int = level.get_tile(pos)
+	if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.THRONE_DAIS:
+		return false
+	return level.get_entity_at(pos) == null
 
 # ============================================================================
 # ARTIFACT SPAWNING
@@ -3612,8 +3718,114 @@ func _generate_throne_room_level(depth: int) -> void:
 	# Final safety sweep
 	var stairs_up: Vector2i = level.find_stairs_up()
 	_clear_monsters_near_stairs(stairs_up)
+	_ensure_final_boss_sauron()
 
 	level.generation_complete.emit(level.width, level.height)
+
+## Depth-20 guarantee: ensure Sauron (ID 135) is present on/near the throne dais.
+## If multiple Saurons exist, keep one and remove extras.
+func _ensure_final_boss_sauron() -> void:
+	const SAURON_ID: int = 135
+	var sauron_data: DataManager.MonsterData = _get_monster_data_by_index(SAURON_ID)
+	if sauron_data == null:
+		push_warning("Depth 20: could not find monster data for Sauron (ID 135)")
+		return
+
+	var target_pos: Vector2i = _find_throne_boss_position()
+	if target_pos == Vector2i(-1, -1):
+		push_warning("Depth 20: could not find valid spawn tile for Sauron")
+		return
+
+	var existing: Array[Monster] = []
+	for entity in level.entities:
+		if not is_instance_valid(entity) or not entity is Monster:
+			continue
+		var m: Monster = entity as Monster
+		if m.monster_data and m.monster_data.index == SAURON_ID:
+			existing.append(m)
+
+	var keeper: Monster = null
+	if not existing.is_empty():
+		keeper = existing[0]
+		# Remove duplicate Saurons if they somehow spawned via random/vault flow.
+		for i in range(1, existing.size()):
+			var dup: Monster = existing[i]
+			level.remove_entity(dup)
+			dup.queue_free()
+
+	if keeper == null:
+		var monster_scene := preload("res://scenes/entities/monster.tscn")
+		keeper = monster_scene.instantiate()
+		keeper.grid_position = target_pos
+		keeper.initialize_from_data(sauron_data)
+		level.add_entity(keeper)
+	else:
+		keeper.grid_position = target_pos
+
+	# Hard-set final boss posture/flags.
+	keeper.alertness = Constants.ALERTNESS_VERY_ALERT
+	keeper.is_sleeping = false
+	keeper.is_unique = true
+	keeper.is_brave = true
+	DataManager.mark_unique_spawned(sauron_data.name)
+	print("Depth 20: ensured Sauron at %s" % [target_pos])
+
+## Find throne-boss position: prefer THRONE_DAIS nearest map center, else nearest floor.
+func _find_throne_boss_position() -> Vector2i:
+	var center := Vector2i(level.width / 2, level.height / 2)
+	var dais_tiles: Array[Vector2i] = []
+	for y in range(level.height):
+		for x in range(level.width):
+			var pos := Vector2i(x, y)
+			if level.get_tile(pos) == Level.Tile.THRONE_DAIS:
+				dais_tiles.append(pos)
+
+	# Preferred: open throne dais tile closest to center.
+	if not dais_tiles.is_empty():
+		dais_tiles.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			var da: int = maxi(absi(a.x - center.x), absi(a.y - center.y))
+			var db: int = maxi(absi(b.x - center.x), absi(b.y - center.y))
+			return da < db
+		)
+		for p in dais_tiles:
+			if _is_valid_final_boss_tile(p):
+				return p
+		# Dais exists but occupied/invalid: use nearest valid tile around dais center.
+		var dais_center := dais_tiles[0]
+		var near := _find_nearest_valid_boss_tile(dais_center, 8)
+		if near != Vector2i(-1, -1):
+			return near
+
+	# Fallback: nearest valid floor around map center.
+	return _find_nearest_valid_boss_tile(center, 12)
+
+func _find_nearest_valid_boss_tile(origin: Vector2i, max_radius: int) -> Vector2i:
+	for r in range(0, max_radius + 1):
+		for y in range(origin.y - r, origin.y + r + 1):
+			for x in range(origin.x - r, origin.x + r + 1):
+				var pos := Vector2i(x, y)
+				if not level.is_in_bounds(pos):
+					continue
+				if _is_valid_final_boss_tile(pos):
+					return pos
+	return Vector2i(-1, -1)
+
+func _is_valid_final_boss_tile(pos: Vector2i) -> bool:
+	if not level.is_in_bounds(pos):
+		return false
+	var tile: int = level.get_tile(pos)
+	if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN:
+		return false
+	if not level.is_passable(pos):
+		return false
+	var occupant: Entity = level.get_entity_at(pos)
+	return occupant == null
+
+func _get_monster_data_by_index(monster_id: int) -> DataManager.MonsterData:
+	for m in DataManager.monsters.values():
+		if m.index == monster_id:
+			return m
+	return null
 
 ## Fallback throne room when no vault is available.
 func _fallback_throne_room(depth: int) -> void:

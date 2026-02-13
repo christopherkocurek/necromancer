@@ -1,9 +1,9 @@
 extends Node2D
 ## Main game scene - coordinates level generation, player spawning, UI, and turn flow.
 
-enum GameState { CHARACTER_CREATION, PLAYING, PAUSED, GAME_OVER }
+enum GameState { TITLE, CHARACTER_CREATION, PLAYING, PAUSED, GAME_OVER }
 
-var current_state: GameState = GameState.CHARACTER_CREATION
+var current_state: GameState = GameState.TITLE
 
 @onready var level_container: Node2D = $LevelContainer
 @onready var hud: CanvasLayer = $HUD  # HUD class - using CanvasLayer to avoid load order issues
@@ -14,6 +14,7 @@ var current_state: GameState = GameState.CHARACTER_CREATION
 # UI Panels (instantiated dynamically)
 # Note: Using Control type to avoid load-order issues with class_name registration
 var character_creation: Control = null
+var title_screen: Control = null
 var inventory_panel: Control = null
 var tome_panel: Control = null
 var death_screen: Control = null
@@ -38,6 +39,11 @@ var quest_system: Node = null
 var voice_menu: PopupMenu = null
 var _voice_menu_abilities: Array[Dictionary] = []  # Cached list from ability_system
 var _pending_voice_ability_id: int = -1  # Ability waiting for target selection
+var _pending_mark_quarry: bool = false
+var _pending_ability_bind_slot: int = -1
+var _voice_menu_targeting_requested: bool = false
+var _pending_utility_bind_slot: int = -1
+const TVAL_CHEST: int = 7
 
 # Item selection menu (for consumable quick-use: comma/Q/R keys)
 var item_menu: PopupMenu = null
@@ -64,10 +70,10 @@ var _pending_stairs_dir: int = 0  # -1 up, +1 down
 # Auto-explore state (flag-based loop)
 var _auto_exploring: bool = false
 
-# Wizard mode (Ctrl+W to toggle, then Ctrl+D/H/K/R for debug commands)
+# Wizard mode (Ctrl+W to toggle, then Ctrl+D/H/K/R/J/T for debug commands)
 var wizard_mode: bool = false
 
-# Free-camera pan mode (V to toggle)
+# Free-camera pan mode (Shift+V to toggle)
 var _pan_mode: bool = false
 var _pan_offset: Vector2 = Vector2.ZERO
 const PAN_STEP: float = 64.0 * 3  # 3 tiles per key press
@@ -79,6 +85,7 @@ var ability_system: AbilitySystem = null
 
 const LEVEL_SCENE := preload("res://scenes/levels/level.tscn")
 const PLAYER_SCENE := preload("res://scenes/entities/player.tscn")
+const TITLE_SCREEN_SCENE := preload("res://scenes/ui/title_screen.tscn")
 const CHARACTER_CREATION_SCENE := preload("res://scenes/ui/character_creation.tscn")
 const INVENTORY_PANEL_SCENE := preload("res://scenes/ui/inventory_panel.tscn")
 const TOME_PANEL_SCENE := preload("res://scenes/ui/tome_panel.tscn")
@@ -95,6 +102,7 @@ const CharacterPanelScript := preload("res://scripts/ui/character_panel.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
 const BASE_CONTENT_SIZE: Vector2i = Vector2i(1440, 810)
+const HOTBAR_CAST_KEY_COUNT: int = 8
 
 func _ready() -> void:
 	# Scale all content uniformly when the game window is resized.
@@ -103,6 +111,30 @@ func _ready() -> void:
 	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	get_tree().root.content_scale_size = BASE_CONTENT_SIZE
 	_setup_ui_panels()
+	_show_title_screen()
+
+func _show_title_screen() -> void:
+	current_state = GameState.TITLE
+	_starting_new_game = false
+
+	if character_creation:
+		character_creation.queue_free()
+		character_creation = null
+	if title_screen:
+		title_screen.queue_free()
+		title_screen = null
+
+	title_screen = TITLE_SCREEN_SCENE.instantiate()
+	title_screen.enter_dungeon_pressed.connect(_on_enter_dungeon_pressed)
+	ui_layer.add_child(title_screen)
+
+	# Hide HUD outside active gameplay.
+	hud.visible = false
+
+func _on_enter_dungeon_pressed() -> void:
+	if title_screen:
+		title_screen.queue_free()
+		title_screen = null
 	_show_character_creation()
 
 func _notification(what: int) -> void:
@@ -124,6 +156,8 @@ func _setup_ui_panels() -> void:
 	# Instantiate inventory panel (hidden by default)
 	inventory_panel = INVENTORY_PANEL_SCENE.instantiate()
 	inventory_panel.closed.connect(_on_inventory_closed)
+	inventory_panel.utility_bind_requested.connect(_on_utility_bind_requested)
+	inventory_panel.item_selected.connect(_on_inventory_item_selected)
 	ui_layer.add_child(inventory_panel)
 
 	# Instantiate Tome panel (replaces skills + abilities panels)
@@ -196,6 +230,7 @@ func _setup_ui_panels() -> void:
 	voice_menu = PopupMenu.new()
 	voice_menu.name = "VoiceMenu"
 	voice_menu.id_pressed.connect(_on_voice_menu_selected)
+	voice_menu.popup_hide.connect(_on_voice_menu_closed)
 	ui_layer.add_child(voice_menu)
 
 	# Item selection menu (comma/Q/R quick-use)
@@ -210,6 +245,23 @@ func _setup_ui_panels() -> void:
 
 	# Connect item drop event to spawn ground items
 	EventBus.item_dropped.connect(_on_item_dropped_to_ground)
+
+	# HUD utility belt interactions
+	if hud:
+		if hud.has_signal("utility_slot_activated"):
+			hud.utility_slot_activated.connect(_on_hud_utility_slot_activated)
+		if hud.has_signal("utility_slot_cleared"):
+			hud.utility_slot_cleared.connect(_on_hud_utility_slot_cleared)
+		if hud.has_signal("utility_equip_drop_requested"):
+			hud.utility_equip_drop_requested.connect(_on_hud_utility_equip_drop_requested)
+		if hud.has_signal("utility_slot_bind_requested"):
+			hud.utility_slot_bind_requested.connect(_on_hud_utility_slot_bind_requested)
+		if hud.has_signal("ability_slot_cast_requested"):
+			hud.ability_slot_cast_requested.connect(_on_hud_ability_slot_cast_requested)
+		if hud.has_signal("ability_slot_cleared"):
+			hud.ability_slot_cleared.connect(_on_hud_ability_slot_cleared)
+		if hud.has_signal("ability_slot_bind_requested"):
+			hud.ability_slot_bind_requested.connect(_on_hud_ability_slot_bind_requested)
 
 func _show_character_creation() -> void:
 	current_state = GameState.CHARACTER_CREATION
@@ -392,9 +444,22 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	if not character_data.is_empty():
 		player.entity_name = character_data.get("name", "Necromancer")
 	if character_data.has("ability_purchases"):
+		if not player.has_meta("learned_abilities"):
+			player.set_meta("learned_abilities", [])
+		var learned_meta: Array = player.get_meta("learned_abilities")
 		for purchase in character_data.ability_purchases:
 			player.learn_ability(purchase.skill_type, purchase.ability_num)
-		player._recalculate_stats()
+			var purchased_name: String = str(purchase.get("name", ""))
+			if not purchased_name.is_empty() and not learned_meta.has(purchased_name):
+				learned_meta.append(purchased_name)
+			player.set_meta("learned_abilities", learned_meta)
+			player._recalculate_stats()
+
+	# Optional debug/playtest sprite override (e.g. Sauron tile for max test hero).
+	if character_data.has("force_sprite_monster_id"):
+		var override_monster_id: int = int(character_data.get("force_sprite_monster_id", -1))
+		if override_monster_id > 0:
+			player.set_sprite_from_monster_id(override_monster_id)
 
 	# Grant starting equipment from race data
 	_grant_starting_equipment(player)
@@ -411,55 +476,60 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 # ============================================================================
 
 func _grant_starting_equipment(p: Player) -> void:
-	## Grant starting items based on race data E: lines (tval:sval:min:max).
+	## GDD baseline starter kit:
+	## - 1 race/house-appropriate basic weapon
+	## - 3-5 food
+	## - 3 torches
 	var race_data: DataManager.RaceData = DataManager.get_race(p.race_name)
 	if not race_data:
 		return
 
+	var weapon_data: DataManager.ItemData = null
+	var food_data: DataManager.ItemData = null
 	for entry in race_data.starting_equipment:
-		var tval: int = entry["tval"]
-		var sval: int = entry["sval"]
-		var min_qty: int = entry["min_qty"]
-		var max_qty: int = entry["max_qty"]
-		var qty: int = randi_range(min_qty, max_qty)
+		var tval: int = int(entry["tval"])
+		var sval: int = int(entry["sval"])
+		if weapon_data == null and tval in [20, 21, 22, 23]:
+			weapon_data = DataManager.get_item_by_tval_sval(tval, sval)
+		if food_data == null and tval == 80:
+			food_data = DataManager.get_item_by_tval_sval(tval, sval)
 
-		var item_data: DataManager.ItemData = DataManager.get_item_by_tval_sval(tval, sval)
-		if not item_data:
-			push_warning("Starting equipment not found: tval=%d sval=%d" % [tval, sval])
-			continue
+	# Weapon: 1 copy, equipped if possible.
+	if weapon_data:
+		var weapon_copy: DataManager.ItemData = _duplicate_item_data(weapon_data)
+		weapon_copy.identified = true
+		weapon_copy.stack_count = 1
+		if p.equipment["weapon"] == null:
+			p.equipment["weapon"] = weapon_copy
+		else:
+			p.pick_up_item(weapon_copy)
+	else:
+		push_warning("No basic melee weapon found for race '%s' starter kit." % p.race_name)
 
-		for i in range(qty):
-			var item_copy: DataManager.ItemData = _duplicate_item_data(item_data)
-			item_copy.identified = true  # Starting equipment is always identified
-			item_copy.stack_count = 1
+	# Food: race-flavored food when available, otherwise dark bread fallback.
+	if food_data == null:
+		food_data = DataManager.get_item_by_tval_sval(80, 35)
+	if food_data:
+		var food_qty: int = randi_range(3, 5)
+		for _i in range(food_qty):
+			var food_copy: DataManager.ItemData = _duplicate_item_data(food_data)
+			food_copy.identified = true
+			food_copy.stack_count = 1
+			p.pick_up_item(food_copy)
 
-			# Set fuel for light sources
-			if tval == 39 and item_copy.fuel < 0:
-				item_copy.fuel = 5000  # Standard torch fuel
-
-			# Try auto-equipping to an appropriate slot
-			var equipped: bool = false
-
-			# Melee weapons -> weapon slot
-			if tval in [21, 22, 23] and p.equipment["weapon"] == null:
-				p.equipment["weapon"] = item_copy
-				equipped = true
-			# Ranged weapons (bows/slings) -> bow slot
-			elif tval in [18, 19] and p.equipment["bow"] == null:
-				p.equipment["bow"] = item_copy
-				equipped = true
-			# Light sources -> light slot
-			elif tval == 39 and p.equipment["light"] == null:
-				p.equipment["light"] = item_copy
-				equipped = true
-			# Ammo -> quiver slot
-			elif tval in [16, 17] and p.equipment["quiver"] == null:
-				p.equipment["quiver"] = item_copy
-				equipped = true
-
-			# If not equipped, add to inventory (uses stacking for consumables)
-			if not equipped:
-				p.pick_up_item(item_copy)
+	# Torches: always 3 in inventory.
+	var torch_data: DataManager.ItemData = DataManager.get_item_by_tval_sval(39, 0)
+	if torch_data:
+		for _j in range(3):
+			var torch_copy: DataManager.ItemData = _duplicate_item_data(torch_data)
+			torch_copy.identified = true
+			torch_copy.stack_count = 1
+			if torch_copy.fuel < 0:
+				torch_copy.fuel = 5000
+			if _j == 0 and p.equipment["light"] == null:
+				p.equipment["light"] = torch_copy
+			else:
+				p.pick_up_item(torch_copy)
 
 func _duplicate_item_data(source: DataManager.ItemData) -> DataManager.ItemData:
 	## Create a deep copy of an ItemData for inventory use.
@@ -517,6 +587,9 @@ func _process(_delta: float) -> void:
 
 	# Process resting / mining / auto-exploring when it's the player's turn
 	if player and player.is_alive and turn_system.current_state == TurnSystem.TurnState.PLAYER_INPUT:
+		# Failsafe: recover from stale UI turn-lock after popups/voice interactions.
+		if not _is_ui_open() and not GameManager.is_player_turn and _pending_voice_ability_id < 0 and not _pending_mark_quarry:
+			GameManager.is_player_turn = true
 		if _resting:
 			_process_rest_step()
 		elif _mining:
@@ -704,7 +777,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Wizard mode commands (Ctrl+D/H/K/R/J) — works in any game state
+	# Wizard mode commands (Ctrl+D/H/K/R/J/T) — works in any game state
 	if wizard_mode and event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed:
 		# macOS Ctrl+H sends backspace — check both keycode and physical_keycode
 		var key: Key = event.keycode
@@ -731,6 +804,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_wizard_xp()
 				get_viewport().set_input_as_handled()
 				return
+			KEY_T:  # Teleport to Thrain / endgame floor
+				_wizard_teleport_to_thrain()
+				get_viewport().set_input_as_handled()
+				return
 
 	# Keyboard zoom (+/- keys) — works in any game state
 	if event is InputEventKey and event.pressed and not event.echo and not event.ctrl_pressed:
@@ -745,14 +822,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-	# Free-camera pan mode (V to toggle, movement keys to pan, Escape to exit)
+	# Free-camera pan mode (Shift+V to toggle, movement keys to pan, Escape to exit)
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_V and not event.ctrl_pressed and not event.shift_pressed:
+		if event.keycode == KEY_V and not event.ctrl_pressed and event.shift_pressed:
 			if _pan_mode:
 				_exit_pan_mode()
 			else:
 				_pan_mode = true
-				GameManager.log_message("Free camera on. WASD/HJKL to pan, V or Escape to exit.", ThemeColors.MSG_SYSTEM)
+				GameManager.log_message("Free camera on. WASD/HJKL to pan, Shift+V or Escape to exit.", ThemeColors.MSG_SYSTEM)
 			get_viewport().set_input_as_handled()
 			return
 
@@ -860,7 +937,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Auto-explore (O key)
 	if event.is_action_pressed("auto_explore"):
-		_start_auto_explore()
+		if not _try_open_chest():
+			_start_auto_explore()
 		get_viewport().set_input_as_handled()
 
 	# Rest (Z key) - rest until full
@@ -871,51 +949,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Rest N turns (Shift+Z) - rest for 20 turns
 	if event.is_action_pressed("rest_n"):
 		_start_rest(20)
-		get_viewport().set_input_as_handled()
-
-	# Defensive stance (Shift+F)
-	if event.is_action_pressed("defensive_stance"):
-		if player and player.is_alive and GameManager.is_player_turn:
-			if player.activate_defensive_stance():
-				player.consume_energy()
-				turn_system._after_player_action()
-				hud.update_player_stats(player)
-		get_viewport().set_input_as_handled()
-
-	# Ready parry (Shift+P)
-	if event.is_action_pressed("ready_parry"):
-		if player and player.is_alive and GameManager.is_player_turn:
-			if player.ready_parry():
-				player.consume_energy()
-				turn_system._after_player_action()
-				hud.update_player_stats(player)
-		get_viewport().set_input_as_handled()
-
-	# Mark quarry (Shift+H)
-	if event.is_action_pressed("mark_quarry"):
-		if player and player.is_alive and GameManager.is_player_turn:
-			if player.activate_mark_quarry():
-				player.consume_energy()
-				turn_system._after_player_action()
-				hud.update_player_stats(player)
-		get_viewport().set_input_as_handled()
-
-	# Expose weakness (Shift+X)
-	if event.is_action_pressed("expose_weakness"):
-		if player and player.is_alive and GameManager.is_player_turn:
-			if player.activate_expose_weakness():
-				player.consume_energy()
-				turn_system._after_player_action()
-				hud.update_player_stats(player)
-		get_viewport().set_input_as_handled()
-
-	# Exploit opening (Shift+E)
-	if event.is_action_pressed("exploit_opening"):
-		if player and player.is_alive and GameManager.is_player_turn:
-			if player.activate_exploit_opening():
-				player.consume_energy()
-				turn_system._after_player_action()
-				hud.update_player_stats(player)
 		get_viewport().set_input_as_handled()
 
 	# F key: Forge if on forge tile, else fire (archery) if bow equipped
@@ -981,7 +1014,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 
-	# Ability hotkey quick-cast (1-4 number keys, no shift)
+	# Ability hotkey quick-cast (1-8 number keys, no shift)
 	if event is InputEventKey and event.pressed and not event.shift_pressed and not event.echo:
 		var hotkey_slot: int = -1
 		match event.keycode:
@@ -989,51 +1022,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_2: hotkey_slot = 1
 			KEY_3: hotkey_slot = 2
 			KEY_4: hotkey_slot = 3
-		if hotkey_slot >= 0 and player and player.is_alive and GameManager.is_player_turn:
-			if hotkey_slot < player.ability_hotkeys.size():
-				var hotkey_ability_id: int = player.ability_hotkeys[hotkey_slot]
-				if hotkey_ability_id >= 0 and ability_system:
-					var check: Dictionary = ability_system.can_use_ability(hotkey_ability_id)
-					if check.can_use:
-						if ability_system.has_method("_ability_needs_target") and ability_system._ability_needs_target(hotkey_ability_id):
-							# Needs a target - open targeting mode
-							_pending_voice_ability_id = hotkey_ability_id
-							var ab_name: String = ability_system._get_ability_name(hotkey_ability_id)
-							GameManager.log_message("Select a target for %s..." % ab_name, ThemeColors.MSG_INFO)
-							target_panel.open(player, current_level)
-							GameManager.is_player_turn = false
-						else:
-							var success: bool = ability_system.activate_ability(hotkey_ability_id)
-							if success:
-								player.consume_energy()
-								hud.update_player_stats(player)
-					else:
-						GameManager.log_message(check.reason, ThemeColors.MSG_ERROR)
-					get_viewport().set_input_as_handled()
-					return
-
-	# Ability hotkey binding (Shift+1-4 while voice menu is open)
-	if event is InputEventKey and event.pressed and event.shift_pressed and not event.echo:
-		if voice_menu and voice_menu.visible:
-			var bind_slot: int = -1
-			match event.keycode:
-				KEY_1: bind_slot = 0
-				KEY_2: bind_slot = 1
-				KEY_3: bind_slot = 2
-				KEY_4: bind_slot = 3
-			if bind_slot >= 0 and player:
-				var focused_idx: int = voice_menu.get_focused_item()
-				if focused_idx >= 0 and focused_idx < _voice_menu_abilities.size():
-					var ab: Dictionary = _voice_menu_abilities[focused_idx]
-					player.ability_hotkeys[bind_slot] = ab.id
-					GameManager.log_message("Bound %s to hotkey %d." % [ab.name, bind_slot + 1], ThemeColors.MSG_INFO)
-					hud.update_hotbar(player, ability_system)
-				else:
-					# No focused item - try to bind from index 0 if voice menu has items
-					if not _voice_menu_abilities.is_empty():
-						GameManager.log_message("Highlight an ability in the voice menu first, then press Shift+%d." % (bind_slot + 1), ThemeColors.MSG_SYSTEM)
-				get_viewport().set_input_as_handled()
-				return
+			KEY_5: hotkey_slot = 4
+			KEY_6: hotkey_slot = 5
+			KEY_7: hotkey_slot = 6
+			KEY_8: hotkey_slot = 7
+		if hotkey_slot >= 0 and hotkey_slot < HOTBAR_CAST_KEY_COUNT:
+			_cast_hotbar_slot(hotkey_slot)
+			get_viewport().set_input_as_handled()
+			return
 
 	# Voice ability menu (V key)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_V and not event.shift_pressed and not event.echo:
@@ -1156,7 +1152,20 @@ func _toggle_tome() -> void:
 		GameManager.is_player_turn = false
 
 func _on_inventory_closed() -> void:
+	_pending_utility_bind_slot = -1
 	GameManager.is_player_turn = true
+	hud.update_player_stats(player)
+
+func _on_inventory_item_selected(item_data: Variant) -> void:
+	if _pending_utility_bind_slot < 0 or item_data == null or not player:
+		return
+	var bind_slot: int = _pending_utility_bind_slot
+	_pending_utility_bind_slot = -1
+	if not player.bind_utility_item(bind_slot, item_data):
+		GameManager.log_message("Failed to load utility slot %d." % (bind_slot + 1), ThemeColors.MSG_ERROR)
+		return
+	var item_name: String = GameManager.get_item_display_name(item_data)
+	GameManager.log_message("Loaded %s into utility slot %d." % [item_name, bind_slot + 1], ThemeColors.MSG_INFO)
 	hud.update_player_stats(player)
 
 func _on_tome_closed() -> void:
@@ -1200,22 +1209,55 @@ func _open_targeting() -> void:
 	target_panel.open(player, current_level)
 	GameManager.is_player_turn = false
 
+func _start_mark_quarry_targeting() -> void:
+	if not player:
+		return
+	if not player.has_ability(Constants.Skill.S_PER, Constants.PerceptionAbility.PER_FOCUSED_ATTACK):
+		GameManager.log_message("You haven't learned Mark Quarry.", ThemeColors.MSG_ERROR)
+		return
+	if player.get_mark_quarry_cooldown_turns() > 0:
+		GameManager.log_message("Mark Quarry is on cooldown (%d turns)." % player.get_mark_quarry_cooldown_turns(), ThemeColors.MSG_SYSTEM)
+		return
+	if look_panel and look_panel.visible:
+		look_panel.close()
+	_pending_mark_quarry = true
+	GameManager.log_message("Select a quarry to mark...", ThemeColors.MSG_INFO)
+	target_panel.open(player, current_level)
+	GameManager.is_player_turn = false
+
 func _on_target_selected(target_pos: Vector2i) -> void:
 	GameManager.is_player_turn = true
+	_voice_menu_targeting_requested = false
 	if not player or not player.is_alive:
 		_pending_voice_ability_id = -1
+		_pending_mark_quarry = false
+		return
+
+	# Mark Quarry targeting
+	if _pending_mark_quarry:
+		_pending_mark_quarry = false
+		var quarry: Entity = current_level.get_entity_at(target_pos)
+		if quarry and is_instance_valid(quarry) and quarry is Monster and quarry.is_alive:
+			if player.activate_mark_quarry_on_target(quarry):
+				_consume_turn_for_ability()
+		else:
+			GameManager.log_message("No valid quarry there.", ThemeColors.MSG_SYSTEM)
 		return
 
 	# Voice ability targeting
 	if _pending_voice_ability_id >= 0:
 		var ability_id: int = _pending_voice_ability_id
 		_pending_voice_ability_id = -1
+		# Word of Warding targets empty floor tiles, not monsters.
+		if ability_id == 154:
+			if ability_system and ability_system.activate_ability(ability_id, target_pos):
+				_consume_turn_for_ability()
+			return
 		var target_entity: Entity = current_level.get_entity_at(target_pos)
 		if target_entity and is_instance_valid(target_entity) and target_entity is Monster and target_entity.is_alive:
 			if ability_system:
-				ability_system.activate_ability(ability_id, target_entity)
-				player.consume_energy()
-				turn_system._after_player_action()
+				if ability_system.activate_ability(ability_id, target_entity):
+					_consume_turn_for_ability()
 		else:
 			GameManager.log_message("No valid target there.", ThemeColors.MSG_SYSTEM)
 		return
@@ -1235,63 +1277,297 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 
 func _on_target_cancelled() -> void:
 	_pending_voice_ability_id = -1
+	_pending_mark_quarry = false
+	_voice_menu_targeting_requested = false
 	GameManager.is_player_turn = true
 
 # ============================================================================
-# VOICE ABILITY MENU (V key)
+# ABILITY MENU (V key)
 # ============================================================================
 
-func _open_voice_menu() -> void:
+func _open_voice_menu(bind_slot: int = -1) -> void:
 	if not player or not player.is_alive or not GameManager.is_player_turn:
 		return
 
-	if not ability_system:
-		GameManager.log_message("No lore abilities available.", ThemeColors.MSG_SYSTEM)
-		return
-
-	_voice_menu_abilities = ability_system.get_learned_active_abilities()
+	_voice_menu_targeting_requested = false
+	_pending_ability_bind_slot = bind_slot
+	voice_menu.set_meta("bind_slot", bind_slot)
+	_voice_menu_abilities = _get_all_hotbar_bindable_abilities()
 	if _voice_menu_abilities.is_empty():
-		GameManager.log_message("You have no active voice abilities.", ThemeColors.MSG_SYSTEM)
+		if bind_slot >= 0:
+			GameManager.log_message("No learned abilities available to bind.", ThemeColors.MSG_SYSTEM)
+		else:
+			GameManager.log_message("You have no active abilities to use.", ThemeColors.MSG_SYSTEM)
+		_pending_ability_bind_slot = -1
+		voice_menu.set_meta("bind_slot", -1)
 		return
 
-	# Build popup menu
 	voice_menu.clear()
 	for i in range(_voice_menu_abilities.size()):
 		var ab: Dictionary = _voice_menu_abilities[i]
-		var label: String = ab.name
-		if ab.cost > 0:
-			label += " (%d voice)" % ab.cost
-		if not ab.can_use:
-			label += " [%s]" % ab.reason
+		var label: String = str(ab.get("name", "Ability"))
+		var cost: int = int(ab.get("cost", 0))
+		if cost > 0:
+			label += " (%d voice)" % cost
+		if bind_slot < 0 and not bool(ab.get("can_use", false)):
+			label += " [%s]" % str(ab.get("reason", "Unavailable"))
 		voice_menu.add_item(label, i)
-		voice_menu.set_item_disabled(i, not ab.can_use)
+		if bind_slot < 0:
+			voice_menu.set_item_disabled(i, not bool(ab.get("can_use", false)))
 
-	# Show centered on screen
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	voice_menu.popup_centered()
 	GameManager.is_player_turn = false
+	if bind_slot >= 0:
+		GameManager.log_message("Choose an ability for gem %d." % (bind_slot + 1), ThemeColors.MSG_INFO)
+	else:
+		GameManager.log_message("Select an ability to cast.", ThemeColors.MSG_SYSTEM)
 
 func _on_voice_menu_selected(index: int) -> void:
 	GameManager.is_player_turn = true
-	if index < 0 or index >= _voice_menu_abilities.size():
+	_voice_menu_targeting_requested = false
+	if index < 0 or index >= _voice_menu_abilities.size() or not player:
 		return
-
 	var ab: Dictionary = _voice_menu_abilities[index]
-	if not ab.can_use:
+	var ability_id: int = int(ab.get("id", -1))
+	if ability_id < 0:
 		return
 
-	if ab.needs_target:
-		# Open targeting mode for this ability
-		_pending_voice_ability_id = ab.id
-		GameManager.log_message("Select a target for %s..." % ab.name, ThemeColors.MSG_INFO)
+	var bind_slot: int = _pending_ability_bind_slot
+	if voice_menu and voice_menu.has_meta("bind_slot"):
+		bind_slot = int(voice_menu.get_meta("bind_slot"))
+	# Bind flow takes priority when user opened menu from gem bind UX.
+	if bind_slot >= 0:
+		if bind_slot < player.ability_hotkeys.size():
+			player.ability_hotkeys[bind_slot] = ability_id
+			GameManager.log_message("Bound %s to gem %d." % [str(ab.get("name", "Ability")), bind_slot + 1], ThemeColors.MSG_INFO)
+			hud.update_hotbar(player, ability_system)
+		_pending_ability_bind_slot = -1
+		if voice_menu:
+			voice_menu.set_meta("bind_slot", -1)
+		return
+
+	if not bool(ab.get("can_use", false)):
+		return
+	if _cast_hotbar_ability(ability_id):
+		# Targeting requested; keep the game paused for target selection.
+		GameManager.is_player_turn = false
+
+func _on_voice_menu_closed() -> void:
+	# If this hide came from selecting a targeted ability, keep turn control paused.
+	if _voice_menu_targeting_requested:
+		_voice_menu_targeting_requested = false
+		return
+	# Keep bind slot state intact through popup-hide event ordering.
+	# It is explicitly cleared in selection, and overwritten on next menu open.
+	if not (target_panel and target_panel.visible):
+		GameManager.is_player_turn = true
+
+func _get_all_hotbar_bindable_abilities() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	if not player:
+		return entries
+
+	# Player active/toggle ability gems (combat/utility stances)
+	var gem_candidates: Array[Dictionary] = [
+		{"id": Player.GEM_DEFENSIVE_STANCE, "skill": Constants.Skill.S_MEL, "ability": Constants.MeleeAbility.MEL_DEFENSIVE_STANCE},
+		{"id": Player.GEM_READY_PARRY, "skill": Constants.Skill.S_EVN, "ability": Constants.EvasionAbility.EVN_PARRY},
+		{"id": Player.GEM_MARK_QUARRY, "skill": Constants.Skill.S_PER, "ability": Constants.PerceptionAbility.PER_FOCUSED_ATTACK},
+		{"id": Player.GEM_EXPOSE_WEAKNESS, "skill": Constants.Skill.S_PER, "ability": Constants.PerceptionAbility.PER_BANE},
+		{"id": Player.GEM_EXPLOIT_OPENING, "skill": Constants.Skill.S_PER, "ability": Constants.PerceptionAbility.PER_MASTER_HUNTER},
+		{"id": Player.GEM_DISGUISE, "skill": Constants.Skill.S_STL, "ability": Constants.StealthAbility.STL_DISGUISE},
+		{"id": Player.GEM_CIRCULAR_GUARD, "skill": Constants.Skill.S_EVN, "ability": Constants.EvasionAbility.EVN_CROWD_FIGHTING},
+		{"id": Player.GEM_SWIFT_STRIKES, "skill": Constants.Skill.S_MEL, "ability": Constants.MeleeAbility.MEL_RAPID_ATTACK},
+		{"id": Player.GEM_CRIPPLING_SHOT, "skill": Constants.Skill.S_ARC, "ability": Constants.ArcheryAbility.ARC_CRIPPLING_SHOT},
+		{"id": Player.GEM_KEEN_SENSES, "skill": Constants.Skill.S_PER, "ability": Constants.PerceptionAbility.PER_KEEN_SENSES},
+		{"id": Player.GEM_CURSE_BREAKING, "skill": Constants.Skill.S_WIL, "ability": Constants.WillAbility.WIL_CURSE_BREAKING},
+		{"id": Player.GEM_POWER_STANCE, "skill": Constants.Skill.S_MEL, "ability": Constants.MeleeAbility.MEL_POWER},
+		{"id": Player.GEM_FINESSE_STANCE, "skill": Constants.Skill.S_MEL, "ability": Constants.MeleeAbility.MEL_FINESSE},
+		{"id": Player.GEM_VANISH, "skill": Constants.Skill.S_STL, "ability": Constants.StealthAbility.STL_VANISH},
+		{"id": Player.GEM_SPRINTING, "skill": Constants.Skill.S_EVN, "ability": Constants.EvasionAbility.EVN_SPRINTING},
+	]
+	for item in gem_candidates:
+		var skill_id: int = int(item.get("skill", -1))
+		var ability_idx: int = int(item.get("ability", -1))
+		if not player.has_ability(skill_id, ability_idx):
+			continue
+		var gem_id: int = int(item.get("id", -1))
+		var check: Dictionary = player.can_use_hotbar_ability(gem_id, ability_system)
+		entries.append({
+			"id": gem_id,
+			"name": player.get_hotbar_ability_display_name(gem_id),
+			"cost": player.get_hotbar_ability_cost(gem_id, ability_system),
+			"can_use": bool(check.get("can_use", false)),
+			"reason": str(check.get("reason", "")),
+			"needs_target": player.is_hotbar_ability_targeted(gem_id, ability_system),
+		})
+
+	# Lore actives/sustains from ability system.
+	if ability_system:
+		var lore_entries: Array[Dictionary] = ability_system.get_learned_active_abilities()
+		for lore_entry in lore_entries:
+			entries.append({
+				"id": int(lore_entry.get("id", -1)),
+				"name": str(lore_entry.get("name", "")),
+				"cost": int(lore_entry.get("cost", 0)),
+				"can_use": bool(lore_entry.get("can_use", false)),
+				"reason": str(lore_entry.get("reason", "")),
+				"needs_target": bool(lore_entry.get("needs_target", false)),
+			})
+	return entries
+
+func _cast_hotbar_slot(slot_index: int) -> void:
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return
+	if slot_index < 0 or slot_index >= player.ability_hotkeys.size():
+		return
+	var ability_id: int = int(player.ability_hotkeys[slot_index])
+	if ability_id < 0:
+		# Empty slot: pressing the key enters bind flow for this gem.
+		_open_voice_menu(slot_index)
+		return
+	_cast_hotbar_ability(ability_id)
+
+func _cast_hotbar_ability(ability_id: int) -> bool:
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return false
+	var check: Dictionary = player.can_use_hotbar_ability(ability_id, ability_system)
+	if not bool(check.get("can_use", false)):
+		GameManager.log_message(str(check.get("reason", "Ability unavailable.")), ThemeColors.MSG_SYSTEM)
+		return false
+
+	var name_text: String = player.get_hotbar_ability_display_name(ability_id) if ability_id >= 1000 else ""
+	if ability_id >= 140 and ability_id <= 159 and ability_system and ability_system.has_method("_get_ability_name"):
+		name_text = str(ability_system._get_ability_name(ability_id))
+
+	var needs_target: bool = player.is_hotbar_ability_targeted(ability_id, ability_system)
+	if needs_target:
+		if ability_id == Player.GEM_MARK_QUARRY:
+			_start_mark_quarry_targeting()
+			_voice_menu_targeting_requested = voice_menu != null and voice_menu.visible
+			return true
+		_pending_voice_ability_id = ability_id
+		GameManager.log_message("Select a target for %s..." % name_text, ThemeColors.MSG_INFO)
 		target_panel.open(player, current_level)
 		GameManager.is_player_turn = false
-	else:
-		# Activate immediately (no target needed)
+		_voice_menu_targeting_requested = voice_menu != null and voice_menu.visible
+		return true
+
+	var success: bool = false
+	if ability_id >= 140 and ability_id <= 159:
 		if ability_system:
-			var success: bool = ability_system.activate_ability(ab.id)
-			if success:
-				player.consume_energy()
+			success = ability_system.activate_ability(ability_id)
+	else:
+		success = _activate_player_gem_ability(ability_id)
+	if success:
+		if ability_id == Player.GEM_SPRINTING:
+			hud.update_player_stats(player)
+		else:
+			_consume_turn_for_ability()
+	return success
+
+func _activate_player_gem_ability(ability_id: int) -> bool:
+	if not player:
+		return false
+	match ability_id:
+		Player.GEM_DEFENSIVE_STANCE:
+			return player.activate_defensive_stance()
+		Player.GEM_READY_PARRY:
+			return player.ready_parry()
+		Player.GEM_EXPOSE_WEAKNESS:
+			return player.activate_expose_weakness()
+		Player.GEM_EXPLOIT_OPENING:
+			return player.activate_exploit_opening()
+		Player.GEM_DISGUISE:
+			return player.activate_disguise_stance()
+		Player.GEM_CIRCULAR_GUARD:
+			return player.activate_circular_guard()
+		Player.GEM_SWIFT_STRIKES:
+			return player.activate_swift_strikes()
+		Player.GEM_CRIPPLING_SHOT:
+			return player.activate_crippling_shot()
+		Player.GEM_KEEN_SENSES:
+			return player.activate_keen_senses()
+		Player.GEM_CURSE_BREAKING:
+			return player.activate_curse_breaking()
+		Player.GEM_POWER_STANCE:
+			return player.activate_power_stance()
+		Player.GEM_FINESSE_STANCE:
+			return player.activate_finesse_stance()
+		Player.GEM_VANISH:
+			return player.activate_vanish()
+		Player.GEM_SPRINTING:
+			return player.activate_sprinting()
+	return false
+
+func _consume_turn_for_ability() -> void:
+	if not player or not player.is_alive:
+		return
+	player.consume_energy()
+	turn_system._after_player_action()
+	hud.update_player_stats(player)
+
+func _try_open_chest() -> bool:
+	if not player or not current_level or not GameManager.is_player_turn:
+		return false
+
+	var search_positions: Array[Vector2i] = [player.grid_position]
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			search_positions.append(player.grid_position + Vector2i(dx, dy))
+
+	for pos in search_positions:
+		if not current_level.is_in_bounds(pos):
+			continue
+		var floor_items: Array[Item] = current_level.get_items_at(pos)
+		for floor_item in floor_items:
+			if floor_item == null:
+				continue
+			var item_data: Variant = floor_item.get_data()
+			if item_data == null or not ("tval" in item_data):
+				continue
+			if int(item_data.tval) != TVAL_CHEST:
+				continue
+			_open_chest_item(floor_item, item_data, pos)
+			return true
+	return false
+
+func _open_chest_item(chest_item: Item, chest_data: Variant, pos: Vector2i) -> void:
+	if not current_level or not player:
+		return
+
+	var chest_name: String = chest_item.get_display_name()
+	current_level.remove_item(chest_item)
+	chest_item.queue_free()
+
+	var sval: int = int(chest_data.sval) if ("sval" in chest_data) else 0
+	var loot_count: int = 1
+	if sval >= 11:
+		loot_count = 2
+	if sval in [3, 13]:
+		loot_count += 1
+
+	var spawned: int = 0
+	for _i in range(loot_count):
+		var loot_template: DataManager.ItemData = DataManager.get_themed_item_for_depth(GameManager.current_depth)
+		if loot_template == null:
+			continue
+		var loot_copy: DataManager.ItemData = DataManager.duplicate_item_data(loot_template)
+		loot_copy.identified = false
+		loot_copy.stack_count = 1
+		var loot_node: Item = ITEM_SCENE.instantiate()
+		loot_node.grid_position = pos
+		loot_node.initialize_from_item_data(loot_copy)
+		current_level.add_item(loot_node)
+		spawned += 1
+
+	GameManager.log_message("You open %s. %d item%s spill out." % [
+		chest_name, spawned, "" if spawned == 1 else "s"
+	], ThemeColors.MSG_LOOT)
+	player.consume_energy()
+	turn_system._after_player_action()
+	hud.update_player_stats(player)
 
 # ============================================================================
 # ITEM SELECTION MENU (comma / Q / R keys)
@@ -1371,6 +1647,121 @@ func _consume_inventory_item(item: Variant) -> void:
 		player.consume_energy()
 		turn_system._after_player_action()
 		hud.update_player_stats(player)
+
+func _on_utility_bind_requested(item_data: Variant, slot_index: int) -> void:
+	if not player or item_data == null:
+		return
+	if not player.bind_utility_item(slot_index, item_data):
+		GameManager.log_message("Failed to load utility slot %d." % (slot_index + 1), ThemeColors.MSG_ERROR)
+		return
+	var item_name: String = GameManager.get_item_display_name(item_data)
+	GameManager.log_message("Loaded %s into utility slot %d." % [item_name, slot_index + 1], ThemeColors.MSG_INFO)
+	hud.update_player_stats(player)
+
+func _on_hud_utility_slot_activated(slot_index: int) -> void:
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return
+	var desc: Dictionary = player.get_utility_descriptor(slot_index)
+	if desc.is_empty():
+		GameManager.log_message("Utility slot %d is empty." % (slot_index + 1), ThemeColors.MSG_SYSTEM)
+		return
+	var item = player.resolve_utility_item(slot_index)
+	if item == null:
+		GameManager.log_message("That utility item is no longer available.", ThemeColors.MSG_SYSTEM)
+		player.clear_utility_item(slot_index)
+		hud.update_player_stats(player)
+		return
+	if not ("tval" in item):
+		return
+	var tval: int = int(item.tval)
+
+	# Consumables: use directly (turn-consuming).
+	if tval in [55, 75, 80]:
+		if not player.inventory.has(item):
+			GameManager.log_message("Consumables must be in inventory to use.", ThemeColors.MSG_SYSTEM)
+			return
+		_consume_inventory_item(item)
+		hud.update_player_stats(player)
+		return
+
+	# Equippables: hot-swap into their natural slot.
+	if Constants.TVAL_TO_SLOT.has(tval):
+		var slot_id: int = int(Constants.TVAL_TO_SLOT[tval])
+		var slot_key: String = player._equip_slot_id_to_key(slot_id)
+		if slot_key.is_empty():
+			return
+		if player.inventory.has(item):
+			if player.equip_item(item, slot_key):
+				var item_name: String = GameManager.get_item_display_name(item)
+				GameManager.log_message("Equipped %s from utility slot." % item_name, ThemeColors.MSG_INFO)
+				player.consume_energy()
+				turn_system._after_player_action()
+		else:
+			GameManager.log_message("That item is already equipped.", ThemeColors.MSG_SYSTEM)
+		hud.update_player_stats(player)
+		return
+
+	GameManager.log_message("This item can't be used from utility slots.", ThemeColors.MSG_SYSTEM)
+
+func _on_hud_utility_slot_cleared(slot_index: int) -> void:
+	if not player:
+		return
+	player.clear_utility_item(slot_index)
+	GameManager.log_message("Cleared utility slot %d." % (slot_index + 1), ThemeColors.MSG_INFO)
+	hud.update_player_stats(player)
+
+func _on_hud_utility_slot_bind_requested(slot_index: int) -> void:
+	if not player or slot_index < 0:
+		return
+	_pending_utility_bind_slot = slot_index
+	if inventory_panel and not inventory_panel.visible:
+		_toggle_inventory()
+	GameManager.log_message("Select an inventory item to load into utility slot %d." % (slot_index + 1), ThemeColors.MSG_INFO)
+
+func _on_hud_utility_equip_drop_requested(slot_index: int, equip_slot_name: String) -> void:
+	if not player or not player.is_alive or not GameManager.is_player_turn:
+		return
+	if equip_slot_name.is_empty():
+		return
+	var item = player.resolve_utility_item(slot_index)
+	if item == null or not ("tval" in item):
+		GameManager.log_message("No valid utility item to equip.", ThemeColors.MSG_SYSTEM)
+		return
+	if not player.inventory.has(item):
+		GameManager.log_message("Only inventory items can be dragged to equipment slots.", ThemeColors.MSG_SYSTEM)
+		return
+	if not player.equipment.has(equip_slot_name):
+		return
+	if not Constants.TVAL_TO_SLOT.has(int(item.tval)):
+		GameManager.log_message("That item is not equippable.", ThemeColors.MSG_SYSTEM)
+		return
+	var expected_slot_key: String = player._equip_slot_id_to_key(int(Constants.TVAL_TO_SLOT[int(item.tval)]))
+	if expected_slot_key != equip_slot_name:
+		GameManager.log_message("That item cannot be equipped to %s." % equip_slot_name.replace("_", " "), ThemeColors.MSG_SYSTEM)
+		return
+	if player.equip_item(item, equip_slot_name):
+		var item_name: String = GameManager.get_item_display_name(item)
+		GameManager.log_message("Equipped %s." % item_name, ThemeColors.MSG_INFO)
+		player.consume_energy()
+		turn_system._after_player_action()
+		hud.update_player_stats(player)
+
+func _on_hud_ability_slot_cast_requested(slot_index: int) -> void:
+	_cast_hotbar_slot(slot_index)
+
+func _on_hud_ability_slot_cleared(slot_index: int) -> void:
+	if not player:
+		return
+	if slot_index < 0 or slot_index >= player.ability_hotkeys.size():
+		return
+	player.ability_hotkeys[slot_index] = -1
+	GameManager.log_message("Cleared gem %d." % (slot_index + 1), ThemeColors.MSG_INFO)
+	hud.update_hotbar(player, ability_system)
+
+func _on_hud_ability_slot_bind_requested(slot_index: int) -> void:
+	if not player or slot_index < 0:
+		return
+	_open_voice_menu(slot_index)
 
 # ============================================================================
 # SETTINGS PANEL
@@ -1454,7 +1845,7 @@ func _cleanup_before_exit() -> void:
 		EventBus.item_dropped.disconnect(_on_item_dropped_to_ground)
 
 	var nodes_to_free: Array = [
-		character_creation, inventory_panel, tome_panel, death_screen, look_panel,
+		title_screen, character_creation, inventory_panel, tome_panel, death_screen, look_panel,
 		dialogue_panel, smithing_panel, target_panel, bestiary_panel, settings_panel,
 		character_panel, transition_overlay, voice_menu, item_menu, ability_system,
 		quest_system, current_level, player
@@ -1463,6 +1854,7 @@ func _cleanup_before_exit() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 
+	title_screen = null
 	character_creation = null
 	inventory_panel = null
 	tome_panel = null
@@ -1958,3 +2350,200 @@ func _wizard_reveal() -> void:
 	# Redraw tilemap with all tiles lit
 	current_level.apply_fov_to_tilemap()
 	GameManager.log_message("[WIZARD] Map and all monsters revealed.", Color.YELLOW)
+
+func _wizard_teleport_to_thrain() -> void:
+	if not player or not player.is_alive:
+		return
+	const ENDGAME_DEPTH: int = 20
+	GameManager.log_message("[WIZARD] Teleporting to Thrain...", Color.YELLOW)
+
+	# Rebuild the target endgame floor directly.
+	if current_level:
+		current_level.remove_entity(player)
+	GameManager.current_depth = ENDGAME_DEPTH
+	_generate_level(ENDGAME_DEPTH)
+	var fixed_thrain_coord: Vector2i = _get_depth20_thrain_fixed_coord()
+	GameManager.log_message("[WIZARD] Depth 20 Thrain target coordinate: %s" % [fixed_thrain_coord], Color.YELLOW)
+	var fixed_entity: Entity = current_level.get_entity_at(fixed_thrain_coord)
+	if fixed_entity != null:
+		var interactable: bool = fixed_entity.has_method("interact")
+		GameManager.log_message("[WIZARD] Occupant at fixed coord: %s (%s) interactable=%s" % [fixed_entity.entity_name, fixed_entity.get_class(), str(interactable)], Color.YELLOW)
+	else:
+		GameManager.log_message("[WIZARD] Occupant at fixed coord: none", Color.YELLOW)
+
+	# Place player adjacent to Thrain if present, otherwise at stairs/random floor.
+	var thrain_pos: Vector2i = _find_thrain_position_on_current_level()
+	if thrain_pos == Vector2i(-1, -1):
+		thrain_pos = _wizard_force_spawn_thrain()
+		if thrain_pos == Vector2i(-1, -1):
+			thrain_pos = _find_thrain_position_on_current_level()
+	var spawn_pos: Vector2i = Vector2i(-1, -1)
+	if thrain_pos != Vector2i(-1, -1):
+		spawn_pos = _find_or_create_open_tile_near(thrain_pos)
+	if spawn_pos == Vector2i(-1, -1):
+		spawn_pos = current_level.find_stairs_up()
+	if spawn_pos == Vector2i(-1, -1):
+		spawn_pos = current_level.find_random_floor()
+
+	player.grid_position = spawn_pos
+	current_level.add_entity(player)
+
+	# Keep systems in sync with the new level.
+	turn_system.set_level(current_level)
+	floater_manager.set_container(current_level.get_node("Effects"))
+	hud.set_level(current_level)
+
+	var fov_radius: int = current_level.get_fov_radius()
+	var light_radius: int = player.get_light_radius()
+	current_level.update_fov(player.grid_position, fov_radius)
+	current_level.apply_lighting(player.grid_position, light_radius)
+	current_level.update_entity_visibility()
+	current_level.apply_fov_to_tilemap()
+
+	if thrain_pos != Vector2i(-1, -1):
+		GameManager.log_message("[WIZARD] Arrived near Thrain on depth %d." % ENDGAME_DEPTH, Color.YELLOW)
+		GameManager.log_message("[WIZARD] Thrain position: %s | Player position: %s" % [thrain_pos, player.grid_position], Color.YELLOW)
+	else:
+		GameManager.log_message("[WIZARD] Depth %d loaded (Thrain not found on this floor)." % ENDGAME_DEPTH, Color.YELLOW)
+		GameManager.log_message("[WIZARD] Player position: %s" % [player.grid_position], Color.YELLOW)
+
+func _wizard_force_spawn_thrain() -> Vector2i:
+	if not current_level:
+		return Vector2i(-1, -1)
+	var spawn_pos: Vector2i = _find_wizard_thrain_spawn_position()
+	if spawn_pos == Vector2i(-1, -1):
+		return Vector2i(-1, -1)
+	var thrain_script: GDScript = load("res://scripts/entities/thrain_npc.gd")
+	if thrain_script == null:
+		return Vector2i(-1, -1)
+	var thrain: Node = thrain_script.create_at_position(spawn_pos, quest_system)
+	# Set identifying fields immediately so detection works before _ready.
+	if thrain.has_method("set"):
+		thrain.set("npc_id", "thrain_ii")
+		thrain.set("entity_name", "Thrain II, Son of Thror")
+	current_level.add_entity(thrain)
+	if quest_system and quest_system.has_method("mark_thrain_spawned"):
+		quest_system.mark_thrain_spawned()
+	GameManager.log_message("[WIZARD] Forced Thrain spawn at %s." % [spawn_pos], Color.YELLOW)
+	return spawn_pos
+
+func _find_wizard_thrain_spawn_position() -> Vector2i:
+	if not current_level:
+		return Vector2i(-1, -1)
+	var fixed: Vector2i = _get_depth20_thrain_fixed_coord()
+	if not current_level.is_in_bounds(fixed):
+		return current_level.find_random_floor()
+	# Ensure fixed tile is walkable and not stairs/dais.
+	var tile: int = current_level.get_tile(fixed)
+	if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.THRONE_DAIS or not current_level.is_passable(fixed):
+		current_level.set_tile(fixed, Level.Tile.FLOOR)
+
+	# Move blocker out of the fixed tile if needed.
+	var blocker: Entity = current_level.get_entity_at(fixed)
+	if blocker != null:
+		for r in range(1, 13):
+			var moved: bool = false
+			for y in range(fixed.y - r, fixed.y + r + 1):
+				for x in range(fixed.x - r, fixed.x + r + 1):
+					var pos := Vector2i(x, y)
+					if not current_level.is_in_bounds(pos):
+						continue
+					if not current_level.is_passable(pos):
+						continue
+					if current_level.get_entity_at(pos) != null:
+						continue
+					var t: int = current_level.get_tile(pos)
+					if t == Level.Tile.STAIRS_UP or t == Level.Tile.STAIRS_DOWN or t == Level.Tile.THRONE_DAIS:
+						continue
+					blocker.grid_position = pos
+					moved = true
+					break
+				if moved:
+					break
+			if moved:
+				break
+		if blocker.grid_position == fixed:
+			current_level.remove_entity(blocker)
+			blocker.queue_free()
+	return fixed
+
+func _get_depth20_thrain_fixed_coord() -> Vector2i:
+	var sauron_pos: Vector2i = _find_sauron_position_on_current_level()
+	if sauron_pos != Vector2i(-1, -1):
+		return sauron_pos + Vector2i(0, -2)
+	return Vector2i(8, 20)
+
+func _find_sauron_position_on_current_level() -> Vector2i:
+	if not current_level:
+		return Vector2i(-1, -1)
+	const SAURON_ID: int = 135
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		var data: Variant = entity.get("monster_data")
+		if data and data.has_method("get"):
+			var mon_index: Variant = data.get("index")
+			if mon_index == SAURON_ID:
+				return entity.grid_position
+		var entity_name: Variant = entity.get("entity_name")
+		if entity_name is String and String(entity_name).find("Sauron") != -1:
+			return entity.grid_position
+	return Vector2i(-1, -1)
+
+func _find_thrain_position_on_current_level() -> Vector2i:
+	if not current_level:
+		return Vector2i(-1, -1)
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		# Prefer canonical NPC id, with a fallback on display name for safety.
+		var npc_id: Variant = entity.get("npc_id")
+		if npc_id == "thrain_ii":
+			return entity.grid_position
+		var entity_name: Variant = entity.get("entity_name")
+		if entity_name is String and String(entity_name).find("Thrain") != -1:
+			return entity.grid_position
+	return Vector2i(-1, -1)
+
+func _find_open_tile_near(origin: Vector2i) -> Vector2i:
+	if not current_level:
+		return Vector2i(-1, -1)
+	var dirs: Array[Vector2i] = [
+		Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0),
+		Vector2i(1, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(-1, -1)
+	]
+	for dir in dirs:
+		var pos := origin + dir
+		if not current_level.is_in_bounds(pos):
+			continue
+		if not current_level.is_passable(pos):
+			continue
+		if current_level.get_entity_at(pos) != null:
+			continue
+		return pos
+	return Vector2i(-1, -1)
+
+func _find_or_create_open_tile_near(origin: Vector2i) -> Vector2i:
+	var near: Vector2i = _find_open_tile_near(origin)
+	if near != Vector2i(-1, -1):
+		return near
+	if not current_level:
+		return Vector2i(-1, -1)
+
+	# Hard fallback for deterministic wizard testing:
+	# carve a standing tile east of Thrain and clear any non-player blocker.
+	var forced: Vector2i = origin + Vector2i(1, 0)
+	if not current_level.is_in_bounds(forced):
+		forced = origin + Vector2i(-1, 0)
+	if not current_level.is_in_bounds(forced):
+		return Vector2i(-1, -1)
+
+	var tile: int = current_level.get_tile(forced)
+	if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN or tile == Level.Tile.THRONE_DAIS or not current_level.is_passable(forced):
+		current_level.set_tile(forced, Level.Tile.FLOOR)
+
+	var blocker: Entity = current_level.get_entity_at(forced)
+	if blocker != null and blocker != player:
+		current_level.remove_entity(blocker)
+		blocker.queue_free()
+	return forced
