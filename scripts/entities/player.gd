@@ -3051,9 +3051,9 @@ func get_light_radius() -> int:
 	if _keen_senses_turns > 0:
 		base_radius += 1
 
-	# Light of the Eldar (active aura): +1 light per 3 Lore while sustained.
+	# Light of the Eldar (active aura): +2 baseline, plus small scaling from Lore.
 	if _is_light_of_eldar_active():
-		base_radius += get_effective_skill("lore") / 3
+		base_radius += 2 + (get_effective_skill("lore") / 6)
 
 	# DARKENED: Reduce light radius by 2 (minimum 1)
 	if status_fx and status_fx.has_effect(Constants.EFFECT_DARKENED):

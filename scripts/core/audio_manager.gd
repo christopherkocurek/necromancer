@@ -133,11 +133,13 @@ func _spawn_player_pools() -> void:
 	music_player_a.name = "MusicPlayerA"
 	music_player_a.bus = "Music"
 	add_child(music_player_a)
+	music_player_a.finished.connect(_on_music_player_finished.bind(music_player_a))
 
 	music_player_b = AudioStreamPlayer.new()
 	music_player_b.name = "MusicPlayerB"
 	music_player_b.bus = "Music"
 	add_child(music_player_b)
+	music_player_b.finished.connect(_on_music_player_finished.bind(music_player_b))
 
 	active_music_player = music_player_a
 	inactive_music_player = music_player_b
@@ -422,6 +424,18 @@ func _on_level_entered(depth: int) -> void:
 	# Switch to exploration music for this depth (unless in combat)
 	if not in_combat:
 		play_music(_get_exploration_track())
+
+func _on_music_player_finished(player_node: AudioStreamPlayer) -> void:
+	# Safety net for imports/streams that don't honor loop flags.
+	if in_combat:
+		return
+	if player_node != active_music_player:
+		return
+	if current_track_name.is_empty():
+		return
+	if current_track_name in music_tracks:
+		player_node.stream = music_tracks[current_track_name]
+		player_node.play()
 
 func _is_player(node: Node) -> bool:
 	if not is_instance_valid(node):

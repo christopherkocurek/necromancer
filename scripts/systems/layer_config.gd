@@ -94,7 +94,7 @@ const LAYERS = {
 		"tint": Color(1.0, 0.8, 0.7, 1.0),  # Red/Orange tint
 		"tint_strength": 0.3,
 		"fov_radius": 6,
-		"darkness_modifier": -2,
+		"darkness_modifier": -1,
 		"room_count_min": 5,
 		"room_count_max": 10,
 		"room_size_min": 6,
@@ -116,7 +116,7 @@ const LAYERS = {
 		"tint": Color(0.7, 0.65, 0.5, 1.0),  # Dark with gold hints
 		"tint_strength": 0.35,
 		"fov_radius": 6,
-		"darkness_modifier": -2,
+		"darkness_modifier": -1,
 		"room_count_min": 4,
 		"room_count_max": 8,
 		"room_size_min": 8,

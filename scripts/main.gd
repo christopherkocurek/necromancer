@@ -670,7 +670,7 @@ func _descend() -> void:
 	_generate_level(GameManager.current_depth)
 
 	# Place player at stairs up
-	var start_pos := current_level.find_stairs_up()
+	var start_pos := current_level.find_random_stairs_up()
 	if start_pos == Vector2i(-1, -1):
 		start_pos = current_level.find_random_floor()
 
@@ -720,7 +720,7 @@ func _ascend() -> void:
 	if quest_system and quest_system.has_quest_items():
 		current_level.is_ascent = true
 
-	var start_pos := current_level.find_stairs_down()
+	var start_pos := current_level.find_random_stairs_down()
 	if start_pos == Vector2i(-1, -1):
 		start_pos = current_level.find_random_floor()
 
@@ -1970,6 +1970,9 @@ func _process_rest_step() -> void:
 	# Simulate player consuming energy and processing the game tick
 	player.consume_energy()
 	turn_system._after_player_action()
+	if ability_system:
+		ability_system.regenerate_voice()
+	hud.update_player_stats(player)
 
 	# Update HP tracker for damage detection
 	_rest_hp_before = player.current_health

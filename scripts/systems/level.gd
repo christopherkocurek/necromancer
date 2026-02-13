@@ -440,7 +440,7 @@ func _resolve_trap_effect(entity: Entity, trap_type: int, _pos: Vector2i) -> voi
 				entity.add_noise(Constants.NOISE_TRAP_STEP)
 
 		TrapType.FLASH:
-			entity.apply_status("blind", 3 + randi_range(0, 2))
+			entity.apply_status("blind", 2 + randi_range(0, 1))
 			if show_msg:
 				GameManager.log_message("A blinding flash of light!", ThemeColors.MSG_WARNING)
 			if entity.has_method("add_noise"):
@@ -520,8 +520,8 @@ func _dark_pool_effect(entity: Entity, _pos: Vector2i) -> bool:
 		return false
 	var dmg: int = randi_range(1, 6)  # 1d6 cold damage
 	entity.take_damage(dmg, "cold", null)
-	# 20% chance of blindness
-	if randf() < 0.20:
+	# 8% chance of blindness (reduced to curb deep-floor chain-blindness)
+	if randf() < 0.08:
 		entity.apply_status("blind", 2)
 	if entity == GameManager.player or is_tile_visible(entity.grid_position):
 		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
@@ -1146,18 +1146,44 @@ func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array[Vector
 # ============================================================================
 
 func find_stairs_down() -> Vector2i:
+	var all: Array[Vector2i] = find_all_stairs_down()
+	if all.is_empty():
+		return Vector2i(-1, -1)
+	return all[0]
+
+func find_all_stairs_down() -> Array[Vector2i]:
+	var results: Array[Vector2i] = []
 	for y in range(height):
 		for x in range(width):
 			if get_tile(Vector2i(x, y)) == Tile.STAIRS_DOWN:
-				return Vector2i(x, y)
-	return Vector2i(-1, -1)
+				results.append(Vector2i(x, y))
+	return results
 
 func find_stairs_up() -> Vector2i:
+	var all: Array[Vector2i] = find_all_stairs_up()
+	if all.is_empty():
+		return Vector2i(-1, -1)
+	return all[0]
+
+func find_all_stairs_up() -> Array[Vector2i]:
+	var results: Array[Vector2i] = []
 	for y in range(height):
 		for x in range(width):
 			if get_tile(Vector2i(x, y)) == Tile.STAIRS_UP:
-				return Vector2i(x, y)
-	return Vector2i(-1, -1)
+				results.append(Vector2i(x, y))
+	return results
+
+func find_random_stairs_down() -> Vector2i:
+	var all: Array[Vector2i] = find_all_stairs_down()
+	if all.is_empty():
+		return Vector2i(-1, -1)
+	return all[randi() % all.size()]
+
+func find_random_stairs_up() -> Vector2i:
+	var all: Array[Vector2i] = find_all_stairs_up()
+	if all.is_empty():
+		return Vector2i(-1, -1)
+	return all[randi() % all.size()]
 
 func find_random_floor() -> Vector2i:
 	# Uses isolated RNG to prevent external seed() calls from poisoning floor selection.

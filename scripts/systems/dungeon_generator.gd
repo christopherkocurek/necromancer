@@ -587,9 +587,9 @@ func _assign_room_data(depth: int) -> void:
 			level.set_room_lit_by_rect(rooms[room_idx], true)
 
 	# Dark zones: at depth 10+, some rooms become dark zones (no ambient light)
-	# Frequency increases with depth: 20% at depth 10, 50% at depth 15, 80% at depth 20
+	# Capped to avoid over-suppressing player light economy in deep floors.
 	if depth >= 10:
-		var dark_zone_chance: float = clampf(0.20 + (depth - 10) * 0.06, 0.20, 0.80)
+		var dark_zone_chance: float = clampf(0.15 + (depth - 10) * 0.04, 0.15, 0.55)
 		for room_idx in range(rooms.size()):
 			if randf() < dark_zone_chance:
 				level.set_dark_zone(room_idx)
@@ -660,6 +660,45 @@ func _place_stairs(depth: int) -> void:
 	)
 	level.set_tile(down_pos, Level.Tile.STAIRS_DOWN)
 
+	# Add extra staircases on larger levels to create alternate routes.
+	# Keep first/last rooms as primary entry/exit anchors.
+	var candidate_rooms: Array[int] = []
+	for room_idx in range(1, rooms.size() - 1):
+		candidate_rooms.append(room_idx)
+	if candidate_rooms.is_empty():
+		return
+
+	var extra_down: int = 0
+	var extra_up: int = 0
+	if rooms.size() >= 6:
+		extra_down = 1
+	if depth > 1 and rooms.size() >= 8:
+		extra_up = 1
+
+	_place_extra_stairs(candidate_rooms, Level.Tile.STAIRS_DOWN, extra_down)
+	if depth > 1:
+		_place_extra_stairs(candidate_rooms, Level.Tile.STAIRS_UP, extra_up)
+
+func _place_extra_stairs(candidate_rooms: Array[int], stair_tile: int, count: int) -> void:
+	if count <= 0 or candidate_rooms.is_empty():
+		return
+	for _i in range(count):
+		for _attempt in range(24):
+			var room_idx: int = candidate_rooms[randi() % candidate_rooms.size()]
+			var room: Rect2i = rooms[room_idx]
+			var pos := Vector2i(
+				randi_range(room.position.x + 1, room.position.x + room.size.x - 2),
+				randi_range(room.position.y + 1, room.position.y + room.size.y - 2)
+			)
+			if not level.is_in_bounds(pos):
+				continue
+			if level.get_tile(pos) != Level.Tile.FLOOR:
+				continue
+			if level.get_entity_at(pos) != null:
+				continue
+			level.set_tile(pos, stair_tile)
+			break
+
 func _add_features(depth: int) -> void:
 	# Place doors at room-corridor junctions and rare mid-corridor spots
 	_place_doors(depth)
@@ -683,8 +722,8 @@ func _add_features(depth: int) -> void:
 	if depth > 4:
 		_add_water_pools(depth)
 
-	# Add lava (depth > 12)
-	if depth > 12:
+	# Add lava in deep zones except inner sanctum depths 16-18 (thematic request).
+	if depth > 12 and not (depth >= 16 and depth <= 18):
 		_add_lava_pools(depth)
 
 	# Add traps with variety
@@ -763,11 +802,21 @@ func _add_traps(depth: int) -> void:
 		if trap_pos == Vector2i(-1, -1):
 			continue
 		# Don't place too close to stairs
-		var stairs_up: Vector2i = level.find_stairs_up()
-		if stairs_up != Vector2i(-1, -1):
-			var dist: int = max(abs(trap_pos.x - stairs_up.x), abs(trap_pos.y - stairs_up.y))
-			if dist < 3:
-				continue
+		var too_close_to_stairs: bool = false
+		for stairs_up: Vector2i in level.find_all_stairs_up():
+			var up_dist: int = max(abs(trap_pos.x - stairs_up.x), abs(trap_pos.y - stairs_up.y))
+			if up_dist < 3:
+				too_close_to_stairs = true
+				break
+		if too_close_to_stairs:
+			continue
+		for stairs_down: Vector2i in level.find_all_stairs_down():
+			var down_dist: int = max(abs(trap_pos.x - stairs_down.x), abs(trap_pos.y - stairs_down.y))
+			if down_dist < 3:
+				too_close_to_stairs = true
+				break
+		if too_close_to_stairs:
+			continue
 		var trap_type: int = available_types[randi() % available_types.size()]
 		level.place_trap(trap_pos, trap_type)
 
@@ -780,7 +829,7 @@ func _get_trap_types_for_depth(depth: int) -> Array[int]:
 		types.append(Level.TrapType.PIT)
 		types.append(Level.TrapType.GAS)
 		types.append(Level.TrapType.WEB)
-	if depth >= 8:
+	if depth >= 8 and depth != 15:
 		types.append(Level.TrapType.FLASH)
 		types.append(Level.TrapType.TELEPORT)
 	return types
@@ -866,7 +915,7 @@ const BOSS_POOL: Dictionary = {
 		{"title": "Ren the Unclean", "hp_mult": 2.0, "xp_mult": 3},
 	],
 	20: [  # Final boss
-		{"title": "Sauron, the Necromancer", "hp_mult": 3.0, "xp_mult": 5},
+		{"title": "Sauron, the Necromancer", "hp_mult": 1.5, "xp_mult": 4},
 	],
 }
 
@@ -896,10 +945,10 @@ func _add_boss_room(depth: int) -> void:
 		boss_room.position.x + boss_room.size.x / 2,
 		boss_room.position.y + boss_room.size.y / 2
 	)
-	if not level.is_in_bounds(boss_pos) or level.get_tile(boss_pos) != Level.Tile.FLOOR:
-		return
-	if level.get_entity_at(boss_pos) != null:
-		return
+	if not level.is_in_bounds(boss_pos) or level.get_tile(boss_pos) != Level.Tile.FLOOR or level.get_entity_at(boss_pos) != null:
+		boss_pos = level.find_random_floor_in_room(boss_room, 80)
+		if boss_pos == Vector2i(-1, -1):
+			return
 
 	var boss: Monster = monster_scene.instantiate()
 	boss.grid_position = boss_pos
@@ -3044,7 +3093,8 @@ func _decorate_wraith_domain(params: Dictionary) -> void:
 							level.set_tile(pos, Level.Tile.SHADOW_FLOOR)
 			"shadow_gallery":
 				# Shadow brazier rows + dark pools between them
-				_place_shadow_gallery(room_rect)
+				var pool_chance: float = 0.15 if level and level.depth == 15 else 0.25
+				_place_shadow_gallery(room_rect, pool_chance)
 			"chasm_bridge":
 				# Chasm across room with 1-tile-wide floor bridge
 				var bridge_y: int = cy
@@ -3055,7 +3105,7 @@ func _decorate_wraith_domain(params: Dictionary) -> void:
 							level.set_tile(pos, Level.Tile.CHASM)
 
 ## Helper: place shadow gallery pattern (brazier rows + dark pools between).
-func _place_shadow_gallery(room_rect: Rect2i) -> void:
+func _place_shadow_gallery(room_rect: Rect2i, dark_pool_chance: float = 0.30) -> void:
 	for y in range(room_rect.position.y + 1, room_rect.position.y + room_rect.size.y - 1):
 		for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
 			var local_x: int = x - room_rect.position.x
@@ -3064,13 +3114,13 @@ func _place_shadow_gallery(room_rect: Rect2i) -> void:
 			if local_x % 4 == 0 and local_y % 3 == 0:
 				if _is_safe_floor(pos):
 					level.set_tile(pos, Level.Tile.SHADOW_BRAZIER)
-			elif local_x % 4 == 2 and _is_safe_floor(pos) and randf() < 0.30:
+			elif local_x % 4 == 2 and _is_safe_floor(pos) and randf() < dark_pool_chance:
 				level.set_tile(pos, Level.Tile.DARK_POOL)
 
-## Inner Sanctum (depths 16-18): Grand halls, guard posts, lava chambers.
+## Inner Sanctum (depths 16-18): Grand halls and guard posts (no lava theme).
 func _decorate_inner_sanctum(params: Dictionary) -> void:
 	var themed_chance: float = params.get("themed_room_chance", 0.80)
-	var subtypes: Array[String] = ["grand_hall", "guard_post", "lava_chamber"]
+	var subtypes: Array[String] = ["grand_hall", "guard_post"]
 
 	for room_rect: Rect2i in rooms:
 		if room_rect.size.x < 5 or room_rect.size.y < 5:
@@ -3106,14 +3156,14 @@ func _decorate_inner_sanctum(params: Dictionary) -> void:
 					if _is_safe_floor(corner):
 						level.set_tile(corner, Level.Tile.SHADOW_BRAZIER)
 			"guard_post":
-				# Rubble barricade near door + lava accents in corners
+				# Rubble barricade near door + shadow floor accents in corners
 				# Barricade: rubble row across the room's narrower axis
 				var barricade_y: int = cy - 1
 				for x in range(room_rect.position.x + 1, room_rect.position.x + room_rect.size.x - 1):
 					var pos := Vector2i(x, barricade_y)
 					if _is_safe_floor(pos) and randf() < 0.60:
 						level.set_tile(pos, Level.Tile.RUBBLE)
-				# Lava in corners
+				# Shadow floor in corners
 				var corners: Array[Vector2i] = [
 					Vector2i(room_rect.position.x + 1, room_rect.position.y + 1),
 					Vector2i(room_rect.position.x + room_rect.size.x - 2, room_rect.position.y + 1),
@@ -3122,21 +3172,7 @@ func _decorate_inner_sanctum(params: Dictionary) -> void:
 				]
 				for corner: Vector2i in corners:
 					if _is_safe_floor(corner):
-						level.set_tile(corner, Level.Tile.LAVA)
-			"lava_chamber":
-				# Lava pool center with rubble ring
-				for dy in range(-1, 2):
-					for dx in range(-1, 2):
-						var lpos := Vector2i(cx + dx, cy + dy)
-						if _is_safe_floor(lpos):
-							level.set_tile(lpos, Level.Tile.LAVA)
-				# Rubble ring around lava
-				for dy in range(-2, 3):
-					for dx in range(-2, 3):
-						if abs(dx) == 2 or abs(dy) == 2:
-							var rpos := Vector2i(cx + dx, cy + dy)
-							if _is_safe_floor(rpos):
-								level.set_tile(rpos, Level.Tile.RUBBLE)
+						level.set_tile(corner, Level.Tile.SHADOW_FLOOR)
 
 ## Throne Room (depths 19-20): Throne chambers, antechambers, lava moats.
 func _decorate_throne_room(params: Dictionary) -> void:

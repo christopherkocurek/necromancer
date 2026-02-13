@@ -57,6 +57,8 @@ func _ready() -> void:
 	material_list.item_selected.connect(_on_material_selected)
 	item_list.max_text_lines = 3
 	material_list.max_text_lines = 3
+	item_list.fixed_column_width = 220
+	material_list.fixed_column_width = 220
 
 	# Connect smithing system signals
 	smithing_system.item_forged.connect(_on_item_forged)
@@ -637,7 +639,7 @@ func _get_item_display_name(item: Variant) -> String:
 		return item.name
 	return "Unknown Item"
 
-func _wrap_list_text(text: String, max_chars_per_line: int = 28, max_lines: int = 3) -> String:
+func _wrap_list_text(text: String, max_chars_per_line: int = 22, max_lines: int = 3) -> String:
 	if text.is_empty() or text.length() <= max_chars_per_line:
 		return text
 	var words: PackedStringArray = text.split(" ", false)
