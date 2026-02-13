@@ -156,6 +156,10 @@ Herbs consumed: %d""" % [
 		run_stats.doors_closed, run_stats.potions_quaffed, run_stats.herbs_consumed
 	]
 
+	var forensic_text: String = _format_forensic_block()
+	if not forensic_text.is_empty():
+		journey_stats.text += "\n\n" + forensic_text
+
 	# Achievements + highlights
 	var achievements: Array[String] = _get_achievement_list()
 	achievements.append_array(_highlights)
@@ -165,7 +169,7 @@ Herbs consumed: %d""" % [
 		achievements_label.text = "MOMENTS OF NOTE\n\n" + "\n".join(achievements)
 
 	# Options
-	options_label.text = "[N] New Game   [Q] Quit   [I] Inventory   [C] Character   [S] Save Dump"
+	options_label.text = "[N] New Game   [Q] Quit   [I] Inventory   [C] Character   [M] Messages   [R] Chronicle   [S] Save Dump"
 
 	# Apply Diablo-themed fonts - stat columns get larger text
 	ThemeColors.apply_body_font(character_info, ThemeColors.FONT_SIZE_H3)
@@ -207,17 +211,15 @@ func _start_phased_reveal() -> void:
 	vignette_tween.tween_property(_vignette, "color:a", 0.4, 0.5)
 
 	# Phase 1 (0.8s): Title scale in
+	# Keep title centering stable: fade-only, no runtime scale offset.
 	var title_node: Label = $MarginContainer/VBoxContainer.get_child(0) if $MarginContainer/VBoxContainer.get_child_count() > 0 else null
 	if title_node and title_node is Label:
 		ThemeColors.apply_heading_font(title_node, ThemeColors.FONT_SIZE_TITLE)
 		title_node.add_theme_color_override("font_color", ThemeColors.BLOOD_BRIGHT)
-		title_node.pivot_offset = title_node.size / 2.0
-		title_node.scale = Vector2(1.5, 1.5)
 		title_node.modulate.a = 0.0
 		var title_tween := create_tween()
 		title_tween.tween_interval(0.8)
 		title_tween.tween_property(title_node, "modulate:a", 1.0, 0.4)
-		title_tween.parallel().tween_property(title_node, "scale", Vector2.ONE, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
 	# Phase 2 (1.5s): Epitaph typewriter
 	var epitaph_tween := create_tween()
@@ -323,7 +325,6 @@ func _skip_to_end() -> void:
 	var title_node: Label = $MarginContainer/VBoxContainer.get_child(0) if $MarginContainer/VBoxContainer.get_child_count() > 0 else null
 	if title_node and title_node is Label:
 		title_node.modulate.a = 1.0
-		title_node.scale = Vector2.ONE
 
 	var hbox: HBoxContainer = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer
 	if hbox:
@@ -357,6 +358,92 @@ func _get_achievement_list() -> Array[String]:
 		achievements.append("* DEFEATED THE NECROMANCER")
 	return achievements
 
+func _format_forensic_block() -> String:
+	if not run_stats:
+		return ""
+	var events: Array[Dictionary] = run_stats.get_recent_forensics(8)
+	if events.is_empty():
+		return ""
+	var lines: Array[String] = []
+	lines.append("WHY YOU DIED (LAST EVENTS)")
+	lines.append("Killer: %s  |  Cause: %s" % [
+		run_stats.killer_name if not run_stats.killer_name.is_empty() else "Unknown",
+		run_stats.died_from if not run_stats.died_from.is_empty() else "Unknown"
+	])
+	if not run_stats.killer_attack_effect.is_empty():
+		lines.append("Killing effect: %s" % _format_effect_label(run_stats.killer_attack_effect))
+	if not run_stats.last_damage_type.is_empty():
+		var src: String = run_stats.last_damage_source_name if not run_stats.last_damage_source_name.is_empty() else "unknown"
+		lines.append("Last damage packet: %s from %s" % [run_stats.last_damage_type, src])
+	lines.append("")
+	for i in range(events.size() - 1, -1, -1):
+		var ev: Dictionary = events[i]
+		var turn: int = int(ev.get("turn", 0))
+		var category: String = str(ev.get("category", "event"))
+		var severity: String = str(ev.get("severity", "info"))
+		var text: String = str(ev.get("text", ""))
+		lines.append("T%d %s [%s] %s" % [turn, _severity_marker(severity), category, text])
+	var suggestions: Array[String] = _build_counterplay_suggestions()
+	if not suggestions.is_empty():
+		lines.append("")
+		lines.append("COUNTERPLAY NEXT RUN")
+		for s in suggestions:
+			lines.append("- %s" % s)
+	return "\n".join(lines)
+
+func _severity_marker(severity: String) -> String:
+	match severity.to_lower():
+		"critical":
+			return "[!!!]"
+		"warning":
+			return "[!]"
+		_:
+			return "[i]"
+
+func _build_counterplay_suggestions() -> Array[String]:
+	var out: Array[String] = []
+	if not run_stats:
+		return out
+	var effect: String = run_stats.killer_attack_effect.to_lower()
+	var dmg: String = run_stats.last_damage_type.to_lower()
+	var killer: String = run_stats.killer_name.to_lower()
+
+	if effect.find("hold") >= 0 or effect.find("entrance") >= 0:
+		out.append("Prioritize Free Action sources or higher Will before control casters.")
+	if effect.find("conf") >= 0 or dmg == "confusion":
+		out.append("Break line of sight sooner; confusion punishes overextension.")
+	if effect.find("dark") >= 0 or dmg == "fire" or dmg == "poison":
+		out.append("Carry more emergency consumables before deep floors.")
+	if killer.find("sorcerer") >= 0 or killer.find("wraith") >= 0:
+		out.append("Invest in Hunting/Lore to read hostile intent earlier.")
+	if run_stats.times_detected > run_stats.enemies_avoided:
+		out.append("Use stealth/disengage routes more aggressively when pressure rises.")
+	if out.is_empty():
+		out.append("Use Look/Target panels proactively; read intent before committing.")
+	return out
+
+func _format_effect_label(raw_effect: String) -> String:
+	var token: String = raw_effect.strip_edges()
+	if token.is_empty():
+		return "Unknown"
+	token = token.replace("_", " ")
+	var upper: String = token.to_upper()
+	match upper:
+		"HURT":
+			return "Physical strike"
+		"DAMAGE PHYSICAL":
+			return "Physical damage"
+		"DAMAGE FIRE":
+			return "Fire damage"
+		"DAMAGE COLD":
+			return "Cold damage"
+		"DAMAGE POISON":
+			return "Poison damage"
+		"DAMAGE DARK":
+			return "Dark sorcery"
+		_:
+			return token.capitalize()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
@@ -386,10 +473,19 @@ func _unhandled_input(event: InputEvent) -> void:
 				_show_messages()
 			KEY_S:
 				_save_dump()
+			KEY_R:
+				_show_chronicle()
 		get_viewport().set_input_as_handled()
 
 func _show_inventory() -> void:
-	GameManager.log_message("Inventory view not yet implemented.", ThemeColors.MSG_SYSTEM)
+	if _player_ref and is_instance_valid(_player_ref):
+		var parent_layer: Node = get_parent()
+		if parent_layer:
+			for child in parent_layer.get_children():
+				if child is InventoryPanel:
+					child.open(_player_ref)
+					return
+	GameManager.log_message("Inventory data not available.", ThemeColors.MSG_SYSTEM)
 
 func _show_character() -> void:
 	if _player_ref and is_instance_valid(_player_ref):
@@ -403,7 +499,35 @@ func _show_character() -> void:
 	GameManager.log_message("Character data not available.", ThemeColors.MSG_SYSTEM)
 
 func _show_messages() -> void:
-	GameManager.log_message("Message log not yet implemented.", ThemeColors.MSG_SYSTEM)
+	var parent_layer: Node = get_parent()
+	if not parent_layer:
+		GameManager.log_message("No message history available.", ThemeColors.MSG_SYSTEM)
+		return
+	for child in parent_layer.get_children():
+		if child is HUD and "messages" in child:
+			var log_messages: Array = child.messages
+			if log_messages.is_empty():
+				GameManager.log_message("No message history available.", ThemeColors.MSG_SYSTEM)
+				return
+			GameManager.log_message("Final message log:", ThemeColors.GOLD_DIM)
+			var start: int = maxi(0, log_messages.size() - 12)
+			for i in range(start, log_messages.size()):
+				var msg: Dictionary = log_messages[i]
+				GameManager.log_message("  %s" % str(msg.get("text", "")), Color(msg.get("color", ThemeColors.TEXT_SECONDARY)))
+			return
+	GameManager.log_message("No message history available.", ThemeColors.MSG_SYSTEM)
+
+func _show_chronicle() -> void:
+	if not ChronicleManager:
+		GameManager.log_message("Chronicle unavailable.", ThemeColors.MSG_SYSTEM)
+		return
+	var lines: Array[String] = ChronicleManager.get_recent_summary_lines(8)
+	if lines.is_empty():
+		GameManager.log_message("Chronicle is empty.", ThemeColors.MSG_SYSTEM)
+		return
+	GameManager.log_message("Chronicle of the fallen:", ThemeColors.GOLD_DIM)
+	for line in lines:
+		GameManager.log_message("  %s" % line, ThemeColors.TEXT_SECONDARY)
 
 func _save_dump() -> void:
 	var dump: String = _generate_character_dump()

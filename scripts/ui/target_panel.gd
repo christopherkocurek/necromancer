@@ -10,6 +10,7 @@ var target_cursor: Vector2i = Vector2i.ZERO
 var player: Player = null
 var level: Level = null
 var max_range: int = 20  # Maximum targeting range
+var _marker_monster: Monster = null
 
 @onready var info_label: RichTextLabel = $Panel/VBox/InfoLabel
 var cursor_sprite: Sprite2D = null
@@ -49,6 +50,7 @@ func open(player_ref: Player, level_ref: Level, range_limit: int = 20) -> void:
 	grab_focus()
 
 func close() -> void:
+	_clear_marker()
 	if cursor_sprite and cursor_sprite.get_parent():
 		cursor_sprite.get_parent().remove_child(cursor_sprite)
 	PanelTransition.close_panel(self)
@@ -124,13 +126,90 @@ func _update_info() -> void:
 
 	# Entity at cursor
 	var entity = level.get_entity_at(target_cursor)
+	_update_marker_for_entity(entity)
 	if is_instance_valid(entity) and entity is Monster:
 		lines.append("")
 		lines.append("[color=red]%s[/color]" % entity.entity_name)
 		lines.append("HP: %d/%d" % [entity.current_health, entity.max_health])
+		if player and entity.has_method("get_intent_readout_for_viewer"):
+			var intent: Dictionary = entity.get_intent_readout_for_viewer(player)
+			var intent_type: String = str(intent.get("type", "uncertain"))
+			var attack_type: String = _intent_type_label(intent_type)
+			var summary: String = str(intent.get("summary", "Unknown"))
+			var detail: String = str(intent.get("detail", ""))
+			var targets_player: bool = bool(intent.get("targets_player", false))
+			var eta: int = int(intent.get("eta", 1))
+			lines.append("[color=#FCD34D][b]TACTICAL READ[/b][/color]")
+			lines.append("[color=#FCD34D]Attack type:[/color] %s" % attack_type)
+			lines.append("[color=#F59E0B]Intent:[/color] %s" % summary)
+			lines.append("[color=#D1D5DB]Target:[/color] %s  [color=#D1D5DB]ETA:[/color] %s" % [
+				"You" if targets_player else "Other",
+				"Now" if eta <= 0 else str(eta)
+			])
+			if not detail.is_empty():
+				lines.append("[color=#9CA3AF]%s[/color]" % detail)
+			lines.append(_format_threat_line(intent))
+	else:
+		lines.append("")
+		lines.append("[color=#9CA3AF]No hostile target selected.[/color]")
 
 	info_label.clear()
 	info_label.append_text("\n".join(lines))
+
+func _update_marker_for_entity(entity: Entity) -> void:
+	if _marker_monster and is_instance_valid(_marker_monster):
+		_marker_monster.clear_intent_marker()
+	_marker_monster = null
+	if not entity or not entity is Monster:
+		return
+	var mon: Monster = entity as Monster
+	if not mon.has_method("get_intent_readout_for_viewer") or not mon.has_method("set_intent_marker_from_readout"):
+		return
+	var intent: Dictionary = mon.get_intent_readout_for_viewer(player)
+	mon.set_intent_marker_from_readout(intent)
+	_marker_monster = mon
+
+func _clear_marker() -> void:
+	if _marker_monster and is_instance_valid(_marker_monster):
+		_marker_monster.clear_intent_marker()
+	_marker_monster = null
+
+func _format_threat_line(intent: Dictionary) -> String:
+	var intent_type: String = str(intent.get("type", "uncertain"))
+	var eta: int = int(intent.get("eta", 1))
+	var targets_player: bool = bool(intent.get("targets_player", false))
+	var level_str: String = "Low"
+	var color: String = "#6B7280"
+
+	if targets_player and eta <= 0:
+		if intent_type == "cast" or intent_type == "ranged":
+			level_str = "Severe"
+			color = "#EF4444"
+		elif intent_type == "melee":
+			level_str = "High"
+			color = "#F97316"
+	elif targets_player:
+		level_str = "Elevated"
+		color = "#F59E0B"
+
+	return "[color=%s]Threat: %s[/color]" % [color, level_str]
+
+func _intent_type_label(intent_type: String) -> String:
+	match intent_type:
+		"melee":
+			return "Melee"
+		"ranged":
+			return "Ranged"
+		"cast":
+			return "Spell"
+		"move":
+			return "Movement pressure"
+		"flee":
+			return "Retreat"
+		"idle":
+			return "Idle"
+		_:
+			return "Unknown"
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:

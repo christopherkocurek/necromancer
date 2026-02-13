@@ -7,6 +7,7 @@ signal closed
 var look_cursor: Vector2i = Vector2i.ZERO
 var player: Player = null
 var level: Level = null
+var _marker_monster: Monster = null
 
 @onready var info_label: RichTextLabel = $Panel/VBox/InfoLabel
 @onready var cursor_sprite: Sprite2D = null
@@ -45,6 +46,7 @@ func open(player_ref: Player, level_ref: Level) -> void:
 	grab_focus()
 
 func close() -> void:
+	_clear_marker()
 	if cursor_sprite and cursor_sprite.get_parent():
 		cursor_sprite.get_parent().remove_child(cursor_sprite)
 	PanelTransition.close_panel(self, func(): closed.emit())
@@ -83,14 +85,10 @@ func _update_info() -> void:
 		return
 
 	var lines: Array[String] = []
-	lines.append("[b]Look Mode[/b] (X to exit, arrows/WASD to move cursor)")
-	lines.append("")
-
-	# Position info
-	lines.append("Position: (%d, %d)" % [look_cursor.x, look_cursor.y])
 
 	# Check for entity at position
 	var entity = level.get_entity_at(look_cursor)
+	_update_marker_for_entity(entity)
 	if entity:
 		lines.append("")
 		if entity is Player:
@@ -110,13 +108,34 @@ func _update_info() -> void:
 	# Terrain info with depth-scaled procedural description
 	var tile: int = level.get_tile(look_cursor)
 	lines.append("")
-	lines.append("[color=gray]Terrain: %s[/color]" % _get_terrain_name(tile))
+	lines.append("[color=gray]Terrain: %s[/color]" % _get_terrain_name(level, look_cursor, tile))
 	var current_depth: int = GameManager.current_depth if GameManager else 1
-	var terrain_desc: String = DescriptionGenerator.generate_terrain_description_for_depth(tile, current_depth)
+	var desc_tile: int = tile
+	if tile == Level.Tile.TRAP and level and level.has_method("is_trap_revealed") and not bool(level.is_trap_revealed(look_cursor)):
+		desc_tile = Level.Tile.FLOOR
+	var terrain_desc: String = DescriptionGenerator.generate_terrain_description_for_depth(desc_tile, current_depth)
 	lines.append("[color=#7D7668][i]%s[/i][/color]" % terrain_desc)
 
 	info_label.bbcode_enabled = true
 	info_label.text = "\n".join(lines)
+
+func _update_marker_for_entity(entity: Entity) -> void:
+	if _marker_monster and is_instance_valid(_marker_monster):
+		_marker_monster.clear_intent_marker()
+	_marker_monster = null
+	if not entity or not entity is Monster:
+		return
+	var mon: Monster = entity as Monster
+	if not mon.has_method("get_intent_readout_for_viewer") or not mon.has_method("set_intent_marker_from_readout"):
+		return
+	var intent: Dictionary = mon.get_intent_readout_for_viewer(player)
+	mon.set_intent_marker_from_readout(intent)
+	_marker_monster = mon
+
+func _clear_marker() -> void:
+	if _marker_monster and is_instance_valid(_marker_monster):
+		_marker_monster.clear_intent_marker()
+	_marker_monster = null
 
 func _add_monster_info(monster: Monster, lines: Array[String]) -> void:
 	# Try to get monster memory from main scene for knowledge-based display
@@ -133,12 +152,62 @@ func _add_monster_info(monster: Monster, lines: Array[String]) -> void:
 	# If we have monster memory, use knowledge-based display
 	if memory:
 		var info_lines: Array[String] = memory.format_monster_info_for_look(monster, player_lore)
-		for line in info_lines:
-			lines.append(line)
+		if not info_lines.is_empty():
+			lines.append(info_lines[0])  # Start from monster name/title.
+			_append_intent_readout(monster, lines)
+			for i in range(1, info_lines.size()):
+				lines.append(info_lines[i])
+		else:
+			_append_intent_readout(monster, lines)
 		return
 
 	# Fallback to full info display (legacy behavior)
 	_add_monster_info_full(monster, lines)
+	_append_intent_readout(monster, lines)
+
+func _append_intent_readout(monster: Monster, lines: Array[String]) -> void:
+	if not player or not monster or not monster.has_method("get_intent_readout_for_viewer"):
+		return
+	var intent: Dictionary = monster.get_intent_readout_for_viewer(player)
+	if intent.is_empty():
+		return
+
+	var intent_type: String = str(intent.get("type", "uncertain"))
+	var attack_type: String = _intent_type_label(intent_type)
+	var summary: String = str(intent.get("summary", "Unknown"))
+	var detail: String = str(intent.get("detail", ""))
+	var certainty: String = str(intent.get("certainty", ""))
+	var targets_player: bool = bool(intent.get("targets_player", false))
+	var eta: int = int(intent.get("eta", 1))
+	lines.append("")
+	lines.append("[color=#FCD34D][b]TACTICAL READ[/b][/color]")
+	lines.append("[color=#FCD34D]Attack type:[/color] %s" % attack_type)
+	lines.append("[color=#F59E0B]Intent:[/color] %s" % summary)
+	lines.append("[color=#D1D5DB]Target:[/color] %s  [color=#D1D5DB]ETA:[/color] %s" % [
+		"You" if targets_player else "Other",
+		"Now" if eta <= 0 else str(eta)
+	])
+	if not detail.is_empty():
+		lines.append("[color=#9CA3AF]%s[/color]" % detail)
+	if not certainty.is_empty():
+		lines.append("[color=#6B7280]Read: %s[/color]" % certainty)
+
+func _intent_type_label(intent_type: String) -> String:
+	match intent_type:
+		"melee":
+			return "Melee"
+		"ranged":
+			return "Ranged"
+		"cast":
+			return "Spell"
+		"move":
+			return "Movement pressure"
+		"flee":
+			return "Retreat"
+		"idle":
+			return "Idle"
+		_:
+			return "Unknown"
 
 func _add_monster_info_full(monster: Monster, lines: Array[String]) -> void:
 	# Monster name with color based on stance
@@ -213,7 +282,9 @@ func _add_monster_info_full(monster: Monster, lines: Array[String]) -> void:
 	if not flags.is_empty():
 		lines.append("Traits: %s" % ", ".join(flags))
 
-func _get_terrain_name(tile: int) -> String:
+func _get_terrain_name(level: Level, pos: Vector2i, tile: int) -> String:
+	if tile == Level.Tile.TRAP and level and level.has_method("is_trap_revealed") and not bool(level.is_trap_revealed(pos)):
+		return "Stone Floor"
 	match tile:
 		Level.Tile.VOID:
 			return "Void"

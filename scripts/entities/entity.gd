@@ -48,6 +48,7 @@ var _move_tween: Tween = null
 # Shared resources (loaded once)
 static var _tileset_texture: Texture2D = null
 static var _magenta_shader: ShaderMaterial = null
+const SpriteSpellVFX := preload("res://scripts/systems/sprite_spell_vfx.gd")
 
 # State
 var is_alive: bool = true
@@ -398,6 +399,16 @@ func vfx_floater(text: String, color: Color, size: int = 16) -> void:
 	if not effects_node:
 		return
 	DamageFloater.create_at(effects_node, get_world_position() + Vector2(0, -12), text, color, size)
+
+## Spawn a CC-BY sprite-sheet spell animation at entity center.
+func vfx_sprite_spell(effect_key: String, scale_override: float = -1.0) -> void:
+	if not GameManager.current_level:
+		return
+	var effects_node: Node = GameManager.current_level.get_node_or_null("Effects")
+	if not effects_node:
+		return
+	var center: Vector2 = get_world_position()
+	SpriteSpellVFX.play(effects_node, center, effect_key, scale_override)
 
 # ============================================================================
 # STATUS EFFECTS

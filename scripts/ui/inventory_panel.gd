@@ -7,6 +7,7 @@ signal item_selected(item_data: Variant)
 signal item_equipped(item_data: Variant, slot: int)
 signal item_unequipped(item_data: Variant, slot_key: String)
 signal item_dropped(item_data: Variant)
+signal utility_bind_requested(item_data: Variant, slot_index: int)
 signal closed
 
 const GRID_COLS: int = 4
@@ -54,6 +55,7 @@ static var _magenta_shader: ShaderMaterial = null
 # Sort/filter labels
 var _sort_label: Label = null
 var _filter_label: Label = null
+var _utility_hint_label: Label = null
 
 # Equipment slot buttons (mapped by Constants.EquipSlot)
 var equipment_slots: Dictionary = {}
@@ -117,6 +119,12 @@ func _setup_sort_filter_bar() -> void:
 	_filter_label.text = "Filter: All"
 	ThemeColors.apply_body_font(_filter_label, ThemeColors.FONT_SIZE_BODY)
 	bar.add_child(_filter_label)
+
+	_utility_hint_label = Label.new()
+	_utility_hint_label.text = "  |  Shift+1..6: Load Utility Slot"
+	ThemeColors.apply_body_font(_utility_hint_label, ThemeColors.FONT_SIZE_HINT)
+	_utility_hint_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	bar.add_child(_utility_hint_label)
 
 	# Insert bar before the grid
 	var grid_idx: int = 0
@@ -861,6 +869,21 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey and event.pressed:
+		# Bind selected inventory item to utility slot (Shift+1..6)
+		if event.shift_pressed and selected_item != null:
+			var utility_slot: int = -1
+			match event.keycode:
+				KEY_1: utility_slot = 0
+				KEY_2: utility_slot = 1
+				KEY_3: utility_slot = 2
+				KEY_4: utility_slot = 3
+				KEY_5: utility_slot = 4
+				KEY_6: utility_slot = 5
+			if utility_slot >= 0:
+				utility_bind_requested.emit(selected_item, utility_slot)
+				get_viewport().set_input_as_handled()
+				return
+
 		# Arrow keys for navigation
 		match event.keycode:
 			KEY_UP:

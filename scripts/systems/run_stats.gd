@@ -7,6 +7,10 @@ extends RefCounted
 var died_from: String = ""
 var killer_name: String = ""
 var killer_idx: int = -1
+var killer_attack_effect: String = ""
+var last_damage_type: String = ""
+var last_damage_source_name: String = ""
+var last_damage_source_id: int = -1
 
 # Combat statistics
 var total_damage_dealt: int = 0
@@ -49,6 +53,11 @@ var victory_type: String = ""  # "Escape" or "Banishment"
 var total_turns: int = 0
 var start_time: int = 0  # Unix timestamp
 var end_time: int = 0
+
+# Death forensics timeline (latest first in UI, stored as append log)
+const MAX_FORENSIC_EVENTS: int = 80
+var forensic_events: Array[Dictionary] = []  # {turn, category, text, severity}
+var run_goal_tags: Array[String] = []  # Non-power progression tags earned this run
 
 func _init() -> void:
 	start_time = Time.get_unix_time_from_system()
@@ -109,6 +118,25 @@ func record_victory(type: String = "Banishment") -> void:
 		escaped = true
 	end_time = Time.get_unix_time_from_system()
 
+func record_forensic_event(turn: int, category: String, text: String, severity: String = "info") -> void:
+	forensic_events.append({
+		"turn": turn,
+		"category": category,
+		"text": text,
+		"severity": severity,
+	})
+	if forensic_events.size() > MAX_FORENSIC_EVENTS:
+		forensic_events.pop_front()
+	if EventBus:
+		EventBus.forensic_event_recorded.emit(category, severity, text, turn)
+
+func get_recent_forensics(count: int = 5) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var start_idx: int = maxi(0, forensic_events.size() - count)
+	for i in range(start_idx, forensic_events.size()):
+		out.append(forensic_events[i])
+	return out
+
 # ============================================================================
 # QUERY METHODS (for epitaph generation)
 # ============================================================================
@@ -149,6 +177,10 @@ func to_dict() -> Dictionary:
 		"died_from": died_from,
 		"killer_name": killer_name,
 		"killer_idx": killer_idx,
+		"killer_attack_effect": killer_attack_effect,
+		"last_damage_type": last_damage_type,
+		"last_damage_source_name": last_damage_source_name,
+		"last_damage_source_id": last_damage_source_id,
 		"total_damage_dealt": total_damage_dealt,
 		"biggest_hit": biggest_hit,
 		"biggest_enemy_killed": biggest_enemy_killed,
@@ -176,6 +208,8 @@ func to_dict() -> Dictionary:
 		"total_turns": total_turns,
 		"start_time": start_time,
 		"end_time": end_time,
+		"forensic_events": forensic_events.duplicate(true),
+		"run_goal_tags": run_goal_tags.duplicate(),
 	}
 
 static func from_dict(data: Dictionary) -> RunStats:
@@ -183,6 +217,10 @@ static func from_dict(data: Dictionary) -> RunStats:
 	stats.died_from = data.get("died_from", "")
 	stats.killer_name = data.get("killer_name", "")
 	stats.killer_idx = data.get("killer_idx", -1)
+	stats.killer_attack_effect = data.get("killer_attack_effect", "")
+	stats.last_damage_type = data.get("last_damage_type", "")
+	stats.last_damage_source_name = data.get("last_damage_source_name", "")
+	stats.last_damage_source_id = data.get("last_damage_source_id", -1)
 	stats.total_damage_dealt = data.get("total_damage_dealt", 0)
 	stats.biggest_hit = data.get("biggest_hit", 0)
 	stats.biggest_enemy_killed = data.get("biggest_enemy_killed", 0)
@@ -210,4 +248,13 @@ static func from_dict(data: Dictionary) -> RunStats:
 	stats.total_turns = data.get("total_turns", 0)
 	stats.start_time = data.get("start_time", 0)
 	stats.end_time = data.get("end_time", 0)
+	var stored_events: Variant = data.get("forensic_events", [])
+	if stored_events is Array:
+		for entry in stored_events:
+			if entry is Dictionary and entry.has("text"):
+				stats.forensic_events.append(entry.duplicate(true))
+	var goal_tags_data: Variant = data.get("run_goal_tags", [])
+	if goal_tags_data is Array:
+		for tag in goal_tags_data:
+			stats.run_goal_tags.append(str(tag))
 	return stats

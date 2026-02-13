@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dark Halls (Layer 3) — Tile Review</title>
+<style>
+body { background: #0d0a12; color: #eee; font-family: monospace; padding: 20px; }
+h1 { color: #7851a9; border-bottom: 2px solid #7851a9; padding-bottom: 8px; }
+h2 { color: #9b72cf; margin-top: 30px; }
+.tile-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.tile-card {
+    background: #1a1520; border: 2px solid #333; border-radius: 8px; padding: 12px;
+    text-align: center; min-width: 160px;
+}
+.tile-card.highlight { border-color: #7851a9; }
+.tile-card.approved { border-color: #33cc33; opacity: 0.7; }
+.tile-card img {
+    width: 128px; height: 128px; image-rendering: pixelated;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.tile-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.tile-card .name { font-size: 14px; font-weight: bold; color: #7851a9; }
+.raw-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.raw-card {
+    background: #1a1520; border: 2px solid #555; border-radius: 8px; padding: 12px;
+    text-align: center;
+}
+.raw-card img {
+    width: 256px; height: 256px; image-rendering: auto;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.raw-card .name { font-size: 14px; font-weight: bold; color: #9b72cf; }
+.info { color: #888; font-size: 13px; margin: 5px 0; }
+.status { color: #33cc33; font-weight: bold; }
+.status.pending { color: #ffaa33; }
+.mechanic { color: #44ff88; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Dark Halls (Layer 3) — Corrupted Elven Sanctum</h1>
+<p class="info">Creative vision: Corrupted elven sanctum seized by Morgul sorcery. Graceful architecture defaced with iron chains and burning runes.</p>
+<p class="info">Palette: obsidian black (#1a1520), amethyst purple (#7851a9), bone white (#d4c9b0), phosphorescent green (#44ff88)</p>
+<p class="info">Tileset location: Row 21, Cols 0-11 (core) + env tile slots</p>
+
+<h2>Phase 1: Anchor Tiles <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Wall (Light)</div>
+        <img src="layer_tiles/dark_halls/wall_light.png" />
+        <div class="label">Row 21, Col 0</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Wall (Dark)</div>
+        <img src="layer_tiles/dark_halls/wall_dark.png" />
+        <div class="label">Row 21, Col 1</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Floor (Light)</div>
+        <img src="layer_tiles/dark_halls/floor_light.png" />
+        <div class="label">Row 21, Col 2</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Floor (Dark)</div>
+        <img src="layer_tiles/dark_halls/floor_dark.png" />
+        <div class="label">Row 21, Col 3</div>
+    </div>
+</div>
+
+<h2>Phase 2: Doors (Programmatic) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Door Closed (Light)</div>
+        <img src="layer_tiles/dark_halls/door_closed_light.png" />
+        <div class="label">Row 21, Col 4</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Closed (Dark)</div>
+        <img src="layer_tiles/dark_halls/door_closed_dark.png" />
+        <div class="label">Row 21, Col 5</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Open (Light)</div>
+        <img src="layer_tiles/dark_halls/door_open_light.png" />
+        <div class="label">Row 21, Col 6</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Open (Dark)</div>
+        <img src="layer_tiles/dark_halls/door_open_dark.png" />
+        <div class="label">Row 21, Col 7</div>
+    </div>
+</div>
+
+<h2>Phase 3: Stairs (Recolored from Outer Pits) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Stairs Down (Light)</div>
+        <img src="layer_tiles/dark_halls/stairs_down_light.png" />
+        <div class="label">Row 21, Col 8</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Down (Dark)</div>
+        <img src="layer_tiles/dark_halls/stairs_down_dark.png" />
+        <div class="label">Row 21, Col 9</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Up (Light)</div>
+        <img src="layer_tiles/dark_halls/stairs_up_light.png" />
+        <div class="label">Row 21, Col 10</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Up (Dark)</div>
+        <img src="layer_tiles/dark_halls/stairs_up_dark.png" />
+        <div class="label">Row 21, Col 11</div>
+    </div>
+</div>
+
+<h2>Phase 4: Environmental Tiles <span class="status pending">REVIEW</span></h2>
+
+<h3 style="color: #44ff88;">Procedural (on floor base)</h3>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Shadow Pool (Light)</div>
+        <img src="layer_tiles/dark_halls/shadow_pool_light.png" />
+        <div class="mechanic">Replaces vine_floor — 1.5x move cost</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Shadow Pool (Dark)</div>
+        <img src="layer_tiles/dark_halls/shadow_pool_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Morgul Sigil (Light)</div>
+        <img src="layer_tiles/dark_halls/morgul_sigil_light.png" />
+        <div class="mechanic">Replaces poison_stream — magic damage</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Morgul Sigil (Dark)</div>
+        <img src="layer_tiles/dark_halls/morgul_sigil_dark.png" />
+    </div>
+</div>
+
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Binding Circle (Light)</div>
+        <img src="layer_tiles/dark_halls/binding_circle_light.png" />
+        <div class="mechanic">Replaces thick_web_trap — holds 2 turns</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Binding Circle (Dark)</div>
+        <img src="layer_tiles/dark_halls/binding_circle_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Bone Fragments (Light)</div>
+        <img src="layer_tiles/dark_halls/bone_fragments_light.png" />
+        <div class="mechanic">Replaces forest_floor — floor decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Bone Fragments (Dark)</div>
+        <img src="layer_tiles/dark_halls/bone_fragments_dark.png" />
+    </div>
+</div>
+
+<h3 style="color: #9b72cf;">DALL-E (composited)</h3>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Collapsed Pillar (Light)</div>
+        <img src="layer_tiles/dark_halls/collapsed_pillar_light.png" />
+        <div class="mechanic">Replaces spider_web — blocks movement</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Collapsed Pillar (Dark)</div>
+        <img src="layer_tiles/dark_halls/collapsed_pillar_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Defaced Carvings (Light)</div>
+        <img src="layer_tiles/dark_halls/defaced_carvings_light.png" />
+        <div class="mechanic">Replaces tangled_roots — wall decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Defaced Carvings (Dark)</div>
+        <img src="layer_tiles/dark_halls/defaced_carvings_dark.png" />
+    </div>
+</div>
+
+<h2>Raw DALL-E Output (256px preview)</h2>
+<div class="raw-row">
+    <div class="raw-card">
+        <div class="name">Wall</div>
+        <img src="layer_tiles/raw/dark_halls/wall_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Floor</div>
+        <img src="layer_tiles/raw/dark_halls/floor_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Collapsed Pillar</div>
+        <img src="layer_tiles/raw/dark_halls/collapsed_pillar_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Defaced Carvings</div>
+        <img src="layer_tiles/raw/dark_halls/defaced_carvings_1024.png" />
+    </div>
+</div>
+
+</body>
+</html>

@@ -587,9 +587,25 @@ func test_map_dimensions() -> void:
 func test_forges_on_even_depths_up_to_10() -> void:
 	for depth: int in [2, 4, 6, 8, 10]:
 		var level: Level = await _generate_level(depth)
-		var forge_count: int = _count_tiles(level, Level.Tile.FORGE)
+		var forge_count: int = _count_all_forge_tiles(level)
 		assert_gte(forge_count, 1,
 			"Depth %d: should have at least 1 forge (got %d)" % [depth, forge_count])
+
+func test_forge_hard_cap_two_per_floor() -> void:
+	for depth: int in range(1, 21):
+		var level: Level = await _generate_level(depth)
+		var forge_count: int = _count_all_forge_tiles(level)
+		assert_lte(forge_count, 2,
+			"Depth %d: should have at most 2 forges (got %d)" % [depth, forge_count])
+
+func _count_all_forge_tiles(level: Level) -> int:
+	var total: int = 0
+	for y in range(level.height):
+		for x in range(level.width):
+			var pos := Vector2i(x, y)
+			if level.is_forge_tile(pos):
+				total += 1
+	return total
 
 # ============================================================================
 # I. ROOM COUNT VALIDATION

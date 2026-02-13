@@ -1,0 +1,93 @@
+Monster Mapping Example Export
+
+These are crops from the CURRENT atlas using CURRENT tile_mapper.gd monster_coords.
+
+- ID 11 (Mirkwood Spider) -> atlas (0, 24) -> monster_11_mapped.png
+- ID 12 (Giant Rat) -> atlas (1, 24) -> monster_12_mapped.png
+- ID 13 (Black Squirrel) -> atlas (2, 24) -> monster_13_mapped.png
+- ID 14 (Crebain) -> atlas (3, 24) -> monster_14_mapped.png
+- ID 15 (Tanglethorn) -> atlas (4, 24) -> monster_15_mapped.png
+- ID 16 (Giant Bat) -> atlas (5, 24) -> monster_16_mapped.png
+- ID 17 (Web Spinner) -> atlas (6, 24) -> monster_17_mapped.png
+- ID 18 (Orc Scout) -> atlas (7, 24) -> monster_18_mapped.png
+- ID 19 (Swamp Adder) -> atlas (8, 24) -> monster_19_mapped.png
+- ID 20 (Great Spider) -> atlas (9, 24) -> monster_20_mapped.png
+- ID 21 (Warg Pup) -> atlas (10, 24) -> monster_21_mapped.png
+- ID 22 (Broodmother) -> atlas (11, 24) -> monster_22_mapped.png
+- ID 31 (Orc Slave) -> atlas (12, 24) -> monster_31_mapped.png
+- ID 32 (Orc Soldier) -> atlas (13, 24) -> monster_32_mapped.png
+- ID 33 (Orc Crossbowman) -> atlas (14, 24) -> monster_33_mapped.png
+- ID 34 (Warg) -> atlas (15, 24) -> monster_34_mapped.png
+- ID 35 (Orc Thrallmaster) -> atlas (16, 24) -> monster_35_mapped.png
+- ID 36 (Orc Captain) -> atlas (17, 24) -> monster_36_mapped.png
+- ID 37 (Warg Rider) -> atlas (18, 24) -> monster_37_mapped.png
+- ID 38 (Hill Troll) -> atlas (19, 24) -> monster_38_mapped.png
+- ID 39 (Gashnak, Warg-lord) -> atlas (20, 24) -> monster_39_mapped.png
+- ID 40 (Orc Warchief) -> atlas (21, 24) -> monster_40_mapped.png
+- ID 51 (Dark Acolyte) -> atlas (22, 24) -> monster_51_mapped.png
+- ID 52 (Ghoul) -> atlas (23, 24) -> monster_52_mapped.png
+- ID 53 (Mirk-troll) -> atlas (24, 24) -> monster_53_mapped.png
+- ID 54 (Easterling Warrior) -> atlas (25, 24) -> monster_54_mapped.png
+- ID 55 (Dark Sorcerer) -> atlas (26, 24) -> monster_55_mapped.png
+- ID 56 (Tortured Wretch) -> atlas (27, 24) -> monster_56_mapped.png
+- ID 57 (Easterling Champion) -> atlas (28, 24) -> monster_57_mapped.png
+- ID 58 (Ghast) -> atlas (29, 24) -> monster_58_mapped.png
+- ID 59 (Karvag the Torturer) -> atlas (30, 24) -> monster_59_mapped.png
+- ID 60 (Master Sorcerer) -> atlas (31, 24) -> monster_60_mapped.png
+- ID 71 (Skeleton) -> atlas (0, 25) -> monster_71_mapped.png
+- ID 72 (Skeleton Warrior) -> atlas (1, 25) -> monster_72_mapped.png
+- ID 73 (Zombie) -> atlas (2, 25) -> monster_73_mapped.png
+- ID 74 (Wight) -> atlas (3, 25) -> monster_74_mapped.png
+- ID 75 (Corpse-candle) -> atlas (4, 25) -> monster_75_mapped.png
+- ID 76 (Necromancer Adept) -> atlas (5, 25) -> monster_76_mapped.png
+- ID 77 (Barrow-wight) -> atlas (6, 25) -> monster_77_mapped.png
+- ID 78 (Bone Golem) -> atlas (7, 25) -> monster_78_mapped.png
+- ID 79 (Grishnákh, Crypt Lord) -> atlas (8, 25) -> monster_79_mapped.png
+- ID 81 (Cave Troll) -> atlas (10, 25) -> monster_81_mapped.png
+- ID 82 (Dark Ritualist) -> atlas (11, 25) -> monster_82_mapped.png
+- ID 83 (Corsair of Umbar) -> atlas (12, 25) -> monster_83_mapped.png
+- ID 84 (Dunlending Berserker) -> atlas (13, 25) -> monster_84_mapped.png
+- ID 85 (Tunnel Crawler) -> atlas (14, 25) -> monster_85_mapped.png
+- ID 86 (Pale Crawler) -> atlas (15, 25) -> monster_86_mapped.png
+- ID 87 (Werewolf) -> atlas (16, 25) -> monster_87_mapped.png
+- ID 91 (Phantom) -> atlas (17, 25) -> monster_91_mapped.png
+- ID 92 (Shadow) -> atlas (18, 25) -> monster_92_mapped.png
+- ID 93 (Whispering Shade) -> atlas (19, 25) -> monster_93_mapped.png
+- ID 94 (Wraith) -> atlas (20, 25) -> monster_94_mapped.png
+- ID 95 (Fell Spirit) -> atlas (21, 25) -> monster_95_mapped.png
+- ID 96 (Spectre) -> atlas (22, 25) -> monster_96_mapped.png
+- ID 97 (Vampire Thrall) -> atlas (23, 25) -> monster_97_mapped.png
+- ID 98 (The Wailing Horror) -> atlas (24, 25) -> monster_98_mapped.png
+- ID 99 (Úvatha the Horseman) -> atlas (25, 25) -> monster_99_mapped.png
+- ID 100 (Black Númenórean Acolyte) -> atlas (26, 25) -> monster_100_mapped.png
+- ID 101 (Haradrim Assassin) -> atlas (27, 25) -> monster_101_mapped.png
+- ID 102 (Cave Worm) -> atlas (28, 25) -> monster_102_mapped.png
+- ID 103 (Oathbreaker Captain) -> atlas (29, 25) -> monster_103_mapped.png
+- ID 104 (Morgul Sorcerer) -> atlas (30, 25) -> monster_104_mapped.png
+- ID 111 (Black Númenórean) -> atlas (31, 25) -> monster_111_mapped.png
+- ID 112 (Olog-hai) -> atlas (0, 26) -> monster_112_mapped.png
+- ID 113 (Vampire) -> atlas (1, 26) -> monster_113_mapped.png
+- ID 114 (Greater Wraith) -> atlas (2, 26) -> monster_114_mapped.png
+- ID 115 (Vampire Lord) -> atlas (3, 26) -> monster_115_mapped.png
+- ID 116 (Shadow Lord) -> atlas (4, 26) -> monster_116_mapped.png
+- ID 117 (Maia Thrall) -> atlas (5, 26) -> monster_117_mapped.png
+- ID 118 (Khamûl, Shadow of the East) -> atlas (6, 26) -> monster_118_mapped.png
+- ID 131 (Elite Olog-hai) -> atlas (7, 26) -> monster_131_mapped.png
+- ID 132 (Greater Shadow) -> atlas (8, 26) -> monster_132_mapped.png
+- ID 133 (Void Wraith) -> atlas (9, 26) -> monster_133_mapped.png
+- ID 134 (Thráin's Shade) -> atlas (10, 26) -> monster_134_mapped.png
+- ID 135 (Sauron, the Necromancer) -> atlas (11, 26) -> monster_135_mapped.png
+- ID 136 (Black Númenórean Lord) -> atlas (12, 26) -> monster_136_mapped.png
+- ID 137 (Mouth of Sauron) -> atlas (13, 26) -> monster_137_mapped.png
+- ID 301 (Gandalf the Grey) -> atlas (14, 26) -> monster_301_mapped.png
+- ID 302 (Thranduil, Elvenking) -> atlas (15, 26) -> monster_302_mapped.png
+- ID 303 (Galadriel, Lady of Light) -> atlas (16, 26) -> monster_303_mapped.png
+- ID 304 (Elrond Half-elven) -> atlas (17, 26) -> monster_304_mapped.png
+- ID 305 (Thorin Oakenshield) -> atlas (18, 26) -> monster_305_mapped.png
+- ID 306 (Beorn the Skinchanger) -> atlas (19, 26) -> monster_306_mapped.png
+- ID 307 (Radagast the Brown) -> atlas (20, 26) -> monster_307_mapped.png
+- ID 308 (Eagle of the Misty Mountains) -> atlas (21, 26) -> monster_308_mapped.png
+- ID 309 (Great Elk of Mirkwood) -> atlas (22, 26) -> monster_309_mapped.png
+- ID 310 (Ent of Fangorn) -> atlas (23, 26) -> monster_310_mapped.png
+
+If two IDs collide in mapping, they both show the same atlas cell contents.

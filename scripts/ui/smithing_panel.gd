@@ -55,6 +55,8 @@ func _ready() -> void:
 	recipe_list.item_selected.connect(_on_recipe_selected)
 	item_list.item_selected.connect(_on_item_selected)
 	material_list.item_selected.connect(_on_material_selected)
+	item_list.max_text_lines = 3
+	material_list.max_text_lines = 3
 
 	# Connect smithing system signals
 	smithing_system.item_forged.connect(_on_item_forged)
@@ -193,7 +195,7 @@ func _populate_items_for_recipe() -> void:
 					display += " (%s)" % template.damage_dice
 				elif "protection_dice" in template and template.protection_dice != "" and template.protection_dice != "0d0":
 					display += " [%s]" % template.protection_dice
-				item_list.add_item(display)
+				item_list.add_item(_wrap_list_text(display))
 
 			# Show Mithril as optional material (if player has any)
 			_populate_optional_mithril()
@@ -202,9 +204,16 @@ func _populate_items_for_recipe() -> void:
 			# Show type selection in item_list for player to choose output category
 			if not _reforge_type_chosen:
 				_in_type_selection = true
-				item_list.add_item("Weapon")
-				item_list.add_item("Armor")
-				item_list.add_item("Jewelry")
+				var type_defs: Array[Dictionary] = [
+					{"label": "Weapon", "ability": Constants.SmithingAbility.SMT_WEAPONSMITH},
+					{"label": "Armor", "ability": Constants.SmithingAbility.SMT_ARMOURSMITH},
+					{"label": "Jewelry", "ability": Constants.SmithingAbility.SMT_JEWELLER},
+				]
+				for t in type_defs:
+					var idx: int = item_list.add_item(_wrap_list_text(str(t.label)))
+					var has_spec: bool = player.has_ability(Constants.Skill.S_SMT, int(t.ability))
+					if not has_spec:
+						item_list.set_item_disabled(idx, true)
 
 		SmithingSystemScript.RecipeType.RECLAIM, \
 		SmithingSystemScript.RecipeType.MASTERWORK:
@@ -228,7 +237,7 @@ func _populate_optional_mithril() -> void:
 	if not mithril_items.is_empty():
 		_current_materials = mithril_items
 		for mat in _current_materials:
-			material_list.add_item("(Optional) %s — enhanced quality" % _get_item_display_name(mat))
+			material_list.add_item(_wrap_list_text("(Optional) %s — enhanced quality" % _get_item_display_name(mat)))
 
 func _populate_materials() -> void:
 	material_list.clear()
@@ -239,7 +248,7 @@ func _populate_materials() -> void:
 
 	_current_materials = smithing_system.get_materials_for_recipe(player, selected_recipe.type)
 	for mat in _current_materials:
-		material_list.add_item(_get_item_display_name(mat))
+		material_list.add_item(_wrap_list_text(_get_item_display_name(mat)))
 
 func _on_item_selected(index: int) -> void:
 	if not selected_recipe:
@@ -492,12 +501,22 @@ func _on_forge_pressed() -> void:
 # ============================================================================
 
 func _handle_type_selection(index: int) -> void:
+	var required_ability: int = -1
 	# Map index to MaterialCategory: 0=Weapon, 1=Armor, 2=Jewelry
 	match index:
-		0: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.WEAPON
-		1: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.ARMOR
-		2: _reforge_chosen_category = SmithingSystemScript.MaterialCategory.JEWELRY
+		0:
+			_reforge_chosen_category = SmithingSystemScript.MaterialCategory.WEAPON
+			required_ability = Constants.SmithingAbility.SMT_WEAPONSMITH
+		1:
+			_reforge_chosen_category = SmithingSystemScript.MaterialCategory.ARMOR
+			required_ability = Constants.SmithingAbility.SMT_ARMOURSMITH
+		2:
+			_reforge_chosen_category = SmithingSystemScript.MaterialCategory.JEWELRY
+			required_ability = Constants.SmithingAbility.SMT_JEWELLER
 		_: return
+	if required_ability >= 0 and not player.has_ability(Constants.Skill.S_SMT, required_ability):
+		GameManager.log_message("You need the matching smithing specialization for that reforge category.", ThemeColors.MSG_ERROR)
+		return
 
 	_in_type_selection = false
 	_in_subtype_selection = true
@@ -512,7 +531,7 @@ func _handle_type_selection(index: int) -> void:
 			display += " (%s)" % subtype.damage_dice
 		elif "protection_dice" in subtype and subtype.protection_dice != "" and subtype.protection_dice != "0d0":
 			display += " [%s]" % subtype.protection_dice
-		item_list.add_item(display)
+		item_list.add_item(_wrap_list_text(display))
 
 	_update_info()
 	_update_forge_button()
@@ -527,7 +546,7 @@ func _handle_subtype_selection(index: int) -> void:
 	# Show selected subtype as confirmed
 	item_list.clear()
 	var display: String = _get_item_display_name(_reforge_chosen_template)
-	item_list.add_item("Forging: %s (selected)" % display)
+	item_list.add_item(_wrap_list_text("Forging: %s (selected)" % display))
 	item_list.set_item_disabled(0, true)
 
 	_update_info()
@@ -556,7 +575,7 @@ func _start_reforge_mastery(depth: int, forge_bonus: int) -> void:
 			display += " (%s)" % item.damage_dice
 		elif "protection_dice" in item and item.protection_dice != "":
 			display += " [%s]" % item.protection_dice
-		item_list.add_item(display)
+		item_list.add_item(_wrap_list_text(display))
 
 	forge_button.disabled = true
 	_update_info()
@@ -574,7 +593,7 @@ func _start_reclaim_mastery(depth: int, forge_bonus: int) -> void:
 	# Show artifacts in item_list for player to pick
 	item_list.clear()
 	for artifact in _mastery_reclaim_artifacts:
-		item_list.add_item("%s (depth %d)" % [artifact.name, artifact.depth])
+		item_list.add_item(_wrap_list_text("%s (depth %d)" % [artifact.name, artifact.depth]))
 
 	forge_button.disabled = true
 	_update_info()
@@ -617,6 +636,42 @@ func _get_item_display_name(item: Variant) -> String:
 	if "name" in item:
 		return item.name
 	return "Unknown Item"
+
+func _wrap_list_text(text: String, max_chars_per_line: int = 28, max_lines: int = 3) -> String:
+	if text.is_empty() or text.length() <= max_chars_per_line:
+		return text
+	var words: PackedStringArray = text.split(" ", false)
+	if words.is_empty():
+		return text
+	var lines: Array[String] = []
+	var current: String = ""
+	for word in words:
+		var candidate: String = word if current.is_empty() else "%s %s" % [current, word]
+		if candidate.length() <= max_chars_per_line:
+			current = candidate
+			continue
+		if not current.is_empty():
+			lines.append(current)
+		else:
+			lines.append(word)
+		current = ""
+		if lines.size() >= max_lines - 1:
+			break
+	var remaining_start: int = 0
+	for i in range(lines.size()):
+		remaining_start += lines[i].split(" ", false).size()
+	if current.is_empty() and remaining_start < words.size():
+		current = " ".join(words.slice(remaining_start))
+	if not current.is_empty():
+		if lines.size() >= max_lines:
+			lines[max_lines - 1] = current
+		else:
+			lines.append(current)
+	if lines.size() > max_lines:
+		lines = lines.slice(0, max_lines)
+	if lines.size() == max_lines and lines[max_lines - 1].length() > max_chars_per_line:
+		lines[max_lines - 1] = lines[max_lines - 1].substr(0, max_chars_per_line - 3).strip_edges() + "..."
+	return "\n".join(lines)
 
 func _input(event: InputEvent) -> void:
 	if not visible:

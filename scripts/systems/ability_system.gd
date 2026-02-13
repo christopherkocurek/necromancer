@@ -47,7 +47,6 @@ enum AbilityType {
 var cooldowns: Dictionary = {}
 
 # Per-floor usage tracking
-var _unmaking_used_this_floor: bool = false
 
 # Warding sigil tracking: [{pos: Vector2i, turns_remaining: int}]
 var active_sigils: Array[Dictionary] = []
@@ -61,6 +60,7 @@ var player: Player = null
 
 func _ready() -> void:
 	EventBus.round_completed.connect(_on_round_completed)
+	EventBus.player_turn_started.connect(_on_player_turn_started)
 	EventBus.level_entered.connect(_on_level_entered)
 
 func set_player(p: Player) -> void:
@@ -122,8 +122,8 @@ func is_on_cooldown(ability_id: int) -> bool:
 func get_cooldown_remaining(ability_id: int) -> int:
 	return cooldowns.get(ability_id, 0)
 
-func _on_round_completed(_round: int) -> void:
-	# Tick down cooldowns
+func _tick_cooldowns() -> void:
+	# Tick lore cooldowns on player turns for consistent UX with other active abilities.
 	var to_remove: Array[int] = []
 	for ability_id in cooldowns:
 		cooldowns[ability_id] -= 1
@@ -133,6 +133,11 @@ func _on_round_completed(_round: int) -> void:
 	for ability_id in to_remove:
 		cooldowns.erase(ability_id)
 		ability_cooldown_ended.emit(ability_id)
+
+func _on_player_turn_started() -> void:
+	_tick_cooldowns()
+
+func _on_round_completed(_round: int) -> void:
 
 	# Tick sustained songs (drain voice, apply effects)
 	_tick_active_song()
@@ -150,17 +155,12 @@ func _on_round_completed(_round: int) -> void:
 	regenerate_voice()
 
 func _on_level_entered(_depth: int) -> void:
-	# Reset per-floor abilities
-	_unmaking_used_this_floor = false
 	# Clear old sigils
 	active_sigils.clear()
 	# Reset Song of Banishment per-floor CD
 	if cooldowns.has(LoreAbility.SONG_OF_BANISHMENT):
 		cooldowns.erase(LoreAbility.SONG_OF_BANISHMENT)
 		ability_cooldown_ended.emit(LoreAbility.SONG_OF_BANISHMENT)
-	if cooldowns.has(LoreAbility.WORD_OF_UNMAKING):
-		cooldowns.erase(LoreAbility.WORD_OF_UNMAKING)
-		ability_cooldown_ended.emit(LoreAbility.WORD_OF_UNMAKING)
 
 # ============================================================================
 # SUSTAINED SONG SYSTEM (v4: dual song support via Mastery of Themes)
@@ -376,13 +376,12 @@ func can_use_ability(ability_id: int) -> Dictionary:
 	if not has_ability(ability_id):
 		return {"can_use": false, "reason": "You don't know this ability."}
 
+	if ability_id == LoreAbility.LIGHT_OF_ELDAR and player and player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active")):
+		return {"can_use": true, "reason": "Dim aura"}
+
 	if is_on_cooldown(ability_id):
 		var remaining: int = get_cooldown_remaining(ability_id)
 		return {"can_use": false, "reason": "On cooldown (%d turns remaining)." % remaining}
-
-	# Per-floor check for Word of Unmaking
-	if ability_id == LoreAbility.WORD_OF_UNMAKING and _unmaking_used_this_floor:
-		return {"can_use": false, "reason": "Already used this floor."}
 
 	var cost: int = get_effective_voice_cost(ability_id)
 	if cost > 0 and get_voice_charges() < cost:
@@ -394,8 +393,9 @@ func get_voice_cost(ability_id: int) -> int:
 	match ability_id:
 		LoreAbility.HIDDEN_WAYS: return 2
 		LoreAbility.WORD_OF_OPENING: return 2
-		LoreAbility.DEEP_MEMORY: return 2
+		LoreAbility.DEEP_MEMORY: return 15
 		LoreAbility.HERBCRAFT: return 1       # Sustained: 1/turn
+		LoreAbility.LIGHT_OF_ELDAR: return 1  # Aura upkeep: 1/turn
 		LoreAbility.WORD_OF_COMMAND: return 3
 		LoreAbility.SONG_OF_FREEDOM: return 1  # Sustained: 1/turn
 		LoreAbility.SONG_OF_LORIEN: return 1   # Sustained: 1/turn
@@ -422,7 +422,7 @@ func get_ability_type(ability_id: int) -> AbilityType:
 		LoreAbility.SONG_OF_LORIEN, LoreAbility.SONG_OF_AULE, \
 		LoreAbility.SONG_OF_HEALING, LoreAbility.SONG_OF_THE_TREES:
 			return AbilityType.SUSTAINED
-		LoreAbility.LORE_OF_NAMING, LoreAbility.LIGHT_OF_ELDAR, \
+		LoreAbility.LORE_OF_NAMING, \
 		LoreAbility.LORE_OF_ENDURANCE, LoreAbility.MASTERY_OF_THEMES, \
 		LoreAbility.GRACE:
 			return AbilityType.PASSIVE
@@ -434,6 +434,9 @@ func get_ability_type(ability_id: int) -> AbilityType:
 # ============================================================================
 
 func activate_ability(ability_id: int, target: Variant = null) -> bool:
+	if ability_id == LoreAbility.LIGHT_OF_ELDAR:
+		return _toggle_light_of_eldar()
+
 	# Handle sustained song toggle
 	if get_ability_type(ability_id) == AbilityType.SUSTAINED:
 		return _toggle_song(ability_id)
@@ -459,6 +462,27 @@ func activate_ability(ability_id: int, target: Variant = null) -> bool:
 
 	return success
 
+func _toggle_light_of_eldar() -> bool:
+	if not player:
+		return false
+	if not has_ability(LoreAbility.LIGHT_OF_ELDAR):
+		GameManager.log_message("You haven't learned Light of the Eldar.", ThemeColors.MSG_ERROR)
+		return false
+	var active: bool = player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))
+	if active:
+		player.set_meta("light_of_eldar_active", false)
+		GameManager.log_message("Your inner light dims.", ThemeColors.TEXT_SECONDARY)
+		return true
+	var cost: int = get_effective_voice_cost(LoreAbility.LIGHT_OF_ELDAR)
+	if get_voice_charges() < cost:
+		GameManager.log_message("Not enough voice to invoke Light of the Eldar.", ThemeColors.MSG_ERROR)
+		return false
+	consume_voice_charges(cost)
+	player.set_meta("light_of_eldar_active", true)
+	GameManager.log_message("You kindle the Light of the Eldar.", ThemeColors.MSG_INFO)
+	ability_activated.emit(LoreAbility.LIGHT_OF_ELDAR, _get_ability_name(LoreAbility.LIGHT_OF_ELDAR))
+	return true
+
 func _execute_ability(ability_id: int, target: Variant) -> bool:
 	match ability_id:
 		LoreAbility.HIDDEN_WAYS:
@@ -480,7 +504,8 @@ func _execute_ability(ability_id: int, target: Variant) -> bool:
 		LoreAbility.WORD_OF_UNMAKING:
 			return _word_of_unmaking(target)
 		_:
-			GameManager.log_message("Ability not implemented.", ThemeColors.MSG_SYSTEM)
+			var ability_name: String = _get_ability_name(ability_id)
+			GameManager.log_message("%s has no active use right now." % ability_name, ThemeColors.MSG_SYSTEM)
 			return false
 
 # ============================================================================
@@ -531,6 +556,8 @@ func _word_of_opening() -> bool:
 	var lore_skill: int = player.get_effective_skill("lore")
 	var radius: int = 3 + (lore_skill / 3)
 	var opened: int = 0
+	var traps_revealed: int = 0
+	var secrets_revealed: int = 0
 
 	GameManager.log_message("You speak words of unbinding!", ThemeColors.MSG_INFO)
 
@@ -551,11 +578,30 @@ func _word_of_opening() -> bool:
 			elif tile == Level.Tile.RUBBLE:
 				level.set_tile(pos, Level.Tile.FLOOR)
 				opened += 1
+			elif tile == Level.Tile.TRAP:
+				if level.has_method("reveal_trap"):
+					level.reveal_trap(pos)
+				else:
+					level.set_explored(pos, true)
+					level.set_tile_visible(pos, true)
+				traps_revealed += 1
+			elif tile == Level.Tile.DOOR_SECRET:
+				level.reveal_secret_door(pos)
+				level.set_explored(pos, true)
+				level.set_tile_visible(pos, true)
+				secrets_revealed += 1
 
 	if opened > 0:
 		GameManager.log_message("The way is opened! (%d barriers cleared)" % opened, ThemeColors.ABILITY_LEARNED)
 	else:
 		GameManager.log_message("There is nothing to open nearby.", ThemeColors.MSG_SYSTEM)
+	if traps_revealed > 0 or secrets_revealed > 0:
+		var parts: Array[String] = []
+		if traps_revealed > 0:
+			parts.append("%d trap%s" % [traps_revealed, "s" if traps_revealed != 1 else ""])
+		if secrets_revealed > 0:
+			parts.append("%d secret door%s" % [secrets_revealed, "s" if secrets_revealed != 1 else ""])
+		GameManager.log_message("Hidden dangers revealed: %s." % ", ".join(parts), ThemeColors.MSG_WARNING)
 
 	start_cooldown(LoreAbility.WORD_OF_OPENING, 8)
 	return true
@@ -572,23 +618,90 @@ func _deep_memory() -> bool:
 	var radius: int = clampi(lore_skill * 3, 5, 30)
 	var center: Vector2i = player.grid_position
 	var revealed: int = 0
+	var newly_revealed: Array[Vector2i] = []
+	var openings: Dictionary = {}  # Vector2i -> true
+	var contour: Dictionary = {}   # Vector2i -> true
+	var door_tiles: Array[int] = [
+		Level.Tile.DOOR_CLOSED,
+		Level.Tile.DOOR_LOCKED,
+		Level.Tile.DOOR_JAMMED,
+		Level.Tile.DOOR_SECRET,
+	]
 
+	# Pass 1: reveal walkable topology and doorway/rubble feature tiles.
 	for dy in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
 			var pos := Vector2i(center.x + dx, center.y + dy)
 			if not level.is_in_bounds(pos):
 				continue
-			var idx: int = pos.y * level.width + pos.x
-			if not level.explored[idx]:
-				level.explored[idx] = true
-				revealed += 1
+			if maxi(absi(dx), absi(dy)) > radius:
+				continue
+			var tile: int = level.get_tile(pos)
+			if level.is_passable(pos) or tile in door_tiles or tile == Level.Tile.RUBBLE:
+				openings[pos] = true
+				contour[pos] = true
+
+	# Pass 2: reveal only boundary walls adjacent to revealed topology.
+	for key in openings.keys():
+		var pos: Vector2i = key
+		for oy in range(-1, 2):
+			for ox in range(-1, 2):
+				if ox == 0 and oy == 0:
+					continue
+				var neighbor: Vector2i = pos + Vector2i(ox, oy)
+				if not level.is_in_bounds(neighbor):
+					continue
+				var ndx: int = neighbor.x - center.x
+				var ndy: int = neighbor.y - center.y
+				if maxi(absi(ndx), absi(ndy)) > radius:
+					continue
+				var tile: int = level.get_tile(neighbor)
+				if not level.is_passable(neighbor) and not (tile in door_tiles) and tile != Level.Tile.RUBBLE:
+					contour[neighbor] = true
+
+	# Apply reveal set.
+	for key in contour.keys():
+		var pos: Vector2i = key
+		var idx: int = pos.y * level.width + pos.x
+		if not level.explored[idx]:
+			level.explored[idx] = true
+			newly_revealed.append(pos)
+			revealed += 1
 
 	if revealed > 0:
 		level.apply_fov_to_tilemap()
+		_animate_deep_memory_reveal(level, center, newly_revealed)
 		GameManager.log_message("Ancient knowledge floods your mind... the dungeon layout becomes clear.", ThemeColors.ABILITY_LEARNED)
 	else:
 		GameManager.log_message("You focus your deep memory, but the surroundings are already known to you.", ThemeColors.MSG_SYSTEM)
 	return true
+
+func _animate_deep_memory_reveal(level: Level, center: Vector2i, revealed_tiles: Array[Vector2i]) -> void:
+	if revealed_tiles.is_empty() or not is_instance_valid(level) or not is_instance_valid(level.effect_container):
+		return
+
+	var tile_size: float = float(GameManager.TILE_SIZE)
+	var peak_alpha: float = 0.20 if AccessibilityManager.reduced_flash else 0.38
+
+	for pos in revealed_tiles:
+		var reveal_flash := ColorRect.new()
+		reveal_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		reveal_flash.size = Vector2(tile_size, tile_size)
+		reveal_flash.position = Vector2(float(pos.x) * tile_size, float(pos.y) * tile_size)
+		reveal_flash.z_index = 180
+		reveal_flash.color = Color(0.78, 0.88, 1.0, 0.0)
+		level.effect_container.add_child(reveal_flash)
+
+		var dist: int = maxi(absi(pos.x - center.x), absi(pos.y - center.y))
+		var delay: float = minf(0.30, float(dist) * 0.012)
+		var tween: Tween = reveal_flash.create_tween()
+		tween.tween_interval(delay)
+		tween.tween_property(reveal_flash, "color:a", peak_alpha, 0.09)
+		tween.tween_property(reveal_flash, "color:a", 0.0, 0.22)
+		tween.tween_callback(func() -> void:
+			if is_instance_valid(reveal_flash):
+				reveal_flash.queue_free()
+		)
 
 ## Word of Command (146): AOE fear/stun, 12-turn CD, NO +5 advantage
 func _word_of_command() -> bool:
@@ -623,7 +736,18 @@ func _word_of_command() -> bool:
 		var monster_roll: int = randi_range(1, 20) + monster_will
 
 		if player_roll > monster_roll:
-			monster.apply_status(Constants.EFFECT_AFRAID, fear_duration)
+			if monster.monster_data and monster.monster_data.has_flag("NO_FEAR"):
+				GameManager.log_message("The %s is immune to fear!" % monster.entity_name, ThemeColors.MSG_SYSTEM)
+				continue
+			var fear_applied: bool = false
+			if monster.status_fx:
+				fear_applied = monster.status_fx.apply_effect(Constants.EFFECT_AFRAID, fear_duration, false)
+			else:
+				monster.apply_status(Constants.EFFECT_AFRAID, fear_duration)
+				fear_applied = monster.has_status(Constants.EFFECT_AFRAID)
+			if not fear_applied:
+				GameManager.log_message("The %s resists your word." % monster.entity_name, ThemeColors.MSG_SYSTEM)
+				continue
 			monster.set_meta("word_of_command_fear", true)
 			monster.set_meta("word_of_command_save_dc", 10 + lore_skill)
 			var no_resist_turns: int = 3 + lore_skill / 4
@@ -817,7 +941,7 @@ func _word_of_authority() -> bool:
 	start_cooldown(LoreAbility.WORD_OF_AUTHORITY, 20)
 	return true
 
-## Word of Unmaking (156): Dispel + terrain + undead dmg, 50% -1 max voice, 1/floor
+## Word of Unmaking (156): Dispel + terrain + undead dmg, 50% -1 max voice, 30-turn CD
 func _word_of_unmaking(target: Variant) -> bool:
 	if not player or not GameManager.current_level:
 		return false
@@ -870,8 +994,7 @@ func _word_of_unmaking(target: Variant) -> bool:
 	else:
 		GameManager.log_message("You endure the strain of the Unmaking.", ThemeColors.MSG_WARNING)
 
-	_unmaking_used_this_floor = true
-	start_cooldown(LoreAbility.WORD_OF_UNMAKING, 9999)
+	start_cooldown(LoreAbility.WORD_OF_UNMAKING, 30)
 	return true
 
 # ============================================================================
@@ -971,6 +1094,16 @@ func _tick_light_of_eldar() -> void:
 		return
 	if not GameManager.current_level:
 		return
+	if not (player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))):
+		return
+
+	var upkeep_cost: int = get_effective_voice_cost(LoreAbility.LIGHT_OF_ELDAR)
+	if player.voice_charges < upkeep_cost:
+		player.set_meta("light_of_eldar_active", false)
+		GameManager.log_message("Your inner light gutters out.", ThemeColors.MSG_WARNING)
+		return
+	player.voice_charges -= upkeep_cost
+	voice_charges_changed.emit(player.voice_charges, player.max_voice)
 
 	var light_radius: int = player.get_light_radius()
 	var entities: Array[Entity] = GameManager.current_level.get_entities_in_radius(player.grid_position, light_radius)
@@ -1027,12 +1160,16 @@ func get_naming_will_bonus(monster: Monster) -> int:
 func get_light_of_eldar_attack_penalty(monster: Monster) -> int:
 	if not has_ability(LoreAbility.LIGHT_OF_ELDAR):
 		return 0
+	if not (player and player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))):
+		return 0
 	if monster.monster_data and monster.monster_data.has_flag("SHADOW"):
 		return -2  # -2 attack for shadow creatures
 	return 0
 
 func get_light_of_eldar_evasion_penalty(monster: Monster) -> int:
 	if not has_ability(LoreAbility.LIGHT_OF_ELDAR):
+		return 0
+	if not (player and player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))):
 		return 0
 	if monster.monster_data and monster.monster_data.has_flag("SHADOW"):
 		return -2  # -2 evasion for shadow creatures
@@ -1144,6 +1281,7 @@ func get_learned_active_abilities() -> Array[Dictionary]:
 		LoreAbility.HIDDEN_WAYS,
 		LoreAbility.WORD_OF_OPENING,
 		LoreAbility.DEEP_MEMORY,
+		LoreAbility.LIGHT_OF_ELDAR,
 		LoreAbility.WORD_OF_COMMAND,
 		LoreAbility.SONG_OF_BANISHMENT,
 		LoreAbility.WORD_OF_DOMINATION,
@@ -1162,16 +1300,19 @@ func get_learned_active_abilities() -> Array[Dictionary]:
 		if has_ability(id):
 			var check: Dictionary = can_use_ability(id)
 			var is_sustained: bool = get_ability_type(id) == AbilityType.SUSTAINED
+			var is_light_aura: bool = id == LoreAbility.LIGHT_OF_ELDAR and player != null and player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))
 			var is_active_song: bool = player != null and (player.active_song_id == id or player.active_song_id_2 == id)
 			var display_name: String = _get_ability_name(id)
 			if is_active_song:
 				display_name += " [SINGING]"
+			if is_light_aura:
+				display_name += " [AURA]"
 			result.append({
 				"id": id,
 				"name": display_name,
 				"cost": get_effective_voice_cost(id),
-				"can_use": check.can_use if not is_active_song else true,
-				"reason": check.reason if not is_active_song else "Stop singing",
+				"can_use": check.can_use if not is_active_song and not is_light_aura else true,
+				"reason": check.reason if not is_active_song and not is_light_aura else ("Dim aura" if is_light_aura else "Stop singing"),
 				"needs_target": _ability_needs_target(id),
 				"is_sustained": is_sustained,
 			})

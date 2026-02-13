@@ -520,9 +520,21 @@ static func read_scroll(player: Player, item: Variant) -> bool:
 
 	match sval:
 		0:  # Light
-			GameManager.log_message("A bright light floods the area!", ThemeColors.MSG_WARNING)
-		1:  # Sanctity - remove curses (placeholder)
-			GameManager.log_message("You feel a holy presence.", ThemeColors.SECONDARY)
+			var revealed_tiles: int = _reveal_area(player, 8)
+			GameManager.log_message("A bright light floods the area! (%d tiles revealed)" % revealed_tiles, ThemeColors.MSG_WARNING)
+		1:  # Sanctity - purge lingering afflictions and light curses
+			var cleansed_effects: int = _cleanse_negative_effects(player)
+			var cleansed_items: int = _remove_light_curses(player)
+			if cleansed_effects > 0 or cleansed_items > 0:
+				GameManager.log_message(
+					"Holy grace cleanses %d affliction%s and %d cursed item%s." % [
+						cleansed_effects, "s" if cleansed_effects != 1 else "",
+						cleansed_items, "s" if cleansed_items != 1 else ""
+					],
+					ThemeColors.ABILITY_LEARNED
+				)
+			else:
+				GameManager.log_message("A holy calm settles over you, but there is little to cleanse.", ThemeColors.SECONDARY)
 		2:  # Understanding - identify all inventory items
 			for inv_item in player.inventory:
 				GameManager.identify_item(inv_item)
@@ -530,14 +542,116 @@ static func read_scroll(player: Player, item: Variant) -> bool:
 		3:  # Self Knowledge - reveal stats
 			GameManager.log_message("You gain insight into yourself.", ThemeColors.MSG_INFO)
 		4:  # Warding - temporary protection bonus
-			player.apply_status("warded", 20 + randi_range(1, 10))
+			_apply_thornvine(player, 1, 20 + randi_range(1, 10))
 			GameManager.log_message("You feel protected.", ThemeColors.SECONDARY)
-		5:  # Recharging (placeholder)
-			GameManager.log_message("Energy crackles around your equipment.", ThemeColors.MSG_WARNING)
+		5:  # Recharging - refill devices with charges
+			var recharge: Dictionary = _recharge_devices(player)
+			if recharge.items > 0:
+				GameManager.log_message(
+					"Energy crackles through %d device%s (+%d charges)." % [
+						recharge.items, "s" if recharge.items != 1 else "", recharge.total_charges
+					],
+					ThemeColors.MSG_WARNING
+				)
+			else:
+				GameManager.log_message("Energy crackles... but you carry no chargeable devices.", ThemeColors.MSG_SYSTEM)
 		_:
 			GameManager.log_message("You read the scroll. The text fades.", ThemeColors.TEXT_PRIMARY)
 
 	return true
+
+## Reveal explored/visible tiles around player and refresh floor visuals.
+static func _reveal_area(player: Player, radius: int) -> int:
+	if not GameManager.current_level:
+		return 0
+	var level: Level = GameManager.current_level
+	var center: Vector2i = player.grid_position
+	var revealed: int = 0
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var pos: Vector2i = center + Vector2i(dx, dy)
+			if not level.is_in_bounds(pos):
+				continue
+			if maxi(absi(dx), absi(dy)) > radius:
+				continue
+			var idx: int = pos.y * level.width + pos.x
+			if not level.explored[idx]:
+				revealed += 1
+			level.set_explored(pos, true)
+			level.set_tile_visible(pos, true)
+	level.apply_fov_to_tilemap()
+	return revealed
+
+## Remove common negative statuses from the player.
+static func _cleanse_negative_effects(player: Player) -> int:
+	if not player.status_fx:
+		return 0
+	var cleansed: int = 0
+	var removable: Array[StringName] = [
+		Constants.EFFECT_POISONED,
+		Constants.EFFECT_CUT,
+		Constants.EFFECT_BURNING,
+		Constants.EFFECT_CONFUSED,
+		Constants.EFFECT_AFRAID,
+		Constants.EFFECT_STUNNED,
+		Constants.EFFECT_ENTRANCED,
+		Constants.EFFECT_IMAGE,
+		Constants.EFFECT_BLIND,
+	]
+	for effect_id in removable:
+		if player.status_fx.has_effect(effect_id):
+			player.status_fx.remove_effect(effect_id, false)
+			cleansed += 1
+	player._sync_status_dict()
+	return cleansed
+
+## Remove removable light curses from equipment and inventory.
+static func _remove_light_curses(player: Player) -> int:
+	var cleansed: int = 0
+	var slots: Array[String] = ["weapon", "offhand", "armor", "head", "light", "amulet"]
+	for slot in slots:
+		var item = player.equipment.get(slot)
+		if item == null or "flags" not in item:
+			continue
+		var idx: int = item.flags.find("LIGHT_CURSE")
+		if idx >= 0:
+			item.flags.remove_at(idx)
+			cleansed += 1
+	for item in player.inventory:
+		if item == null or "flags" not in item:
+			continue
+		var idx: int = item.flags.find("LIGHT_CURSE")
+		if idx >= 0:
+			item.flags.remove_at(idx)
+			cleansed += 1
+	player._recalculate_stats()
+	return cleansed
+
+## Recharge charged devices (wands/staves) carried by the player.
+static func _recharge_devices(player: Player) -> Dictionary:
+	var affected: int = 0
+	var total_added: int = 0
+	var device_tvals: Array[int] = [56, 57]
+	var all_items: Array = []
+	for item in player.inventory:
+		all_items.append(item)
+	var slots: Array[String] = ["weapon", "offhand", "armor", "head", "light", "amulet"]
+	for slot in slots:
+		var equipped = player.equipment.get(slot)
+		if equipped != null:
+			all_items.append(equipped)
+	for item in all_items:
+		if item == null or "tval" not in item:
+			continue
+		if not (item.tval in device_tvals):
+			continue
+		if "pval" not in item:
+			continue
+		var gain: int = randi_range(2, 6)
+		item.pval += gain
+		total_added += gain
+		affected += 1
+	return {"items": affected, "total_charges": total_added}
 
 # ============================================================================
 # WAND USE (tval 56)

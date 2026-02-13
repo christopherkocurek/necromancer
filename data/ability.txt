@@ -252,7 +252,7 @@ T:22:0:99  # Polearms
 T:23:0:99  # Swords
 T:31:0:99  # Gloves
 
-N:43:Crowd Fighting
+N:43:Circular Guard
 I:2:3:5
 D:Halves the bonus opponents get for surrounding you.
 T:31:0:99  # Gloves
@@ -434,10 +434,10 @@ D:You possess an innate gift that allows you to take advanced abilities
 D: without the usual prerequisites. Some are simply born to greatness.
 T:40:0:99  # Amulet
 
-N:81:Focused attack
+N:81:Mark Quarry
 I:4:1:2
-D:Gives you a bonus of half your Hunting score to your
-D: attacks if you passed the previous turn.
+D:Active. Mark a visible enemy as your quarry for several turns.
+D: Reading and pressuring the marked foe grants tactical advantage.
 T:21:0:99  # Hafted
 T:22:0:99  # Polearms
 T:23:0:99  # Swords
@@ -454,8 +454,8 @@ T:40:0:99  # Amulet
 
 N:83:Concentration
 I:4:3:4
-D:Gives you a +1 bonus to attack for every consecutive round
-D: spent attacking the same enemy (to a maximum of Hunting/2).
+D:Sustained pressure on your marked quarry builds Focus.
+D:Focus improves your duel state and feeds finishing windows.
 T:32:0:99  # Helm
 T:36:0:99  # Soft Armour
 T:40:0:99  # Amulet
@@ -468,11 +468,10 @@ D: combine two identical herbs to produce a more potent version.
 T:32:0:99  # Helm
 T:45:0:99  # Ring
 
-N:85:Bane
+N:85:Expose Weakness
 I:4:5:6
-D:You receive a bonus to all skill rolls against
-D: a selected category of enemy. The bonus increases as
-D: you kill more.
+D:Active. Read your marked quarry and open its guard.
+D:On success, temporarily reduce evasion and protection.
 
 N:86:Outwit
 I:4:6:7
@@ -489,11 +488,11 @@ D:Gives you a chance each turn to detect enemies that you
 D: cannot see (including around corners and through doors).
 T:32:0:99  # Helm
 
-N:88:Master Hunter
+N:88:Exploit Opening
 I:4:8:9
 P:4/3:4/5
-D:Gives you an attack bonus of +1 for each time you have killed
-D: an opponent of the same type (up to a maximum of Hunting/2).
+D:Active finisher. Spend accumulated Focus to arm your next strike
+D:against the marked quarry for bonus damage and crit pressure.
 T:32:0:99  # Helm
 T:30:0:99  # Boots
 T:19:0:99  # Bows
@@ -823,7 +822,7 @@ P:7/6:7/14
 D:A word of terrible destruction. Dispels enchantment on target item,
 D: destroys rubble/walls in radius 2, deals [Lore]d6 to undead in
 D: radius 3, stuns living 2 turns. 50% chance to lose 1 max voice
-D: permanently. Usable once per floor.
+D: permanently. 30-turn cooldown.
 T:40:0:99  # Amulet
 T:35:0:99  # Cloak
 
@@ -844,4 +843,3 @@ I:7:19:3
 D:A sustained song of the ancient forests. Grants +5 stealth while
 D: singing. The trees themselves seem to hide your passage.
 D: Drains 1 voice charge per turn.
-

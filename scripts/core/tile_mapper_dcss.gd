@@ -537,6 +537,10 @@ func get_effect_coords(effect_id: int) -> Vector2i:
 
 func get_object_coords(object_id: int) -> Vector2i:
     ## Compatibility function - tries items then artifacts.
+    # Quest artifacts (Ring/Key/Map of Thrain/Erebor) intentionally overlap
+    # base object ids; force artifact visuals for this range.
+    if object_id >= 175 and object_id <= 180 and artifact_coords.has(object_id):
+        return artifact_coords[object_id]
     if item_coords.has(object_id):
         return item_coords[object_id]
     if artifact_coords.has(object_id):

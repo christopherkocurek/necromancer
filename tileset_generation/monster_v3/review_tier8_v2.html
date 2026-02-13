@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tier 8 Monster Review v2 — Magenta BG Fix</title>
+<style>
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+h1 { color: #4ade80; text-align: center; }
+h2 { color: #ffd93d; margin-top: 40px; }
+.subtitle { color: #888; text-align: center; font-size: 14px; margin-top: -10px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto; }
+.card { background: #16213e; border-radius: 12px; padding: 20px; text-align: center; border: 2px solid #333; }
+.card.approved { border-color: #4ade80; }
+.card.regen { border-color: #ff69b4; }
+.name { font-size: 18px; font-weight: bold; color: #ffd93d; margin-bottom: 5px; }
+.id { color: #888; font-size: 12px; }
+.sprites { display: flex; justify-content: center; gap: 20px; margin: 15px 0; }
+.sprite-box { text-align: center; }
+.sprite-box img { width: 128px; height: 128px; image-rendering: pixelated; border: 1px solid #444; }
+.sprite-box .label { font-size: 11px; color: #888; margin-top: 4px; }
+.raw-preview { margin: 10px 0; }
+.raw-preview img { width: 200px; height: 200px; border: 1px solid #333; border-radius: 8px; }
+.stats { font-size: 12px; color: #aaa; margin-top: 8px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+.tag-magenta { background: #ff00ff33; color: #ff69b4; }
+.tag-green { background: #00ff0033; color: #4ade80; }
+.tag-approved { background: #4ade8033; color: #4ade80; }
+.tag-frag { background: #ffd93d33; color: #ffd93d; }
+.tag-merge { background: #e74c3c33; color: #e74c3c; }
+.note { font-size: 12px; color: #aaa; margin-top: 8px; font-style: italic; }
+.summary { background: #16213e; border-radius: 12px; padding: 20px; max-width: 800px; margin: 30px auto; }
+</style>
+</head>
+<body>
+<h1>Tier 8 v2 — NPC Hallucinations (Magenta BG Fix)</h1>
+<p class="subtitle">9/10 switched from green to magenta BG to fix green skin/color contamination. Radagast kept on green (10/10).</p>
+
+<div class="grid">
+
+<div class="card regen">
+  <div class="name">Gandalf the Grey</div>
+  <div class="id">#301 — Wandering Wizard</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_301_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 32.2% | final 46.0% (was 26.9% on green)</div>
+  <div class="note">Warm skin tones preserved. Gray robes no longer green-tinted.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Thranduil, Elvenking</div>
+  <div class="id">#302 — Woodland Elf King</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <span class="tag tag-frag">FRAG=0 (4 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_302_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 46.1% | 4 fragments all kept | final 46.8%</div>
+  <div class="note">Warm pale skin. Silver-green armor preserved (was blue-ish on green BG).</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Galadriel, Lady of Light</div>
+  <div class="id">#303 — Radiant Elven Queen</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_303_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 64.4% | 1 clean component | final 73.9% (was 42.0%)</div>
+  <div class="note">Best improvement: +32% final. White/silver robes shine on magenta.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Elrond Half-elven</div>
+  <div class="id">#304 — Elf Lord of Rivendell</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_304_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 50.1% | 1 clean component | final 55.2%</div>
+  <div class="note">Warm pale skin. No more blue-tinted face.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Thorin Oakenshield</div>
+  <div class="id">#305 — Dwarf King in Exile</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_305_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 68.9% | 1 clean component | final 71.3%</div>
+  <div class="note">Warm ruddy skin. No more blue face tint.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Beorn the Skinchanger</div>
+  <div class="id">#306 — Bear-Man</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_306_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 52.1% | 18 components, kept 2 | final 50.8%</div>
+  <div class="note">Warm tanned skin. No more green skin. Brown leather preserved.</div>
+</div>
+
+<div class="card approved">
+  <div class="name">Radagast the Brown</div>
+  <div class="id">#307 — Woodland Wizard</div>
+  <span class="tag tag-green">GREEN BG</span>
+  <span class="tag tag-approved">APPROVED v1</span>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 50.8% | final 52.1% | 10/10 from v1</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Eagle of the Misty Mountains</div>
+  <div class="id">#308 — Great Eagle</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <span class="tag tag-frag">FRAG=0 (5 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_308_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 34.9% | 5 fragments all kept | final 42.7% (was 25.4%)</div>
+  <div class="note">Golden-brown feathers preserved. No green feather tint.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Great Elk of Mirkwood</div>
+  <div class="id">#309 — Majestic Forest Elk</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_309_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 39.3% | 2 components, kept 1 | final 52.6% (was 59.0%)</div>
+  <div class="note">Natural brown fur. No green tint on body.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Ent of Fangorn</div>
+  <div class="id">#310 — Living Tree Shepherd</div>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <span class="tag tag-merge">COLOR_MERGE</span>
+  <span class="tag tag-frag">FRAG=0</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_310_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 48.3% + COLOR_MERGE +5.8% | final 54.6% (was 8.4% → 36.5%)</div>
+  <div class="note">Huge improvement: 48.3% rembg on magenta (was 1.3% on green, 6.6% on magenta v1).</div>
+</div>
+
+</div>
+
+<div class="summary">
+  <h2>Tier 8 v2 Summary — Magenta BG Fix</h2>
+  <p>Switched 9/10 NPCs from green to magenta BG. Green BG was contaminating skin tones and natural colors.</p>
+  <ul>
+    <li><strong>Gandalf</strong> — Gray robes clean, warm skin. 46.0% final.</li>
+    <li><strong>Thranduil</strong> — Warm pale elf skin, silver armor. 46.8% final.</li>
+    <li><strong>Galadriel</strong> — Best improvement (+32%). White robes shine. 73.9% final.</li>
+    <li><strong>Elrond</strong> — Clean dark blue robes, warm skin. 55.2% final.</li>
+    <li><strong>Thorin</strong> — Ruddy dwarf skin, blue armor. 71.3% final.</li>
+    <li><strong>Beorn</strong> — Tanned skin, brown leather. 50.8% final.</li>
+    <li><strong>Radagast</strong> — KEPT from v1 (10/10). Brown on green works. 52.1%.</li>
+    <li><strong>Eagle</strong> — Golden-brown feathers, no green tint. 42.7% final.</li>
+    <li><strong>Great Elk</strong> — Natural brown fur. 52.6% final.</li>
+    <li><strong>Ent</strong> — Massive improvement: 1.3% → 48.3% rembg on magenta. 54.6% final.</li>
+  </ul>
+  <p><strong>Key lesson:</strong> Humanoids, animals, and natural creatures should ALWAYS use magenta BG. Green BG only works for creatures with strongly non-green palettes (dark armor, purple robes, all-brown like Radagast).</p>
+</div>
+
+</body>
+</html>

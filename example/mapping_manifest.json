@@ -1,0 +1,785 @@
+[
+  {
+    "id": 11,
+    "name": "Mirkwood Spider",
+    "atlas_coord": [
+      0,
+      24
+    ],
+    "image": "monster_11_mapped.png"
+  },
+  {
+    "id": 12,
+    "name": "Giant Rat",
+    "atlas_coord": [
+      1,
+      24
+    ],
+    "image": "monster_12_mapped.png"
+  },
+  {
+    "id": 13,
+    "name": "Black Squirrel",
+    "atlas_coord": [
+      2,
+      24
+    ],
+    "image": "monster_13_mapped.png"
+  },
+  {
+    "id": 14,
+    "name": "Crebain",
+    "atlas_coord": [
+      3,
+      24
+    ],
+    "image": "monster_14_mapped.png"
+  },
+  {
+    "id": 15,
+    "name": "Tanglethorn",
+    "atlas_coord": [
+      4,
+      24
+    ],
+    "image": "monster_15_mapped.png"
+  },
+  {
+    "id": 16,
+    "name": "Giant Bat",
+    "atlas_coord": [
+      5,
+      24
+    ],
+    "image": "monster_16_mapped.png"
+  },
+  {
+    "id": 17,
+    "name": "Web Spinner",
+    "atlas_coord": [
+      6,
+      24
+    ],
+    "image": "monster_17_mapped.png"
+  },
+  {
+    "id": 18,
+    "name": "Orc Scout",
+    "atlas_coord": [
+      7,
+      24
+    ],
+    "image": "monster_18_mapped.png"
+  },
+  {
+    "id": 19,
+    "name": "Swamp Adder",
+    "atlas_coord": [
+      8,
+      24
+    ],
+    "image": "monster_19_mapped.png"
+  },
+  {
+    "id": 20,
+    "name": "Great Spider",
+    "atlas_coord": [
+      9,
+      24
+    ],
+    "image": "monster_20_mapped.png"
+  },
+  {
+    "id": 21,
+    "name": "Warg Pup",
+    "atlas_coord": [
+      10,
+      24
+    ],
+    "image": "monster_21_mapped.png"
+  },
+  {
+    "id": 22,
+    "name": "Broodmother",
+    "atlas_coord": [
+      11,
+      24
+    ],
+    "image": "monster_22_mapped.png"
+  },
+  {
+    "id": 31,
+    "name": "Orc Slave",
+    "atlas_coord": [
+      12,
+      24
+    ],
+    "image": "monster_31_mapped.png"
+  },
+  {
+    "id": 32,
+    "name": "Orc Soldier",
+    "atlas_coord": [
+      13,
+      24
+    ],
+    "image": "monster_32_mapped.png"
+  },
+  {
+    "id": 33,
+    "name": "Orc Crossbowman",
+    "atlas_coord": [
+      14,
+      24
+    ],
+    "image": "monster_33_mapped.png"
+  },
+  {
+    "id": 34,
+    "name": "Warg",
+    "atlas_coord": [
+      15,
+      24
+    ],
+    "image": "monster_34_mapped.png"
+  },
+  {
+    "id": 35,
+    "name": "Orc Thrallmaster",
+    "atlas_coord": [
+      16,
+      24
+    ],
+    "image": "monster_35_mapped.png"
+  },
+  {
+    "id": 36,
+    "name": "Orc Captain",
+    "atlas_coord": [
+      17,
+      24
+    ],
+    "image": "monster_36_mapped.png"
+  },
+  {
+    "id": 37,
+    "name": "Warg Rider",
+    "atlas_coord": [
+      18,
+      24
+    ],
+    "image": "monster_37_mapped.png"
+  },
+  {
+    "id": 38,
+    "name": "Hill Troll",
+    "atlas_coord": [
+      19,
+      24
+    ],
+    "image": "monster_38_mapped.png"
+  },
+  {
+    "id": 39,
+    "name": "Gashnak, Warg-lord",
+    "atlas_coord": [
+      20,
+      24
+    ],
+    "image": "monster_39_mapped.png"
+  },
+  {
+    "id": 40,
+    "name": "Orc Warchief",
+    "atlas_coord": [
+      21,
+      24
+    ],
+    "image": "monster_40_mapped.png"
+  },
+  {
+    "id": 51,
+    "name": "Dark Acolyte",
+    "atlas_coord": [
+      22,
+      24
+    ],
+    "image": "monster_51_mapped.png"
+  },
+  {
+    "id": 52,
+    "name": "Ghoul",
+    "atlas_coord": [
+      23,
+      24
+    ],
+    "image": "monster_52_mapped.png"
+  },
+  {
+    "id": 53,
+    "name": "Mirk-troll",
+    "atlas_coord": [
+      24,
+      24
+    ],
+    "image": "monster_53_mapped.png"
+  },
+  {
+    "id": 54,
+    "name": "Easterling Warrior",
+    "atlas_coord": [
+      25,
+      24
+    ],
+    "image": "monster_54_mapped.png"
+  },
+  {
+    "id": 55,
+    "name": "Dark Sorcerer",
+    "atlas_coord": [
+      26,
+      24
+    ],
+    "image": "monster_55_mapped.png"
+  },
+  {
+    "id": 56,
+    "name": "Tortured Wretch",
+    "atlas_coord": [
+      27,
+      24
+    ],
+    "image": "monster_56_mapped.png"
+  },
+  {
+    "id": 57,
+    "name": "Easterling Champion",
+    "atlas_coord": [
+      28,
+      24
+    ],
+    "image": "monster_57_mapped.png"
+  },
+  {
+    "id": 58,
+    "name": "Ghast",
+    "atlas_coord": [
+      29,
+      24
+    ],
+    "image": "monster_58_mapped.png"
+  },
+  {
+    "id": 59,
+    "name": "Karvag the Torturer",
+    "atlas_coord": [
+      30,
+      24
+    ],
+    "image": "monster_59_mapped.png"
+  },
+  {
+    "id": 60,
+    "name": "Master Sorcerer",
+    "atlas_coord": [
+      31,
+      24
+    ],
+    "image": "monster_60_mapped.png"
+  },
+  {
+    "id": 71,
+    "name": "Skeleton",
+    "atlas_coord": [
+      0,
+      25
+    ],
+    "image": "monster_71_mapped.png"
+  },
+  {
+    "id": 72,
+    "name": "Skeleton Warrior",
+    "atlas_coord": [
+      1,
+      25
+    ],
+    "image": "monster_72_mapped.png"
+  },
+  {
+    "id": 73,
+    "name": "Zombie",
+    "atlas_coord": [
+      2,
+      25
+    ],
+    "image": "monster_73_mapped.png"
+  },
+  {
+    "id": 74,
+    "name": "Wight",
+    "atlas_coord": [
+      3,
+      25
+    ],
+    "image": "monster_74_mapped.png"
+  },
+  {
+    "id": 75,
+    "name": "Corpse-candle",
+    "atlas_coord": [
+      4,
+      25
+    ],
+    "image": "monster_75_mapped.png"
+  },
+  {
+    "id": 76,
+    "name": "Necromancer Adept",
+    "atlas_coord": [
+      5,
+      25
+    ],
+    "image": "monster_76_mapped.png"
+  },
+  {
+    "id": 77,
+    "name": "Barrow-wight",
+    "atlas_coord": [
+      6,
+      25
+    ],
+    "image": "monster_77_mapped.png"
+  },
+  {
+    "id": 78,
+    "name": "Bone Golem",
+    "atlas_coord": [
+      7,
+      25
+    ],
+    "image": "monster_78_mapped.png"
+  },
+  {
+    "id": 79,
+    "name": "Grishn\u00e1kh, Crypt Lord",
+    "atlas_coord": [
+      8,
+      25
+    ],
+    "image": "monster_79_mapped.png"
+  },
+  {
+    "id": 81,
+    "name": "Cave Troll",
+    "atlas_coord": [
+      10,
+      25
+    ],
+    "image": "monster_81_mapped.png"
+  },
+  {
+    "id": 82,
+    "name": "Dark Ritualist",
+    "atlas_coord": [
+      11,
+      25
+    ],
+    "image": "monster_82_mapped.png"
+  },
+  {
+    "id": 83,
+    "name": "Corsair of Umbar",
+    "atlas_coord": [
+      12,
+      25
+    ],
+    "image": "monster_83_mapped.png"
+  },
+  {
+    "id": 84,
+    "name": "Dunlending Berserker",
+    "atlas_coord": [
+      13,
+      25
+    ],
+    "image": "monster_84_mapped.png"
+  },
+  {
+    "id": 85,
+    "name": "Tunnel Crawler",
+    "atlas_coord": [
+      14,
+      25
+    ],
+    "image": "monster_85_mapped.png"
+  },
+  {
+    "id": 86,
+    "name": "Pale Crawler",
+    "atlas_coord": [
+      15,
+      25
+    ],
+    "image": "monster_86_mapped.png"
+  },
+  {
+    "id": 87,
+    "name": "Werewolf",
+    "atlas_coord": [
+      16,
+      25
+    ],
+    "image": "monster_87_mapped.png"
+  },
+  {
+    "id": 91,
+    "name": "Phantom",
+    "atlas_coord": [
+      17,
+      25
+    ],
+    "image": "monster_91_mapped.png"
+  },
+  {
+    "id": 92,
+    "name": "Shadow",
+    "atlas_coord": [
+      18,
+      25
+    ],
+    "image": "monster_92_mapped.png"
+  },
+  {
+    "id": 93,
+    "name": "Whispering Shade",
+    "atlas_coord": [
+      19,
+      25
+    ],
+    "image": "monster_93_mapped.png"
+  },
+  {
+    "id": 94,
+    "name": "Wraith",
+    "atlas_coord": [
+      20,
+      25
+    ],
+    "image": "monster_94_mapped.png"
+  },
+  {
+    "id": 95,
+    "name": "Fell Spirit",
+    "atlas_coord": [
+      21,
+      25
+    ],
+    "image": "monster_95_mapped.png"
+  },
+  {
+    "id": 96,
+    "name": "Spectre",
+    "atlas_coord": [
+      22,
+      25
+    ],
+    "image": "monster_96_mapped.png"
+  },
+  {
+    "id": 97,
+    "name": "Vampire Thrall",
+    "atlas_coord": [
+      23,
+      25
+    ],
+    "image": "monster_97_mapped.png"
+  },
+  {
+    "id": 98,
+    "name": "The Wailing Horror",
+    "atlas_coord": [
+      24,
+      25
+    ],
+    "image": "monster_98_mapped.png"
+  },
+  {
+    "id": 99,
+    "name": "\u00davatha the Horseman",
+    "atlas_coord": [
+      25,
+      25
+    ],
+    "image": "monster_99_mapped.png"
+  },
+  {
+    "id": 100,
+    "name": "Black N\u00famen\u00f3rean Acolyte",
+    "atlas_coord": [
+      26,
+      25
+    ],
+    "image": "monster_100_mapped.png"
+  },
+  {
+    "id": 101,
+    "name": "Haradrim Assassin",
+    "atlas_coord": [
+      27,
+      25
+    ],
+    "image": "monster_101_mapped.png"
+  },
+  {
+    "id": 102,
+    "name": "Cave Worm",
+    "atlas_coord": [
+      28,
+      25
+    ],
+    "image": "monster_102_mapped.png"
+  },
+  {
+    "id": 103,
+    "name": "Oathbreaker Captain",
+    "atlas_coord": [
+      29,
+      25
+    ],
+    "image": "monster_103_mapped.png"
+  },
+  {
+    "id": 104,
+    "name": "Morgul Sorcerer",
+    "atlas_coord": [
+      30,
+      25
+    ],
+    "image": "monster_104_mapped.png"
+  },
+  {
+    "id": 111,
+    "name": "Black N\u00famen\u00f3rean",
+    "atlas_coord": [
+      31,
+      25
+    ],
+    "image": "monster_111_mapped.png"
+  },
+  {
+    "id": 112,
+    "name": "Olog-hai",
+    "atlas_coord": [
+      0,
+      26
+    ],
+    "image": "monster_112_mapped.png"
+  },
+  {
+    "id": 113,
+    "name": "Vampire",
+    "atlas_coord": [
+      1,
+      26
+    ],
+    "image": "monster_113_mapped.png"
+  },
+  {
+    "id": 114,
+    "name": "Greater Wraith",
+    "atlas_coord": [
+      2,
+      26
+    ],
+    "image": "monster_114_mapped.png"
+  },
+  {
+    "id": 115,
+    "name": "Vampire Lord",
+    "atlas_coord": [
+      3,
+      26
+    ],
+    "image": "monster_115_mapped.png"
+  },
+  {
+    "id": 116,
+    "name": "Shadow Lord",
+    "atlas_coord": [
+      4,
+      26
+    ],
+    "image": "monster_116_mapped.png"
+  },
+  {
+    "id": 117,
+    "name": "Maia Thrall",
+    "atlas_coord": [
+      5,
+      26
+    ],
+    "image": "monster_117_mapped.png"
+  },
+  {
+    "id": 118,
+    "name": "Kham\u00fbl, Shadow of the East",
+    "atlas_coord": [
+      6,
+      26
+    ],
+    "image": "monster_118_mapped.png"
+  },
+  {
+    "id": 131,
+    "name": "Elite Olog-hai",
+    "atlas_coord": [
+      7,
+      26
+    ],
+    "image": "monster_131_mapped.png"
+  },
+  {
+    "id": 132,
+    "name": "Greater Shadow",
+    "atlas_coord": [
+      8,
+      26
+    ],
+    "image": "monster_132_mapped.png"
+  },
+  {
+    "id": 133,
+    "name": "Void Wraith",
+    "atlas_coord": [
+      9,
+      26
+    ],
+    "image": "monster_133_mapped.png"
+  },
+  {
+    "id": 134,
+    "name": "Thr\u00e1in's Shade",
+    "atlas_coord": [
+      10,
+      26
+    ],
+    "image": "monster_134_mapped.png"
+  },
+  {
+    "id": 135,
+    "name": "Sauron, the Necromancer",
+    "atlas_coord": [
+      11,
+      26
+    ],
+    "image": "monster_135_mapped.png"
+  },
+  {
+    "id": 136,
+    "name": "Black N\u00famen\u00f3rean Lord",
+    "atlas_coord": [
+      12,
+      26
+    ],
+    "image": "monster_136_mapped.png"
+  },
+  {
+    "id": 137,
+    "name": "Mouth of Sauron",
+    "atlas_coord": [
+      13,
+      26
+    ],
+    "image": "monster_137_mapped.png"
+  },
+  {
+    "id": 301,
+    "name": "Gandalf the Grey",
+    "atlas_coord": [
+      14,
+      26
+    ],
+    "image": "monster_301_mapped.png"
+  },
+  {
+    "id": 302,
+    "name": "Thranduil, Elvenking",
+    "atlas_coord": [
+      15,
+      26
+    ],
+    "image": "monster_302_mapped.png"
+  },
+  {
+    "id": 303,
+    "name": "Galadriel, Lady of Light",
+    "atlas_coord": [
+      16,
+      26
+    ],
+    "image": "monster_303_mapped.png"
+  },
+  {
+    "id": 304,
+    "name": "Elrond Half-elven",
+    "atlas_coord": [
+      17,
+      26
+    ],
+    "image": "monster_304_mapped.png"
+  },
+  {
+    "id": 305,
+    "name": "Thorin Oakenshield",
+    "atlas_coord": [
+      18,
+      26
+    ],
+    "image": "monster_305_mapped.png"
+  },
+  {
+    "id": 306,
+    "name": "Beorn the Skinchanger",
+    "atlas_coord": [
+      19,
+      26
+    ],
+    "image": "monster_306_mapped.png"
+  },
+  {
+    "id": 307,
+    "name": "Radagast the Brown",
+    "atlas_coord": [
+      20,
+      26
+    ],
+    "image": "monster_307_mapped.png"
+  },
+  {
+    "id": 308,
+    "name": "Eagle of the Misty Mountains",
+    "atlas_coord": [
+      21,
+      26
+    ],
+    "image": "monster_308_mapped.png"
+  },
+  {
+    "id": 309,
+    "name": "Great Elk of Mirkwood",
+    "atlas_coord": [
+      22,
+      26
+    ],
+    "image": "monster_309_mapped.png"
+  },
+  {
+    "id": 310,
+    "name": "Ent of Fangorn",
+    "atlas_coord": [
+      23,
+      26
+    ],
+    "image": "monster_310_mapped.png"
+  }
+]

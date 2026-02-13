@@ -62,7 +62,7 @@ const SFX_FILES: Dictionary = {
 	"dmg_poison": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/clothBelt.ogg",
 	"dmg_cold": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak1.ogg",
 	"dmg_fire": "res://assets/audio/sfx/destroy.wav",
-	"dmg_dark": "res://assets/audio/sfx/hallu.wav",
+	"dmg_dark": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak3.ogg",
 	"miss": "res://assets/audio/sfx/miss.wav",
 	"miss1": "res://assets/audio/sfx/miss1.wav",
 	"kill": "res://assets/audio/sfx/kill.wav",
@@ -83,6 +83,9 @@ const SFX_FILES: Dictionary = {
 	"terrain_vine_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/footstep03.ogg",
 	"terrain_web_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/cloth2.ogg",
 	"terrain_poison_stream_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/clothBelt2.ogg",
+	"terrain_dark_pool_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak2.ogg",
+	"terrain_morgul_rune_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak3.ogg",
+	"terrain_shadow_floor_bite": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak3.ogg",
 }
 
 # Settings file
@@ -161,6 +164,13 @@ func _preload_audio() -> void:
 		var path: String = MUSIC_FILES[track_name]
 		var stream: AudioStream = _load_audio_stream(path)
 		if stream:
+			# Exploration themes should loop continuously while the player remains in the layer.
+			if stream is AudioStreamMP3:
+				(stream as AudioStreamMP3).loop = true
+			elif stream is AudioStreamOggVorbis:
+				(stream as AudioStreamOggVorbis).loop = true
+			elif stream is AudioStreamWAV:
+				(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
 			music_tracks[track_name] = stream
 		else:
 			push_warning("AudioManager: Music file not found: %s" % path)
@@ -252,18 +262,22 @@ func _crossfade_music(stream: AudioStream) -> void:
 
 func _get_exploration_track() -> String:
 	var depth: int = GameManager.current_depth if GameManager else 1
-	if depth <= 3:
-		return "mirkwood"
-	elif depth <= 6:
-		return "orc_warrens"
-	elif depth <= 9:
-		return "wraith_domain"
-	elif depth <= 12:
-		return "necropolis"
-	elif depth <= 15:
-		return "the_pit"
-	else:
-		return "eye_awakens"
+	var layer_name: String = LayerConfig.get_layer_name(depth)
+	match layer_name:
+		"outer_pits":
+			return "mirkwood"
+		"lower_halls":
+			return "orc_warrens"
+		"dark_halls":
+			return "wraith_domain"
+		"necropolis":
+			return "necropolis"
+		"pits_of_despair":
+			return "the_pit"
+		"inner_sanctum", "throne_room":
+			return "eye_awakens"
+		_:
+			return "mirkwood"
 
 # ============================================================================
 # SFX PLAYBACK
@@ -371,9 +385,12 @@ func _on_entity_damaged(entity: Node, _damage: int, damage_type: String, source:
 		"fire":
 			play_sfx("dmg_fire")
 		"dark":
-			play_sfx("dmg_dark")
+			# Terrain dark damage (source == null) has dedicated tile SFX in level.gd.
+			if source != null:
+				play_sfx("dmg_dark")
 		_:
-			play_sfx(["hit", "hit1"].pick_random())
+			# Keep the metallic clang; disable the voice-like impact variant.
+			play_sfx("hit")
 
 	# Start combat music if player is involved
 	if _is_player(entity) or _is_player(source):

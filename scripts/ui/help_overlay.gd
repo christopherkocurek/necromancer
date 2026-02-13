@@ -42,21 +42,32 @@ func _setup_ui() -> void:
 	var gold := ThemeColors.PRIMARY.to_html(false)
 	var muted := ThemeColors.TEXT_MUTED.to_html(false)
 	var cyan := ThemeColors.MSG_INFO.to_html(false)
+	var move_bind: String = _binding_text("move_right", "D") + "/" + _binding_text("move_left", "A")
+	var inv_bind: String = _binding_text("inventory", "I")
+	var look_bind: String = _binding_text("look", "X")
+	var auto_bind: String = _binding_text("auto_explore", "O")
+	var rest_bind: String = _binding_text("rest", "Z")
+	var rest_n_bind: String = _binding_text("rest_n", "Shift+Z")
+	var forge_bind: String = _binding_text("forge", "F")
+	var equip_bind: String = _binding_text("equip", "E")
+	var skills_bind: String = _binding_text("skills", "@")
+	var abilities_bind: String = _binding_text("abilities", "A")
+	var help_bind: String = _binding_text("help_overlay", "?")
 
 	content.text = """[color=#%s][b]THE NECROMANCER - KEYBINDINGS[/b][/color]
 
 [color=#%s]Press any key to close[/color]
 
 [color=#%s][b]MOVEMENT[/b][/color]
-  WASD / HJKL / Arrows .... Cardinal movement
+  WASD / HJKL / Arrows .... Cardinal movement (e.g. %s)
   YUBN / Numpad 7913 ...... Diagonal movement
   . / Numpad 5 ............ Wait one turn
-  O ........................ Auto-explore
+  %s ........................ Auto-explore
 
 [color=#%s][b]INVENTORY[/b][/color]
-  I ........................ Open inventory
+  %s ........................ Open inventory
   G ........................ Pick up item
-  E ........................ Equip selected item
+  %s ........................ Equip selected item
   R ........................ Unequip selected item
   Shift+D .................. Drop selected item
   Shift+Q .................. Quaff potion
@@ -64,31 +75,33 @@ func _setup_ui() -> void:
 
 [color=#%s][b]COMBAT[/b][/color]
   (bump into enemy) ....... Melee attack
-  F ........................ Fire bow / Use forge
+  %s ........................ Fire bow / Use forge
   ; (semicolon) ........... Toggle stealth mode
-  Shift+F .................. Defensive stance
-  Shift+P .................. Ready parry
-  Shift+H .................. Mark quarry (Hunting)
-  Shift+X .................. Expose weakness (Hunting)
-  Shift+E .................. Exploit opening (Hunting)
+  1..6 ..................... Cast gems 1-6
+  V ........................ Open ability list (cast/bind)
+  Press 1..6 on empty gem .. Bind that gem
+  Left click gem ........... Cast bound ability (or bind if empty)
+  Right click gem .......... Clear gem
   Shift+T .................. Tunnel / dig rubble
   Shift+S .................. Search for secrets
   C ........................ Close adjacent door
   Shift+C .................. Character profile
 
 [color=#%s][b]INFORMATION[/b][/color]
-  X ........................ Look mode (examine)
-  @ ........................ Skills panel
-  A ........................ Abilities panel
+  %s ........................ Look mode (examine)
+  %s ........................ Skills panel
+  %s ........................ Abilities panel
+  Shift+V .................. Free camera toggle
   M ........................ Toggle minimap
 
 [color=#%s][b]SYSTEM[/b][/color]
   Enter .................... Use stairs / Advance dialogue
   Space .................... Skip/Advance
   Escape ................... Settings / Close panel
-  ? ........................ This help screen
+  %s ........................ This help screen
+  %s / %s ............ Rest / Rest N turns
   Mouse Wheel .............. Zoom (0.5x - 3.0x)
-""" % [gold, muted, cyan, cyan, cyan, cyan, cyan]
+""" % [gold, muted, cyan, move_bind, auto_bind, cyan, inv_bind, equip_bind, cyan, forge_bind, cyan, look_bind, skills_bind, abilities_bind, cyan, help_bind, rest_bind, rest_n_bind]
 
 	scroll.add_child(content)
 	_panel.add_child(scroll)
@@ -108,3 +121,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed:
 			toggle()
 			get_viewport().set_input_as_handled()
+
+func _binding_text(action: String, fallback: String) -> String:
+	if not InputMap.has_action(action):
+		return fallback
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	if events.is_empty():
+		return fallback
+	return events[0].as_text()

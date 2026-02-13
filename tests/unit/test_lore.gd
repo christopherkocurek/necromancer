@@ -190,6 +190,11 @@ func test_voice_cost_hidden_ways():
 	assert_eq(system.get_voice_cost(140), 2, "Hidden Ways costs 2 voice")
 	system.free()
 
+func test_voice_cost_deep_memory():
+	var system := AbilitySystem.new()
+	assert_eq(system.get_voice_cost(142), 15, "Deep Memory costs 15 voice")
+	system.free()
+
 func test_voice_cost_word_of_command():
 	var system := AbilitySystem.new()
 	assert_eq(system.get_voice_cost(146), 3, "Word of Command costs 3 voice")
@@ -223,10 +228,14 @@ func test_voice_cost_song_of_trees_sustained():
 func test_voice_cost_passive_zero():
 	var system := AbilitySystem.new()
 	assert_eq(system.get_voice_cost(144), 0, "Lore of Naming (passive) costs 0 voice")
-	assert_eq(system.get_voice_cost(145), 0, "Light of the Eldar (passive) costs 0 voice")
 	assert_eq(system.get_voice_cost(149), 0, "Lore of Endurance (passive) costs 0 voice")
 	assert_eq(system.get_voice_cost(157), 0, "Mastery of Themes (passive) costs 0 voice")
 	assert_eq(system.get_voice_cost(158), 0, "Grace (passive) costs 0 voice")
+	system.free()
+
+func test_voice_cost_light_of_eldar_aura():
+	var system := AbilitySystem.new()
+	assert_eq(system.get_voice_cost(145), 1, "Light of the Eldar aura costs 1 voice/turn")
 	system.free()
 
 # ============================================================================
@@ -243,7 +252,7 @@ func test_sustained_ability_count():
 
 func test_passive_ability_count():
 	var system := AbilitySystem.new()
-	var passive_ids: Array[int] = [144, 145, 149, 157, 158]
+	var passive_ids: Array[int] = [144, 149, 157, 158]
 	for aid: int in passive_ids:
 		assert_eq(system.get_ability_type(aid), AbilitySystem.AbilityType.PASSIVE,
 			"Ability %d should be PASSIVE" % aid)
@@ -251,7 +260,7 @@ func test_passive_ability_count():
 
 func test_active_abilities():
 	var system := AbilitySystem.new()
-	var active_ids: Array[int] = [140, 141, 142, 146, 150, 151, 154, 155, 156]
+	var active_ids: Array[int] = [140, 141, 142, 145, 146, 150, 151, 154, 155, 156]
 	for aid: int in active_ids:
 		assert_eq(system.get_ability_type(aid), AbilitySystem.AbilityType.ACTIVE,
 			"Ability %d should be ACTIVE" % aid)

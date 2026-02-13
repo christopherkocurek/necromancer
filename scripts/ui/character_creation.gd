@@ -64,6 +64,9 @@ var _skills_expanded_idx: int = -1  # Which skill row is expanded (-1 = none)
 @onready var nav_container: HBoxContainer = $VBoxContainer/NavContainer
 @onready var back_button: Button = $VBoxContainer/NavContainer/BackButton
 @onready var next_button: Button = $VBoxContainer/NavContainer/NextButton
+var chronicle_button: Button = null
+var chronicle_dialog: AcceptDialog = null
+var chronicle_text: RichTextLabel = null
 
 # Stat allocation UI
 var stat_labels: Dictionary = {}
@@ -92,6 +95,7 @@ const FALLBACK_NAMES: Array[String] = [
 	"Thorin", "Elrond", "Galadriel", "Aragorn", "Legolas", "Gimli",
 	"Beren", "Luthien", "Fingolfin", "Feanor", "Turin", "Hurin", "Earendil",
 	"Celebrimbor", "Gil-galad", "Thranduil", "Glorfindel", "Ecthelion"]
+const PLAYTEST_MAX_HERO_SPRITE_ID: int = 135  # Sauron tile
 
 # Stat bar colors
 const STAT_COLORS: Dictionary = {
@@ -239,6 +243,7 @@ func _update_progress_dots() -> void:
 			_progress_dots[i].color = ThemeColors.TEXT_DISABLED
 
 func _setup_ui() -> void:
+	_ensure_chronicle_ui()
 	back_button.pressed.connect(_on_back_pressed)
 	next_button.pressed.connect(_on_next_pressed)
 
@@ -248,8 +253,48 @@ func _setup_ui() -> void:
 		ThemeColors.apply_heading_font(stage_label, ThemeColors.FONT_SIZE_H2)
 		ThemeColors.apply_rich_body_font(info_label)
 		_apply_creation_button_theme(back_button)
-		_apply_creation_button_theme(next_button)
+	_apply_creation_button_theme(next_button)
+	if chronicle_button:
+		_apply_creation_button_theme(chronicle_button)
 	info_label.visible = true
+
+func _ensure_chronicle_ui() -> void:
+	if chronicle_button == null:
+		chronicle_button = Button.new()
+		chronicle_button.text = "Chronicle"
+		chronicle_button.custom_minimum_size = Vector2(120, 0)
+		chronicle_button.pressed.connect(_show_chronicle_popup)
+		nav_container.add_child(chronicle_button)
+		nav_container.move_child(chronicle_button, 0)
+
+	if chronicle_dialog == null:
+		chronicle_dialog = AcceptDialog.new()
+		chronicle_dialog.title = "Chronicle of the Fallen"
+		chronicle_dialog.min_size = Vector2i(720, 420)
+		add_child(chronicle_dialog)
+
+		chronicle_text = RichTextLabel.new()
+		chronicle_text.bbcode_enabled = false
+		chronicle_text.fit_content = false
+		chronicle_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		chronicle_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		ThemeColors.apply_rich_body_font(chronicle_text, ThemeColors.FONT_SIZE_BODY)
+		chronicle_dialog.add_child(chronicle_text)
+
+func _show_chronicle_popup() -> void:
+	if not chronicle_dialog or not chronicle_text:
+		return
+	var lines: Array[String] = []
+	if ChronicleManager:
+		lines = ChronicleManager.get_recent_summary_lines(40)
+	chronicle_text.clear()
+	if lines.is_empty():
+		chronicle_text.append_text("No records yet. The tome is waiting for the first fallen name.")
+	else:
+		chronicle_text.append_text("Record of the fallen and the few who escaped:\n\n")
+		for line in lines:
+			chronicle_text.append_text(" - %s\n" % line)
+	chronicle_dialog.popup_centered_ratio(0.72)
 
 func _apply_creation_button_theme(button: Button) -> void:
 	if not is_instance_valid(ThemeColors):
@@ -366,6 +411,12 @@ func _clear_content() -> void:
 func _show_race_selection() -> void:
 	stage_label.text = "Choose Your Race"
 
+	var playtest_btn := Button.new()
+	playtest_btn.text = "MAX TEST HERO (AUTOLOAD)"
+	playtest_btn.pressed.connect(_create_playtest_max_hero)
+	_apply_creation_button_theme(playtest_btn)
+	content_container.add_child(playtest_btn)
+
 	var races := DataManager.races
 	for race_name in races:
 		var race_data: DataManager.RaceData = races[race_name]
@@ -386,6 +437,49 @@ func _show_race_selection() -> void:
 		content_container.add_child(btn)
 
 	_update_race_info()
+
+func _create_playtest_max_hero() -> void:
+	if _finishing_creation:
+		return
+	_finishing_creation = true
+	next_button.disabled = true
+	back_button.disabled = true
+
+	if GameManager:
+		GameManager.set_difficulty(selected_difficulty)
+
+	var max_skills: Dictionary = {}
+	for skill_name in SKILL_NAMES:
+		max_skills[skill_name] = 20
+
+	var all_ability_purchases: Array = []
+	for skill_idx in range(Constants.S_MAX):
+		var abilities: Array = DataManager.get_abilities_for_skill(skill_idx)
+		for ability in abilities:
+			all_ability_purchases.append({
+				"skill_type": ability.skill_type,
+				"ability_num": ability.ability_num,
+				"skill_name": SKILL_NAMES[skill_idx],
+				"name": ability.name,
+				"xp_cost": 0,
+			})
+
+	var character_data := {
+		"race": "Man",
+		"house": "Gondor",
+		"gender": "male",
+		"trait": "",
+		"base_stats": {"str": 6, "dex": 6, "con": 6, "gra": 6},
+		"name": "Playtest Max Hero",
+		"age": 45,
+		"history": "A forged avatar for immediate systems testing.",
+		"difficulty": selected_difficulty,
+		"skill_investments": max_skills,
+		"ability_purchases": all_ability_purchases,
+		"xp_spent_precreation": 0,
+		"force_sprite_monster_id": PLAYTEST_MAX_HERO_SPRITE_ID,
+	}
+	creation_complete.emit(character_data)
 
 func _on_race_selected(race_name: String) -> void:
 	# Defer UI updates to avoid potential input/rebuild re-entrancy crashes
@@ -464,6 +558,7 @@ func _show_house_selection() -> void:
 
 func _on_house_selected(house_name: String) -> void:
 	selected_house = house_name
+	character_history = ""  # Invalidate prior house-specific history text.
 	_reset_skill_investments()  # Affinity changes invalidate costs
 	_update_house_info()
 	_update_navigation()
@@ -523,18 +618,11 @@ func _show_gender_selection() -> void:
 		_apply_creation_button_theme(btn)
 		content_container.add_child(btn)
 
-	# Note about portraits
-	var note_label := Label.new()
-	note_label.text = "(No female character portraits yet)"
-	note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
-	ThemeColors.apply_body_font(note_label, ThemeColors.FONT_SIZE_HINT)
-	content_container.add_child(note_label)
-
 	_update_gender_info()
 
 func _on_gender_selected(gender: String) -> void:
 	selected_gender = gender
+	character_history = ""  # Invalidate prior pronounized history text.
 	_update_character_preview()
 	_update_gender_info()
 	_update_navigation()
@@ -545,12 +633,45 @@ func _update_gender_info() -> void:
 		return
 
 	var display_gender: String = selected_gender.capitalize()
-	var child_text: String = "son" if selected_gender == "male" else "daughter"
+	var lineage_text: String = _get_lineage_flavor()
 
 	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\nReferred to as %s in histories." % [
-		display_gender, child_text
+	info_label.text = "[b]%s[/b]\n%s" % [
+		display_gender, lineage_text
 	]
+
+func _get_lineage_flavor() -> String:
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var house_alt: String = house_data.alternate_name if house_data and not house_data.alternate_name.is_empty() else selected_house
+	var child_word: String = "son" if selected_gender == "male" else "daughter"
+
+	match house_alt:
+		"Lothlorien":
+			return "A %s of the Golden Wood, sworn to memory and moonlit bows." % child_word
+		"Rivendell":
+			return "A %s of Imladris, raised among loremasters and smith-craft." % child_word
+		"Greenwood":
+			return "A %s of Greenwood, hunter of shadowed halls and silent trails." % child_word
+		"the Dunedain":
+			return "A %s of the Rangers, heir to the long watch against darkness." % child_word
+		"Rohan":
+			return "A %s of the Riddermark, bold in open war and swift reprisals." % child_word
+		"Gondor":
+			return "A %s of Gondor, tempered by duty beneath the White Tower." % child_word
+		"Khazad-dum":
+			return "A %s of Khazad-dum, keeper of old oaths and deep craft." % child_word
+		"Erebor":
+			return "A %s of Erebor, forged in exile and anvil-fire." % child_word
+		"the Iron Hills":
+			return "A %s of the Iron Hills, bred for shieldwalls and broken orcs." % child_word
+		"the Shire":
+			return "A %s of the Shire, small of stature and stubborn of spirit." % child_word
+		"the Gamgees":
+			return "A %s of the Gamgees, practical, loyal, and hard to turn from purpose." % child_word
+		"the Tooks":
+			return "A %s of the Tooks, restless for danger beyond hedges and hearth." % child_word
+		_:
+			return "Referred to as %s in chronicles." % child_word
 
 # ============================================================================
 # TRAIT SELECTION
@@ -1457,6 +1578,7 @@ func _generate_history() -> void:
 		character_history = _generate_fallback_history()
 	else:
 		character_history = " ".join(history_parts)
+	character_history = _sanitize_history_for_house(character_history)
 
 func _generate_fallback_history() -> String:
 	## Fallback history when history.txt chain data is unavailable.
@@ -1472,6 +1594,40 @@ func _generate_fallback_history() -> String:
 	var profession: String = professions.pick_random()
 
 	return "You are the %s of a %s from %s." % [child_word, profession, location]
+
+func _sanitize_history_for_house(text: String) -> String:
+	var result: String = text
+	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
+	var selected_alt: String = house_data.alternate_name if house_data and not house_data.alternate_name.is_empty() else selected_house
+	if selected_alt.begins_with("Of "):
+		selected_alt = selected_alt.trim_prefix("Of ")
+	if selected_alt.is_empty():
+		return result
+
+	var race_houses: Dictionary = {
+		"Elf": ["Lothlorien", "Rivendell", "Greenwood"],
+		"Man": ["the Dunedain", "Rohan", "Gondor"],
+		"Dwarf": ["Khazad-dum", "Erebor", "the Iron Hills"],
+		"Hobbit": ["the Shire", "the Gamgees", "the Tooks"],
+	}
+	var peers: Array = race_houses.get(selected_race, [])
+	for h in peers:
+		var name: String = str(h)
+		if name != selected_alt:
+			result = result.replace(name, selected_alt)
+			result = result.replace("of " + name, "of " + selected_alt)
+
+	if selected_race == "Elf":
+		if selected_alt == "Rivendell":
+			result = result.replace("golden wood", "hidden valley")
+			result = result.replace("dark forest", "hidden valley")
+		elif selected_alt == "Greenwood":
+			result = result.replace("golden wood", "dark forest")
+			result = result.replace("hidden valley", "dark forest")
+		else:
+			result = result.replace("hidden valley", "golden wood")
+			result = result.replace("dark forest", "golden wood")
+	return result
 
 func _update_history_display() -> void:
 	if stat_labels.has("_history_label"):
@@ -1563,9 +1719,9 @@ func _get_character_summary() -> String:
 	if not ability_names.is_empty():
 		abilities_text = "\nAbilities: " + ", ".join(ability_names)
 
-	return "%s of %s\n%s %s | %s | Age %s\nTrait: %s | Difficulty: %s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d%s%s\n\nStarting XP: %d (Invested: %d)" % [
-		display_name, house_suffix, selected_race, selected_house,
-		gender_text, age_text, trait_text, diff_label,
+	return "%s of %s\n%s %s | Age %s\nTrait: %s | Difficulty: %s\n%s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d%s%s\n\nStarting XP: %d (Invested: %d)" % [
+		display_name, house_suffix, selected_race, gender_text,
+		age_text, trait_text, diff_label, _get_lineage_flavor(),
 		final_str, final_dex, final_con, final_gra,
 		skills_text, abilities_text,
 		remaining_xp, _precreation_xp_spent,
@@ -1629,6 +1785,22 @@ func _show_difficulty_selection() -> void:
 
 		content_container.add_child(btn)
 
+	var mode_note := Label.new()
+	mode_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mode_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mode_note.text = "Hardcore note: assist overlays and build dashboard are disabled. Hunting/Lore-based opponent reads remain available."
+	ThemeColors.apply_body_font(mode_note, ThemeColors.FONT_SIZE_HINT)
+	mode_note.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	content_container.add_child(mode_note)
+
+	var profile_note := Label.new()
+	profile_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	profile_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	profile_note.text = "Recommended profiles:\nEasy: first-time players\nNormal: intended baseline\nHard: experienced roguelike players\nIronman (Hardcore): no helper overlays, full pressure."
+	ThemeColors.apply_body_font(profile_note, ThemeColors.FONT_SIZE_HINT)
+	profile_note.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	content_container.add_child(profile_note)
+
 # ============================================================================
 # CONFIRMATION
 # ============================================================================
@@ -1655,6 +1827,8 @@ func _show_confirmation() -> void:
 		"trait": selected_trait,
 		"base_stats": base_stats,
 		"age": character_age,
+		"skill_investments": skill_investments.duplicate(),
+		"ability_purchases": ability_purchases.duplicate(true),
 	}
 	var backstory: String = BackstoryGeneratorScript.generate(backstory_data)
 	var full_history: String = _combine_history_and_backstory(backstory)
@@ -1700,6 +1874,8 @@ func _show_confirmation() -> void:
 func _update_navigation() -> void:
 	back_button.visible = current_stage != Stage.RACE
 	back_button.text = "Back"
+	if chronicle_button:
+		chronicle_button.visible = true
 
 	match current_stage:
 		Stage.RACE:
@@ -1761,6 +1937,8 @@ func _finish_creation() -> void:
 		"trait": selected_trait,
 		"base_stats": base_stats,
 		"age": character_age,
+		"skill_investments": skill_investments.duplicate(),
+		"ability_purchases": ability_purchases.duplicate(true),
 	}
 	var backstory: String = BackstoryGeneratorScript.generate(backstory_data)
 	var final_history: String = _combine_history_and_backstory(backstory)
@@ -1821,3 +1999,9 @@ func _input(event: InputEvent) -> void:
 			if not focused is LineEdit:
 				_on_reroll_age()
 				get_viewport().set_input_as_handled()
+				return
+
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_L and not event.shift_pressed and not event.ctrl_pressed:
+			_show_chronicle_popup()
+			get_viewport().set_input_as_handled()

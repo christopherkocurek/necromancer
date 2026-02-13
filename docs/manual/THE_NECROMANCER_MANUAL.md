@@ -1025,6 +1025,8 @@ destroyed or sold.
 | V           | Open Voice ability menu (Lore abilities)         |
 | 1-4         | Quick-cast ability hotkeys                       |
 | Shift+1-4   | Bind ability to hotkey (in Voice menu)           |
+| Shift+F     | Defensive stance                                 |
+| Shift+P     | Ready parry                                      |
 | D           | Disarm trap                                      |
 | P           | Blow horn/flute                                  |
 

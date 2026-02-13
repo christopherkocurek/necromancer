@@ -28,3 +28,15 @@ tileset_generation/*_progress.json
 # Tileset backups
 assets/sprites/*_backup_*.png
 assets/sprites/*_backup_*.png.import
+
+# local secrets
+.env.local
+
+# Local test/output data (archived outside repo)
+.playtest_logs/
+.tmp/
+bot_results/
+bot_results_*/
+builds/
+godot_crash.log
+godot_gl.log

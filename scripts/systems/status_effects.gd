@@ -21,7 +21,14 @@ func apply_effect(effect_id: StringName, duration: int, show_message: bool = tru
 	# Check resistance
 	if owner and _check_resistance(effect_id):
 		if show_message:
-			GameManager.log_message("%s resists!" % owner.entity_name, ThemeColors.MSG_SYSTEM)
+			var resist_prop: String = EffectDefinitions.get_resistance_property(effect_id)
+			var reason: String = resist_prop.replace("_", " ").capitalize() if not resist_prop.is_empty() else "resistance"
+			GameManager.log_message("%s resists (%s)." % [owner.entity_name, reason], ThemeColors.MSG_SYSTEM)
+		_record_player_forensics(
+			"status",
+			"Resisted %s (%s)" % [String(effect_id), EffectDefinitions.get_resistance_property(effect_id)],
+			"info"
+		)
 		return false
 
 	# Get effect metadata
@@ -193,7 +200,31 @@ func _apply_damage(effect_id: StringName, duration: int) -> void:
 			damage_type = "fire"
 
 	if damage > 0:
+		if owner and owner is Player:
+			var explain: String = ""
+			match effect_id:
+				Constants.EFFECT_POISONED:
+					explain = "Poison ticks for %d (scaled by poison severity %d)." % [damage, duration]
+				Constants.EFFECT_CUT:
+					explain = "Bleeding ticks for %d (scaled by wound severity %d)." % [damage, duration]
+				Constants.EFFECT_BURNING:
+					explain = "Burning ticks for %d (scaled by burn severity %d)." % [damage, duration]
+			if not explain.is_empty():
+				GameManager.log_message(explain, ThemeColors.MSG_WARNING)
+			_record_player_forensics(
+				"dot",
+				"%s for %d (%d remaining before decay)" % [String(effect_id), damage, duration],
+				"warning"
+			)
 		owner.take_damage(damage, damage_type, null)
+
+func _record_player_forensics(category: String, text: String, severity: String) -> void:
+	if not owner or not (owner is Player):
+		return
+	var p: Player = owner as Player
+	if not p.run_stats:
+		return
+	p.run_stats.record_forensic_event(GameManager.turn_count, category, text, severity)
 
 ## Calculate decay amount for an effect.
 func _calculate_decay(effect_id: StringName, duration: int) -> int:
@@ -231,7 +262,12 @@ func _check_resistance(effect_id: StringName) -> bool:
 		var player_owner: Player = owner as Player
 		var equip_flag_map: Dictionary = {
 			"resist_fire": "RES_FIRE",
+			"resist_pois": "RES_POIS",
 			"resist_fear": "RES_FEAR",
+			"resist_stun": "RES_STUN",
+			"resist_confu": "RES_CONFU",
+			"resist_hallu": "RES_HALLU",
+			"resist_blind": "RES_BLIND",
 			"free_act": "FREE_ACT",
 		}
 		var equip_flag: String = equip_flag_map.get(resist_prop, "")

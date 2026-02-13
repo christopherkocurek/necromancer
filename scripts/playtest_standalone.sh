@@ -23,6 +23,8 @@ DETACH=1
 KILL_EXISTING=1
 OPEN_APP=0
 COMPATIBILITY=1
+FORCE_REIMPORT=0
+REIMPORT_IF_EMPTY=1
 LOG_DIR="$PROJECT_DIR/.playtest_logs"
 mkdir -p "$LOG_DIR"
 PID_FILE="$LOG_DIR/standalone.pid"
@@ -38,6 +40,8 @@ Options:
   --focus             Bring Godot app to foreground after launch.
   --forward-plus      Use Forward+ renderer instead of compatibility.
   --compatibility     Use compatibility renderer (OpenGL 3) for stability.
+  --reimport          Force Godot resource reimport before launch.
+  --no-auto-reimport  Disable auto-reimport when .godot/imported is empty.
   --help              Show this help.
 USAGE
 }
@@ -68,6 +72,14 @@ while [[ $# -gt 0 ]]; do
       COMPATIBILITY=0
       shift
       ;;
+    --reimport)
+      FORCE_REIMPORT=1
+      shift
+      ;;
+    --no-auto-reimport)
+      REIMPORT_IF_EMPTY=0
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -91,6 +103,16 @@ fi
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="$LOG_DIR/${MODE}-${TIMESTAMP}.log"
 
+if [[ "$FORCE_REIMPORT" -eq 1 || ( "$REIMPORT_IF_EMPTY" -eq 1 && ! -d "$PROJECT_DIR/.godot/imported" ) ]]; then
+  echo "Running resource import..."
+  "$GODOT_BIN" --path "$PROJECT_DIR" --import --quit >/dev/null 2>&1 || true
+elif [[ "$REIMPORT_IF_EMPTY" -eq 1 && -d "$PROJECT_DIR/.godot/imported" ]]; then
+  if ! find "$PROJECT_DIR/.godot/imported" -type f -maxdepth 1 2>/dev/null | head -1 | grep -q .; then
+    echo "Detected empty import cache; running resource import..."
+    "$GODOT_BIN" --path "$PROJECT_DIR" --import --quit >/dev/null 2>&1 || true
+  fi
+fi
+
 CMD=("$GODOT_BIN" "--path" "$PROJECT_DIR")
 if [[ "$MODE" == "editor" ]]; then
   CMD+=("-e")
@@ -104,13 +126,36 @@ fi
 CMD+=("--log-file" "$LOG_FILE")
 
 if [[ "$DETACH" -eq 1 ]]; then
-  nohup "${CMD[@]}" >>"$LOG_FILE" 2>&1 &
-  NEW_PID=$!
-  echo "$NEW_PID" > "$PID_FILE"
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    CMD_ARGS=("--path" "$PROJECT_DIR")
+    if [[ "$MODE" == "editor" ]]; then
+      CMD_ARGS+=("-e")
+    else
+      CMD_ARGS+=("--scene" "res://scenes/main.tscn")
+    fi
+    if [[ "$COMPATIBILITY" -eq 1 ]]; then
+      CMD_ARGS+=("--rendering-driver" "opengl3")
+    fi
+    CMD_ARGS+=("--log-file" "$LOG_FILE")
+    open -n -a Godot --args "${CMD_ARGS[@]}"
+    sleep 1
+    NEW_PID="$(pgrep -f "/Applications/Godot.app/Contents/MacOS/Godot --path $PROJECT_DIR" | tail -1 || true)"
+    if [[ -n "$NEW_PID" ]]; then
+      echo "$NEW_PID" > "$PID_FILE"
+      echo "Launched $MODE (PID $NEW_PID)"
+    else
+      echo "Launched $MODE (PID unknown)"
+      : > "$PID_FILE"
+    fi
+  else
+    nohup "${CMD[@]}" >>"$LOG_FILE" 2>&1 &
+    NEW_PID=$!
+    echo "$NEW_PID" > "$PID_FILE"
+    echo "Launched $MODE (PID $NEW_PID)"
+  fi
   if [[ "$OPEN_APP" -eq 1 && "$MODE" == "standalone" ]]; then
     open -a Godot >/dev/null 2>&1 || true
   fi
-  echo "Launched $MODE (PID $NEW_PID)"
   echo "Log: $LOG_FILE"
   if [[ "$COMPATIBILITY" -eq 1 ]]; then
     echo "Renderer: compatibility (OpenGL 3)"

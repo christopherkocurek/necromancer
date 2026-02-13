@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tier 8 — Gandalf v6</title>
+<style>
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+h1 { color: #4ade80; text-align: center; }
+.subtitle { color: #888; text-align: center; font-size: 14px; margin-top: -10px; }
+.card { background: #16213e; border-radius: 12px; padding: 20px; text-align: center; border: 2px solid #ff69b4; max-width: 500px; margin: 20px auto; }
+.name { font-size: 18px; font-weight: bold; color: #ffd93d; margin-bottom: 5px; }
+.id { color: #888; font-size: 12px; }
+.sprites { display: flex; justify-content: center; gap: 20px; margin: 15px 0; }
+.sprite-box { text-align: center; }
+.sprite-box img { width: 128px; height: 128px; image-rendering: pixelated; border: 1px solid #444; }
+.sprite-box .label { font-size: 11px; color: #888; margin-top: 4px; }
+.raw-preview { margin: 10px 0; }
+.raw-preview img { width: 300px; height: 300px; border: 1px solid #333; border-radius: 8px; }
+.stats { font-size: 12px; color: #aaa; margin-top: 8px; }
+.note { font-size: 12px; color: #aaa; margin-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+<h1>Gandalf v6 — White Highlights Fix</h1>
+<p class="subtitle">Gray robes with explicit white fabric highlights + "no pink or magenta in the robes"</p>
+
+<div class="card">
+  <div class="name">Gandalf the Grey</div>
+  <div class="id">#301 — v6 regen</div>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_301_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 57.6% | 1 clean component | magenta cleanup only 8.5% (was 31-49%)</div>
+  <div class="note">Key fix: "bright white folds and white fabric highlights, no pink or magenta tones in the clothing." White highlights keep robes distinct from magenta BG.</div>
+</div>
+
+</body>
+</html>

@@ -275,6 +275,23 @@ func _get_tvals_for_category(category: MaterialCategory) -> Array[int]:
 		MaterialCategory.JEWELRY: return JEWELRY_TVALS
 	return WEAPON_TVALS
 
+func _get_category_name(category: MaterialCategory) -> String:
+	match category:
+		MaterialCategory.WEAPON: return "Weaponsmith"
+		MaterialCategory.ARMOR: return "Armoursmith"
+		MaterialCategory.JEWELRY: return "Jeweller"
+	return "Smithing"
+
+func _can_reforge_category(player: Player, category: MaterialCategory) -> bool:
+	match category:
+		MaterialCategory.WEAPON:
+			return player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_WEAPONSMITH)
+		MaterialCategory.ARMOR:
+			return player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_ARMOURSMITH)
+		MaterialCategory.JEWELRY:
+			return player.has_ability(Constants.Skill.S_SMT, Constants.SmithingAbility.SMT_JEWELLER)
+	return false
+
 # ============================================================================
 # ITEM TYPE CHECKS
 # ============================================================================
@@ -436,6 +453,13 @@ func get_reforge_subtypes(category: MaterialCategory, depth: int) -> Array:
 	return subtypes
 
 func reforge(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0, chosen_tval: MaterialCategory = MaterialCategory.WEAPON, use_chosen_tval: bool = false, chosen_template: Variant = null) -> Variant:
+	var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
+	if not _can_reforge_category(player, category):
+		var req_name: String = _get_category_name(category)
+		smithing_failed.emit(null, "Requires %s." % req_name)
+		GameManager.log_message("Reforge requires %s for that category." % req_name, ThemeColors.MSG_ERROR)
+		return null
+
 	# XP cost check — reforge costs 250 XP (with Expertise discount)
 	var xp_cost: int = get_reforge_xp_cost(player)
 	if not _can_afford_xp(player, xp_cost):
@@ -452,7 +476,6 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 	if chosen_template != null:
 		new_item = DataManager.duplicate_item_data(chosen_template)
 	else:
-		var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
 		var tvals: Array[int] = _get_tvals_for_category(category)
 		new_item = DataManager.get_random_item_by_tvals(tvals, depth)
 
@@ -476,6 +499,13 @@ func reforge(player: Player, material1: Variant, material2: Variant, depth: int,
 
 ## Reforge Mastery: reject result and reroll once (Task 10)
 func reforge_with_mastery(player: Player, material1: Variant, material2: Variant, depth: int, _forge_bonus: int = 0, chosen_tval: MaterialCategory = MaterialCategory.WEAPON, use_chosen_tval: bool = false, chosen_template: Variant = null) -> Array:
+	var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
+	if not _can_reforge_category(player, category):
+		var req_name: String = _get_category_name(category)
+		smithing_failed.emit(null, "Requires %s." % req_name)
+		GameManager.log_message("Reforge requires %s for that category." % req_name, ThemeColors.MSG_ERROR)
+		return []
+
 	# Returns [item1, item2] — UI shows both, player picks one
 	# XP cost check
 	var xp_cost: int = get_reforge_xp_cost(player)
@@ -495,7 +525,6 @@ func reforge_with_mastery(player: Player, material1: Variant, material2: Variant
 		item1 = DataManager.duplicate_item_data(chosen_template)
 		item2 = DataManager.duplicate_item_data(chosen_template)
 	else:
-		var category: MaterialCategory = chosen_tval if use_chosen_tval else get_material_category(material1)
 		var tvals: Array[int] = _get_tvals_for_category(category)
 		item1 = DataManager.get_random_item_by_tvals(tvals, depth)
 		item2 = DataManager.get_random_item_by_tvals(tvals, depth)

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pits of Despair (Layer 5) — Tile Review</title>
+<style>
+body { background: #120D0B; color: #eee; font-family: monospace; padding: 20px; }
+h1 { color: #C85A3A; border-bottom: 2px solid #C85A3A; padding-bottom: 8px; }
+h2 { color: #E8824E; margin-top: 30px; }
+.tile-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.tile-card {
+    background: #2A1F1A; border: 2px solid #4A4240; border-radius: 8px; padding: 12px;
+    text-align: center; min-width: 160px;
+}
+.tile-card.highlight { border-color: #C85A3A; }
+.tile-card img {
+    width: 128px; height: 128px; image-rendering: pixelated;
+    border: 1px solid #555; display: block; margin: 8px auto;
+}
+.tile-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.tile-card .name { font-size: 14px; font-weight: bold; color: #E8824E; }
+.raw-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.raw-card {
+    background: #2A1F1A; border: 2px solid #555; border-radius: 8px; padding: 12px;
+    text-align: center;
+}
+.raw-card img {
+    width: 256px; height: 256px; image-rendering: auto;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.raw-card .name { font-size: 14px; font-weight: bold; color: #C85A3A; }
+.info { color: #888; font-size: 13px; margin: 5px 0; }
+.status { color: #33cc33; font-weight: bold; }
+.status.pending { color: #ffaa33; }
+.mechanic { color: #E8824E; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Pits of Despair (Layer 5) — Volcanic Forge-Prison</h1>
+<p class="info">Creative vision: Volcanic forge-prison where scorched basalt cracks reveal ember-orange heat from below. Sauron's active torture chambers.</p>
+<p class="info">Palette: scorched basalt (#2A1F1A), volcanic ash grey (#4A4240), ember orange (#C85A3A), dried blood red (#5c1a1a), soot black (#120D0B)</p>
+<p class="info">Tileset: Row 22, Cols 0-11</p>
+
+<h2>Phase 1: Anchor Tiles <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Wall (Light)</div><img src="layer_tiles/pits_of_despair/wall_light.png" /><div class="label">Row 22, Col 0</div></div>
+    <div class="tile-card highlight"><div class="name">Wall (Dark)</div><img src="layer_tiles/pits_of_despair/wall_dark.png" /><div class="label">Row 22, Col 1</div></div>
+    <div class="tile-card highlight"><div class="name">Floor (Light)</div><img src="layer_tiles/pits_of_despair/floor_light.png" /><div class="label">Row 22, Col 2</div></div>
+    <div class="tile-card highlight"><div class="name">Floor (Dark)</div><img src="layer_tiles/pits_of_despair/floor_dark.png" /><div class="label">Row 22, Col 3</div></div>
+</div>
+
+<h2>Phase 2: Doors (Programmatic) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Door Closed (Light)</div><img src="layer_tiles/pits_of_despair/door_closed_light.png" /><div class="label">Row 22, Col 4</div></div>
+    <div class="tile-card highlight"><div class="name">Door Closed (Dark)</div><img src="layer_tiles/pits_of_despair/door_closed_dark.png" /><div class="label">Row 22, Col 5</div></div>
+    <div class="tile-card highlight"><div class="name">Door Open (Light)</div><img src="layer_tiles/pits_of_despair/door_open_light.png" /><div class="label">Row 22, Col 6</div></div>
+    <div class="tile-card highlight"><div class="name">Door Open (Dark)</div><img src="layer_tiles/pits_of_despair/door_open_dark.png" /><div class="label">Row 22, Col 7</div></div>
+</div>
+
+<h2>Phase 3: Stairs (Ember Recolor) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Stairs Down (Light)</div><img src="layer_tiles/pits_of_despair/stairs_down_light.png" /><div class="label">Row 22, Col 8</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Down (Dark)</div><img src="layer_tiles/pits_of_despair/stairs_down_dark.png" /><div class="label">Row 22, Col 9</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Up (Light)</div><img src="layer_tiles/pits_of_despair/stairs_up_light.png" /><div class="label">Row 22, Col 10</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Up (Dark)</div><img src="layer_tiles/pits_of_despair/stairs_up_dark.png" /><div class="label">Row 22, Col 11</div></div>
+</div>
+
+<h2>Phase 4: Environmental Tiles <span class="status pending">REVIEW</span></h2>
+<h3 style="color: #E8824E;">Procedural</h3>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Bloodstained Floor (Light)</div><img src="layer_tiles/pits_of_despair/bloodstained_floor_light.png" /><div class="mechanic">1.5x move cost</div></div>
+    <div class="tile-card highlight"><div class="name">Bloodstained Floor (Dark)</div><img src="layer_tiles/pits_of_despair/bloodstained_floor_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Smoldering Grate (Light)</div><img src="layer_tiles/pits_of_despair/smoldering_grate_light.png" /><div class="mechanic">Fire damage on step</div></div>
+    <div class="tile-card highlight"><div class="name">Smoldering Grate (Dark)</div><img src="layer_tiles/pits_of_despair/smoldering_grate_dark.png" /></div>
+</div>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Blood Pool Trap (Light)</div><img src="layer_tiles/pits_of_despair/blood_pool_trap_light.png" /><div class="mechanic">Vampiric drain trap</div></div>
+    <div class="tile-card highlight"><div class="name">Blood Pool Trap (Dark)</div><img src="layer_tiles/pits_of_despair/blood_pool_trap_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Scattered Bones (Light)</div><img src="layer_tiles/pits_of_despair/scattered_bones_light.png" /><div class="mechanic">Floor decoration</div></div>
+    <div class="tile-card highlight"><div class="name">Scattered Bones (Dark)</div><img src="layer_tiles/pits_of_despair/scattered_bones_dark.png" /></div>
+</div>
+<h3 style="color: #C85A3A;">DALL-E</h3>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Iron Maiden (Light)</div><img src="layer_tiles/pits_of_despair/iron_maiden_light.png" /><div class="mechanic">Blocks movement</div></div>
+    <div class="tile-card highlight"><div class="name">Iron Maiden (Dark)</div><img src="layer_tiles/pits_of_despair/iron_maiden_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Shadow Tapestry (Light)</div><img src="layer_tiles/pits_of_despair/shadow_tapestry_light.png" /><div class="mechanic">Wall decoration</div></div>
+    <div class="tile-card highlight"><div class="name">Shadow Tapestry (Dark)</div><img src="layer_tiles/pits_of_despair/shadow_tapestry_dark.png" /></div>
+</div>
+
+<h2>Raw DALL-E Output (256px)</h2>
+<div class="raw-row">
+    <div class="raw-card"><div class="name">Wall</div><img src="layer_tiles/raw/pits_of_despair/wall_1024.png" /></div>
+    <div class="raw-card"><div class="name">Floor</div><img src="layer_tiles/raw/pits_of_despair/floor_1024.png" /></div>
+    <div class="raw-card"><div class="name">Iron Maiden</div><img src="layer_tiles/raw/pits_of_despair/iron_maiden_1024.png" /></div>
+    <div class="raw-card"><div class="name">Shadow Tapestry</div><img src="layer_tiles/raw/pits_of_despair/shadow_tapestry_1024.png" /></div>
+</div>
+
+</body>
+</html>

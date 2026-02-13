@@ -257,6 +257,7 @@ static func get_recovery_message(effect_id: StringName, old_severity: int = 0) -
 const RESISTANCE_MAP: Dictionary = {
 	Constants.EFFECT_BLIND: "resist_blind",
 	Constants.EFFECT_CONFUSED: "resist_confu",
+	Constants.EFFECT_POISONED: "resist_pois",
 	Constants.EFFECT_AFRAID: "resist_fear",
 	Constants.EFFECT_STUNNED: "resist_stun",
 	Constants.EFFECT_SLOW: "free_act",

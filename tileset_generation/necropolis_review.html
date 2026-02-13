@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Necropolis (Layer 4) — Tile Review</title>
+<style>
+body { background: #1a1812; color: #eee; font-family: monospace; padding: 20px; }
+h1 { color: #4a7f8f; border-bottom: 2px solid #4a7f8f; padding-bottom: 8px; }
+h2 { color: #9db4c8; margin-top: 30px; }
+.tile-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.tile-card {
+    background: #252218; border: 2px solid #3d3a2e; border-radius: 8px; padding: 12px;
+    text-align: center; min-width: 160px;
+}
+.tile-card.highlight { border-color: #4a7f8f; }
+.tile-card.approved { border-color: #33cc33; opacity: 0.7; }
+.tile-card img {
+    width: 128px; height: 128px; image-rendering: pixelated;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.tile-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.tile-card .name { font-size: 14px; font-weight: bold; color: #4a7f8f; }
+.raw-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.raw-card {
+    background: #252218; border: 2px solid #555; border-radius: 8px; padding: 12px;
+    text-align: center;
+}
+.raw-card img {
+    width: 256px; height: 256px; image-rendering: auto;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.raw-card .name { font-size: 14px; font-weight: bold; color: #9db4c8; }
+.info { color: #888; font-size: 13px; margin: 5px 0; }
+.status { color: #33cc33; font-weight: bold; }
+.status.pending { color: #ffaa33; }
+.mechanic { color: #4a7f8f; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Necropolis (Layer 4) — Ancient Ossuary</h1>
+<p class="info">Creative vision: Ancient ossuary where the dead were entombed then emptied by Sauron's necromancy. Walls faced with bones, cold spectral light from empty eye sockets.</p>
+<p class="info">Palette: dusty limestone grey (#3d3a2e), aged bone ivory (#c8b89d), cold cyan (#4a7f8f), decay brown (#6b5a42), spectral mist blue (#9db4c8)</p>
+<p class="info">Tileset location: Row 21, Cols 12-23 (core)</p>
+
+<h2>Phase 1: Anchor Tiles <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Wall (Light)</div>
+        <img src="layer_tiles/necropolis/wall_light.png" />
+        <div class="label">Row 21, Col 12</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Wall (Dark)</div>
+        <img src="layer_tiles/necropolis/wall_dark.png" />
+        <div class="label">Row 21, Col 13</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Floor (Light)</div>
+        <img src="layer_tiles/necropolis/floor_light.png" />
+        <div class="label">Row 21, Col 14</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Floor (Dark)</div>
+        <img src="layer_tiles/necropolis/floor_dark.png" />
+        <div class="label">Row 21, Col 15</div>
+    </div>
+</div>
+
+<h2>Phase 2: Doors (Programmatic) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Door Closed (Light)</div>
+        <img src="layer_tiles/necropolis/door_closed_light.png" />
+        <div class="label">Row 21, Col 16</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Closed (Dark)</div>
+        <img src="layer_tiles/necropolis/door_closed_dark.png" />
+        <div class="label">Row 21, Col 17</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Open (Light)</div>
+        <img src="layer_tiles/necropolis/door_open_light.png" />
+        <div class="label">Row 21, Col 18</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Door Open (Dark)</div>
+        <img src="layer_tiles/necropolis/door_open_dark.png" />
+        <div class="label">Row 21, Col 19</div>
+    </div>
+</div>
+
+<h2>Phase 3: Stairs (Recolored — Cold Cyan) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Stairs Down (Light)</div>
+        <img src="layer_tiles/necropolis/stairs_down_light.png" />
+        <div class="label">Row 21, Col 20</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Down (Dark)</div>
+        <img src="layer_tiles/necropolis/stairs_down_dark.png" />
+        <div class="label">Row 21, Col 21</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Up (Light)</div>
+        <img src="layer_tiles/necropolis/stairs_up_light.png" />
+        <div class="label">Row 21, Col 22</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stairs Up (Dark)</div>
+        <img src="layer_tiles/necropolis/stairs_up_dark.png" />
+        <div class="label">Row 21, Col 23</div>
+    </div>
+</div>
+
+<h2>Phase 4: Environmental Tiles <span class="status pending">REVIEW</span></h2>
+
+<h3 style="color: #4a7f8f;">Procedural (on floor base)</h3>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Bone Dust (Light)</div>
+        <img src="layer_tiles/necropolis/bone_dust_light.png" />
+        <div class="mechanic">Replaces vine_floor — 1.5x move cost</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Bone Dust (Dark)</div>
+        <img src="layer_tiles/necropolis/bone_dust_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Grave Miasma (Light)</div>
+        <img src="layer_tiles/necropolis/grave_miasma_light.png" />
+        <div class="mechanic">Replaces poison_stream — necrotic damage</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Grave Miasma (Dark)</div>
+        <img src="layer_tiles/necropolis/grave_miasma_dark.png" />
+    </div>
+</div>
+
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Burial Urn (Light)</div>
+        <img src="layer_tiles/necropolis/burial_urn_light.png" />
+        <div class="mechanic">Replaces thick_web_trap — trap</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Burial Urn (Dark)</div>
+        <img src="layer_tiles/necropolis/burial_urn_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Grave Offerings (Light)</div>
+        <img src="layer_tiles/necropolis/grave_offerings_light.png" />
+        <div class="mechanic">Replaces forest_floor — floor decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Grave Offerings (Dark)</div>
+        <img src="layer_tiles/necropolis/grave_offerings_dark.png" />
+    </div>
+</div>
+
+<h3 style="color: #9db4c8;">DALL-E (direct resize)</h3>
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Sealed Sarcophagus (Light)</div>
+        <img src="layer_tiles/necropolis/sealed_sarcophagus_light.png" />
+        <div class="mechanic">Replaces spider_web — blocks movement</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Sealed Sarcophagus (Dark)</div>
+        <img src="layer_tiles/necropolis/sealed_sarcophagus_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Carved Epitaph (Light)</div>
+        <img src="layer_tiles/necropolis/carved_epitaph_light.png" />
+        <div class="mechanic">Replaces tangled_roots — wall decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Carved Epitaph (Dark)</div>
+        <img src="layer_tiles/necropolis/carved_epitaph_dark.png" />
+    </div>
+</div>
+
+<h2>Raw DALL-E Output (256px preview)</h2>
+<div class="raw-row">
+    <div class="raw-card">
+        <div class="name">Wall</div>
+        <img src="layer_tiles/raw/necropolis/wall_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Floor</div>
+        <img src="layer_tiles/raw/necropolis/floor_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Sealed Sarcophagus</div>
+        <img src="layer_tiles/raw/necropolis/sealed_sarcophagus_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Carved Epitaph</div>
+        <img src="layer_tiles/raw/necropolis/carved_epitaph_1024.png" />
+    </div>
+</div>
+
+</body>
+</html>

@@ -858,6 +858,13 @@ func _load_layer_tile_kits() -> void:
 		if layer_name in layer_tile_kits:
 			layer_tile_kits[layer_name][8] = rubble_slots[layer_name]  # 8 = RUBBLE
 
+	# Layer-2 (lower halls): use valid baked floor overlay for BONE_PILE.
+	if "lower_halls" in layer_tile_kits:
+		layer_tile_kits["lower_halls"][24] = {"light": Vector2i(26, 20), "dark": Vector2i(27, 20)}  # 24 = BONE_PILE
+	# Necropolis (layer 4): old bones should render on necropolis floor (non-void atlas cells).
+	if "necropolis" in layer_tile_kits:
+		layer_tile_kits["necropolis"][24] = {"light": Vector2i(26, 21), "dark": Vector2i(27, 21)}  # 24 = BONE_PILE
+
 # ============================================================================
 # PUBLIC API
 # ============================================================================
@@ -947,6 +954,10 @@ func get_effect_coords(effect_id: int) -> Vector2i:
 
 func get_object_coords(object_id: int) -> Vector2i:
 	## Compatibility function - tries items then artifacts.
+	# Quest artifacts (Ring/Key/Map of Thrain/Erebor) intentionally overlap
+	# base object ids; force artifact visuals for this range.
+	if object_id >= 175 and object_id <= 180 and artifact_coords.has(object_id):
+		return artifact_coords[object_id]
 	if item_coords.has(object_id):
 		return item_coords[object_id]
 	if artifact_coords.has(object_id):

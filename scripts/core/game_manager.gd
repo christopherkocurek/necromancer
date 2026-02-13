@@ -129,6 +129,9 @@ func get_difficulty_description() -> String:
 	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
 	return mods.get("description", "")
 
+func is_hardcore_mode() -> bool:
+	return current_difficulty == Difficulty.IRONMAN
+
 func get_xp_multiplier() -> float:
 	var mods: Dictionary = DIFFICULTY_MODIFIERS.get(current_difficulty, DIFFICULTY_MODIFIERS[Difficulty.NORMAL])
 	return mods.get("xp_multiplier", 1.0)

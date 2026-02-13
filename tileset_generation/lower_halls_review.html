@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Lower Halls (Layer 2) — Tile Review</title>
+<style>
+body { background: #1a1a1a; color: #eee; font-family: monospace; padding: 20px; }
+h1 { color: #ff9933; border-bottom: 2px solid #ff9933; padding-bottom: 8px; }
+h2 { color: #cc7722; margin-top: 30px; }
+.tile-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.tile-card {
+    background: #222; border: 2px solid #444; border-radius: 8px; padding: 12px;
+    text-align: center; min-width: 160px;
+}
+.tile-card.highlight { border-color: #33cc33; }
+.tile-card.approved { border-color: #33cc33; opacity: 0.7; }
+.tile-card img {
+    width: 128px; height: 128px; image-rendering: pixelated;
+    border: 1px solid #555; display: block; margin: 8px auto;
+}
+.tile-card .label { font-size: 12px; color: #aaa; margin-top: 4px; }
+.tile-card .name { font-size: 14px; font-weight: bold; color: #ff9933; }
+.raw-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.raw-card {
+    background: #222; border: 2px solid #666; border-radius: 8px; padding: 12px;
+    text-align: center;
+}
+.raw-card img {
+    width: 256px; height: 256px; image-rendering: auto;
+    border: 1px solid #555; display: block; margin: 8px auto;
+}
+.raw-card .name { font-size: 14px; font-weight: bold; color: #cc7722; }
+.info { color: #888; font-size: 13px; margin: 5px 0; }
+.status { color: #33cc33; font-weight: bold; }
+.mechanic { color: #ff6666; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Lower Halls (Layer 2) — Orc Military Garrison</h1>
+<p class="info">Creative vision: Crude lashed wood, hanging racks of raw/rotting meat, military, stone + chopped wood, rough wrought iron, soot, war banners, crude iron fixtures</p>
+<p class="info">Palette: dark grey stone, rough-hewn brown wood, sooty black iron, amber torchlight</p>
+<p class="info">Tileset location: Row 20, Cols 12-23 (core) + new env tile slots</p>
+
+<h2>Phase 1: Anchor Tiles <span class="status">✓ APPROVED</span></h2>
+<div class="tile-row">
+    <div class="tile-card approved">
+        <div class="name">Wall (Light)</div>
+        <img src="layer_tiles/lower_halls/wall_light.png" />
+        <div class="label">Row 20, Col 12</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Wall (Dark)</div>
+        <img src="layer_tiles/lower_halls/wall_dark.png" />
+        <div class="label">Row 20, Col 13</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Floor (Light)</div>
+        <img src="layer_tiles/lower_halls/floor_light.png" />
+        <div class="label">Row 20, Col 14</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Floor (Dark)</div>
+        <img src="layer_tiles/lower_halls/floor_dark.png" />
+        <div class="label">Row 20, Col 15</div>
+    </div>
+</div>
+
+<h2>Phase 2: Doors <span class="status">✓ APPROVED</span></h2>
+<div class="tile-row">
+    <div class="tile-card approved">
+        <div class="name">Door Closed (Light)</div>
+        <img src="layer_tiles/lower_halls/door_closed_light.png" />
+        <div class="label">Row 20, Col 16</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Door Closed (Dark)</div>
+        <img src="layer_tiles/lower_halls/door_closed_dark.png" />
+        <div class="label">Row 20, Col 17</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Door Open (Light)</div>
+        <img src="layer_tiles/lower_halls/door_open_light.png" />
+        <div class="label">Row 20, Col 18</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Door Open (Dark)</div>
+        <img src="layer_tiles/lower_halls/door_open_dark.png" />
+        <div class="label">Row 20, Col 19</div>
+    </div>
+</div>
+
+<h2>Phase 3: Stairs <span class="status">✓ APPROVED</span></h2>
+<div class="tile-row">
+    <div class="tile-card approved">
+        <div class="name">Stairs Down (Light)</div>
+        <img src="layer_tiles/lower_halls/stairs_down_light.png" />
+        <div class="label">Row 20, Col 20</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Stairs Down (Dark)</div>
+        <img src="layer_tiles/lower_halls/stairs_down_dark.png" />
+        <div class="label">Row 20, Col 21</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Stairs Up (Light)</div>
+        <img src="layer_tiles/lower_halls/stairs_up_light.png" />
+        <div class="label">Row 20, Col 22</div>
+    </div>
+    <div class="tile-card approved">
+        <div class="name">Stairs Up (Dark)</div>
+        <img src="layer_tiles/lower_halls/stairs_up_dark.png" />
+        <div class="label">Row 20, Col 23</div>
+    </div>
+</div>
+
+<h2>Phase 4: Environmental Tiles — NEW (review needed)</h2>
+
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Pool of Filth (Light)</div>
+        <img src="layer_tiles/lower_halls/pool_of_filth_light.png" />
+        <div class="mechanic">Replaces vine_floor — 1.5x move cost</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Pool of Filth (Dark)</div>
+        <img src="layer_tiles/lower_halls/pool_of_filth_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Pit Fire (Light)</div>
+        <img src="layer_tiles/lower_halls/pit_fire_light.png" />
+        <div class="mechanic">Replaces poison_stream — fire dmg (unresistible)</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Pit Fire (Dark)</div>
+        <img src="layer_tiles/lower_halls/pit_fire_dark.png" />
+    </div>
+</div>
+
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Crude Barricade (Light)</div>
+        <img src="layer_tiles/lower_halls/crude_barricade_light.png" />
+        <div class="mechanic">Replaces spider_web — blocks movement</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Crude Barricade (Dark)</div>
+        <img src="layer_tiles/lower_halls/crude_barricade_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Warg Trap (Light)</div>
+        <img src="layer_tiles/lower_halls/warg_trap_light.png" />
+        <div class="mechanic">Replaces thick_web_trap — iron jaw trap</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Warg Trap (Dark)</div>
+        <img src="layer_tiles/lower_halls/warg_trap_dark.png" />
+    </div>
+</div>
+
+<div class="tile-row">
+    <div class="tile-card highlight">
+        <div class="name">Stacked Crates (Light)</div>
+        <img src="layer_tiles/lower_halls/stacked_crates_light.png" />
+        <div class="mechanic">Replaces tangled_roots — wall decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Stacked Crates (Dark)</div>
+        <img src="layer_tiles/lower_halls/stacked_crates_dark.png" />
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Garrison Debris (Light)</div>
+        <img src="layer_tiles/lower_halls/garrison_debris_light.png" />
+        <div class="mechanic">Replaces forest_floor — floor decoration</div>
+    </div>
+    <div class="tile-card highlight">
+        <div class="name">Garrison Debris (Dark)</div>
+        <img src="layer_tiles/lower_halls/garrison_debris_dark.png" />
+    </div>
+</div>
+
+<h2>Raw DALL-E Output (256px)</h2>
+<div class="raw-row">
+    <div class="raw-card">
+        <div class="name">Wall</div>
+        <img src="layer_tiles/raw/lower_halls/wall_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Floor</div>
+        <img src="layer_tiles/raw/lower_halls/floor_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Pool of Filth</div>
+        <img src="layer_tiles/raw/lower_halls/pool_of_filth_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Pit Fire</div>
+        <img src="layer_tiles/raw/lower_halls/pit_fire_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Crude Barricade</div>
+        <img src="layer_tiles/raw/lower_halls/crude_barricade_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Warg Trap</div>
+        <img src="layer_tiles/raw/lower_halls/warg_trap_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Stacked Crates</div>
+        <img src="layer_tiles/raw/lower_halls/stacked_crates_1024.png" />
+    </div>
+    <div class="raw-card">
+        <div class="name">Garrison Debris</div>
+        <img src="layer_tiles/raw/lower_halls/garrison_debris_1024.png" />
+    </div>
+</div>
+
+</body>
+</html>

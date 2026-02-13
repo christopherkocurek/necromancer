@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tier 8 Monster Review — NPC Hallucinations</title>
+<style>
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+h1 { color: #4ade80; text-align: center; }
+h2 { color: #ffd93d; margin-top: 40px; }
+.subtitle { color: #888; text-align: center; font-size: 14px; margin-top: -10px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto; }
+.card { background: #16213e; border-radius: 12px; padding: 20px; text-align: center; border: 2px solid #333; }
+.card.wizard { border-color: #9b59b6; }
+.card.elf { border-color: #3498db; }
+.card.dwarf { border-color: #e67e22; }
+.card.creature { border-color: #27ae60; }
+.card.fixed { border-color: #ffd93d; }
+.name { font-size: 18px; font-weight: bold; color: #ffd93d; margin-bottom: 5px; }
+.id { color: #888; font-size: 12px; }
+.sprites { display: flex; justify-content: center; gap: 20px; margin: 15px 0; }
+.sprite-box { text-align: center; }
+.sprite-box img { width: 128px; height: 128px; image-rendering: pixelated; border: 1px solid #444; }
+.sprite-box .label { font-size: 11px; color: #888; margin-top: 4px; }
+.raw-preview { margin: 10px 0; }
+.raw-preview img { width: 200px; height: 200px; border: 1px solid #333; border-radius: 8px; }
+.stats { font-size: 12px; color: #aaa; margin-top: 8px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+.tag-wizard { background: #9b59b633; color: #9b59b6; }
+.tag-elf { background: #3498db33; color: #3498db; }
+.tag-dwarf { background: #e67e2233; color: #e67e22; }
+.tag-creature { background: #27ae6033; color: #27ae60; }
+.tag-frag { background: #ffd93d33; color: #ffd93d; }
+.tag-merge { background: #e74c3c33; color: #e74c3c; }
+.tag-magenta { background: #ff00ff33; color: #ff69b4; }
+.note { font-size: 12px; color: #aaa; margin-top: 8px; font-style: italic; }
+.summary { background: #16213e; border-radius: 12px; padding: 20px; max-width: 800px; margin: 30px auto; }
+</style>
+</head>
+<body>
+<h1>Tier 8 — NPC Hallucination Creatures</h1>
+<p class="subtitle">10 iconic Middle-earth figures — non-combat encounters</p>
+
+<div class="grid">
+
+<div class="card wizard">
+  <div class="name">Gandalf the Grey</div>
+  <div class="id">#301 — Wandering Wizard</div>
+  <span class="tag tag-wizard">WIZARD</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_301_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 19.8% | 3 components, kept 2 | final 26.9%</div>
+</div>
+
+<div class="card elf">
+  <div class="name">Thranduil, Elvenking</div>
+  <div class="id">#302 — Woodland Elf King</div>
+  <span class="tag tag-elf">ELF</span>
+  <span class="tag tag-frag">FRAG=0 (14 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_302_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 44.1% | 14 fragments, all kept | final 45.9%</div>
+</div>
+
+<div class="card elf">
+  <div class="name">Galadriel, Lady of Light</div>
+  <div class="id">#303 — Radiant Elven Queen</div>
+  <span class="tag tag-elf">ELF</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_303_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 30.5% | 1 clean component | final 42.0%</div>
+</div>
+
+<div class="card elf">
+  <div class="name">Elrond Half-elven</div>
+  <div class="id">#304 — Elf Lord of Rivendell</div>
+  <span class="tag tag-elf">ELF</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_304_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 73.1% | 1 clean component | final 72.3%</div>
+  <div class="note">Best extraction of the tier — dark blue robes on green BG = excellent contrast</div>
+</div>
+
+<div class="card dwarf">
+  <div class="name">Thorin Oakenshield</div>
+  <div class="id">#305 — Dwarf King in Exile</div>
+  <span class="tag tag-dwarf">DWARF</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_305_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 60.9% | 1 clean component | final 63.4%</div>
+</div>
+
+<div class="card creature">
+  <div class="name">Beorn the Skinchanger</div>
+  <div class="id">#306 — Bear-Man</div>
+  <span class="tag tag-creature">MAN</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_306_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 46.0% | 1 clean component | final 60.2%</div>
+</div>
+
+<div class="card wizard">
+  <div class="name">Radagast the Brown</div>
+  <div class="id">#307 — Woodland Wizard</div>
+  <span class="tag tag-wizard">WIZARD</span>
+  <span class="tag tag-frag">FRAG=0 (6 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_307_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 50.8% | 6 fragments, all kept | final 52.1%</div>
+</div>
+
+<div class="card creature">
+  <div class="name">Eagle of the Misty Mountains</div>
+  <div class="id">#308 — Great Eagle</div>
+  <span class="tag tag-creature">BEAST</span>
+  <span class="tag tag-frag">FRAG=0 (6 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_308_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 22.0% | 6 fragments, all kept | final 25.4%</div>
+</div>
+
+<div class="card creature">
+  <div class="name">Great Elk of Mirkwood</div>
+  <div class="id">#309 — Majestic Forest Elk</div>
+  <span class="tag tag-creature">BEAST</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_309_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 59.0% | 1 clean component | final 59.0%</div>
+</div>
+
+<div class="card fixed">
+  <div class="name">Ent of Fangorn</div>
+  <div class="id">#310 — Living Tree Shepherd</div>
+  <span class="tag tag-creature">TREE</span>
+  <span class="tag tag-magenta">MAGENTA BG</span>
+  <span class="tag tag-merge">COLOR_MERGE</span>
+  <span class="tag tag-frag">FRAG=0</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_310_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 6.6% → COLOR_MERGE +27.7% → final 36.5%</div>
+  <div class="note">Green tree on green BG = 1.3% rembg. Switched to magenta BG + COLOR_MERGE.</div>
+</div>
+
+</div>
+
+<div class="summary">
+  <h2>Tier 8 Summary</h2>
+  <p><strong>10 NPC hallucination monsters.</strong> All generated on green BG except Ent (magenta).</p>
+  <ul>
+    <li><strong>#301 Gandalf</strong> — 26.9% final. Gray wizard.</li>
+    <li><strong>#302 Thranduil</strong> — 45.9% final, 14 fragments all kept. Green armor on green BG fragmented.</li>
+    <li><strong>#303 Galadriel</strong> — 42.0% final. Radiant white/silver elven queen.</li>
+    <li><strong>#304 Elrond</strong> — 72.3% final. Best of the tier. Dark blue robes = great contrast.</li>
+    <li><strong>#305 Thorin</strong> — 63.4% final. Stocky dwarf king, clean extraction.</li>
+    <li><strong>#306 Beorn</strong> — 60.2% final. Massive bear-man in leather.</li>
+    <li><strong>#307 Radagast</strong> — 52.1% final, 6 fragments all kept. Eccentric brown wizard.</li>
+    <li><strong>#308 Eagle</strong> — 25.4% final, 6 fragments all kept. Golden-brown feathers.</li>
+    <li><strong>#309 Great Elk</strong> — 59.0% final. Majestic forest elk with antlers.</li>
+    <li><strong>#310 Ent</strong> — 36.5% final. Magenta BG + COLOR_MERGE recovered bark body (was 1.3% on green).</li>
+  </ul>
+  <p><strong>This is the FINAL TIER.</strong> All 87 monster sprites are now generated and processed.</p>
+</div>
+
+</body>
+</html>

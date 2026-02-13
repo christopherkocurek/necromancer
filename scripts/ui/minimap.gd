@@ -65,7 +65,7 @@ func refresh() -> void:
 
 			var tile: int = level.get_tile(pos)
 			var is_visible: bool = level.is_tile_visible(pos)
-			var col: Color = _tile_color(tile, is_visible)
+			var col: Color = _tile_color(pos, tile, is_visible)
 
 			# Draw 2x2 pixel block
 			var px: int = x * TILE_PX
@@ -106,7 +106,7 @@ func _draw_dot(pos: Vector2i, col: Color) -> void:
 			if px + dx < _image.get_width() and py + dy < _image.get_height():
 				_image.set_pixel(px + dx, py + dy, col)
 
-func _tile_color(tile: int, is_visible: bool) -> Color:
+func _tile_color(pos: Vector2i, tile: int, is_visible: bool) -> Color:
 	match tile:
 		Level.Tile.VOID:
 			return COL_VOID
@@ -127,6 +127,10 @@ func _tile_color(tile: int, is_visible: bool) -> Color:
 		Level.Tile.FORGE, Level.Tile.FORGE_ENCHANTED, Level.Tile.FORGE_UNIQUE:
 			return COL_FORGE
 		Level.Tile.TRAP:
+			if level and level.has_method("is_trap_revealed") and bool(level.is_trap_revealed(pos)):
+				return COL_TRAP if is_visible else COL_FLOOR_EXPLORED
+			return COL_FLOOR if is_visible else COL_FLOOR_EXPLORED
+		Level.Tile.TRAP_TRIGGERED:
 			return COL_TRAP if is_visible else COL_FLOOR_EXPLORED
 		Level.Tile.RUBBLE:
 			return COL_FLOOR if is_visible else COL_FLOOR_EXPLORED

@@ -49,6 +49,7 @@ signal message_logged(text: String, color: Color)
 signal popup_requested(title: String, content: String)
 signal inventory_opened()
 signal inventory_closed()
+signal threat_summary_updated(level: String, ready: int, casters: int, seen: int)
 
 # Game state events
 signal game_started()
@@ -69,3 +70,9 @@ signal quest_updated(quest_state: int)
 signal quest_item_received(item_name: String)
 signal thrain_encountered()
 signal escape_sequence_started()
+
+# Telemetry/ops events
+signal forensic_event_recorded(category: String, severity: String, text: String, turn: int)
+signal chronicle_updated(entry_count: int)
+signal room_event_seeded(depth: int, room_id: int, seed: int, tags: Array)
+signal run_goal_completed(goal_id: String, description: String, tag: String)

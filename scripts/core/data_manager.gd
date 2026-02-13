@@ -1225,11 +1225,33 @@ func _validate_data() -> void:
 	# Spot-check critical content
 	var warnings: Array[String] = []
 
-	# Check for key monsters
-	var key_monsters := ["Morgoth, Lord of Darkness", "Orc", "Troll", "Warg", "Spider"]
-	for monster_name in key_monsters:
-		if not monsters.has(monster_name):
-			warnings.append("Missing key monster: " + monster_name)
+	# Check for a valid boss plus key monster families.
+	var has_end_boss: bool = false
+	for monster_name in monsters.keys():
+		var n: String = String(monster_name).to_lower()
+		if "necromancer" in n or n.begins_with("sauron"):
+			has_end_boss = true
+			break
+	if not has_end_boss:
+		warnings.append("Missing end boss entry (expected 'The Necromancer' or 'Sauron').")
+
+	var family_flags: Dictionary = {
+		"ORC": false,
+		"TROLL": false,
+		"SPIDER": false,
+	}
+	for mon in monsters.values():
+		if mon == null:
+			continue
+		if mon.has_flag("ORC"):
+			family_flags["ORC"] = true
+		if mon.has_flag("TROLL"):
+			family_flags["TROLL"] = true
+		if mon.has_flag("SPIDER"):
+			family_flags["SPIDER"] = true
+	for family in family_flags:
+		if not family_flags[family]:
+			warnings.append("Missing key monster family: " + family)
 
 	# Check for races
 	var expected_races := ["Elf", "Man", "Dwarf", "Hobbit"]
@@ -1258,10 +1280,9 @@ func _validate_data() -> void:
 func get_vaults_for_depth(depth: int) -> Array[VaultData]:
 	var valid_vaults: Array[VaultData] = []
 	for vault in vaults:
-		# vault_type determines the layer/type:
-		# 0 = any, 1+ = specific dungeon layers
-		# For now, allow all vaults with type <= depth
-		if vault.vault_type <= depth:
+		# vault_type is a category (normal/lesser/greater/transition/throne), rating is depth gate.
+		# Only include regular vault types here; greater/throne are handled elsewhere.
+		if vault.rating <= depth and vault.vault_type < 8:
 			valid_vaults.append(vault)
 	return valid_vaults
 

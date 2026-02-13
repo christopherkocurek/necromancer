@@ -10,17 +10,18 @@ Transform The Necromancer from a rough prototype into a polished, fun, balanced,
 - `/tileset-gen` — **REQUIRED** for any new tile/sprite additions. Invokes DALL-E generation pipeline with proper protocols (BG removal, HSV correction, tileset integration). If a boss, item, or terrain type needs a new sprite, invoke `/tileset-gen` to generate it. NEVER manually edit tileset PNGs.
 - `playtest_bot.gd` — Automated gameplay simulation (10-turn survival test)
 - `test_runner.gd` — 125 tests, 684 assertions (unit + integration + bot)
-- Sil-Q C reference: `~/dev/active/games/necromancer-master/` (READ-ONLY reference)
+- Sil-Q C reference: `~/dev/active/games/necromancer-master/` (READ-ONLY reference) or check my necromancer github repo for game design document or manual for visioning.
 
 ## Execution Model
 Run as autonomous mega-pass cycles. Each cycle:
 1. **Audit** — Run tests + bot, identify issues
 2. **Design** — Plan fixes using roguelike design principles
 3. **Implement** — Code changes in parallel streams
-4. **Test** — Run full test suite + bot after each stream
+4. **Test** — Run full test suite + bot after each stream (use all 4 bots as needed)
 5. **Verify** — Playtest bot confirms no regressions
 6. **Commit** — One commit per stream with descriptive message
-7. **Repeat** — Start next cycle with remaining items
+7. **Clean** — Remove unecessary code without accidentally deleting things the system needs
+8. **Repeat** — Start next cycle with remaining items
 
 ## Priority Tiers (execute in order)
 
@@ -37,25 +38,25 @@ Run as autonomous mega-pass cycles. Each cycle:
 - Ensure smithing materials spawn near forges (1-3 materials within 3 tiles of each forge)
 - Also spawn smithing materials as rare floor drops (5% of item spawns on floors with forges)
 - Port the FULL smithing recipe tree from the C version — do not simplify
-- Verify: Player can find materials, walk to forge, press F, and enhance a weapon
+- Verify: Player can find materials, walk to forge, press F, and either create new weapons & armor or reforge / reclaim - ENHANCE DOES NOT EXIST !
 **Files**: `dungeon_generator.gd`, `smithing_system.gd`, `data_manager.gd`, `smithing_panel.gd`
 
 #### 1.2 Weapon Evasion — Port Sil-Q Mechanic
 **Problem**: Weapons don't contribute to evasion. Parry ability is therefore broken/useless.
 **Solution**:
 - Reference Sil-Q source for the weapon evasion formula
-- In Sil-Q, melee weapons provide evasion bonus based on weapon weight and melee skill
+- In Sil-Q, melee weapons provide evasion bonus based on weapon weight and melee skill. Make sure all weapon ports -> are accurate
 - Implement: `weapon_evasion = weapon.pval * melee_skill / 10` or similar Sil-Q formula
 - Parry ability should multiply this: `parry_bonus = weapon_evasion * (1 + evasion_skill / 5)`
 - Display weapon evasion contribution in inventory tooltip
 **Files**: `player.gd` (evasion calculation ~line 1299), `inventory_panel.gd`
 
-#### 1.3 Secret Doors — Fix Depth 1-2 Spawn
+<!-- //#### 1.3 Secret Doors — Fix Depth 1-2 Spawn
 **Problem**: `mini(2, depth/3)` = 0 for depths 1-2. No secret doors on early floors.
 **Solution**: Change formula to `maxi(1, mini(3, 1 + depth / 3))` — always at least 1 secret door per floor
 - Bonus: Add a message when player finds one: "You discover a hidden passage!" in gold
 - Add a Shift+S search animation/delay (0.5s) for tactile feedback
-**Files**: `dungeon_generator.gd` (~line 573), `main.gd` (search action)
+**Files**: `dungeon_generator.gd` (~line 573), `main.gd` (search action)/// commented out because i actually like this implmeentation :p -->
 
 #### 1.4 Kill-Move Visual Bug Investigation
 **Problem**: Player reports moving into killed monster's tile on same turn when attacking up/diagonally.
@@ -74,11 +75,11 @@ Run as autonomous mega-pass cycles. Each cycle:
 
 #### 2.1 HUD Detection State — HIDDEN / ALERT / COMBAT
 **Problem**: No visible indicator of player's detection state. Can't tell when stealthing works.
-**Solution**: Add a prominent, always-visible status indicator to the HUD:
-- **HIDDEN** (green, pulsing glow) — No monsters have alertness > -5 within FOV
-- **ALERT** (yellow, static) — At least one monster has alertness > -5 but < 5
-- **COMBAT** (red, flashing) — At least one monster has alertness >= 5 and is hunting
-- Position: Top-center of screen or next to health orb. LARGE text, not subtle.
+**Solution**: Add a prominent, always-visible status indicator in the form of an EYE to the HUD in between the HP and VOICE UI features:
+- **HIDDEN** (Eye is closed) — No monsters have alertness > -5 within FOV
+- **ALERT** (eye is halfway open) — At least one monster has alertness > -5 but < 5
+- **COMBAT** (eye is open) — At least one monster has alertness >= 5 and is hunting
+- Position: TNext to health orb. LARGE text, not subtle.
 - Also show: Small stealth score number next to indicator (e.g., "HIDDEN [14]")
 - Update every turn by scanning all monsters in FOV range
 **Files**: `hud.gd`, `player.gd`, `monster.gd`
@@ -106,6 +107,12 @@ Run as autonomous mega-pass cycles. Each cycle:
 - Consider: Stealth kill XP bonus (+25% for killing unwary monsters) to reward the playstyle
 - Consider: "Shadow Walk" ability (stealth tree) — teleport to unwary monster's tile for guaranteed backstab
 
+#### 2.4 LIGHTING ECOLOGY FUnctions and feels like ''breathing''
+**Verify**: are we having a light ecology like sil-q C version of necromancer in the godot build?
+- Some rooms feel overlit. it could just be upper floors.
+- need to make sure the increasing danger of darkness is balanced with increasing accessibility of light radius via skills or items
+- can add more mechanics or ideas into light ecology - this is a fun, differentiated and very tolkien concept!
+
 ---
 
 ### TIER 3: GAME BALANCE — MAKE IT EASIER & MORE FUN (Cycle 3)
@@ -113,21 +120,19 @@ Run as autonomous mega-pass cycles. Each cycle:
 
 #### 3.1 Early Game Difficulty Reduction (Floors 1-5)
 **Changes**:
-- **Starting XP**: Increase from 5000 to 7500 (lets players buy 2-3 early skills)
-- **Floor 1-3 monster count**: Reduce by 25% (multiply target by 0.75 for depths 1-3)
+- **Starting XP**: Increase from 5000 to 7000 (lets players buy 2-3 early skills)
 - **Floor 1-2 monster stats**: Cap monster melee_bonus at +2 for depth 1, +4 for depth 2
 - **Guaranteed equipment**: Spawn 1 weapon + 1 armor piece per floor for depths 1-3
 - **Starting food**: Ensure 3+ food items in starting inventory (prevent early starvation)
-- **Rest healing**: Increase from 1HP/4turns to 1HP/3turns (was already buffed from 1/10)
 - **Trap damage on floor 1**: Reduce to 1d2 (from 1d4 + depth/3)
 **Files**: `dungeon_generator.gd`, `player.gd`, `main.gd`, `constants.gd`
 
 #### 3.2 Item Scarcity Fix
 **Problem**: Not enough equipment by floor 3 vs Sil-Q experience.
 **Solution**:
-- Increase item spawn count by 40% for floors 1-6
+- investigate if this is true - if it is, balance to match sil-q experience. 
 - Add guaranteed equipment drops: 1 weapon OR armor per floor (floors 1-10)
-- Monster drops: 30% chance to drop an item on kill (currently 0% — monsters drop nothing!)
+- Monster drops: 10% chance to drop an item on kill (currently 0% — monsters drop nothing!)
 - Add item quality scaling: deeper floors spawn better base items
 **Files**: `dungeon_generator.gd`, `monster.gd` (add death drop logic), `data_manager.gd`
 
@@ -140,12 +145,14 @@ Run as autonomous mega-pass cycles. Each cycle:
 - Magic item chance: 15% of spawned equipment gets an ego prefix (scales with depth: +2% per depth)
 - Cursed items: 5% chance, negative ego (-1 to stat), removable at forge
 - Display: Ego items in blue text, cursed in red
+- crosscheck this system with SMITHING. EGO/MAGIC RANDOM SPAWNS AND SMITHING MUST WORK TOGETHER - I.E., MUST FUNCTION TOGETHER. SMITHING MUST BE THE WAY TO GET THE BEST/MOST POWERFUL GEAR RELIABLy.
+- no soft upgrade item system like sil-q. in sil-q you had all these different parts of a weapon/armor that could be improved. evasion. protection die. damage. atk. we need more of that in here so that as you go deeper you're getting empirically better gear, even if it isn't magic.
 **Files**: `data_manager.gd` (new ego generation), `dungeon_generator.gd`, `item.gd`, `inventory_panel.gd`
 
 #### 3.4 Monster Drop System
 **Problem**: Monsters currently drop NOTHING on death. Zero loot. This removes a core roguelike dopamine loop.
 **Solution**:
-- Base drop chance: 20% for normal monsters, 50% for uniques/bosses, 100% for named bosses
+- Base drop chance: 5-10% for normal monsters, 50% for uniques/bosses, 100% for named bosses
 - Drop table: weighted by monster depth/rarity
   - Common: food, herbs, potions
   - Uncommon: equipment, scrolls
@@ -160,7 +167,7 @@ Run as autonomous mega-pass cycles. Each cycle:
 - **Level-up notification**: When player spends XP on a skill, show dramatic "SKILL UP!" floater
 - **Kill streak bonus**: 3+ kills in a row grants temporary +1 attack (visible buff, 10 turns)
 - **Equipment comparison**: Show green/red arrows when picking up items vs current equipment
-- **XP milestone rewards**: At 1000, 3000, 6000, 10000 XP spent total, grant a free ability point
+- **XP milestone rewards**: At 1000, 3000, 6000, 10000 XP spent total, should we grant a free ability point ? or does this get TOO overpowered?
 - **Power scaling feedback**: Show "Effective Power: X" in character sheet (composite of attack + evasion + abilities)
 **Files**: `player.gd`, `hud.gd`, `inventory_panel.gd`, `floater_manager.gd`
 
@@ -178,15 +185,16 @@ Run as autonomous mega-pass cycles. Each cycle:
 - Stopping a song is free action
 - Starting a song costs 1 turn
 
-**Song List** (replace or augment existing Lore abilities):
+**Song List** (replace or augment existing Lore abilities). . Lore needs update to design & balance. here are ideas:
 1. **Chant of Silence** (Lore 3) — Reduce all monster perception by 3 within radius 5. Drain: 1/turn. Paradox: reduces noise but the chant itself makes some noise.
-2. **Chant of Endurance** (Lore 5) — Regenerate 1 HP every 3 turns. Drain: 2/turn.
+2. **Chant of Endurance** (Lore 5) — Regenerate 1 HP every 3 turns. Drain: 2/turn. This is like ''song of healing'' from Sil. If we have this we'd take healing out of herbcraft. 
 3. **Chant of Mastery** (Lore 7) — Reduce all monster morale by 15 within radius 4. Drain: 2/turn.
 4. **Chant of Battle** (Lore 9) — +2 attack, +1 damage die. Drain: 3/turn.
 5. **Chant of the Valar** (Lore 12) — All nearby allies (if any) get +2 to all stats. Drain: 4/turn.
 6. **Chant of Banishment** (Lore 15) — Undead within radius 3 take 1d4 damage per turn. Drain: 5/turn.
+7. **Chant of Memory** Deep Memory (Lore 2) - map around you unveils - distance you can see is based on lore skill (look at sil-q for scaling here)
 
-**Keep as instant-cast**: Word of Command, Word of Opening, Word of Shutting, Deadly Lore, Herbcraft (passive), Device Mastery (passive), Deep Memory (passive)
+**Keep as instant-cast**: Word of Command, Word of Opening, Word of Shutting, Deadly Lore, Herbcraft (passive), Device Mastery (passive), 
 
 **Voice pool**: Increase max_voice formula to support sustained drain. Current `20 * 1.2^Grace` is fine if Grace can reach 5-8.
 
@@ -201,6 +209,8 @@ Run as autonomous mega-pass cycles. Each cycle:
 - Reduce Herbcraft bonus from 2x to 1.5x healing
 - Add alternative healing: rest healing scales with Will skill (+1 HP per 2 Will per rest cycle)
 - This way non-Lore builds have a viable healing path too
+- HUMAN AUTHOR SAYS: I THINK THAT IF YOU USE CHANT OF ENDURANCE AS YOUR LORE BASED ACTIVE HEALING. YOU CAN HAVE HERBCRAFT BE A 3 POINT SKILL THAT SPEEDS UP YOUR HEALING --WHILE RESTED-- BY 50%. SO ESSENTIALLY THIS BECOMES A PASSIVE HEALING BUFF THAT REDUCES CONSUMPTION OF FOOD / LIGHT / DECREASES DANGER OF HEALING PASSIVELY. while you keep rest of hercraft components. i like that!
+- this is VERY UNRESOLVED. YOU NEED TO THEORYCRAFT AND GO FOR MAX FUN. I THINK MAYBE MOVING THIS PASSIVE HEAL REST BOOST TO WILL MAKES SENSE - MAYBE EVEN HUNTING - IM NOT SURE. COME UP WITH SOMETHING DELIGHTFUL AS A SOLUTION!!! THINK ABOUT THIS FROM LOTR. ELROND SINGS TO HEAL - LEVEL 5 LORE. ARAGORN HAS HERBCRAFT. LEVEL 2 LORE. NOT AS GOOD !!!! SO YEAH THINK ON IT
 **Files**: `ability_system.gd`, `consumable_system.gd`, `player.gd`
 
 ---
@@ -213,13 +223,15 @@ Run as autonomous mega-pass cycles. Each cycle:
 
 | Floor | Boss Name | Layer | Mechanics |
 |-------|-----------|-------|-----------|
-| 3 | **Ungoliant's Broodmother** | Outer Pits | Spider queen. Spawns 2 spiderlings per turn. Web terrain AOE. Poison bite 2d6. Weak to fire. |
+| 3 | **Shelob's Daughter** | Outer Pits | Spider queen. Spawns 2 spiderlings per turn. Web terrain AOE. Poison bite 2d6. Weak to fire (great, but we have no fire skills/abilities/droppables at this point so the vuln doesn't matter. design a better vuln or introduce fire somehwere.) |
 | 6 | **Bolg the Orc-Captain** | Lower Halls | Armored orc. Rallies nearby orcs (+morale). Shield bash stun. Drops a guaranteed ego weapon. |
 | 9 | **The Wight-Lord of Rhudaur** | Dark Halls | Undead wraith. Darkness aura (FOV -2). Life drain attack. Cold damage AOE. Immune to poison/fear. |
 | 12 | **Khamul the Shadow** | Necropolis | Nazgul lieutenant. Fear aura (Will save or flee). Morgul blade (permanent -1 max HP). Teleports when below 30% HP. |
 | 15 | **Thuringwethil** | Pits of Despair | Vampire bat form. Flight (ignores terrain). Blood drain heals her. Shriek stun AOE. Transforms between bat and humanoid. |
 | 18 | **The Mouth of Sauron** | Inner Sanctum | Dark sorcerer. Casts all spell types. Summons 1-2 elites per 5 turns. Will-based attacks. Drops Rod of Istari piece. |
 | 20 | **Sauron (The Necromancer)** | Throne Room | Final boss. Already exists. Verify he works correctly. |
+
+THIS IS A GOOD START BUT IT DOESN'T CREATE RNG VARIETY. WE NEED 3 POTENTIAL BOSSES PER LAYER TRANSITION, OUTSIDE OF SAURON. HE'S THE BOSS ONT HE SAURON LAYER. hehe
 
 **Implementation**:
 - Add boss monster definitions to `monster.txt` (IDs 88-94)
@@ -284,7 +296,7 @@ Run as autonomous mega-pass cycles. Each cycle:
 **Implementation**: Add `_generate_layer_rooms()` that selects room generation algorithm based on layer.
 
 #### 7.2 Environmental Storytelling
-- **Readable objects**: Scattered notes, carvings, graffiti that hint at lore
+- **Readable objects**: Scattered notes, carvings, graffiti that hint at lore. create 300 readable snippets with procedural generation.
   - "A crude orc marking: three slashes. A warning."
   - "Elvish script, barely legible: 'Turn back, mortal.'"
 - **Visual set pieces**: Pre-built template vignettes (torture room, abandoned camp, shrine)
@@ -308,10 +320,10 @@ Run mathematical simulations (can be pseudocode/spreadsheet logic in a subagent)
 2. **Stealth Assassin** (DEX/Stealth focus): Can they sneak to depth 15 and escape?
 3. **Lore Scholar** (GRA/Lore focus): Can sustained songs carry them to victory?
 4. **Balanced Explorer** (even stats): Is generalist viable?
-5. **Smithing Specialist** (STR/Smithing): Can forged equipment carry them?
+5. **Smithing Specialist** (GRA/Smithing): Can forged equipment carry them? (THIS IS A PROBABLY NOT, SO THINK ABOUT IT)
 
 **For each build, calculate**:
-- Expected XP per floor (kills + lore objects)
+- Expected XP per floor (kills + lore objects) -> do we need to make more XP flow for seeing monsters
 - Expected skill/ability purchases by floor 5, 10, 15, 20
 - Expected equipment quality by floor 5, 10, 15
 - Expected combat outcome vs average monster per floor
@@ -319,13 +331,6 @@ Run mathematical simulations (can be pseudocode/spreadsheet logic in a subagent)
 - Estimated death rate per floor
 
 **Output**: A balance report with specific recommended adjustments.
-
-#### 8.2 Difficulty Modes
-Add selectable difficulty at character creation:
-- **Easy**: +50% XP, -25% monster damage, +25% item spawns, display all traps
-- **Normal**: Current (after Tier 3 balance adjustments)
-- **Hard**: Original Sil-Q difficulty (-20% items, +25% monster perception, no pity spawns)
-- **Ironman**: Hard + no rest healing, hunger drains faster, permadeath enforced (it already is, but label it)
 
 **Files**: `character_creation.gd`, `game_manager.gd`, `constants.gd`, all combat/spawning files
 
@@ -352,6 +357,28 @@ godot --path ~/dev/active/games/necromancer-godot --headless --quit-after 3
 - Tier 5: test_boss_spawn_every_3_floors, test_boss_special_abilities
 - Tier 8: test_difficulty_mode_modifiers
 
+bash
+  # Full suite: unit + gameplay + bot (319 tests, ~21K assertions)
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd
+
+  # Unit + integration only (fast, ~10s)
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd -- --unit-only
+
+  # Gameplay scenario tests only (~80s, generates dungeons)
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd -- --gameplay-only
+
+  # Fuzz bot: 500+ random actions, finds crashes, writes report to user://fuzz_crash_report.txt
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd -- --fuzz
+
+  # Survival bot: intelligent 20-floor auto-play with per-floor telemetry
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd -- --survival
+
+  # Legacy bot playtest (10-turn survival smoke test)
+  godot --path ~/dev/active/games/necromancer-godot --headless --script res://test_runner.gd -- --bot-only
+
+  After each stream: Run --unit-only (fast gate). Before final commit: run full suite.
+  After risky changes (combat, inventory, dungeon gen): also run --fuzz for crash detection.
+
 ## Commit Protocol
 - One commit per stream/tier completion
 - Format: `Session S Stream [X]: [Theme] — [1-line summary]`
@@ -374,7 +401,7 @@ godot --path ~/dev/active/games/necromancer-godot --headless --quit-after 3
 
 ## Success Criteria
 After all tiers complete:
-1. All existing tests pass (125+)
+1. All existing tests pass (319+)
 2. New tests pass (30+ new tests across tiers)
 3. Bot playtest survives 10 turns without crash
 4. Smithing works end-to-end
@@ -382,5 +409,3 @@ After all tiers complete:
 6. At least 1 ego item spawns per 3 floors
 7. Bosses spawn at depths 3,6,9,12,15,18
 8. Active songs toggle on/off correctly
-9. Difficulty modes selectable at character creation
-10. Secret doors appear on floor 1

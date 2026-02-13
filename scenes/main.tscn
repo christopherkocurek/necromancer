@@ -1,22 +1,22 @@
-[gd_scene load_steps=5 format=3 uid="uid://bqm4n7k2p8x1v"]
+[gd_scene format=3 uid="uid://bqm4n7k2p8x1v"]
 
-[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Script" path="res://scripts/systems/turn_system.gd" id="2_turn"]
-[ext_resource type="Script" path="res://scripts/systems/floater_manager.gd" id="3_floater"]
-[ext_resource type="PackedScene" uid="uid://bhx9k2v4m1pqr" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" uid="uid://dfryc6e7iu0do" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://dgo7ii5gjmw2b" path="res://scripts/systems/turn_system.gd" id="2_turn"]
+[ext_resource type="Script" uid="uid://oout6ur4jf35" path="res://scripts/systems/floater_manager.gd" id="3_floater"]
+[ext_resource type="PackedScene" uid="uid://bhyak2v4m1pqr" path="res://scenes/ui/hud.tscn" id="4_hud"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=261772415]
 script = ExtResource("1_main")
 
-[node name="LevelContainer" type="Node2D" parent="."]
+[node name="LevelContainer" type="Node2D" parent="." unique_id=1835824235]
 
-[node name="TurnSystem" type="Node" parent="."]
+[node name="TurnSystem" type="Node" parent="." unique_id=539339581]
 script = ExtResource("2_turn")
 
-[node name="FloaterManager" type="Node" parent="."]
+[node name="FloaterManager" type="Node" parent="." unique_id=1048489653]
 script = ExtResource("3_floater")
 
-[node name="HUD" parent="." instance=ExtResource("4_hud")]
+[node name="HUD" parent="." unique_id=797092818 instance=ExtResource("4_hud")]
 
-[node name="UILayer" type="CanvasLayer" parent="."]
+[node name="UILayer" type="CanvasLayer" parent="." unique_id=1353963873]
 layer = 10

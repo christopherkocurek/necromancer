@@ -77,25 +77,18 @@ func test_learn_sets_all_three_arrays():
 # COMBAT MODIFIER TESTS
 # ============================================================================
 
-func test_bane_bonus_formula():
-	# Bane: +log2(kill_count) for kills >= 2
-	# Simulating player.gd _get_bane_bonus()
-	assert_eq(_bane_bonus(0), 0, "0 kills = no bonus")
-	assert_eq(_bane_bonus(1), 0, "1 kill = no bonus")
-	assert_eq(_bane_bonus(2), 1, "2 kills = +1")
-	assert_eq(_bane_bonus(4), 2, "4 kills = +2")
-	assert_eq(_bane_bonus(8), 3, "8 kills = +3")
-	assert_eq(_bane_bonus(16), 4, "16 kills = +4")
-	assert_eq(_bane_bonus(3), 1, "3 kills = +1 (floor of log2)")
+func test_hunting_duel_attack_bonus_is_target_locked():
+	# New hunting loop: attack bonus applies only when target is marked quarry.
+	assert_eq(_hunting_duel_attack_bonus(true, 0), 2, "Marked target grants baseline +2 attack")
+	assert_eq(_hunting_duel_attack_bonus(true, 1), 3, "Focus stack adds +1 attack")
+	assert_eq(_hunting_duel_attack_bonus(true, 3), 5, "Max focus + baseline gives +5 attack")
+	assert_eq(_hunting_duel_attack_bonus(false, 3), 0, "Unmarked target gets no hunting attack bonus")
 
-func test_master_hunter_bonus_formula():
-	# Master Hunter: +MIN(kill_count, perception/2)
-	# Simulating player.gd _get_master_hunter_bonus()
-	assert_eq(_master_hunter_bonus(5, 6), 3, "5 kills, 6 perception = +3")
-	assert_eq(_master_hunter_bonus(1, 10), 1, "1 kill, 10 perception = +1")
-	assert_eq(_master_hunter_bonus(10, 4), 2, "10 kills, 4 perception = +2")
-	assert_eq(_master_hunter_bonus(0, 10), 0, "0 kills = 0")
-	assert_eq(_master_hunter_bonus(5, 0), 1, "0 perception = +1 (per_cap floor at 1)")
+func test_hunting_duel_evasion_bonus_is_attacker_locked():
+	# New hunting loop: defensive bonus applies only vs marked quarry attacking you.
+	assert_eq(_hunting_duel_evasion_bonus(true, 0), 2, "Marked attacker grants baseline +2 evasion")
+	assert_eq(_hunting_duel_evasion_bonus(true, 2), 4, "Focus stacks add to marked-attacker evasion")
+	assert_eq(_hunting_duel_evasion_bonus(false, 2), 0, "No hunting evasion bonus vs non-marked attacker")
 
 func test_strength_in_adversity_formula():
 	# +1 per 10% HP below 50%
@@ -227,16 +220,15 @@ func test_smithing_enum_range():
 # HELPERS
 # ============================================================================
 
-func _bane_bonus(kill_count: int) -> int:
-	if kill_count < 2:
+func _hunting_duel_attack_bonus(is_marked_target: bool, focus_stacks: int) -> int:
+	if not is_marked_target:
 		return 0
-	return int(log(float(kill_count)) / log(2.0))
+	return 2 + maxi(0, focus_stacks)
 
-func _master_hunter_bonus(kill_count: int, perception: int) -> int:
-	if kill_count <= 0:
+func _hunting_duel_evasion_bonus(is_marked_attacker: bool, focus_stacks: int) -> int:
+	if not is_marked_attacker:
 		return 0
-	var per_cap: int = maxi(1, perception / 2)
-	return mini(kill_count, per_cap)
+	return 2 + maxi(0, focus_stacks)
 
 func _adversity_bonus(current_hp: int, max_hp: int) -> int:
 	if max_hp <= 0:

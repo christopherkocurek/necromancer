@@ -42,6 +42,11 @@ cd necromancer-godot
 | `1-4` | Ability hotkey quick-cast |
 | `Shift+1-4` | Bind ability to hotkey (in voice menu) |
 | `;` | Toggle stealth mode |
+| `Shift+F` | Defensive stance |
+| `Shift+P` | Ready parry |
+| `Shift+H` | Mark quarry (Hunting) |
+| `Shift+X` | Expose weakness (Hunting) |
+| `Shift+E` | Exploit opening (Hunting) |
 | `D` | Disarm trap |
 
 ### Items & Consumables

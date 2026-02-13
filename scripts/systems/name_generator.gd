@@ -126,6 +126,57 @@ static var name_banks: Dictionary = {
 	},
 }
 
+static var procedural_syllables: Dictionary = {
+	"elf_lothlorien": {
+		"start": ["Ae", "Cele", "Elen", "Gal", "Lae", "Nim", "Sil", "Thal", "Taur", "Cal", "Mir", "Al"],
+		"mid": ["la", "ri", "wen", "dir", "dor", "nor", "lith", "riel", "adan", "mir", "thal", "eth", "ion"],
+		"end_male": ["ion", "dir", "dor", "las", "mir", "nor", "thil", "rand", "ron"],
+		"end_female": ["wen", "riel", "loth", "eth", "iel", "dis", "liel", "niel", "ia"],
+	},
+	"elf_rivendell": {
+		"start": ["El", "Fin", "Gil", "Glor", "Vor", "Ecth", "Ara", "Cal", "Lind", "Pen", "Tur", "Mag"],
+		"mid": ["ron", "dor", "gol", "dan", "riel", "dir", "wen", "nor", "las", "vorn", "eth", "mir"],
+		"end_male": ["dil", "ion", "dir", "dor", "gorn", "hir", "las", "ron"],
+		"end_female": ["wen", "riel", "eth", "iel", "dis", "mir", "lin", "a"],
+	},
+	"elf_greenwood": {
+		"start": ["Leg", "Thran", "Or", "Amd", "Bel", "Mae", "Fer", "Taur", "Daer", "Gal", "Lae", "Sil"],
+		"mid": ["las", "dor", "ion", "wen", "mir", "lith", "eth", "nor", "ria", "vren", "thal"],
+		"end_male": ["ion", "dor", "las", "dir", "mir", "gorn", "or"],
+		"end_female": ["wen", "riel", "eth", "iel", "lith", "ia", "elle"],
+	},
+	"man_gondor": {
+		"start": ["Bor", "Far", "Den", "Bere", "Imra", "Mar", "Tor", "Cir", "Earn", "An", "Bel", "Hir"],
+		"mid": ["om", "ag", "eth", "ion", "dor", "mir", "las", "uin", "bar", "gon", "dir"],
+		"end_male": ["mir", "dor", "ion", "bar", "gond", "hir", "thor", "ric"],
+		"end_female": ["iel", "wen", "dis", "eth", "ra", "thiel", "anna", "ria"],
+	},
+	"man_rohan": {
+		"start": ["Eo", "Theo", "Ald", "Erk", "Gam", "Hama", "Grim", "Leof", "Wulf", "Bryn", "Ceor", "Dun"],
+		"mid": ["wyn", "ric", "mund", "gar", "hild", "bert", "laf", "red", "ward", "grim", "helm"],
+		"end_male": ["ric", "mund", "gar", "helm", "red", "laf", "wald", "bert"],
+		"end_female": ["wyn", "hild", "a", "th", "dis", "swith", "lind", "frid"],
+	},
+	"man_dunedain": {
+		"start": ["Ara", "Ar", "Bar", "Hal", "Dir", "Elen", "Isil", "Val", "Cal", "Elen", "Anar", "Tar"],
+		"mid": ["gon", "dor", "dir", "wen", "mir", "thon", "dil", "ion", "las", "vorn", "eth", "iel"],
+		"end_male": ["gorn", "dil", "dir", "dor", "thor", "ion", "bar", "hir"],
+		"end_female": ["wen", "iel", "eth", "dis", "ria", "iela", "mir", "anna"],
+	},
+	"dwarf": {
+		"start": ["Bal", "Dur", "Gim", "Thor", "Dwal", "Nain", "Grim", "Fund", "Bif", "Bor", "Far", "Kil"],
+		"mid": ["in", "or", "ur", "ar", "rim", "dur", "grim", "li", "dra", "gar", "thra"],
+		"end_male": ["in", "or", "ur", "ar", "grim", "dur", "li", "ain"],
+		"end_female": ["dis", "a", "run", "hild", "na", "ga", "rid", "dis"],
+	},
+	"hobbit": {
+		"start": ["Bil", "Fro", "Sam", "Mer", "Per", "Ham", "Ros", "Bel", "Pip", "Tol", "Mar", "Ben"],
+		"mid": ["bo", "do", "wise", "adoc", "egrin", "fast", "ie", "elia", "ette", "vin", "ston", "by"],
+		"end_male": ["o", "wise", "doc", "grim", "bert", "fast", "ric", "ton"],
+		"end_female": ["ie", "ella", "ette", "a", "ina", "y", "rose", "bel"],
+	},
+}
+
 
 static func _normalize_house(house: String) -> String:
 	## Strip common prefixes from house alternate names for key lookup.
@@ -149,7 +200,12 @@ static func get_random_name(race: String, house: String, gender: String) -> Stri
 
 	var bank: Dictionary = name_banks[key]
 	var names: Array = bank.get(gender, bank.get("male", ["Unknown"]))
-	return names.pick_random()
+	if names.is_empty():
+		return _build_procedural_name(race, normalized_house, gender)
+	# Blend fixed lore names with procedural synthesis for richer variety.
+	if randf() < 0.65:
+		return names.pick_random()
+	return _build_procedural_name(race, normalized_house, gender)
 
 
 static func get_all_names_for(race: String, house: String, gender: String) -> Array:
@@ -163,3 +219,48 @@ static func get_all_names_for(race: String, house: String, gender: String) -> Ar
 
 	var bank: Dictionary = name_banks[key]
 	return bank.get(gender, bank.get("male", []))
+
+static func _build_procedural_name(race: String, normalized_house: String, gender: String) -> String:
+	var culture_key: String = _get_culture_key(race, normalized_house)
+	if culture_key not in procedural_syllables:
+		return "Stranger"
+	var culture: Dictionary = procedural_syllables[culture_key]
+	var starts: Array = culture.get("start", [])
+	var mids: Array = culture.get("mid", [])
+	var ends: Array = culture.get("end_female", []) if gender == "female" else culture.get("end_male", [])
+	if starts.is_empty() or mids.is_empty() or ends.is_empty():
+		return "Stranger"
+
+	var parts: Array[String] = []
+	parts.append(str(starts.pick_random()))
+	parts.append(str(mids.pick_random()))
+	if randf() < 0.50:
+		parts.append(str(mids.pick_random()))
+	parts.append(str(ends.pick_random()))
+
+	var raw: String = "".join(parts)
+	# Smooth common double-joints from random assembly.
+	raw = raw.replace("aa", "a").replace("ee", "e").replace("ii", "i")
+	raw = raw.replace("oo", "o").replace("uu", "u").replace("yy", "y")
+	if raw.length() > 14:
+		raw = raw.substr(0, 14)
+	return raw.capitalize()
+
+static func _get_culture_key(race: String, normalized_house: String) -> String:
+	if race == "Elf":
+		if normalized_house == "Rivendell":
+			return "elf_rivendell"
+		if normalized_house == "Greenwood":
+			return "elf_greenwood"
+		return "elf_lothlorien"
+	if race == "Man":
+		if normalized_house == "Rohan":
+			return "man_rohan"
+		if normalized_house == "Dunedain":
+			return "man_dunedain"
+		return "man_gondor"
+	if race == "Dwarf":
+		return "dwarf"
+	if race == "Hobbit":
+		return "hobbit"
+	return "man_gondor"

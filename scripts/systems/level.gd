@@ -527,6 +527,8 @@ func _dark_pool_effect(entity: Entity, _pos: Vector2i) -> bool:
 		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 		var verb: String = "wade" if entity == GameManager.player else "wades"
 		GameManager.log_message("%s %s through a dark, freezing pool! (%d cold damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	if entity == GameManager.player and AudioManager and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("terrain_dark_pool_step")
 	return true
 
 func _morgul_rune_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -541,6 +543,8 @@ func _morgul_rune_effect(entity: Entity, _pos: Vector2i) -> bool:
 		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 		var verb: String = "step" if entity == GameManager.player else "steps"
 		GameManager.log_message("%s %s on a Morgul rune! (%d dark damage)" % [entity_name, verb, dmg], ThemeColors.MSG_ERROR)
+	if entity == GameManager.player and AudioManager and AudioManager.has_method("play_sfx"):
+		AudioManager.play_sfx("terrain_morgul_rune_step")
 	return true
 
 func _glyph_of_warding_effect(entity: Entity, _pos: Vector2i) -> bool:
@@ -567,6 +571,8 @@ func _shadow_floor_effect(entity: Entity, pos: Vector2i) -> bool:
 		if entity == GameManager.player or is_tile_visible(entity.grid_position):
 			var entity_name: String = "You" if entity == GameManager.player else entity.entity_name
 			GameManager.log_message("Light disturbs the shadows, lashing out at %s! (%d damage)" % [entity_name.to_lower(), dmg], ThemeColors.MSG_ERROR)
+		if entity == GameManager.player and AudioManager and AudioManager.has_method("play_sfx"):
+			AudioManager.play_sfx("terrain_shadow_floor_bite")
 		return true
 	return false
 
@@ -783,10 +789,24 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 		return
 
 	# Map tile type to atlas coordinates (default to lit for set_tile calls)
-	var atlas_coords := _get_atlas_coords_for_tile(tile, true)
+	var atlas_coords := _get_atlas_coords_for_tile(tile, true, pos)
 	terrain_layer.set_cell(pos, 0, atlas_coords)
 
-func _get_atlas_coords_for_tile(tile: int, lit: bool = true) -> Vector2i:
+func _get_atlas_coords_for_tile(tile: int, lit: bool = true, pos: Vector2i = Vector2i(-1, -1)) -> Vector2i:
+	# BONE_PILE uses exact elf/orc skeleton overlays on top of the current layer floor:
+	# deterministic 50/50 split by tile position.
+	if tile == Tile.BONE_PILE and pos.x >= 0 and pos.y >= 0:
+		var h: int = (pos.x * 73856093) ^ (pos.y * 19349663) ^ (depth * 83492791)
+		var use_orc: bool = (h & 1) == 0
+		if layer_name == "lower_halls":
+			if use_orc:
+				return Vector2i(28, 20) if lit else Vector2i(29, 20)
+			return Vector2i(30, 20) if lit else Vector2i(31, 20)
+		if layer_name == "necropolis":
+			if use_orc:
+				return Vector2i(28, 21) if lit else Vector2i(29, 21)
+			return Vector2i(30, 21) if lit else Vector2i(31, 21)
+
 	# Use layer-specific tile kits for base terrain types (wall/floor/door/stairs)
 	if not layer_name.is_empty():
 		return TileMapper.get_layer_terrain_coords(tile, layer_name, lit)
@@ -980,11 +1000,11 @@ func apply_fov_to_tilemap() -> void:
 				render_tile = Tile.FLOOR
 			if tile_visibility[idx]:
 				# Currently visible — lit variant
-				var atlas_coords := _get_atlas_coords_for_tile(render_tile, true)
+				var atlas_coords := _get_atlas_coords_for_tile(render_tile, true, pos)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
 			elif explored[idx]:
 				# Explored but not visible — dark/remembered variant
-				var atlas_coords := _get_atlas_coords_for_tile(render_tile, false)
+				var atlas_coords := _get_atlas_coords_for_tile(render_tile, false, pos)
 				terrain_layer.set_cell(pos, 0, atlas_coords)
 			else:
 				# Unexplored: erase cell so black background shows through

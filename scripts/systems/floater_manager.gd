@@ -225,16 +225,26 @@ func _on_ability_activated(ability_id: int, _ability_name: String) -> void:
 		return
 
 	match ability_id:
+		140:  # Hidden Ways
+			_vfx_hidden_ways(player)
+		142:  # Deep Memory
+			_vfx_deep_memory(player)
+		145:  # Light of the Eldar
+			_vfx_inner_light(player)
 		146:  # Word of Command
 			_vfx_word_of_command(player)
 		141:  # Word of Opening
 			_vfx_word_of_opening(player)
 		143:  # Herbcraft (sustained, triggered on toggle)
 			_vfx_herbcraft(player)
+		147, 148, 152, 153, 159:  # Song toggles / sustained themes
+			_vfx_song_toggle(player)
 		150:  # Song of Banishment
 			_vfx_song_of_banishment(player)
-		145:  # Light of the Eldar
-			_vfx_inner_light(player)
+		151:  # Word of Domination
+			_vfx_domination(player)
+		154, 155, 156:  # Warding / Authority / Unmaking
+			_vfx_word_major(player)
 
 ## Word of Command: Blue-white shockwave, 12 radiating particles, zoom pulse
 func _vfx_word_of_command(player: Node) -> void:
@@ -242,6 +252,7 @@ func _vfx_word_of_command(player: Node) -> void:
 		var ent: Entity = player as Entity
 		ent.vfx_flash(ThemeColors.FLASH_COMMAND_BLUE, 0.08, 0.15)
 		ent.vfx_particles(Color(0.7, 0.85, 1.0), 12, 45.0, 0.5)
+		ent.vfx_sprite_spell("fireball", 0.28)
 	# Camera zoom pulse
 	_do_camera_zoom_pulse(2.05, 0.3)
 
@@ -258,6 +269,7 @@ func _vfx_word_of_opening(player: Node) -> void:
 		var ent: Entity = player as Entity
 		ent.vfx_flash(ThemeColors.FLASH_OPENING_BLUE, 0.08, 0.15)
 		ent.vfx_particles(ThemeColors.DMG_COLD, 6, 35.0, 0.4)
+		ent.vfx_sprite_spell("flash04", 0.78)
 
 ## Herbcraft: Green healing sparkle + 5 green particles upward
 func _vfx_herbcraft(player: Node) -> void:
@@ -265,6 +277,7 @@ func _vfx_herbcraft(player: Node) -> void:
 		var ent: Entity = player as Entity
 		ent.vfx_flash(ThemeColors.FLASH_HERBCRAFT_GREEN, 0.05, 0.2)
 		ent.vfx_particles_directional(ThemeColors.VFX_REGEN_SPARKLE, Vector2.UP, 5, 0.6, 20.0, 0.4)
+		ent.vfx_sprite_spell("sphere_purple", 0.50)
 
 ## Song of Banishment: Purple ring of particles expanding outward
 func _vfx_song_of_banishment(player: Node) -> void:
@@ -272,6 +285,7 @@ func _vfx_song_of_banishment(player: Node) -> void:
 		var ent: Entity = player as Entity
 		ent.vfx_flash(ThemeColors.FLASH_BANISH_PURPLE, 0.1, 0.2)
 		ent.vfx_particles(ThemeColors.DMG_DARK, 8, 50.0, 0.6)
+		ent.vfx_sprite_spell("fire_purple", 0.56)
 
 ## Inner Light: Gold glow + radiating gold/white particles + brief screen brighten
 func _vfx_inner_light(player: Node) -> void:
@@ -279,8 +293,45 @@ func _vfx_inner_light(player: Node) -> void:
 		var ent: Entity = player as Entity
 		# Gold glow (complementing the FLASH_CHARGE already applied in ability_system.gd)
 		ent.vfx_particles(ThemeColors.GOLD_BRIGHT, 8, 40.0, 0.5)
+		ent.vfx_sprite_spell("flash03", 0.80)
 	# Brief screen brighten via scene modulate
 	_do_screen_brighten(0.3)
+
+func _vfx_hidden_ways(player: Node) -> void:
+	if player is Entity:
+		var ent: Entity = player as Entity
+		ent.vfx_flash(ThemeColors.FLASH_VANISH, 0.06, 0.2)
+		ent.vfx_ring_particles(ThemeColors.TEXT_MUTED, 8, 14.0, 0.45)
+		ent.vfx_sprite_spell("skull_smoke_purple", 0.42)
+
+func _vfx_deep_memory(player: Node) -> void:
+	if player is Entity:
+		var ent: Entity = player as Entity
+		ent.vfx_flash(ThemeColors.PRIMARY_BRIGHT, 0.08, 0.2)
+		ent.vfx_particles(ThemeColors.GOLD_BRIGHT, 10, 48.0, 0.55)
+		ent.vfx_sprite_spell("flash_freeze", 0.30)
+	_do_camera_zoom_pulse(2.03, 0.22)
+
+func _vfx_song_toggle(player: Node) -> void:
+	if player is Entity:
+		var ent: Entity = player as Entity
+		ent.vfx_ring_particles(ThemeColors.MSG_INFO, 7, 12.0, 0.45)
+		ent.vfx_particles_directional(ThemeColors.MSG_INFO, Vector2.UP, 4, 0.5, 18.0, 0.35)
+		ent.vfx_sprite_spell("fire_green", 0.56)
+
+func _vfx_domination(player: Node) -> void:
+	if player is Entity:
+		var ent: Entity = player as Entity
+		ent.vfx_flash(ThemeColors.FLASH_COMMAND_BLUE, 0.08, 0.2)
+		ent.vfx_particles(ThemeColors.STATUS_CONFUSED, 9, 40.0, 0.5)
+		ent.vfx_sprite_spell("smoke_glow", 0.30)
+
+func _vfx_word_major(player: Node) -> void:
+	if player is Entity:
+		var ent: Entity = player as Entity
+		ent.vfx_flash(ThemeColors.GOLD_BRIGHT, 0.08, 0.18)
+		ent.vfx_particles(ThemeColors.GOLD_BRIGHT, 8, 36.0, 0.45)
+		ent.vfx_sprite_spell("sphere", 0.54)
 
 ## Helper: trigger camera zoom pulse if camera exists
 func _do_camera_zoom_pulse(target_zoom: float, duration: float) -> void:

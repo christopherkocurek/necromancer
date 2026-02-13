@@ -3,6 +3,16 @@ class_name HUD
 ## Diablo-inspired bottom action bar HUD with health/voice orbs,
 ## floating message log, minimap, stealth meter, and status pills.
 
+signal utility_slot_activated(slot_index: int)
+signal utility_slot_cleared(slot_index: int)
+signal utility_equip_drop_requested(slot_index: int, equip_slot_name: String)
+signal utility_slot_bind_requested(slot_index: int)
+signal ability_slot_cast_requested(slot_index: int)
+signal ability_slot_cleared(slot_index: int)
+signal ability_slot_bind_requested(slot_index: int)
+
+const StatusMetadata = preload("res://scripts/systems/status_metadata.gd")
+
 # --- Action Bar (bottom) ---
 var action_bar: PanelContainer
 var health_orb: TextureRect          # Shader-driven liquid orb
@@ -11,18 +21,30 @@ var health_label: Label              # "34/34" centered on orb
 var voice_orb: TextureRect
 var voice_orb_frame: TextureRect
 var voice_label: Label
-var xp_bar: ProgressBar
 var xp_label: Label
+var xp_gem_icon: TextureRect
 var depth_label: Label
 var turn_label: Label
 var prot_label: Label
 var stealth_label: Label
 var song_label: Label                # Active song indicator
 var hunger_label: Label              # Hunger state indicator
+var build_label: Label               # Optional archetype dashboard (normal mode only)
+var mode_label: Label                # Runtime mode/assist policy indicator
+var pursuit_label: Label             # Floor-wide pursuit pressure meter
+var goals_label: Label               # Run goals summary
+var threat_container: HBoxContainer  # Always-on threat summary with minimize toggle
+var threat_label: Label
+var threat_toggle: Button
+var _threat_minimized: bool = false
 var status_container: HBoxContainer
-var stance_container: HBoxContainer
+var stance_container: VBoxContainer
 var stats_container: HBoxContainer   # Center column stats
 var quick_slots_container: HBoxContainer  # 6 equipment slot panels
+var utility_slots_container: HBoxContainer
+var utility_slots: Array[PanelContainer] = []
+var _utility_icon_nodes: Array[TextureRect] = []
+var _utility_index_labels: Array[Label] = []
 
 # --- Floating Message Log ---
 var message_panel: PanelContainer
@@ -36,12 +58,17 @@ var minimap: Minimap = null
 # --- Stealth meter ---
 var stealth_meter: ColorRect = null
 
-# --- Ability Hotbar (1-4 quick-cast) ---
+# --- Ability Gems (8 slots) ---
 var hotbar_container: HBoxContainer = null
 var hotbar_slots: Array[PanelContainer] = []
+var _hotbar_key_labels: Array[Label] = []
+var _hotbar_icon_nodes: Array[TextureRect] = []
 var _hotbar_ability_labels: Array[Label] = []
 var _hotbar_cost_labels: Array[Label] = []
+var _hotbar_state_labels: Array[Label] = []
 var _ability_system_ref: Node = null  # Set by main.gd for hotbar updates
+var _hotbar_ability_ids: Array[int] = []
+var hotbar_hint_label: Label = null
 
 # --- Low HP peril warning ---
 var _last_hp_pct: float = 1.0
@@ -55,16 +82,24 @@ var messages: Array[Dictionary] = []
 var _active_filter: String = "all"
 var _turn_count: int = 0
 var _stance_signature: String = ""
+var _threat_signature: String = ""
+var _stance_icon_tileset: Texture2D = null
+var _ui_icon_tileset: Texture2D = null
+var _equip_icon_nodes: Dictionary = {}  # slot_name -> TextureRect
+var _player_ref: Player = null
+var _goal_banner: PanelContainer = null
+var _goal_banner_label: Label = null
 
 const DANGER_STATUSES := ["poisoned", "burning", "stunned", "confused"]
 const EQUIP_SLOTS := ["weapon", "off_hand", "armor", "head", "light", "amulet"]
 
 # Layout constants
-const ACTION_BAR_HEIGHT := 140
+const ACTION_BAR_HEIGHT := 156
 const ORB_SIZE := 90
 const ORB_FRAME_SIZE := 100
 const MESSAGE_LOG_HEIGHT := 140
 const MESSAGE_LOG_EXPANDED := 360
+const HUD_ITEM_ICON_SIZE := 28
 
 # Health/voice orb materials
 var _health_material: ShaderMaterial = null
@@ -73,8 +108,10 @@ var _voice_material: ShaderMaterial = null
 func _ready() -> void:
 	layer = 10
 	_build_action_bar()
+	_build_stance_overlay()
 	_build_ability_hotbar()
 	_build_floating_message_log()
+	_build_goal_banner()
 	_build_minimap()
 	_build_stealth_meter()
 	_build_peril_overlay()
@@ -118,13 +155,14 @@ func _build_action_bar() -> void:
 
 	# --- Center Column ---
 	var center := VBoxContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.add_theme_constant_override("separation", 2)
+	center.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	center.custom_minimum_size = Vector2(760, 0)
+	center.add_theme_constant_override("separation", 3)
 	hbox.add_child(center)
 
 	# Row 1: Stats (Depth, Turn, Prot, Stealth, Status pills)
 	stats_container = HBoxContainer.new()
-	stats_container.add_theme_constant_override("separation", 16)
+	stats_container.add_theme_constant_override("separation", 10)
 	stats_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	center.add_child(stats_container)
 
@@ -138,34 +176,99 @@ func _build_action_bar() -> void:
 	# Turn
 	turn_label = Label.new()
 	turn_label.text = "Turn 0"
-	ThemeColors.apply_body_font(turn_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(turn_label, ThemeColors.FONT_SIZE_HINT)
 	turn_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
 	stats_container.add_child(turn_label)
 
 	# Protection
 	prot_label = Label.new()
 	prot_label.text = ""
-	ThemeColors.apply_body_font(prot_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(prot_label, ThemeColors.FONT_SIZE_HINT)
 	prot_label.add_theme_color_override("font_color", ThemeColors.SECONDARY)
 	stats_container.add_child(prot_label)
 
 	# Stealth
 	stealth_label = Label.new()
 	stealth_label.text = ""
-	ThemeColors.apply_body_font(stealth_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(stealth_label, ThemeColors.FONT_SIZE_HINT)
 	stats_container.add_child(stealth_label)
 
 	# Song indicator
 	song_label = Label.new()
 	song_label.text = ""
-	ThemeColors.apply_body_font(song_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(song_label, ThemeColors.FONT_SIZE_HINT)
 	stats_container.add_child(song_label)
 
 	# Hunger indicator
 	hunger_label = Label.new()
 	hunger_label.text = ""
-	ThemeColors.apply_body_font(hunger_label, ThemeColors.FONT_SIZE_BODY)
+	ThemeColors.apply_body_font(hunger_label, ThemeColors.FONT_SIZE_HINT)
 	stats_container.add_child(hunger_label)
+
+	build_label = Label.new()
+	build_label.text = ""
+	ThemeColors.apply_body_font(build_label, ThemeColors.FONT_SIZE_HINT)
+	build_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	stats_container.add_child(build_label)
+
+	mode_label = Label.new()
+	mode_label.text = ""
+	ThemeColors.apply_body_font(mode_label, ThemeColors.FONT_SIZE_HINT)
+	mode_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	mode_label.visible = false  # User-facing request: remove Normal/ON mode line from HUD.
+	stats_container.add_child(mode_label)
+
+	goals_label = Label.new()
+	goals_label.text = ""
+	ThemeColors.apply_body_font(goals_label, ThemeColors.FONT_SIZE_HINT - 1)
+	goals_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+	goals_label.clip_text = true
+	goals_label.custom_minimum_size = Vector2(220, 0)
+	stats_container.add_child(goals_label)
+
+	# Threat summary (always-on, minimizable)
+	threat_container = HBoxContainer.new()
+	threat_container.add_theme_constant_override("separation", 4)
+	stats_container.add_child(threat_container)
+
+	threat_label = Label.new()
+	threat_label.text = "Threat: --"
+	ThemeColors.apply_body_font(threat_label, ThemeColors.FONT_SIZE_HINT)
+	threat_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	threat_label.clip_text = true
+	threat_label.custom_minimum_size = Vector2(270, 0)
+	threat_container.add_child(threat_label)
+
+	threat_toggle = Button.new()
+	threat_toggle.custom_minimum_size = Vector2(24, 24)
+	threat_toggle.icon = _create_circle_tile_icon(Vector2i(15, 10), ThemeColors.TEXT_MUTED)
+	threat_toggle.flat = true
+	var toggle_style := StyleBoxFlat.new()
+	toggle_style.bg_color = Color(0.08, 0.08, 0.10, 0.75)
+	toggle_style.border_color = ThemeColors.IRON_HIGHLIGHT
+	toggle_style.border_width_left = 1
+	toggle_style.border_width_right = 1
+	toggle_style.border_width_top = 1
+	toggle_style.border_width_bottom = 1
+	toggle_style.corner_radius_top_left = 12
+	toggle_style.corner_radius_top_right = 12
+	toggle_style.corner_radius_bottom_left = 12
+	toggle_style.corner_radius_bottom_right = 12
+	threat_toggle.add_theme_stylebox_override("normal", toggle_style)
+	threat_toggle.add_theme_stylebox_override("hover", toggle_style)
+	threat_toggle.add_theme_stylebox_override("pressed", toggle_style)
+	threat_toggle.tooltip_text = "Minimize or expand threat summary"
+	threat_toggle.pressed.connect(_toggle_threat_summary)
+	threat_container.add_child(threat_toggle)
+
+	# Pursuit meter line (floor alertness pressure)
+	pursuit_label = Label.new()
+	pursuit_label.text = "Pursuit: Calm"
+	ThemeColors.apply_body_font(pursuit_label, ThemeColors.FONT_SIZE_HINT)
+	pursuit_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	pursuit_label.clip_text = true
+	pursuit_label.custom_minimum_size = Vector2(220, 0)
+	stats_container.add_child(pursuit_label)
 
 	# Status pills (right side of stats row)
 	var status_spacer := Control.new()
@@ -173,24 +276,21 @@ func _build_action_bar() -> void:
 	stats_container.add_child(status_spacer)
 
 	status_container = HBoxContainer.new()
-	status_container.add_theme_constant_override("separation", 4)
+	status_container.add_theme_constant_override("separation", 2)
 	stats_container.add_child(status_container)
-
-	stance_container = HBoxContainer.new()
-	stance_container.add_theme_constant_override("separation", 4)
-	stats_container.add_child(stance_container)
 
 	# Row 2: Quick slots (6 equipment icons)
 	quick_slots_container = HBoxContainer.new()
 	quick_slots_container.add_theme_constant_override("separation", 4)
-	quick_slots_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	quick_slots_container.alignment = BoxContainer.ALIGNMENT_END
+	quick_slots_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.add_child(quick_slots_container)
 	var quick_slots := quick_slots_container
 
 	for slot_name in EQUIP_SLOTS:
 		var slot := PanelContainer.new()
 		slot.name = "Slot_%s" % slot_name
-		slot.custom_minimum_size = Vector2(45, 45)
+		slot.custom_minimum_size = Vector2(40, 40)
 		if ThemeColors.has_textures():
 			slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
 		else:
@@ -198,57 +298,120 @@ func _build_action_bar() -> void:
 				ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
 			))
 		slot.tooltip_text = slot_name.capitalize().replace("_", " ")
+		slot.set_drag_forwarding(
+			func(_position: Vector2) -> Variant:
+				return null,
+			func(_position: Vector2, data: Variant) -> bool:
+				return _can_drop_utility_to_equip(slot_name, data),
+			func(_position: Vector2, data: Variant) -> void:
+				_drop_utility_to_equip(slot_name, data)
+		)
+
+		var icon_rect := TextureRect.new()
+		icon_rect.name = "Icon"
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(HUD_ITEM_ICON_SIZE, HUD_ITEM_ICON_SIZE)
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_rect.visible = false
+		slot.add_child(icon_rect)
+		_equip_icon_nodes[slot_name] = icon_rect
+
 		quick_slots.add_child(slot)
 
-	# Row 3: XP bar (thin ornate bar across bottom)
+	# Row 3: Utility belt (loadable inventory slots)
+	utility_slots_container = HBoxContainer.new()
+	utility_slots_container.add_theme_constant_override("separation", 4)
+	utility_slots_container.alignment = BoxContainer.ALIGNMENT_END
+	utility_slots_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.add_child(utility_slots_container)
+
+	utility_slots.clear()
+	_utility_icon_nodes.clear()
+	_utility_index_labels.clear()
+	for i in range(6):
+		var slot := PanelContainer.new()
+		slot.custom_minimum_size = Vector2(40, 40)
+		slot.tooltip_text = "Utility %d (bind in inventory with Shift+%d)" % [i + 1, i + 1]
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+		else:
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+				ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+			))
+		slot.gui_input.connect(_on_utility_slot_gui_input.bind(i))
+		slot.set_drag_forwarding(
+			func(_position: Vector2) -> Variant:
+				return _get_utility_drag_data(i),
+			func(_position: Vector2, _data: Variant) -> bool:
+				return false,
+			func(_position: Vector2, _data: Variant) -> void:
+				pass
+		)
+
+		var icon_rect := TextureRect.new()
+		icon_rect.name = "Icon"
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon_rect.custom_minimum_size = Vector2(HUD_ITEM_ICON_SIZE, HUD_ITEM_ICON_SIZE)
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_rect.visible = false
+		slot.add_child(icon_rect)
+
+		var idx_label := Label.new()
+		idx_label.text = str(i + 1)
+		ThemeColors.apply_body_font(idx_label, ThemeColors.FONT_SIZE_HINT - 2)
+		idx_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		idx_label.position = Vector2(2, 0)
+		idx_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(idx_label)
+
+		utility_slots_container.add_child(slot)
+		utility_slots.append(slot)
+		_utility_icon_nodes.append(icon_rect)
+		_utility_index_labels.append(idx_label)
+
+	# Row 4: XP gem (brightness reflects XP bank)
 	var xp_row := HBoxContainer.new()
 	xp_row.add_theme_constant_override("separation", 8)
-	center.add_child(xp_row)
+	xp_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	xp_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hbox.add_child(xp_row)
 
-	var xp_icon := Label.new()
-	xp_icon.text = "XP"
-	ThemeColors.apply_body_font(xp_icon, ThemeColors.FONT_SIZE_HINT)
-	xp_icon.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
-	xp_row.add_child(xp_icon)
-
-	xp_bar = ProgressBar.new()
-	xp_bar.custom_minimum_size = Vector2(280, 14)
-	xp_bar.max_value = 100
-	xp_bar.value = 0
-	xp_bar.show_percentage = false
-	xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	xp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# Style the XP bar with gold tint
-	var xp_bg := StyleBoxFlat.new()
-	xp_bg.bg_color = ThemeColors.IRON_SHADOW
-	xp_bg.border_color = ThemeColors.IRON_HIGHLIGHT
-	xp_bg.border_width_left = 1
-	xp_bg.border_width_right = 1
-	xp_bg.border_width_top = 1
-	xp_bg.border_width_bottom = 1
-	xp_bg.corner_radius_top_left = 2
-	xp_bg.corner_radius_top_right = 2
-	xp_bg.corner_radius_bottom_left = 2
-	xp_bg.corner_radius_bottom_right = 2
-	xp_bar.add_theme_stylebox_override("background", xp_bg)
-	var xp_fill := StyleBoxFlat.new()
-	xp_fill.bg_color = ThemeColors.GOLD_DIM
-	xp_fill.corner_radius_top_left = 2
-	xp_fill.corner_radius_top_right = 2
-	xp_fill.corner_radius_bottom_left = 2
-	xp_fill.corner_radius_bottom_right = 2
-	xp_bar.add_theme_stylebox_override("fill", xp_fill)
-	xp_row.add_child(xp_bar)
+	xp_gem_icon = TextureRect.new()
+	xp_gem_icon.custom_minimum_size = Vector2(28, 28)
+	xp_gem_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	xp_gem_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	xp_gem_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	xp_gem_icon.texture = _create_circle_tile_icon(Vector2i(5, 11), ThemeColors.GOLD_DIM)
+	xp_row.add_child(xp_gem_icon)
 
 	xp_label = Label.new()
-	xp_label.text = "0"
-	ThemeColors.apply_body_font(xp_label, ThemeColors.FONT_SIZE_HINT)
+	xp_label.text = "0\nXP"
+	ThemeColors.apply_heading_font(xp_label, ThemeColors.FONT_SIZE_HINT)
 	xp_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
+	xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	xp_row.add_child(xp_label)
 
 	# --- Voice Orb (right) ---
 	var voice_container := _build_orb(false)
 	hbox.add_child(voice_container)
+
+func _build_stance_overlay() -> void:
+	# Separate overlay so container layout in action_bar cannot reposition these cards.
+	# Right-center keeps them visible without covering orb/log critical info.
+	stance_container = VBoxContainer.new()
+	stance_container.name = "StanceOverlay"
+	stance_container.add_theme_constant_override("separation", 8)
+	stance_container.alignment = BoxContainer.ALIGNMENT_END
+	stance_container.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	stance_container.offset_left = -230
+	stance_container.offset_right = -16
+	stance_container.offset_top = -92
+	stance_container.offset_bottom = 92
+	add_child(stance_container)
 
 func _build_orb(is_health: bool) -> Control:
 	var container := CenterContainer.new()
@@ -317,7 +480,7 @@ func _build_orb(is_health: bool) -> Control:
 	return container
 
 # ============================================================================
-# BUILD: ABILITY HOTBAR (1-4 quick-cast slots)
+# BUILD: ABILITY GEMS (8 slots)
 # ============================================================================
 
 func _build_ability_hotbar() -> void:
@@ -327,19 +490,37 @@ func _build_ability_hotbar() -> void:
 
 	# Position above the action bar, left-aligned
 	hotbar_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	hotbar_container.offset_left = 12
-	hotbar_container.offset_top = -(ACTION_BAR_HEIGHT + 58)
-	hotbar_container.offset_bottom = -(ACTION_BAR_HEIGHT + 4)
-	hotbar_container.offset_right = 232  # 4 slots x 54px + gaps
+	hotbar_container.offset_left = 218
+	hotbar_container.offset_top = -(ACTION_BAR_HEIGHT - 42)
+	hotbar_container.offset_bottom = -(ACTION_BAR_HEIGHT - 96)
+	hotbar_container.offset_right = 544  # + left-side hint rail
+
+	# Left-side bind/cast legend for gem bar.
+	hotbar_hint_label = Label.new()
+	hotbar_hint_label.name = "HotbarHint"
+	hotbar_hint_label.text = "GEMS\n1-8 CAST\nL-BIND/CAST\nR-CLEAR"
+	hotbar_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	ThemeColors.apply_body_font(hotbar_hint_label, ThemeColors.FONT_SIZE_HINT - 1)
+	hotbar_hint_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	hotbar_hint_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	hotbar_hint_label.offset_left = 122
+	hotbar_hint_label.offset_top = -(ACTION_BAR_HEIGHT - 40)
+	hotbar_hint_label.offset_bottom = -(ACTION_BAR_HEIGHT - 98)
+	hotbar_hint_label.offset_right = 104
+	add_child(hotbar_hint_label)
 
 	hotbar_slots.clear()
+	_hotbar_key_labels.clear()
+	_hotbar_icon_nodes.clear()
 	_hotbar_ability_labels.clear()
 	_hotbar_cost_labels.clear()
+	_hotbar_state_labels.clear()
+	_hotbar_ability_ids.clear()
 
-	for i in range(4):
+	for i in range(8):
 		var slot: PanelContainer = PanelContainer.new()
 		slot.name = "HotbarSlot_%d" % (i + 1)
-		slot.custom_minimum_size = Vector2(52, 50)
+		slot.custom_minimum_size = Vector2(52, 52)
 
 		# Empty slot styling
 		if ThemeColors.has_textures():
@@ -353,37 +534,65 @@ func _build_ability_hotbar() -> void:
 		vbox.add_theme_constant_override("separation", 0)
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 
-		# Number label (1-4)
+		# Number label (1-8 keyboard casts).
 		var num_label: Label = Label.new()
 		num_label.text = str(i + 1)
 		num_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ThemeColors.apply_body_font(num_label, ThemeColors.FONT_SIZE_HINT)
 		num_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		num_label.visible = false
 		vbox.add_child(num_label)
+		_hotbar_key_labels.append(num_label)
+
+		# Gem icon (tile icon from atlas)
+		var icon_rect := TextureRect.new()
+		icon_rect.name = "IconSigil"
+		icon_rect.custom_minimum_size = Vector2(34, 34)
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		vbox.add_child(icon_rect)
+		_hotbar_icon_nodes.append(icon_rect)
 
 		# Ability abbreviation
 		var ability_label: Label = Label.new()
 		ability_label.name = "AbilityName"
-		ability_label.text = "---"
+		ability_label.text = "EMPTY"
 		ability_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ThemeColors.apply_body_font(ability_label, ThemeColors.FONT_SIZE_HINT)
 		ability_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
 		vbox.add_child(ability_label)
 		_hotbar_ability_labels.append(ability_label)
 
-		# Voice cost
+		# Footer row: voice cost (left) + state badge (right)
+		var footer: HBoxContainer = HBoxContainer.new()
+		footer.alignment = BoxContainer.ALIGNMENT_CENTER
+		footer.add_theme_constant_override("separation", 3)
+		vbox.add_child(footer)
+
 		var cost_label: Label = Label.new()
 		cost_label.name = "CostLabel"
 		cost_label.text = ""
-		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		ThemeColors.apply_body_font(cost_label, ThemeColors.FONT_SIZE_HINT)
 		cost_label.add_theme_color_override("font_color", ThemeColors.SPIRIT_BRIGHT)
-		vbox.add_child(cost_label)
+		footer.add_child(cost_label)
 		_hotbar_cost_labels.append(cost_label)
+
+		var state_label: Label = Label.new()
+		state_label.name = "StateLabel"
+		state_label.text = "BIND"
+		state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		ThemeColors.apply_body_font(state_label, int(ThemeColors.FONT_SIZE_HINT * 0.5))
+		state_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		footer.add_child(state_label)
+		_hotbar_state_labels.append(state_label)
 
 		slot.add_child(vbox)
 		hotbar_container.add_child(slot)
 		hotbar_slots.append(slot)
+		_hotbar_ability_ids.append(-1)
+		slot.gui_input.connect(_on_hotbar_slot_gui_input.bind(i))
 
 	add_child(hotbar_container)
 
@@ -393,55 +602,75 @@ func update_hotbar(player_ref: Player, ability_sys: Node) -> void:
 	if not player_ref:
 		return
 
-	# Check if player has any abilities hotkeyed - hide hotbar if all empty
-	var any_bound: bool = false
-	for slot_id: int in player_ref.ability_hotkeys:
-		if slot_id >= 0:
-			any_bound = true
-			break
-	hotbar_container.visible = any_bound
+	hotbar_container.visible = true
 
-	if not any_bound:
-		return
-
-	for i in range(4):
+	for i in range(hotbar_slots.size()):
 		if i >= hotbar_slots.size():
 			break
-		var ability_id: int = player_ref.ability_hotkeys[i]
+		var ability_id: int = player_ref.ability_hotkeys[i] if i < player_ref.ability_hotkeys.size() else -1
+		_hotbar_ability_ids[i] = ability_id
 		var slot: PanelContainer = hotbar_slots[i]
+		var key_label: Label = _hotbar_key_labels[i]
+		var icon_rect: TextureRect = _hotbar_icon_nodes[i]
 		var ab_label: Label = _hotbar_ability_labels[i]
 		var cost_label: Label = _hotbar_cost_labels[i]
+		var state_label: Label = _hotbar_state_labels[i]
+		key_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
 
 		if ability_id < 0:
 			# Empty slot
-			ab_label.text = "---"
+			icon_rect.texture = null
+			icon_rect.modulate = ThemeColors.TEXT_DISABLED
+			ab_label.text = "EMPTY"
 			ab_label.add_theme_color_override("font_color", ThemeColors.TEXT_DISABLED)
 			cost_label.text = ""
+			state_label.text = "BIND"
+			state_label.add_theme_color_override("font_color", ThemeColors.MSG_INFO)
+			_set_hotbar_node_anim(icon_rect, "idle")
 			if ThemeColors.has_textures():
 				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
 			else:
 				slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
 					ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
 				))
-			slot.tooltip_text = "Slot %d: empty (V menu, Shift+%d to bind)" % [i + 1, i + 1]
+			slot.tooltip_text = "Gem %d: empty | Left click: bind | Right click: clear" % [i + 1]
 		else:
 			# Bound ability
-			var ab_name: String = _get_hotbar_ability_name(ability_id)
+			var ab_name: String = _get_hotbar_ability_name(ability_id, player_ref)
 			var abbr: String = ab_name.substr(0, 4) if ab_name.length() > 4 else ab_name
+			icon_rect.texture = _get_hotbar_icon_texture(ability_id)
 			ab_label.text = abbr
 
 			var cost: int = 0
 			var can_use: bool = false
-			if ability_sys and ability_sys.has_method("get_effective_voice_cost"):
-				cost = ability_sys.get_effective_voice_cost(ability_id)
-			if ability_sys and ability_sys.has_method("can_use_ability"):
-				var check: Dictionary = ability_sys.can_use_ability(ability_id)
-				can_use = check.can_use
+			var reason: String = ""
+			var cooldown_turns: int = 0
+			var needs_target: bool = false
+			if player_ref and player_ref.has_method("get_hotbar_ability_cost"):
+				cost = int(player_ref.get_hotbar_ability_cost(ability_id, ability_sys))
+			if player_ref and player_ref.has_method("can_use_hotbar_ability"):
+				var check: Dictionary = player_ref.can_use_hotbar_ability(ability_id, ability_sys)
+				can_use = bool(check.get("can_use", false))
+				reason = str(check.get("reason", ""))
+				cooldown_turns = _extract_cooldown_turns(reason)
+			if player_ref and player_ref.has_method("is_hotbar_ability_targeted"):
+				needs_target = bool(player_ref.is_hotbar_ability_targeted(ability_id, ability_sys))
 
 			cost_label.text = "%dv" % cost if cost > 0 else ""
 
 			if can_use:
+				icon_rect.modulate = ThemeColors.GOLD_BRIGHT
 				ab_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
+				var is_active_state: bool = false
+				if player_ref and player_ref.has_method("is_hotbar_ability_active"):
+					is_active_state = bool(player_ref.is_hotbar_ability_active(ability_id))
+				if is_active_state:
+					state_label.text = "ACTV"
+					state_label.add_theme_color_override("font_color", ThemeColors.MSG_WARNING)
+				else:
+					state_label.text = "TGT" if needs_target else "RDY"
+					state_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
+				_set_hotbar_node_anim(icon_rect, "target" if needs_target else "ready")
 				if ThemeColors.has_textures():
 					slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("selected"))
 				else:
@@ -449,18 +678,43 @@ func update_hotbar(player_ref: Player, ability_sys: Node) -> void:
 						ThemeColors.IRON_MID, ThemeColors.GOLD_DIM
 					))
 			else:
+				icon_rect.modulate = ThemeColors.TEXT_MUTED
 				ab_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+				if cooldown_turns > 0:
+					state_label.text = "CD %d" % cooldown_turns
+					state_label.add_theme_color_override("font_color", ThemeColors.MSG_WARNING)
+					_set_hotbar_node_anim(icon_rect, "cooldown")
+				elif reason.begins_with("Already"):
+					state_label.text = "ON"
+					state_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+					_set_hotbar_node_anim(icon_rect, "idle")
+				elif reason.begins_with("Need"):
+					state_label.text = "RES"
+					state_label.add_theme_color_override("font_color", ThemeColors.MSG_WARNING)
+					_set_hotbar_node_anim(icon_rect, "idle")
+				else:
+					state_label.text = "NO"
+					state_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+					_set_hotbar_node_anim(icon_rect, "idle")
 				if ThemeColors.has_textures():
 					slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
 				else:
-					slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
-						ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
-					))
+					var border_col: Color = ThemeColors.MSG_WARNING if cooldown_turns > 0 else ThemeColors.IRON_HIGHLIGHT
+					slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(ThemeColors.IRON_SHADOW, border_col))
 
-			slot.tooltip_text = "%s (%d voice)" % [ab_name, cost] if cost > 0 else ab_name
+			var use_text: String = "Ready" if can_use else ("Unavailable: %s" % reason)
+			var cast_hint: String = "Key %d" % (i + 1)
+			slot.tooltip_text = "%s | %s | %s%s | Left: cast Right: clear" % [
+				ab_name,
+				cast_hint,
+				use_text,
+				(" | %d voice" % cost) if cost > 0 else ""
+			]
 
 ## Get a short display name for ability in hotbar
-func _get_hotbar_ability_name(ability_id: int) -> String:
+func _get_hotbar_ability_name(ability_id: int, player_ref: Player = null) -> String:
+	if player_ref and player_ref.has_method("get_hotbar_ability_display_name") and ability_id >= 1000:
+		return player_ref.get_hotbar_ability_display_name(ability_id)
 	# Match the ability IDs from AbilitySystem.LoreAbility (v4: IDs 140-159)
 	match ability_id:
 		140: return "Hide"   # Lore of Hidden Ways
@@ -484,6 +738,147 @@ func _get_hotbar_ability_name(ability_id: int) -> String:
 		158: return "Grce"   # Grace
 		159: return "Tree"   # Song of the Trees
 		_: return "???"
+
+func _get_hotbar_icon_texture(ability_id: int) -> Texture2D:
+	if _ui_icon_tileset == null:
+		var candidate_paths: Array[String] = [
+			"res://assets/sprites/necromancer_dcss_tileset.png",
+			"res://assets/sprites/necromancer_dcss_tileset_pre_outer_pits_v2.png",
+		]
+		for p in candidate_paths:
+			if FileAccess.file_exists(p):
+				_ui_icon_tileset = load(p)
+				if _ui_icon_tileset != null:
+					break
+	if _ui_icon_tileset == null:
+		return _create_circle_tile_icon(Vector2i(9, 0), ThemeColors.GOLD_DIM)
+
+	var coords: Vector2i = _get_hotbar_icon_coords(ability_id)
+	var tex_size: Vector2i = _ui_icon_tileset.get_size()
+	var tile_px: int = 64
+	if coords.x < 0 or coords.y < 0 or ((coords.x + 1) * tile_px > tex_size.x) or ((coords.y + 1) * tile_px > tex_size.y):
+		coords = _get_hotbar_fallback_icon_coords(ability_id)
+		if coords.x < 0 or coords.y < 0:
+			return _create_circle_tile_icon(Vector2i(9, 0), ThemeColors.GOLD_DIM)
+		if ((coords.x + 1) * tile_px > tex_size.x) or ((coords.y + 1) * tile_px > tex_size.y):
+			return _create_circle_tile_icon(Vector2i(9, 0), ThemeColors.GOLD_DIM)
+
+	var atlas := AtlasTexture.new()
+	atlas.atlas = _ui_icon_tileset
+	atlas.region = Rect2(coords.x * 64, coords.y * 64, 64, 64)
+	return atlas
+
+func _get_hotbar_icon_coords(ability_id: int) -> Vector2i:
+	match ability_id:
+		# Core gem abilities
+		Player.GEM_DEFENSIVE_STANCE: return Vector2i(21, 11)  # tower shield
+		Player.GEM_READY_PARRY: return Vector2i(29, 11)       # Rohirrim blade
+		Player.GEM_MARK_QUARRY: return Vector2i(23, 12)       # arrow
+		Player.GEM_EXPOSE_WEAKNESS: return Vector2i(20, 13)   # ring/gaze motif
+		Player.GEM_EXPLOIT_OPENING: return Vector2i(24, 11)   # ranger knife
+		Player.GEM_DISGUISE: return Vector2i(17, 12)          # shadow cloak
+		Player.GEM_CIRCULAR_GUARD: return Vector2i(22, 11)    # mithril shield
+		Player.GEM_SWIFT_STRIKES: return Vector2i(26, 11)     # sylvan blade
+		Player.GEM_CRIPPLING_SHOT: return Vector2i(24, 12)    # ammo shot
+		Player.GEM_KEEN_SENSES: return Vector2i(12, 13)       # vigilant eye
+		Player.GEM_CURSE_BREAKING: return Vector2i(12, 14)    # freedom/light motif
+		Player.GEM_POWER_STANCE: return Vector2i(8, 12)       # dwarven hammer
+		Player.GEM_FINESSE_STANCE: return Vector2i(23, 11)    # nimble blade
+		Player.GEM_VANISH: return Vector2i(19, 12)            # bat-fell
+		Player.GEM_SPRINTING: return Vector2i(28, 12)         # boots
+		# Lore abilities
+		140: return Vector2i(19, 12)  # Hidden Ways
+		141: return Vector2i(0, 2)    # Word of Opening (door)
+		142: return Vector2i(5, 17)   # Deep Memory (note)
+		143: return Vector2i(5, 16)   # Herbcraft
+		144: return Vector2i(15, 14)  # Lore of Naming
+		145: return Vector2i(17, 13)  # Light of Eldar
+		146: return Vector2i(4, 15)   # Word of Command (challenge/horn)
+		147: return Vector2i(11, 14)  # Song of Freedom
+		148: return Vector2i(19, 14)  # Song of Lorien
+		149: return Vector2i(3, 14)   # Lore of Endurance
+		150: return Vector2i(22, 14)  # Song of Banishment
+		151: return Vector2i(24, 14)  # Word of Domination
+		152: return Vector2i(8, 12)   # Song of Aule
+		153: return Vector2i(14, 16)  # Song of Healing
+		154: return Vector2i(21, 14)  # Word of Warding
+		155: return Vector2i(20, 14)  # Word of Authority
+		156: return Vector2i(3, 15)   # Word of Unmaking
+		157: return Vector2i(21, 14)  # Mastery of Themes
+		158: return Vector2i(7, 13)   # Grace
+		159: return Vector2i(5, 14)   # Song of the Trees
+		_: return Vector2i(-1, -1)
+
+func _get_hotbar_fallback_icon_coords(ability_id: int) -> Vector2i:
+	# Guarantee a visible tile-based placeholder for all bindable abilities.
+	if ability_id >= 1000:
+		return Vector2i(9, 0)   # gem/crystal placeholder
+	if ability_id >= 140 and ability_id <= 200:
+		return Vector2i(5, 17)  # lore sigil placeholder
+	return Vector2i(9, 0)
+
+func _set_hotbar_node_anim(node: CanvasItem, anim_key: String) -> void:
+	if node == null:
+		return
+	var current_key: String = str(node.get_meta("hotbar_anim_key")) if node.has_meta("hotbar_anim_key") else ""
+	if current_key == anim_key:
+		return
+	node.set_meta("hotbar_anim_key", anim_key)
+	if node.has_meta("hotbar_anim_tween"):
+		var old_tween: Variant = node.get_meta("hotbar_anim_tween")
+		if old_tween is Tween and is_instance_valid(old_tween):
+			(old_tween as Tween).kill()
+		node.remove_meta("hotbar_anim_tween")
+	node.modulate.a = 1.0
+	if AccessibilityManager.reduced_motion:
+		return
+	match anim_key:
+		"ready":
+			var tween := create_tween()
+			node.set_meta("hotbar_anim_tween", tween)
+			tween.set_loops()
+			tween.tween_property(node, "modulate:a", 0.72, 0.45).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(node, "modulate:a", 1.0, 0.45).set_ease(Tween.EASE_IN_OUT)
+		"target":
+			var tween := create_tween()
+			node.set_meta("hotbar_anim_tween", tween)
+			tween.set_loops()
+			tween.tween_property(node, "modulate:a", 0.6, 0.32).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(node, "modulate:a", 1.0, 0.32).set_ease(Tween.EASE_IN_OUT)
+		"cooldown":
+			var tween := create_tween()
+			node.set_meta("hotbar_anim_tween", tween)
+			tween.set_loops()
+			tween.tween_property(node, "modulate:a", 0.45, 0.62).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(node, "modulate:a", 0.9, 0.62).set_ease(Tween.EASE_IN_OUT)
+
+func _extract_cooldown_turns(reason: String) -> int:
+	if reason.is_empty():
+		return 0
+	var open_i: int = reason.find("(")
+	var close_i: int = reason.find(")")
+	if open_i < 0 or close_i <= open_i:
+		return 0
+	var inside: String = reason.substr(open_i + 1, close_i - open_i - 1)
+	var parts: PackedStringArray = inside.split(" ", false)
+	if parts.is_empty():
+		return 0
+	return maxi(0, int(parts[0]))
+
+func _on_hotbar_slot_gui_input(event: InputEvent, slot_index: int) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			ability_slot_cleared.emit(slot_index)
+			return
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			var ability_id: int = -1
+			if slot_index >= 0 and slot_index < _hotbar_ability_ids.size():
+				ability_id = _hotbar_ability_ids[slot_index]
+			if ability_id < 0:
+				ability_slot_bind_requested.emit(slot_index)
+			else:
+				ability_slot_cast_requested.emit(slot_index)
 
 # ============================================================================
 # BUILD: FLOATING MESSAGE LOG
@@ -579,6 +974,28 @@ func _build_stealth_meter() -> void:
 	stealth_meter.visible = false
 	add_child(stealth_meter)
 
+func _build_goal_banner() -> void:
+	_goal_banner = PanelContainer.new()
+	_goal_banner.visible = false
+	_goal_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_goal_banner.offset_top = 18
+	_goal_banner.offset_left = 0
+	_goal_banner.offset_right = 0
+	_goal_banner.custom_minimum_size = Vector2(560, 44)
+	_goal_banner.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var style := ThemeColors.create_panel_stylebox(
+		Color(ThemeColors.IRON_DARK.r, ThemeColors.IRON_DARK.g, ThemeColors.IRON_DARK.b, 0.92),
+		ThemeColors.GOLD_BRIGHT, 2, 8
+	)
+	_goal_banner.add_theme_stylebox_override("panel", style)
+
+	_goal_banner_label = Label.new()
+	_goal_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ThemeColors.apply_heading_font(_goal_banner_label, ThemeColors.FONT_SIZE_LARGE)
+	_goal_banner_label.text = "Goal Complete"
+	_goal_banner.add_child(_goal_banner_label)
+	add_child(_goal_banner)
+
 func _connect_signals() -> void:
 	EventBus.message_logged.connect(_on_message_logged)
 	EventBus.entity_damaged.connect(_on_entity_damaged)
@@ -587,6 +1004,7 @@ func _connect_signals() -> void:
 	EventBus.round_completed.connect(_on_round_completed)
 	EventBus.status_applied.connect(_on_status_applied)
 	EventBus.status_removed.connect(_on_status_removed)
+	EventBus.run_goal_completed.connect(_on_run_goal_completed)
 
 # ============================================================================
 # PLAYER STATS UPDATE
@@ -595,6 +1013,7 @@ func _connect_signals() -> void:
 func update_player_stats(player: Player) -> void:
 	if not player:
 		return
+	_player_ref = player
 
 	# Health orb
 	var health_pct := float(player.current_health) / float(maxi(player.max_health, 1))
@@ -610,7 +1029,8 @@ func update_player_stats(player: Player) -> void:
 	_check_peril_warning(player.current_health, player.max_health)
 
 	# XP
-	xp_label.text = _format_number(player.xp_available)
+	xp_label.text = "%s\nXP" % _format_number(player.xp_available)
+	_update_xp_gem(player.xp_available)
 
 	# Voice orb
 	var show_voice: bool = player.max_voice > 0
@@ -630,6 +1050,11 @@ func update_player_stats(player: Player) -> void:
 
 	# Stealth / Detection eye indicator
 	_update_detection_indicator(player)
+	_update_threat_summary(player)
+	_update_pursuit_meter()
+	_update_build_identity(player)
+	_update_mode_indicator()
+	_update_goals_line()
 
 	# Song indicator
 	if song_label:
@@ -647,12 +1072,37 @@ func update_player_stats(player: Player) -> void:
 
 	# Equipment quick-view
 	_update_equip_icons(player)
+	_update_utility_slots(player)
 
 	# Active melee stance/parry indicators
 	_update_combat_stance_gems(player)
 
 	# Ability hotbar
 	update_hotbar(player, _ability_system_ref)
+
+func _update_xp_gem(xp_value: int) -> void:
+	if xp_gem_icon == null:
+		return
+	# Stronger brightness ramp so XP gain is visibly obvious.
+	var t: float = clampf(float(xp_value) / 3000.0, 0.0, 1.0)
+	var brightness: float = lerpf(0.54, 4.95, t)  # ~3x previous intensity range
+	var glow: Color = Color(
+		ThemeColors.GOLD_WARM.r * brightness,
+		ThemeColors.GOLD_WARM.g * brightness,
+		ThemeColors.GOLD_WARM.b * brightness,
+		1.0
+	)
+	xp_gem_icon.modulate = glow
+	if t >= 0.85:
+		if not xp_gem_icon.has_meta("xp_pulse"):
+			xp_gem_icon.set_meta("xp_pulse", true)
+			var tween := create_tween()
+			tween.set_loops()
+			tween.tween_property(xp_gem_icon, "modulate:a", 0.55, 0.45).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(xp_gem_icon, "modulate:a", 1.0, 0.55).set_ease(Tween.EASE_IN_OUT)
+	elif xp_gem_icon.has_meta("xp_pulse"):
+		xp_gem_icon.remove_meta("xp_pulse")
+		xp_gem_icon.modulate.a = 1.0
 
 func _update_equip_icons(player: Player) -> void:
 	if not quick_slots_container:
@@ -664,6 +1114,7 @@ func _update_equip_icons(player: Player) -> void:
 		var slot: PanelContainer = quick_slots_container.get_child(i)
 		var slot_name: String = EQUIP_SLOTS[i]
 		var item = player.equipment.get(slot_name)
+		var icon_rect: TextureRect = _equip_icon_nodes.get(slot_name, null)
 
 		if item != null:
 			if ThemeColors.has_textures():
@@ -674,6 +1125,9 @@ func _update_equip_icons(player: Player) -> void:
 				))
 			var item_name: String = GameManager.get_item_display_name(item)
 			slot.tooltip_text = "%s: %s" % [slot_name.capitalize().replace("_", " "), item_name]
+			if icon_rect:
+				icon_rect.texture = _get_hud_item_icon(item)
+				icon_rect.visible = (icon_rect.texture != null)
 		else:
 			if ThemeColors.has_textures():
 				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
@@ -682,6 +1136,96 @@ func _update_equip_icons(player: Player) -> void:
 					ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
 				))
 			slot.tooltip_text = "%s: empty" % slot_name.capitalize().replace("_", " ")
+			if icon_rect:
+				icon_rect.texture = null
+				icon_rect.visible = false
+
+func _update_utility_slots(player: Player) -> void:
+	if utility_slots.is_empty():
+		return
+	for i in range(mini(utility_slots.size(), player.utility_hotkeys.size())):
+		var slot: PanelContainer = utility_slots[i]
+		var icon_rect: TextureRect = _utility_icon_nodes[i]
+		var descriptor: Dictionary = player.get_utility_descriptor(i)
+		var item = player.resolve_utility_item(i)
+		if descriptor.is_empty() or item == null:
+			if ThemeColors.has_textures():
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("empty"))
+			else:
+				slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+					ThemeColors.IRON_SHADOW, ThemeColors.IRON_HIGHLIGHT
+				))
+			icon_rect.texture = null
+			icon_rect.visible = false
+			slot.tooltip_text = "Utility %d (empty)" % (i + 1)
+			continue
+
+		if ThemeColors.has_textures():
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_textured_slot("selected"))
+		else:
+			slot.add_theme_stylebox_override("panel", ThemeColors.create_slot_stylebox(
+				ThemeColors.IRON_MID, ThemeColors.GOLD_DIM
+			))
+		icon_rect.texture = _get_hud_item_icon(item)
+		icon_rect.visible = icon_rect.texture != null
+		slot.tooltip_text = "Utility %d: %s\nLeft click: use/equip  Right click: clear\nDrag to equip slot above." % [
+			i + 1, GameManager.get_item_display_name(item)
+		]
+
+func _on_utility_slot_gui_input(event: InputEvent, slot_index: int) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	if not mouse_event.pressed:
+		return
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+		if _player_ref and _player_ref.get_utility_descriptor(slot_index).is_empty():
+			utility_slot_bind_requested.emit(slot_index)
+		else:
+			utility_slot_activated.emit(slot_index)
+		get_viewport().set_input_as_handled()
+	elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+		utility_slot_cleared.emit(slot_index)
+		get_viewport().set_input_as_handled()
+
+func _get_utility_drag_data(slot_index: int) -> Variant:
+	if _player_ref == null:
+		return null
+	var desc: Dictionary = _player_ref.get_utility_descriptor(slot_index)
+	var item = _player_ref.resolve_utility_item(slot_index)
+	if desc.is_empty() or item == null:
+		return null
+	var preview := TextureRect.new()
+	preview.custom_minimum_size = Vector2(28, 28)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	preview.texture = _get_hud_item_icon(item)
+	return {"type": "utility_item", "slot_index": slot_index}
+
+func _can_drop_utility_to_equip(slot_name: String, data: Variant) -> bool:
+	if data == null or not (data is Dictionary):
+		return false
+	var payload: Dictionary = data
+	if str(payload.get("type", "")) != "utility_item":
+		return false
+	if _player_ref == null:
+		return false
+	var slot_index: int = int(payload.get("slot_index", -1))
+	var item = _player_ref.resolve_utility_item(slot_index)
+	if item == null or not ("tval" in item):
+		return false
+	if not Constants.TVAL_TO_SLOT.has(int(item.tval)):
+		return false
+	var expected_slot_key: String = _player_ref._equip_slot_id_to_key(int(Constants.TVAL_TO_SLOT[int(item.tval)]))
+	return expected_slot_key == slot_name
+
+func _drop_utility_to_equip(slot_name: String, data: Variant) -> void:
+	if not _can_drop_utility_to_equip(slot_name, data):
+		return
+	var payload: Dictionary = data
+	var slot_index: int = int(payload.get("slot_index", -1))
+	utility_equip_drop_requested.emit(slot_index, slot_name)
 
 func _update_stealth_meter(player: Player) -> void:
 	if not stealth_meter:
@@ -762,16 +1306,13 @@ func _update_combat_stance_gems(player: Player) -> void:
 
 	for info in indicators:
 		var badge := PanelContainer.new()
-		badge.custom_minimum_size = Vector2(112, 30)
+		badge.custom_minimum_size = Vector2(180, 48)
 
-		var state: String = str(info.get("state", "active"))
+		var active_turns: int = int(info.get("active_turns", 0))
+		var cooldown_turns: int = int(info.get("cooldown_turns", 0))
+		var state: String = "active" if active_turns > 0 else "cooldown"
 		var style: StyleBoxFlat
 		match state:
-			"ready":
-				style = ThemeColors.create_panel_stylebox(
-					Color(ThemeColors.ABILITY_LEARNED.r, ThemeColors.ABILITY_LEARNED.g, ThemeColors.ABILITY_LEARNED.b, 0.18),
-					ThemeColors.ABILITY_LEARNED, 1, 4
-				)
 			"cooldown":
 				style = ThemeColors.create_panel_stylebox(
 					Color(ThemeColors.IRON_SHADOW.r, ThemeColors.IRON_SHADOW.g, ThemeColors.IRON_SHADOW.b, 0.8),
@@ -779,37 +1320,90 @@ func _update_combat_stance_gems(player: Player) -> void:
 				)
 			_:
 				style = ThemeColors.create_panel_stylebox(
-					Color(ThemeColors.SECONDARY.r, ThemeColors.SECONDARY.g, ThemeColors.SECONDARY.b, 0.18),
+					Color(ThemeColors.SECONDARY.r, ThemeColors.SECONDARY.g, ThemeColors.SECONDARY.b, 0.16),
 					ThemeColors.SECONDARY, 1, 4
 				)
 		badge.add_theme_stylebox_override("panel", style)
 
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 4)
-		badge.add_child(row)
+		# Layout: [Icon 36x36] [Text Column]
+		var hbox := HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 8)
+		badge.add_child(hbox)
 
+		var icon_tex: Texture2D = _get_stance_icon_texture(str(info.get("icon", "")))
+		if icon_tex:
+			var icon_rect := TextureRect.new()
+			icon_rect.custom_minimum_size = Vector2(36, 36)
+			icon_rect.texture = icon_tex
+			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			hbox.add_child(icon_rect)
+
+		var text_col := VBoxContainer.new()
+		text_col.add_theme_constant_override("separation", 0)
+		text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hbox.add_child(text_col)
+
+		# Title + bonus on one line
 		var title := Label.new()
-		title.text = str(info.get("title", "Buff"))
-		ThemeColors.apply_body_font(title, ThemeColors.FONT_SIZE_HINT)
+		var bonus_text: String = str(info.get("bonus_text", ""))
+		var title_text: String = str(info.get("title", "Buff"))
+		title.text = "%s %s" % [bonus_text, title_text] if bonus_text else title_text
+		ThemeColors.apply_body_font(title, ThemeColors.FONT_SIZE_BODY)
 		title.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
-		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(title)
+		text_col.add_child(title)
 
-		var turns := int(info.get("turns", 0))
-		var turns_label := Label.new()
-		turns_label.text = "%dt" % turns
-		ThemeColors.apply_body_font(turns_label, ThemeColors.FONT_SIZE_HINT)
-		turns_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
-		row.add_child(turns_label)
+		# State line: "Active 3t" or "Recharge 5t"
+		var state_label := Label.new()
+		if active_turns > 0:
+			state_label.text = "%st" % active_turns
+			state_label.add_theme_color_override("font_color", ThemeColors.SECONDARY)
+		else:
+			state_label.text = "CD %st" % cooldown_turns
+			state_label.add_theme_color_override("font_color", ThemeColors.GOLD_DIM)
+		ThemeColors.apply_body_font(state_label, ThemeColors.FONT_SIZE_HINT)
+		text_col.add_child(state_label)
 
-		var detail := Label.new()
-		detail.text = str(info.get("detail", ""))
-		ThemeColors.apply_body_font(detail, ThemeColors.FONT_SIZE_HINT)
-		detail.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
-		badge.tooltip_text = "%s: %s" % [str(info.get("title", "")), detail.text]
-		badge.add_child(detail)
+		badge.tooltip_text = "%s\n%s\nActive: %d\nCD: %d" % [
+			title_text,
+			bonus_text,
+			active_turns,
+			cooldown_turns
+		]
 
 		stance_container.add_child(badge)
+
+func _get_stance_icon_texture(icon_id: String) -> Texture2D:
+	if _stance_icon_tileset == null:
+		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
+		if FileAccess.file_exists(path):
+			_stance_icon_tileset = load(path)
+	if _stance_icon_tileset == null:
+		return null
+
+	var coords := Vector2i(-1, -1)
+	match icon_id:
+		"parry":
+			coords = Vector2i(28, 11)  # Longsword
+		"defend":
+			coords = Vector2i(21, 11)  # Tower shield
+		"circle":
+			coords = Vector2i(22, 11)  # Circular guard shield
+		"swift":
+			coords = Vector2i(26, 11)  # Swift strikes blade
+		"disguise":
+			coords = Vector2i(17, 12)  # Cloak
+		"hunt":
+			coords = Vector2i(24, 11)  # Bow icon for quarry hunt state
+		_:
+			return null
+
+	var atlas := AtlasTexture.new()
+	atlas.atlas = _stance_icon_tileset
+	atlas.region = Rect2(coords.x * 64, coords.y * 64, 64, 64)
+	return atlas
 
 # ============================================================================
 # DETECTION EYE INDICATOR
@@ -845,11 +1439,11 @@ func _update_detection_indicator(player: Player) -> void:
 
 	if max_alertness >= Constants.ALERTNESS_ALERT:
 		# DETECTED — enemy knows where you are
-		eye_text = "(O) DETECTED"
+		eye_text = "(O) SEEN" if _is_compact_hud() else "(O) DETECTED"
 		eye_color = ThemeColors.ALERT_DETECTED
 	elif max_alertness >= Constants.ALERTNESS_UNWARY:
 		# CAUTIOUS — enemy is searching
-		eye_text = "(-) CAUTIOUS"
+		eye_text = "(-) CAUT" if _is_compact_hud() else "(-) CAUTIOUS"
 		eye_color = ThemeColors.ALERT_CAUTIOUS
 	else:
 		# HIDDEN — safe or stealth mode active
@@ -861,6 +1455,277 @@ func _update_detection_indicator(player: Player) -> void:
 
 	stealth_label.text = eye_text
 	stealth_label.add_theme_color_override("font_color", eye_color)
+
+func _toggle_threat_summary() -> void:
+	_threat_minimized = not _threat_minimized
+	if threat_label:
+		threat_label.visible = not _threat_minimized
+	if threat_toggle:
+		var coords: Vector2i = Vector2i(9, 10) if _threat_minimized else Vector2i(15, 10)
+		var color: Color = ThemeColors.TEXT_SECONDARY if _threat_minimized else ThemeColors.TEXT_MUTED
+		threat_toggle.icon = _create_circle_tile_icon(coords, color)
+
+func _update_threat_summary(player: Player) -> void:
+	if not threat_label or not player:
+		return
+	if not AccessibilityManager.is_assist_enabled():
+		if threat_container:
+			threat_container.visible = false
+		_clear_world_intent_markers()
+		return
+	if threat_container and not threat_container.visible:
+		threat_container.visible = true
+	if not GameManager.current_level:
+		threat_label.text = "Threat: --"
+		threat_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		_clear_world_intent_markers()
+		return
+
+	var visible_count: int = 0
+	var ready_count: int = 0
+	var caster_count: int = 0
+	var severe_count: int = 0
+
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		if not GameManager.current_level.is_tile_visible(entity.grid_position):
+			continue
+		visible_count += 1
+
+		var intent: Dictionary = {}
+		if entity.has_method("get_intent_readout_for_viewer"):
+			intent = entity.get_intent_readout_for_viewer(player)
+
+		var eta: int = int(intent.get("eta", 1))
+		var targets_player: bool = bool(intent.get("targets_player", false))
+		var intent_type: String = str(intent.get("type", "uncertain"))
+
+		if targets_player and eta <= 0:
+			ready_count += 1
+			if intent_type == "cast" or intent_type == "ranged":
+				severe_count += 1
+		if intent_type == "cast" or intent_type == "ranged":
+			caster_count += 1
+
+	if visible_count <= 0:
+		threat_label.text = "Threat: Clear"
+		threat_label.add_theme_color_override("font_color", ThemeColors.ALERT_SAFE)
+		return
+
+	var threat_level: String = "Low"
+	var threat_color: Color = ThemeColors.ALERT_CAUTIOUS
+	if severe_count > 0:
+		threat_level = "Severe"
+		threat_color = ThemeColors.MSG_ERROR
+	elif ready_count >= 2:
+		threat_level = "High"
+		threat_color = ThemeColors.MSG_WARNING
+	elif ready_count >= 1 or caster_count >= 1:
+		threat_level = "Elevated"
+		threat_color = ThemeColors.GOLD_DIM
+
+	if AccessibilityManager.assist_level == "basic":
+		threat_label.text = "Threat: %s" % threat_level
+	else:
+		threat_label.text = "Threat: %s I%d C%d V%d" % [
+			threat_level, ready_count, caster_count, visible_count
+		]
+	threat_label.add_theme_color_override("font_color", threat_color)
+	var signature: String = "%s:%d:%d:%d" % [threat_level, ready_count, caster_count, visible_count]
+	if signature != _threat_signature:
+		_threat_signature = signature
+		if EventBus:
+			EventBus.threat_summary_updated.emit(threat_level, ready_count, caster_count, visible_count)
+
+func _update_world_intent_markers(player: Player) -> void:
+	if not GameManager.current_level:
+		return
+	if not AccessibilityManager.is_assist_enabled():
+		_clear_world_intent_markers()
+		return
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		if not GameManager.current_level.is_tile_visible(entity.grid_position):
+			if entity.has_method("clear_intent_marker"):
+				entity.clear_intent_marker()
+			continue
+		if entity.has_method("get_intent_readout_for_viewer") and entity.has_method("set_intent_marker_from_readout"):
+			var intent: Dictionary = entity.get_intent_readout_for_viewer(player)
+			entity.set_intent_marker_from_readout(intent)
+
+func _clear_world_intent_markers() -> void:
+	if not GameManager.current_level:
+		return
+	for entity in GameManager.current_level.entities:
+		if is_instance_valid(entity) and entity is Monster and entity.has_method("clear_intent_marker"):
+			entity.clear_intent_marker()
+
+func _update_pursuit_meter() -> void:
+	if not pursuit_label:
+		return
+	if not GameManager.current_level:
+		pursuit_label.text = "Pursuit Pressure: --"
+		pursuit_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		return
+	var alert: int = GameManager.current_level.get_floor_alertness() if GameManager.current_level.has_method("get_floor_alertness") else 0
+	var active_contact: bool = _has_visible_hostiles()
+	var player_hidden: bool = false
+	if GameManager.player and GameManager.player is Player:
+		player_hidden = bool((GameManager.player as Player).stealth_mode)
+
+	if not active_contact:
+		if alert > 0:
+			pursuit_label.text = "Pursuit: Dormant"
+			pursuit_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+		else:
+			pursuit_label.text = "Pursuit: Calm"
+			pursuit_label.add_theme_color_override("font_color", ThemeColors.ALERT_SAFE)
+		return
+
+	var tier: String = "Calm"
+	var color: Color = ThemeColors.ALERT_SAFE
+	if alert >= 40:
+		tier = "Relentless"
+		color = ThemeColors.MSG_ERROR
+	elif alert >= 25:
+		tier = "Hunted"
+		color = ThemeColors.MSG_WARNING
+	elif alert >= 10:
+		tier = "Wary"
+		color = ThemeColors.GOLD_DIM
+	if player_hidden and tier != "Calm":
+		tier = "Wary"
+		color = ThemeColors.GOLD_DIM
+	pursuit_label.text = "Pursuit: %s (%d)" % [tier, alert]
+	pursuit_label.add_theme_color_override("font_color", color)
+
+func _update_build_identity(player: Player) -> void:
+	if not build_label or not player:
+		return
+	if not AccessibilityManager.is_build_dashboard_enabled():
+		build_label.text = ""
+		return
+	var ranked: Array[Dictionary] = []
+	var keys: Array[String] = ["melee", "archery", "evasion", "stealth", "hunting", "will", "smithing", "lore"]
+	for key in keys:
+		ranked.append({"k": key, "v": int(player.get_effective_skill(key))})
+	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.v) > int(b.v)
+	)
+	var a0: Dictionary = ranked[0] if not ranked.is_empty() else {"k": "none", "v": 0}
+	var a1: Dictionary = ranked[1] if ranked.size() > 1 else {"k": "none", "v": 0}
+	build_label.text = "BLD %s/%s" % [str(a0.k).capitalize(), str(a1.k).capitalize()] if _is_compact_hud() else "Build: %s/%s" % [str(a0.k).capitalize(), str(a1.k).capitalize()]
+
+func _update_mode_indicator() -> void:
+	if not mode_label:
+		return
+	mode_label.text = ""
+	mode_label.visible = false
+
+func _update_goals_line() -> void:
+	if not goals_label:
+		return
+	if not RunGoalsManager:
+		goals_label.text = ""
+		return
+	var line: String = RunGoalsManager.get_goal_summary_line()
+	if _is_compact_hud():
+		line = line.replace("Goals: ", "GOAL ")
+		if line.length() > 26:
+			line = line.substr(0, 26) + "..."
+	elif line.length() > 36:
+		line = line.substr(0, 36) + "..."
+	goals_label.text = line
+
+func _on_run_goal_completed(_goal_id: String, description: String, tag: String) -> void:
+	if _goal_banner == null or _goal_banner_label == null:
+		return
+	_goal_banner_label.text = "Goal Complete: %s  •  Chronicle: %s" % [description, tag]
+	_goal_banner.visible = true
+	_goal_banner.modulate.a = 0.0
+	_goal_banner.position.y = 8
+	var tween := create_tween()
+	tween.tween_property(_goal_banner, "modulate:a", 1.0, 0.18)
+	tween.parallel().tween_property(_goal_banner, "position:y", 18.0, 0.18)
+	tween.tween_interval(1.8)
+	tween.tween_property(_goal_banner, "modulate:a", 0.0, 0.45)
+	tween.tween_callback(func(): _goal_banner.visible = false)
+
+func _is_compact_hud() -> bool:
+	var vp := get_viewport()
+	if vp == null:
+		return false
+	var width: float = vp.get_visible_rect().size.x
+	return width > 0.0 and width <= 1680.0
+
+func _create_circle_tile_icon(tile_coords: Vector2i, ring_color: Color) -> Texture2D:
+	if _ui_icon_tileset == null:
+		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
+		if FileAccess.file_exists(path):
+			_ui_icon_tileset = load(path)
+	if _ui_icon_tileset == null:
+		return null
+
+	var src_image: Image = _ui_icon_tileset.get_image()
+	if src_image == null or src_image.is_empty():
+		return null
+
+	var out_size: int = 24
+	var out := Image.create(out_size, out_size, false, Image.FORMAT_RGBA8)
+	out.fill(Color(0, 0, 0, 0))
+
+	var center := Vector2(out_size / 2, out_size / 2)
+	var outer_radius: float = 11.0
+	var inner_radius: float = 9.0
+	for y in range(out_size):
+		for x in range(out_size):
+			var d: float = Vector2(x, y).distance_to(center)
+			if d <= outer_radius and d >= inner_radius:
+				out.set_pixel(x, y, ring_color)
+
+	var tile_px: int = 64
+	var src_rect := Rect2i(tile_coords.x * tile_px, tile_coords.y * tile_px, tile_px, tile_px)
+	var tile_image: Image = src_image.get_region(src_rect)
+	tile_image.resize(12, 12, Image.INTERPOLATE_LANCZOS)
+	out.blit_rect(tile_image, Rect2i(0, 0, 12, 12), Vector2i(6, 6))
+
+	return ImageTexture.create_from_image(out)
+
+func _get_hud_item_icon(item: Variant) -> Texture2D:
+	if item == null:
+		return null
+	if _ui_icon_tileset == null:
+		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
+		if FileAccess.file_exists(path):
+			_ui_icon_tileset = load(path)
+	if _ui_icon_tileset == null:
+		return null
+	if not ("index" in item):
+		return null
+
+	var item_index: int = int(item.index)
+	var atlas_coords: Vector2i
+	if item is DataManager.ArtifactData:
+		atlas_coords = TileMapper.get_artifact_coords(item_index)
+	else:
+		atlas_coords = TileMapper.get_item_coords(item_index)
+
+	var atlas := AtlasTexture.new()
+	atlas.atlas = _ui_icon_tileset
+	atlas.region = Rect2(atlas_coords.x * 64, atlas_coords.y * 64, 64, 64)
+	return atlas
+
+func _has_visible_hostiles() -> bool:
+	if not GameManager.current_level:
+		return false
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or not entity.is_alive:
+			continue
+		if GameManager.current_level.is_tile_visible(entity.grid_position):
+			return true
+	return false
 
 # ============================================================================
 # MINIMAP
@@ -901,9 +1766,14 @@ func _build_peril_overlay() -> void:
 	peril_label.text = "SAURON SENSES YOUR PERIL..."
 	peril_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	peril_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	peril_label.set_anchors_preset(Control.PRESET_CENTER)
-	peril_label.add_theme_font_size_override("font_size", 36)
-	peril_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.1))
+	peril_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	peril_label.offset_top = 90
+	peril_label.offset_bottom = 150
+	ThemeColors.apply_heading_font(peril_label, ThemeColors.FONT_SIZE_H1)
+	peril_label.add_theme_color_override("font_color", ThemeColors.BLOOD_BRIGHT)
+	peril_label.add_theme_constant_override("shadow_offset_x", 2)
+	peril_label.add_theme_constant_override("shadow_offset_y", 2)
+	peril_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	peril_label.modulate.a = 0.0
 	peril_label.visible = false
 	add_child(peril_label)
@@ -934,6 +1804,7 @@ func _show_peril_warning() -> void:
 	var color: Color
 	var font_size: int
 	var flash_intensity: float
+	var label_color: Color = ThemeColors.BLOOD_BRIGHT
 
 	if depth <= 6:
 		message = "A malevolent presence watches from below..."
@@ -965,14 +1836,16 @@ func _show_peril_warning() -> void:
 	peril_flash.visible = true
 	peril_flash.color = Color(color.r, color.g, color.b, 0.0)
 	var flash_tween: Tween = create_tween()
-	flash_tween.tween_property(peril_flash, "color:a", flash_intensity, 0.15)
-	flash_tween.tween_property(peril_flash, "color:a", 0.0, 1.0)
+	var peak: float = flash_intensity * 0.5 if AccessibilityManager.reduced_flash else flash_intensity
+	var fade_time: float = 0.5 if AccessibilityManager.reduced_motion else 1.0
+	flash_tween.tween_property(peril_flash, "color:a", peak, 0.15)
+	flash_tween.tween_property(peril_flash, "color:a", 0.0, fade_time)
 	flash_tween.tween_callback(func(): peril_flash.visible = false)
 
 	# Label with depth-based styling
 	peril_label.text = message
 	peril_label.add_theme_font_size_override("font_size", font_size)
-	peril_label.add_theme_color_override("font_color", color)
+	peril_label.add_theme_color_override("font_color", label_color)
 	peril_label.visible = true
 	peril_label.modulate.a = 0.0
 	var label_tween: Tween = create_tween()
@@ -1101,14 +1974,36 @@ func _on_status_removed(entity: Entity, status_name: String) -> void:
 
 func _update_status_icons(player: Player) -> void:
 	for child in status_container.get_children():
+		if child.has_meta("pulse_tween"):
+			var pulse_tween: Variant = child.get_meta("pulse_tween")
+			if pulse_tween is Tween and is_instance_valid(pulse_tween):
+				(pulse_tween as Tween).kill()
+			child.remove_meta("pulse_tween")
 		child.queue_free()
 
 	if not player.status_fx:
 		return
 
+	var active_effects: Array[Dictionary] = []
 	for effect_id: StringName in player.status_fx.get_active_effects():
 		var duration: int = player.status_fx.get_duration(effect_id)
 		var status_name := String(effect_id)
+		var meta: Dictionary = StatusMetadata.get_status_meta(status_name, duration)
+		active_effects.append({
+			"status_name": status_name,
+			"duration": duration,
+			"meta": meta,
+			"rank": int(meta.get("severity_rank", 1)),
+		})
+
+	active_effects.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.rank) > int(b.rank)
+	)
+
+	for entry in active_effects:
+		var status_name: String = str(entry.status_name)
+		var duration: int = int(entry.duration)
+		var meta: Dictionary = entry.meta
 		var status_color := ThemeColors.get_status_color(status_name)
 
 		var badge := PanelContainer.new()
@@ -1119,7 +2014,13 @@ func _update_status_icons(player: Player) -> void:
 		icon.add_theme_color_override("font_color", status_color)
 		ThemeColors.apply_body_font(icon, ThemeColors.FONT_SIZE_HINT)
 		icon.add_theme_color_override("font_color", status_color)
-		icon.tooltip_text = "%s (%d turns)" % [status_name.capitalize(), duration]
+		icon.tooltip_text = "%s (%d turns)\nSeverity: %s\nEffect: %s\nCounterplay: %s" % [
+			str(meta.get("name", status_name.capitalize())),
+			duration,
+			str(meta.get("severity", "minor")),
+			str(meta.get("exact_effect", "Temporary effect.")),
+			str(meta.get("counterplay", "React defensively.")),
+		]
 		badge.add_child(icon)
 		status_container.add_child(badge)
 
@@ -1127,7 +2028,16 @@ func _update_status_icons(player: Player) -> void:
 			_pulse_node(badge)
 
 func _pulse_node(node: Control) -> void:
+	if AccessibilityManager.reduced_motion:
+		return
+	if node.has_meta("pulse_tween"):
+		var old_tween: Variant = node.get_meta("pulse_tween")
+		if old_tween is Tween and is_instance_valid(old_tween):
+			(old_tween as Tween).kill()
+		node.remove_meta("pulse_tween")
 	var tween := create_tween()
+	tween.bind_node(node)
+	node.set_meta("pulse_tween", tween)
 	tween.set_loops()
 	tween.tween_property(node, "modulate:a", 0.5, 0.5).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(node, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_IN_OUT)

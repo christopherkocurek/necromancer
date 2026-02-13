@@ -1,0 +1,38 @@
+[
+  {
+    "id": "e1_h1_human_ranger",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass A: razor-spired black citadel, broken rock canyons, narrow beams of moonlight through storm clouds, minimal moon disk visibility, oppressive fog layers, high contrast edges and clean center readability for UI overlay. Hero variant 1: lone human ranger silhouette on foreground ledge, cloak and sword, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e1_h2_elf_scout",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass A: razor-spired black citadel, broken rock canyons, narrow beams of moonlight through storm clouds, minimal moon disk visibility, oppressive fog layers, high contrast edges and clean center readability for UI overlay. Hero variant 2: lone elf scout silhouette on foreground ledge, long cloak, subtle pointed-ear profile, elegant bow held low, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e1_h3_knight_heavy",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass A: razor-spired black citadel, broken rock canyons, narrow beams of moonlight through storm clouds, minimal moon disk visibility, oppressive fog layers, high contrast edges and clean center readability for UI overlay. Hero variant 3: lone armored human knight silhouette on foreground ledge, heavier shoulders, long cape, sword or spear point downward, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e2_h1_human_ranger",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass B: tower/moon variant with a larger visible moon halo behind the upper spires, fewer side spires, broader gate massing, dramatic backlit cloud ring, mist pooling in lower ravine, clear central value gradient for menu readability. Hero variant 1: lone human ranger silhouette on foreground ledge, cloak and sword, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e2_h2_elf_scout",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass B: tower/moon variant with a larger visible moon halo behind the upper spires, fewer side spires, broader gate massing, dramatic backlit cloud ring, mist pooling in lower ravine, clear central value gradient for menu readability. Hero variant 2: lone elf scout silhouette on foreground ledge, long cloak, subtle pointed-ear profile, elegant bow held low, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e2_h3_knight_heavy",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass B: tower/moon variant with a larger visible moon halo behind the upper spires, fewer side spires, broader gate massing, dramatic backlit cloud ring, mist pooling in lower ravine, clear central value gradient for menu readability. Hero variant 3: lone armored human knight silhouette on foreground ledge, heavier shoulders, long cape, sword or spear point downward, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e3_h1_human_ranger",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass C: tower/moon variant with segmented fortress architecture (central keep plus flanking towers), crescent moon partly obscured by fast clouds, colder blue-green fog, strong shafts of side light through canyon, gate framed by deep vertical shadows, center preserved for UI readability. Hero variant 1: lone human ranger silhouette on foreground ledge, cloak and sword, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e3_h2_elf_scout",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass C: tower/moon variant with segmented fortress architecture (central keep plus flanking towers), crescent moon partly obscured by fast clouds, colder blue-green fog, strong shafts of side light through canyon, gate framed by deep vertical shadows, center preserved for UI readability. Hero variant 2: lone elf scout silhouette on foreground ledge, long cloak, subtle pointed-ear profile, elegant bow held low, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  },
+  {
+    "id": "e3_h3_knight_heavy",
+    "prompt": "Dark fantasy title-screen concept art in the same composition language as a lone figure facing a colossal fortress gate through misty ravines. Environment pass C: tower/moon variant with segmented fortress architecture (central keep plus flanking towers), crescent moon partly obscured by fast clouds, colder blue-green fog, strong shafts of side light through canyon, gate framed by deep vertical shadows, center preserved for UI readability. Hero variant 3: lone armored human knight silhouette on foreground ledge, heavier shoulders, long cape, sword or spear point downward, no facial detail. Keep hero small (about 8-12% frame height), fortress dominant. Painterly cinematic style, no text, no logos, no watermark, no signature, 16:9 widescreen."
+  }
+]

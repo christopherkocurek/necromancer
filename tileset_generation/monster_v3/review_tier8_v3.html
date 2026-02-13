@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tier 8 Monster Review v3 — Prompt Overhaul</title>
+<style>
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+h1 { color: #4ade80; text-align: center; }
+h2 { color: #ffd93d; margin-top: 40px; }
+.subtitle { color: #888; text-align: center; font-size: 14px; margin-top: -10px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto; }
+.card { background: #16213e; border-radius: 12px; padding: 20px; text-align: center; border: 2px solid #333; }
+.card.approved { border-color: #4ade80; }
+.card.regen { border-color: #ff69b4; }
+.card.warn { border-color: #ffd93d; }
+.name { font-size: 18px; font-weight: bold; color: #ffd93d; margin-bottom: 5px; }
+.id { color: #888; font-size: 12px; }
+.sprites { display: flex; justify-content: center; gap: 20px; margin: 15px 0; }
+.sprite-box { text-align: center; }
+.sprite-box img { width: 128px; height: 128px; image-rendering: pixelated; border: 1px solid #444; }
+.sprite-box .label { font-size: 11px; color: #888; margin-top: 4px; }
+.raw-preview { margin: 10px 0; }
+.raw-preview img { width: 200px; height: 200px; border: 1px solid #333; border-radius: 8px; }
+.stats { font-size: 12px; color: #aaa; margin-top: 8px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+.tag-approved { background: #4ade8033; color: #4ade80; }
+.tag-regen { background: #ff69b433; color: #ff69b4; }
+.tag-warn { background: #ffd93d33; color: #ffd93d; }
+.tag-merge { background: #e74c3c33; color: #e74c3c; }
+.tag-frag { background: #ffd93d33; color: #ffd93d; }
+.note { font-size: 12px; color: #aaa; margin-top: 8px; font-style: italic; }
+.summary { background: #16213e; border-radius: 12px; padding: 20px; max-width: 800px; margin: 30px auto; }
+</style>
+</head>
+<body>
+<h1>Tier 8 v3 — Prompt Overhaul (6 Regens)</h1>
+<p class="subtitle">Gandalf, Thranduil, Elrond, Beorn, Great Elk, Ent — rewritten prompts. Galadriel/Thorin/Radagast/Eagle kept from v2.</p>
+
+<div class="grid">
+
+<div class="card warn">
+  <div class="name">Gandalf the Grey</div>
+  <div class="id">#301 — Wandering Wizard</div>
+  <span class="tag tag-warn">LOW EXTRACTION</span>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_301_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_301_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 6.6% | final 8.7% — "oil painting" style confused rembg</div>
+  <div class="note">Prompt changed to weathered pilgrim wizard with painterly brushstrokes. Very low extraction — may need another regen with cleaner prompt.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Thranduil, Elvenking</div>
+  <div class="id">#302 — Woodland Elf King</div>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <span class="tag tag-frag">FRAG=0 (5 kept)</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_302_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_302_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 70.6% | final 72.7% (was 46.8%)</div>
+  <div class="note">Green cloak + gold embroidery on magenta. Pale ivory skin, blue eyes. +26% improvement.</div>
+</div>
+
+<div class="card approved">
+  <div class="name">Galadriel, Lady of Light</div>
+  <div class="id">#303 — Radiant Elven Queen</div>
+  <span class="tag tag-approved">APPROVED v2</span>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_303_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 64.4% | final 73.9% | "perfect" per user</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Elrond Half-elven</div>
+  <div class="id">#304 — Elf Lord of Rivendell</div>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <span class="tag tag-merge">COLOR_MERGE</span>
+  <span class="tag tag-frag">FRAG=0</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_304_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_304_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 22.0% + COLOR_MERGE +34.0% | final 56.8% (was 55.2%)</div>
+  <div class="note">Bright blue robes with gilded gold. COLOR_MERGE recovered robe area.</div>
+</div>
+
+<div class="card approved">
+  <div class="name">Thorin Oakenshield</div>
+  <div class="id">#305 — Dwarf King in Exile</div>
+  <span class="tag tag-approved">APPROVED v2</span>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_305_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 68.9% | final 71.3% | "pretty good" per user</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Beorn the Skinchanger</div>
+  <div class="id">#306 — Bear-Man Berserker</div>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_306_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_306_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 61.1% | final 61.8% (was 50.8%)</div>
+  <div class="note">Complete rewrite: half-man half-bear berserker with fur, claws, iron armor, bestial snarl.</div>
+</div>
+
+<div class="card approved">
+  <div class="name">Radagast the Brown</div>
+  <div class="id">#307 — Woodland Wizard</div>
+  <span class="tag tag-approved">APPROVED v1</span>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_307_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 50.8% | final 52.1% | 10/10 from v1</div>
+</div>
+
+<div class="card approved">
+  <div class="name">Eagle of the Misty Mountains</div>
+  <div class="id">#308 — Great Eagle</div>
+  <span class="tag tag-approved">APPROVED v2</span>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_308_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 34.9% | final 42.7% | "awesome" per user</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Great Elk of Mirkwood</div>
+  <div class="id">#309 — Majestic Forest Elk</div>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_309_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_309_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 43.4% | final 45.7%</div>
+  <div class="note">Explicit "one head one body, one elk only" to prevent dual-face. Dark brown with golden chest.</div>
+</div>
+
+<div class="card regen">
+  <div class="name">Ent of Fangorn</div>
+  <div class="id">#310 — Living Tree Shepherd</div>
+  <span class="tag tag-regen">v3 REGEN</span>
+  <span class="tag tag-merge">COLOR_MERGE</span>
+  <span class="tag tag-frag">FRAG=0</span>
+  <div class="raw-preview">
+    <img src="../monster_v2/raw/monster_310_1024.png">
+  </div>
+  <div class="sprites">
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_light.png">
+      <div class="label">Light</div>
+    </div>
+    <div class="sprite-box">
+      <img src="tier_8/monster_310_dark.png">
+      <div class="label">Dark</div>
+    </div>
+  </div>
+  <div class="stats">rembg: 44.5% + COLOR_MERGE +0.1% | final 48.8% (was 54.6%)</div>
+  <div class="note">Green moss, ivy vines, bright green leaf crown. More living-tree feel vs pure brown bark.</div>
+</div>
+
+</div>
+
+<div class="summary">
+  <h2>Tier 8 v3 Summary — Prompt Overhaul</h2>
+  <p>6 monsters regenerated with completely rewritten prompts per user feedback. 4 kept from v2.</p>
+  <ul>
+    <li><strong>Gandalf</strong> — 8.7% final. Oil painting style killed rembg extraction. Likely needs another regen with standard "dark fantasy illustration" style.</li>
+    <li><strong>Thranduil</strong> — 72.7% final (+26%). Green cloak, pale ivory skin, blue eyes as requested.</li>
+    <li><strong>Galadriel</strong> — 73.9% (KEPT). "Perfect" per user.</li>
+    <li><strong>Elrond</strong> — 56.8% final. Bright blue robes + gilded gold. COLOR_MERGE recovered lost robe area.</li>
+    <li><strong>Thorin</strong> — 71.3% (KEPT). "Pretty good" per user.</li>
+    <li><strong>Beorn</strong> — 61.8% final. Now half-bear berserker with fur, claws, bestial features.</li>
+    <li><strong>Radagast</strong> — 52.1% (KEPT). 10/10.</li>
+    <li><strong>Eagle</strong> — 42.7% (KEPT). "Awesome" per user.</li>
+    <li><strong>Great Elk</strong> — 45.7% final. Explicit single-creature constraints to prevent dual face.</li>
+    <li><strong>Ent</strong> — 48.8% final. Green moss + ivy + leaf crown for more living-tree feel.</li>
+  </ul>
+  <p><strong>Known issue:</strong> Gandalf "oil painting" prompt needs regen — 8.7% is too low for clean sprite.</p>
+</div>
+
+</body>
+</html>

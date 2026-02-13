@@ -29,6 +29,8 @@ func _setup_tabs() -> void:
 	_add_toggle(display_tab, "Screen Shake", AccessibilityManager.screen_shake_enabled, func(v: bool) -> void: AccessibilityManager.screen_shake_enabled = v)
 	_add_slider(display_tab, "Animation Speed", 0.5, 2.0, AccessibilityManager.animation_speed, func(v: float) -> void: AccessibilityManager.animation_speed = v)
 	_add_slider(display_tab, "Font Scale", 0.8, 1.5, AccessibilityManager.font_scale, func(v: float) -> void: AccessibilityManager.font_scale = v)
+	_add_toggle(display_tab, "Reduced Flash", AccessibilityManager.reduced_flash, func(v: bool) -> void: AccessibilityManager.reduced_flash = v)
+	_add_toggle(display_tab, "Reduced Motion", AccessibilityManager.reduced_motion, func(v: bool) -> void: AccessibilityManager.reduced_motion = v)
 	tab_container.add_child(display_tab)
 
 	# Accessibility tab
@@ -44,6 +46,18 @@ func _setup_tabs() -> void:
 	_add_dropdown(access_tab, "Colorblind Mode", ["None", "Protanopia", "Deuteranopia", "Tritanopia"], func(idx: int) -> void:
 		var modes := ["none", "protanopia", "deuteranopia", "tritanopia"]
 		AccessibilityManager.colorblind_mode = modes[idx]
+	)
+	_add_dropdown_with_initial(
+		access_tab,
+		"Assist Layer",
+		["Off", "Basic", "Full"],
+		_get_assist_dropdown_index(),
+		func(idx: int) -> void:
+			var levels := ["off", "basic", "full"]
+			AccessibilityManager.assist_level = levels[idx]
+	)
+	_add_toggle(access_tab, "Build Identity Dashboard", AccessibilityManager.build_dashboard_enabled, func(v: bool) -> void:
+		AccessibilityManager.build_dashboard_enabled = v
 	)
 	_add_toggle(access_tab, "High Contrast", AccessibilityManager.high_contrast, func(v: bool) -> void: AccessibilityManager.high_contrast = v)
 	tab_container.add_child(access_tab)
@@ -126,7 +140,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _refresh_all() -> void:
-	pass
+	var prev_tab: int = tab_container.current_tab
+	for child in tab_container.get_children():
+		child.queue_free()
+	_setup_tabs()
+	tab_container.current_tab = clampi(prev_tab, 0, maxi(0, tab_container.get_tab_count() - 1))
 
 func _add_toggle(parent: VBoxContainer, label_text: String, initial: bool, callback: Callable) -> void:
 	var row := HBoxContainer.new()
@@ -201,3 +219,27 @@ func _add_dropdown(parent: VBoxContainer, label_text: String, options: Array, ca
 	dropdown.item_selected.connect(callback)
 	row.add_child(dropdown)
 	parent.add_child(row)
+
+func _add_dropdown_with_initial(parent: VBoxContainer, label_text: String, options: Array, initial_idx: int, callback: Callable) -> void:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size.x = 300
+	ThemeColors.apply_body_font(label)
+	row.add_child(label)
+	var dropdown := OptionButton.new()
+	for opt in options:
+		dropdown.add_item(opt)
+	dropdown.select(clampi(initial_idx, 0, options.size() - 1))
+	dropdown.item_selected.connect(callback)
+	row.add_child(dropdown)
+	parent.add_child(row)
+
+func _get_assist_dropdown_index() -> int:
+	match AccessibilityManager.assist_level:
+		"off":
+			return 0
+		"basic":
+			return 1
+		_:
+			return 2

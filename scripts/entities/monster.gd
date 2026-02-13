@@ -69,6 +69,9 @@ var _hunter_exposed_evasion_penalty: int = 0
 var _hunter_exposed_protection_shred: int = 0
 
 var health_bar: EntityHealthBar = null
+var _intent_marker: Sprite2D = null
+var _intent_marker_glow: Sprite2D = null
+static var _intent_glow_texture: Texture2D = null
 
 # Intent readout (focus-first telegraphing)
 const INTENT_MELEE := "melee"
@@ -78,6 +81,16 @@ const INTENT_MOVE := "move"
 const INTENT_FLEE := "flee"
 const INTENT_IDLE := "idle"
 const INTENT_UNCERTAIN := "uncertain"
+
+const INTENT_ICON_COORDS := {
+	INTENT_MELEE: Vector2i(28, 11),   # Sword
+	INTENT_RANGED: Vector2i(24, 11),  # Bow
+	INTENT_CAST: Vector2i(14, 11),    # Wand/arcane-like icon
+	INTENT_MOVE: Vector2i(9, 10),     # Eye-like movement pressure marker
+	INTENT_FLEE: Vector2i(8, 11),     # Boot-ish retreat marker
+	INTENT_IDLE: Vector2i(15, 10),    # Passive eye marker
+	INTENT_UNCERTAIN: Vector2i(15, 10),
+}
 
 func _ready() -> void:
 	super._ready()
@@ -259,14 +272,25 @@ func get_intent_readout_for_viewer(viewer: Player) -> Dictionary:
 	var detail: String = ""
 
 	if tier <= 0:
+		match intent_type:
+			INTENT_FLEE:
+				summary = "Retreat likely"
+			INTENT_IDLE:
+				summary = "No immediate threat"
+			INTENT_MOVE:
+				summary = "Advance likely"
+			INTENT_MELEE, INTENT_RANGED, INTENT_CAST:
+				summary = "Hostile action likely"
+			_:
+				summary = "Behavior uncertain"
 		return {
-			"type": INTENT_UNCERTAIN,
-			"icon": _intent_icon(INTENT_UNCERTAIN),
-			"summary": "Behavior unreadable",
-			"detail": "",
+			"type": intent_type,
+			"icon": icon,
+			"summary": summary,
+			"detail": "Coarse read. Hunting improves precision.",
 			"eta": eta,
 			"targets_player": targets_player,
-			"certainty": certainty,
+			"certainty": "Coarse",
 		}
 
 	if tier <= 2:
@@ -413,7 +437,7 @@ func _choose_intent_spell(spells: Array[String]) -> String:
 		return ""
 	# Deterministic threat-ordered choice for telegraph readability.
 	var priority: Array[String] = [
-		"HOLD", "CONF", "SCARE", "SLOW",
+		"HOLD", "CONF", "SCARE", "WEB", "SLOW",
 		"BR_DARK", "BR_POIS", "BR_COLD", "BR_FIRE",
 		"ARROW2", "BOULDER", "ARROW1",
 		"DARKNESS", "SHRIEK"
@@ -467,6 +491,8 @@ func _spell_label(spell: String) -> String:
 			return "Scare"
 		"SLOW":
 			return "Slow"
+		"WEB", "THROW_WEB":
+			return "Web"
 		"DARKNESS":
 			return "Darkness"
 		"SHRIEK":
@@ -577,8 +603,8 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		m_per -= distance
 		# Terrain openness: open areas are harder to hide in
 		var openness: int = _count_open_squares(player.grid_position)
-		# Disguise halves terrain openness impact
-		if player.has_ability(Constants.Skill.S_STL, Constants.StealthAbility.STL_DISGUISE):
+		# Active Disguise stance halves terrain openness impact.
+		if player.has_method("is_disguise_active") and player.is_disguise_active():
 			openness = openness / 2
 		m_per += openness
 		# Combat noise bonus
@@ -598,6 +624,8 @@ func _update_alertness(player: Player, has_los: bool, distance: int) -> void:
 		var result: int = perception_roll - difficulty_roll
 		if result > 0:
 			alertness = mini(alertness + result, Constants.ALERTNESS_MAX)
+			if alertness >= Constants.ALERTNESS_ALERT and has_los and player.has_method("on_enemy_detected"):
+				player.on_enemy_detected()
 		else:
 			alertness = maxi(alertness - 1, Constants.ALERTNESS_MIN)
 
@@ -1115,6 +1143,78 @@ func roll_protection(_damage_type: int = 1) -> int:
 		prot = maxi(0, prot - _hunter_exposed_protection_shred)
 	return prot
 
+func clear_intent_marker() -> void:
+	if _intent_marker:
+		_intent_marker.visible = false
+	if _intent_marker_glow:
+		_intent_marker_glow.visible = false
+
+func set_intent_marker_from_readout(intent: Dictionary) -> void:
+	if intent.is_empty():
+		clear_intent_marker()
+		return
+	var intent_type: String = str(intent.get("type", INTENT_UNCERTAIN))
+	var targets_player: bool = bool(intent.get("targets_player", false))
+	var eta: int = int(intent.get("eta", 1))
+	var marker_color: Color = Color(0.85, 0.85, 0.85, 0.95)
+	if targets_player and eta <= 0:
+		marker_color = ThemeColors.MSG_ERROR if intent_type in [INTENT_CAST, INTENT_RANGED] else ThemeColors.MSG_WARNING
+	elif targets_player:
+		marker_color = ThemeColors.GOLD_DIM
+	_ensure_intent_marker()
+	var coords: Vector2i = INTENT_ICON_COORDS.get(intent_type, INTENT_ICON_COORDS[INTENT_UNCERTAIN])
+	var tile_size: int = GameManager.TILE_SIZE
+	_intent_marker.region_rect = Rect2(coords.x * tile_size, coords.y * tile_size, tile_size, tile_size)
+	_intent_marker.modulate = marker_color
+	_intent_marker_glow.modulate = Color(marker_color.r, marker_color.g, marker_color.b, 0.45)
+	_intent_marker_glow.visible = true
+	_intent_marker.visible = true
+
+func _ensure_intent_marker() -> void:
+	if _intent_marker:
+		return
+	_intent_marker_glow = Sprite2D.new()
+	_intent_marker_glow.name = "IntentMarkerGlow"
+	_intent_marker_glow.texture = _get_intent_glow_texture()
+	_intent_marker_glow.region_enabled = false
+	_intent_marker_glow.material = null
+	_intent_marker_glow.centered = false
+	_intent_marker_glow.scale = Vector2.ONE
+	_intent_marker_glow.position = Vector2(41, 2)
+	_intent_marker_glow.z_index = 79
+	_intent_marker_glow.visible = false
+	add_child(_intent_marker_glow)
+
+	_intent_marker = Sprite2D.new()
+	_intent_marker.name = "IntentMarker"
+	_intent_marker.texture = Entity._tileset_texture
+	_intent_marker.region_enabled = true
+	_intent_marker.material = Entity._magenta_shader
+	_intent_marker.centered = false
+	_intent_marker.scale = Vector2.ONE * 0.17
+	_intent_marker.position = Vector2(49, 8)
+	_intent_marker.z_index = 80
+	_intent_marker.visible = false
+	add_child(_intent_marker)
+
+func _get_intent_glow_texture() -> Texture2D:
+	if _intent_glow_texture != null:
+		return _intent_glow_texture
+	var size: int = 28
+	var center: Vector2 = Vector2(size * 0.5, size * 0.5)
+	var max_radius: float = size * 0.5
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for y in range(size):
+		for x in range(size):
+			var d: float = Vector2(float(x), float(y)).distance_to(center)
+			if d <= max_radius:
+				var t: float = 1.0 - (d / max_radius)
+				var alpha: float = pow(t, 2.2) * 0.65
+				img.set_pixel(x, y, Color(1.0, 0.95, 0.45, alpha))
+	_intent_glow_texture = ImageTexture.create_from_image(img)
+	return _intent_glow_texture
+
 ## Override damage dice for werewolf human form (reduced to 1d6 unarmed)
 func _get_attack_damage_dice() -> String:
 	if _is_werewolf() and werewolf_form == "human":
@@ -1295,6 +1395,8 @@ func _get_light_of_eldar_penalty() -> int:
 	if not is_instance_valid(player):
 		return 0
 	if not player.has_ability(Constants.Skill.S_LOR, Constants.LoreAbility.LOR_LIGHT_OF_ELDAR):
+		return 0
+	if not (player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active"))):
 		return 0
 	return 2  # -2 attack and -2 evasion for shadow creatures in lit tiles
 
@@ -1493,17 +1595,21 @@ func _get_available_spells() -> Array[String]:
 				mapped = "ARROW1"
 			"ARROW":
 				mapped = "ARROW1"
+			"THROW_WEB":
+				mapped = "WEB"
 		if mapped not in spells:
 			spells.append(mapped)
 
 	# Legacy fallback: also check flags array for older monsters that use F: lines for spells
 	var flag_spell_map: Array[String] = [
 		"SHRIEK", "DARKNESS", "SLOW", "BR_FIRE", "BR_COLD", "BR_POIS", "BR_DARK",
-		"ARROW1", "ARROW2", "BOULDER", "HOLD", "SCARE", "CONF"
+		"ARROW1", "ARROW2", "BOULDER", "HOLD", "SCARE", "CONF", "THROW_WEB"
 	]
 	for spell_name: String in flag_spell_map:
-		if monster_data.has_flag(spell_name) and spell_name not in spells:
-			spells.append(spell_name)
+		if monster_data.has_flag(spell_name):
+			var mapped: String = "WEB" if spell_name == "THROW_WEB" else spell_name
+			if mapped not in spells:
+				spells.append(mapped)
 
 	return spells
 
@@ -1538,6 +1644,8 @@ func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:
 			return _spell_scare(cast_target)
 		"CONF":
 			return _spell_conf(cast_target)
+		"WEB", "THROW_WEB":
+			return _spell_throw_web(cast_target, distance)
 	return false
 
 func _spell_shriek() -> bool:
@@ -1632,6 +1740,72 @@ func _spell_conf(cast_target: Entity) -> bool:
 	GameManager.log_message("The %s bewilders your mind!" % entity_name, ThemeColors.MSG_ERROR)
 	cast_target.apply_status("confused", 3 + randi_range(1, 4))
 	return true
+
+func _spell_throw_web(cast_target: Entity, distance: int) -> bool:
+	if not GameManager.current_level:
+		return false
+	var max_range: int = 6 + (monster_data.spell_power / 4 if monster_data else 0)
+	if distance > max_range:
+		return false
+
+	var spell_roll: int = randi_range(1, 20) + perception + (monster_data.spell_power / 3 if monster_data else 0)
+	var evade_roll: int = randi_range(1, 20)
+	if cast_target is Player:
+		var p: Player = cast_target as Player
+		evade_roll += p.get_total_evasion(self)
+
+	var primary_pos: Vector2i = cast_target.grid_position
+	var webbed_tiles: int = _place_web_cluster(primary_pos)
+	var show_msg: bool = cast_target is Player
+	if not show_msg and GameManager.current_level:
+		show_msg = GameManager.current_level.is_tile_visible(grid_position) or GameManager.current_level.is_tile_visible(primary_pos)
+
+	if evade_roll >= spell_roll:
+		if show_msg:
+			GameManager.log_message("The %s hurls a web, but you slip clear!" % entity_name, ThemeColors.ABILITY_LEARNED)
+		if webbed_tiles > 0 and show_msg:
+			GameManager.log_message("Sticky webs spread across the floor.", ThemeColors.MSG_WARNING)
+		return true
+
+	if show_msg:
+		GameManager.log_message("The %s ensnares you in webbing!" % entity_name, ThemeColors.MSG_ERROR)
+	cast_target.apply_status("slow", 4 + randi_range(1, 3))
+	return true
+
+func _place_web_cluster(center: Vector2i) -> int:
+	if not GameManager.current_level:
+		return 0
+	var level: Level = GameManager.current_level
+	var placed: int = 0
+	var positions: Array[Vector2i] = [center]
+	var offsets: Array[Vector2i] = [
+		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
+		Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)
+	]
+	offsets.shuffle()
+	var spread: int = 2 + (randi() % 2)  # 2-3 nearby web tiles
+	for i in range(mini(spread, offsets.size())):
+		positions.append(center + offsets[i])
+
+	for pos in positions:
+		if not level.is_in_bounds(pos):
+			continue
+		if not _can_place_web_at(pos):
+			continue
+		level.set_tile(pos, Level.Tile.WEB)
+		level.set_explored(pos, true)
+		placed += 1
+	return placed
+
+func _can_place_web_at(pos: Vector2i) -> bool:
+	if not GameManager.current_level:
+		return false
+	var tile: int = GameManager.current_level.get_tile(pos)
+	match tile:
+		Level.Tile.FLOOR, Level.Tile.VINE_FLOOR, Level.Tile.TRAP_TRIGGERED, Level.Tile.BONE_PILE, Level.Tile.INSCRIPTION:
+			return true
+		_:
+			return false
 
 func _spell_breath(cast_target: Entity, element: String, distance: int) -> bool:
 	# Breath weapon: damage based on monster health, reduced by distance

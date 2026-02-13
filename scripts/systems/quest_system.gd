@@ -304,6 +304,9 @@ func attempt_escape() -> bool:
 	if player and player.run_stats:
 		player.run_stats.victory = true
 		player.run_stats.victory_type = "Escape"
+		player.run_stats.record_victory("Escape")
+		if ChronicleManager:
+			ChronicleManager.record_run(player, player.run_stats, "escape")
 
 	EventBus.game_over.emit(true, "Escape Victory")
 	return true
@@ -342,6 +345,9 @@ func attempt_banishment() -> bool:
 			player.run_stats.victory = true
 			player.run_stats.victory_type = "Banishment"
 			player.run_stats.necromancer_defeated = true
+			player.run_stats.record_victory("Banishment")
+			if ChronicleManager:
+				ChronicleManager.record_run(player, player.run_stats, "banishment")
 
 		EventBus.game_over.emit(true, "Banishment Victory")
 		return true

@@ -105,6 +105,13 @@ func test_burning_has_fire_resistance():
 	var resistance_key: StringName = Constants.EFFECT_BURNING
 	assert_eq(resistance_key, &"burning", "EFFECT_BURNING should be 'burning'")
 
+func test_poison_has_pois_resistance_mapping():
+	assert_eq(
+		EffectDefinitions.get_resistance_property(Constants.EFFECT_POISONED),
+		"resist_pois",
+		"Poisoned should map to resist_pois"
+	)
+
 func test_effect_constants_exist():
 	assert_eq(Constants.EFFECT_BLIND, &"blind", "EFFECT_BLIND defined")
 	assert_eq(Constants.EFFECT_CONFUSED, &"confused", "EFFECT_CONFUSED defined")

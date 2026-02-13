@@ -251,6 +251,10 @@ def paste_sprite(tileset, sprite_path, col, row):
             sprite = sprite.resize((TILE_SIZE, TILE_SIZE), Image.Resampling.NEAREST)
         x = col * TILE_SIZE
         y = row * TILE_SIZE
+        # Clear destination cell first so transparent sprite pixels don't keep
+        # stale content from previous atlas occupants.
+        clear = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0))
+        tileset.paste(clear, (x, y))
         tileset.paste(sprite, (x, y), sprite)  # Use alpha mask
         return True
     except Exception as e:

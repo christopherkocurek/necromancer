@@ -25,6 +25,7 @@ var animation_delay: float = 0.001
 var pending_monsters: Array[Monster] = []
 var current_level: Level = null
 var player: Player = null
+var _pursuit_track_forced: bool = false
 
 func _ready() -> void:
 	EventBus.entity_moved.connect(_on_entity_moved)
@@ -240,6 +241,7 @@ func _end_round() -> void:
 				monster.tick_status_effects()
 		# Decay floor-wide alertness
 		current_level.tick_floor_alertness()
+		_apply_pursuit_pressure()
 
 		# Periodic spawning (Brogue clock)
 		_tick_periodic_spawn()
@@ -324,6 +326,13 @@ func _tick_periodic_spawn() -> void:
 	var interval: int = Constants.PERIODIC_SPAWN_INTERVAL
 	if current_level.is_ascent:
 		interval = interval / 2
+	var alert: int = current_level.get_floor_alertness()
+	if alert >= 40:
+		interval = maxi(8, int(interval * 0.45))
+	elif alert >= 25:
+		interval = maxi(10, int(interval * 0.60))
+	elif alert >= 10:
+		interval = maxi(12, int(interval * 0.80))
 
 	if current_round % interval != 0:
 		return
@@ -342,6 +351,8 @@ func _tick_periodic_spawn() -> void:
 	var depth: int = GameManager.current_depth
 	if current_level.is_ascent:
 		depth = mini(depth + 5, 20)
+	if alert >= 25:
+		depth = mini(depth + 1, 20)
 	var effective_depth: int = DataManager.get_effective_monster_depth(depth)
 
 	# 70% themed, 30% random — no uniques
@@ -359,9 +370,64 @@ func _tick_periodic_spawn() -> void:
 	monster.grid_position = spawn_pos
 	monster.initialize_from_data(monster_data)
 	monster.alertness = Constants.ALERTNESS_ALERT
+	if alert >= 25:
+		monster.alertness = Constants.ALERTNESS_QUITE_ALERT
+	if alert >= 40:
+		monster.alertness = Constants.ALERTNESS_VERY_ALERT
 	monster.is_sleeping = false
 	monster.encounter_type = Constants.EncounterType.HUNTER
 	current_level.add_entity(monster)
+
+	# Relentless pursuit can add a second hunter if capacity allows.
+	if alert >= 40 and randf() < 0.30:
+		var count_after: int = current_level.get_monsters().size()
+		if count_after < Constants.PERIODIC_SPAWN_MAX_MONSTERS:
+			var spawn2: Vector2i = _find_periodic_spawn_pos()
+			if spawn2 != Vector2i(-1, -1):
+				var monster2: Monster = monster_scene.instantiate()
+				monster2.grid_position = spawn2
+				monster2.initialize_from_data(monster_data)
+				monster2.alertness = Constants.ALERTNESS_VERY_ALERT
+				monster2.is_sleeping = false
+				monster2.encounter_type = Constants.EncounterType.HUNTER
+				current_level.add_entity(monster2)
+
+func _apply_pursuit_pressure() -> void:
+	if not current_level or not player:
+		return
+	var alert: int = current_level.get_floor_alertness()
+	if alert >= 35 and current_round % 8 == 0:
+		var door_pos: Vector2i = current_level.find_open_door_near(player.grid_position, 8, 64)
+		if door_pos != Vector2i(-1, -1):
+			current_level.set_tile(door_pos, Level.Tile.DOOR_LOCKED)
+			GameManager.log_message("Pursuit pressure: a nearby door slams and locks.", ThemeColors.MSG_WARNING)
+			if player.run_stats:
+				player.run_stats.record_forensic_event(
+					current_round,
+					"pursuit",
+					"Door lock pressure triggered at alertness %d" % alert,
+					"warning"
+				)
+
+	# Music escalation hooks
+	if AudioManager:
+		var active_contact: bool = _has_visible_hostiles()
+		if active_contact and alert >= 30 and not _pursuit_track_forced:
+			AudioManager.play_music("pursuit")
+			_pursuit_track_forced = true
+		elif _pursuit_track_forced and (not active_contact or alert < 24):
+			AudioManager.play_music(AudioManager._get_exploration_track())
+			_pursuit_track_forced = false
+
+func _has_visible_hostiles() -> bool:
+	if not current_level:
+		return false
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if entity is Monster and entity.is_alive and current_level.is_tile_visible(entity.grid_position):
+			return true
+	return false
 
 ## Find a valid periodic spawn position: passable, not in FOV, min distance from player.
 func _find_periodic_spawn_pos() -> Vector2i:

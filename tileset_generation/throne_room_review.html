@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Throne Room (Layer 7) — Tile Review</title>
+<style>
+body { background: #0a0812; color: #eee; font-family: monospace; padding: 20px; }
+h1 { color: #d4a017; border-bottom: 2px solid #d4a017; padding-bottom: 8px; }
+h2 { color: #e8c040; margin-top: 30px; }
+.tile-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.tile-card {
+    background: #1a1420; border: 2px solid #2d1045; border-radius: 8px; padding: 12px;
+    text-align: center; min-width: 160px;
+}
+.tile-card.highlight { border-color: #d4a017; }
+.tile-card img {
+    width: 128px; height: 128px; image-rendering: pixelated;
+    border: 1px solid #555; display: block; margin: 8px auto;
+}
+.tile-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.tile-card .name { font-size: 14px; font-weight: bold; color: #e8c040; }
+.raw-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+.raw-card {
+    background: #1a1420; border: 2px solid #555; border-radius: 8px; padding: 12px;
+    text-align: center;
+}
+.raw-card img {
+    width: 256px; height: 256px; image-rendering: auto;
+    border: 1px solid #444; display: block; margin: 8px auto;
+}
+.raw-card .name { font-size: 14px; font-weight: bold; color: #d4a017; }
+.info { color: #888; font-size: 13px; margin: 5px 0; }
+.status { color: #33cc33; font-weight: bold; }
+.status.pending { color: #ffaa33; }
+.mechanic { color: #e8c040; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Throne Room (Layer 7) — Sauron's Seat of Power</h1>
+<p class="info">Creative vision: The final layer. Not tarnished craftsman gold — BURNISHED, gleaming gold. Void purple shadows. The lidless Eye's sickly green accent. Every tile deliberate.</p>
+<p class="info">Palette: void black (#0a0812), burnished gold (#d4a017), void purple (#2d1045), Eye green (#4a6e28), iron black (#1a1a1e)</p>
+<p class="info">Tileset: Row 23, Cols 0-11</p>
+
+<h2>Phase 1: Anchor Tiles <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Wall (Light)</div><img src="layer_tiles/throne_room/wall_light.png" /><div class="label">Row 23, Col 0</div></div>
+    <div class="tile-card highlight"><div class="name">Wall (Dark)</div><img src="layer_tiles/throne_room/wall_dark.png" /><div class="label">Row 23, Col 1</div></div>
+    <div class="tile-card highlight"><div class="name">Floor (Light)</div><img src="layer_tiles/throne_room/floor_light.png" /><div class="label">Row 23, Col 2</div></div>
+    <div class="tile-card highlight"><div class="name">Floor (Dark)</div><img src="layer_tiles/throne_room/floor_dark.png" /><div class="label">Row 23, Col 3</div></div>
+</div>
+
+<h2>Phase 2: Doors (Gold Frame + Lidless Eye) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Door Closed (Light)</div><img src="layer_tiles/throne_room/door_closed_light.png" /><div class="label">Row 23, Col 4</div></div>
+    <div class="tile-card highlight"><div class="name">Door Closed (Dark)</div><img src="layer_tiles/throne_room/door_closed_dark.png" /><div class="label">Row 23, Col 5</div></div>
+    <div class="tile-card highlight"><div class="name">Door Open (Light)</div><img src="layer_tiles/throne_room/door_open_light.png" /><div class="label">Row 23, Col 6</div></div>
+    <div class="tile-card highlight"><div class="name">Door Open (Dark)</div><img src="layer_tiles/throne_room/door_open_dark.png" /><div class="label">Row 23, Col 7</div></div>
+</div>
+
+<h2>Phase 3: Stairs (Void-Purple Recolor) <span class="status pending">REVIEW</span></h2>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Stairs Down (Light)</div><img src="layer_tiles/throne_room/stairs_down_light.png" /><div class="label">Row 23, Col 8</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Down (Dark)</div><img src="layer_tiles/throne_room/stairs_down_dark.png" /><div class="label">Row 23, Col 9</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Up (Light)</div><img src="layer_tiles/throne_room/stairs_up_light.png" /><div class="label">Row 23, Col 10</div></div>
+    <div class="tile-card highlight"><div class="name">Stairs Up (Dark)</div><img src="layer_tiles/throne_room/stairs_up_dark.png" /><div class="label">Row 23, Col 11</div></div>
+</div>
+
+<h2>Phase 4: Environmental Tiles <span class="status pending">REVIEW</span></h2>
+<h3 style="color: #e8c040;">Procedural</h3>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Dominion Floor (Light)</div><img src="layer_tiles/throne_room/dominion_floor_light.png" /><div class="mechanic">Psychic oppression — 1.5x move cost</div></div>
+    <div class="tile-card highlight"><div class="name">Dominion Floor (Dark)</div><img src="layer_tiles/throne_room/dominion_floor_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Dark Fire (Light)</div><img src="layer_tiles/throne_room/dark_fire_light.png" /><div class="mechanic">Cold-burning flames — damage on step</div></div>
+    <div class="tile-card highlight"><div class="name">Dark Fire (Dark)</div><img src="layer_tiles/throne_room/dark_fire_dark.png" /></div>
+</div>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Eye Glyph (Light)</div><img src="layer_tiles/throne_room/eye_glyph_light.png" /><div class="mechanic">Surveillance rune — trap</div></div>
+    <div class="tile-card highlight"><div class="name">Eye Glyph (Dark)</div><img src="layer_tiles/throne_room/eye_glyph_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Gold Inlay (Light)</div><img src="layer_tiles/throne_room/gold_inlay_light.png" /><div class="mechanic">Floor decoration</div></div>
+    <div class="tile-card highlight"><div class="name">Gold Inlay (Dark)</div><img src="layer_tiles/throne_room/gold_inlay_dark.png" /></div>
+</div>
+<h3 style="color: #d4a017;">DALL-E</h3>
+<div class="tile-row">
+    <div class="tile-card highlight"><div class="name">Obsidian Pillar (Light)</div><img src="layer_tiles/throne_room/obsidian_pillar_light.png" /><div class="mechanic">Blocks movement, +3 evasion cover</div></div>
+    <div class="tile-card highlight"><div class="name">Obsidian Pillar (Dark)</div><img src="layer_tiles/throne_room/obsidian_pillar_dark.png" /></div>
+    <div class="tile-card highlight"><div class="name">Obsidian Relief (Light)</div><img src="layer_tiles/throne_room/obsidian_relief_light.png" /><div class="mechanic">Wall decoration</div></div>
+    <div class="tile-card highlight"><div class="name">Obsidian Relief (Dark)</div><img src="layer_tiles/throne_room/obsidian_relief_dark.png" /></div>
+</div>
+
+<h2>Raw DALL-E Output (256px)</h2>
+<div class="raw-row">
+    <div class="raw-card"><div class="name">Wall</div><img src="layer_tiles/raw/throne_room/wall_1024.png" /></div>
+    <div class="raw-card"><div class="name">Floor</div><img src="layer_tiles/raw/throne_room/floor_1024.png" /></div>
+    <div class="raw-card"><div class="name">Obsidian Pillar</div><img src="layer_tiles/raw/throne_room/obsidian_pillar_1024.png" /></div>
+    <div class="raw-card"><div class="name">Obsidian Relief</div><img src="layer_tiles/raw/throne_room/obsidian_relief_1024.png" /></div>
+</div>
+
+</body>
+</html>

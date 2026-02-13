@@ -227,6 +227,96 @@ const ARCHETYPES: Dictionary = {
 		],
 		"xp_spent_precreation": 3200,
 	},
+	"HUNTING_STRESS_RANGED": {
+		"archetype_id": "HUNTING_STRESS_RANGED",
+		"name": "SurvivalBot-HuntingStressRanged",
+		"race": "Man",
+		"house": "Dunedain",
+		"trait": "Wayfarer's Instinct",
+		"gender": "male",
+		# Cost: 3+6+3+1 = 13. Final with Man(+1/0/+1/0) + Dunedain(0/+1/0/+1): STR4 DEX5 CON3 GRA2
+		"base_stats": {"str": 3, "dex": 4, "con": 2, "gra": 1},
+		# Hunting stress profile: force late-tree Hunting online from floor 1.
+		"skill_investments": {"hunting": 9, "archery": 2, "evasion": 1},
+		"ability_purchases": [
+			{"skill_type": 4, "ability_num": 0},   # Natural Talent
+			{"skill_type": 4, "ability_num": 1},   # Focused Attack / Mark Quarry
+			{"skill_type": 4, "ability_num": 3},   # Concentration / Hunter's Rhythm
+			{"skill_type": 4, "ability_num": 5},   # Bane / Expose Weakness
+			{"skill_type": 4, "ability_num": 8},   # Master Hunter / Exploit Opening
+		],
+		"xp_spent_precreation": 4800,
+	},
+	"HUNTING_STRESS_MELEE": {
+		"archetype_id": "HUNTING_STRESS_MELEE",
+		"name": "SurvivalBot-HuntingStressMelee",
+		"race": "Man",
+		"house": "Of Gondor",
+		"trait": "Last Stand",
+		"gender": "male",
+		# Cost: 6+1+6+0 = 13. Final with Man(+1/0/+1/0) + Gondor(0/0/+1/0): STR4 DEX1 CON5 GRA0
+		"base_stats": {"str": 3, "dex": 1, "con": 3, "gra": 0},
+		# Hunting stress profile: melee pressure with full hunting duel kit.
+		"skill_investments": {"hunting": 9, "melee": 2, "evasion": 1},
+		"ability_purchases": [
+			{"skill_type": 4, "ability_num": 0},   # Natural Talent
+			{"skill_type": 4, "ability_num": 1},   # Focused Attack / Mark Quarry
+			{"skill_type": 4, "ability_num": 3},   # Concentration / Hunter's Rhythm
+			{"skill_type": 4, "ability_num": 5},   # Bane / Expose Weakness
+			{"skill_type": 4, "ability_num": 8},   # Master Hunter / Exploit Opening
+		],
+		"xp_spent_precreation": 4800,
+	},
+	"HUNTING_MIDGAME_RANGED": {
+		"archetype_id": "HUNTING_MIDGAME_RANGED",
+		"name": "SurvivalBot-HuntingMidgameRanged",
+		"race": "Man",
+		"house": "Dunedain",
+		"trait": "Wayfarer's Instinct",
+		"gender": "male",
+		# Cost: 3+6+3+1 = 13. Final with Man(+1/0/+1/0) + Dunedain(0/+1/0/+1): STR4 DEX5 CON3 GRA2
+		"base_stats": {"str": 3, "dex": 4, "con": 2, "gra": 1},
+		# Mid-game package: floor 5 start + corrected XP profile.
+		"start_depth": 5,
+		"skill_investments": {"hunting": 9, "archery": 4, "evasion": 2},
+		"ability_purchases": [
+			{"skill_type": 4, "ability_num": 0},   # Natural Talent
+			{"skill_type": 4, "ability_num": 1},   # Mark Quarry
+			{"skill_type": 4, "ability_num": 3},   # Hunter's Rhythm
+			{"skill_type": 4, "ability_num": 5},   # Expose Weakness
+			{"skill_type": 4, "ability_num": 8},   # Exploit Opening
+			{"skill_type": 1, "ability_num": 0},   # Rout
+			{"skill_type": 1, "ability_num": 2},   # Point Blank Archery
+			{"skill_type": 1, "ability_num": 4},   # Ambush
+			{"skill_type": 2, "ability_num": 0},   # Dodging
+		],
+		"xp_spent_precreation": 6300,
+	},
+	"HUNTING_MIDGAME_MELEE": {
+		"archetype_id": "HUNTING_MIDGAME_MELEE",
+		"name": "SurvivalBot-HuntingMidgameMelee",
+		"race": "Man",
+		"house": "Of Gondor",
+		"trait": "Last Stand",
+		"gender": "male",
+		# Cost: 6+1+6+0 = 13. Final with Man(+1/0/+1/0) + Gondor(0/0/+1/0): STR4 DEX1 CON5 GRA0
+		"base_stats": {"str": 3, "dex": 1, "con": 3, "gra": 0},
+		# Mid-game package: floor 5 start + corrected XP profile.
+		"start_depth": 5,
+		"skill_investments": {"hunting": 9, "melee": 4, "evasion": 2},
+		"ability_purchases": [
+			{"skill_type": 4, "ability_num": 0},   # Natural Talent
+			{"skill_type": 4, "ability_num": 1},   # Mark Quarry
+			{"skill_type": 4, "ability_num": 3},   # Hunter's Rhythm
+			{"skill_type": 4, "ability_num": 5},   # Expose Weakness
+			{"skill_type": 4, "ability_num": 8},   # Exploit Opening
+			{"skill_type": 0, "ability_num": 0},   # Power
+			{"skill_type": 0, "ability_num": 1},   # Finesse
+			{"skill_type": 0, "ability_num": 4},   # Charge
+			{"skill_type": 2, "ability_num": 0},   # Dodging
+		],
+		"xp_spent_precreation": 6300,
+	},
 }
 
 
