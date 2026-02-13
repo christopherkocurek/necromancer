@@ -504,8 +504,10 @@ func _web_effect(entity: Entity, _pos: Vector2i) -> bool:
 	if not is_instance_valid(entity):
 		return false
 	# Spiders are immune to web effects
-	if entity is Monster and entity.has_method("has_flag") and entity.has_flag("SPIDER"):
-		return false
+	if entity is Monster:
+		var mon: Monster = entity as Monster
+		if mon.monster_data and mon.monster_data.has_flag("SPIDER"):
+			return false
 	entity.apply_status("slow", 3)
 	if entity == GameManager.player or is_tile_visible(entity.grid_position):
 		var entity_name: String = "You" if entity == GameManager.player else entity.entity_name

@@ -4,6 +4,8 @@ class_name Minimap
 ## Shows walls, floors, doors, stairs, player (white), monsters (red), items (yellow).
 ## Updated once per turn, not per frame.
 
+signal minimap_clicked
+
 const TILE_PX: int = 2  # Pixels per tile
 
 var level: Level = null
@@ -28,11 +30,22 @@ const COL_FORGE := Color(0.8, 0.5, 0.2, 1.0)
 const COL_TRAP := Color(0.7, 0.2, 0.5, 0.8)
 
 func _ready() -> void:
-	mouse_filter = MOUSE_FILTER_IGNORE
+	mouse_filter = MOUSE_FILTER_STOP
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	custom_minimum_size = Vector2(160, 80)
 	visible = false  # Hidden until set_level is called
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			minimap_clicked.emit()
+			accept_event()
+
+func set_display_size(size_px: Vector2) -> void:
+	custom_minimum_size = size_px
+	size = size_px
 
 func set_level(new_level: Level) -> void:
 	level = new_level

@@ -150,7 +150,7 @@ func _load_terrain_coords() -> void:
 	terrain_coords[18] = {"light": Vector2i(20, 18), "dark": Vector2i(21, 18)}    # POISON_STREAM -> DALL-E regen
 	# Stream D: New layer terrain types (row 18)
 	# These use placeholder coords until DALL-E sprites are generated
-	terrain_coords[19] = {"light": Vector2i(6, 1), "dark": Vector2i(7, 1)}    # WEB -> neutral web tile (no layer-1 floor bake)
+	terrain_coords[19] = {"light": Vector2i(6, 1), "dark": Vector2i(7, 1)}    # WEB -> neutral fallback; layer kits override where baked web-floor tiles exist
 	terrain_coords[20] = {"light": Vector2i(2, 18), "dark": Vector2i(3, 18)}    # DARK_POOL
 	terrain_coords[21] = {"light": Vector2i(4, 18), "dark": Vector2i(5, 18)}    # MORGUL_RUNE
 	terrain_coords[22] = {"light": Vector2i(6, 18), "dark": Vector2i(7, 18)}    # SHADOW_BRAZIER
@@ -857,6 +857,18 @@ func _load_layer_tile_kits() -> void:
 	for layer_name: String in rubble_slots:
 		if layer_name in layer_tile_kits:
 			layer_tile_kits[layer_name][8] = rubble_slots[layer_name]  # 8 = RUBBLE
+
+	# Per-layer WEB overrides (tile ID 19) — use baked "web on floor" variants where available.
+	# This keeps spawned spider webs visually grounded in each layer's default floor style.
+	var web_slots: Dictionary = {
+		"outer_pits":  {"light": Vector2i(28, 20), "dark": Vector2i(29, 20)},
+		"lower_halls": {"light": Vector2i(30, 20), "dark": Vector2i(31, 20)},
+		"dark_halls":  {"light": Vector2i(28, 21), "dark": Vector2i(29, 21)},
+		"necropolis":  {"light": Vector2i(30, 21), "dark": Vector2i(31, 21)},
+	}
+	for layer_name: String in web_slots:
+		if layer_name in layer_tile_kits:
+			layer_tile_kits[layer_name][19] = web_slots[layer_name]  # 19 = WEB
 
 	# Layer-2 (lower halls): use valid baked floor overlay for BONE_PILE.
 	if "lower_halls" in layer_tile_kits:

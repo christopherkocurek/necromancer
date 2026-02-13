@@ -171,6 +171,7 @@ func generate(target_level: Level, depth: int) -> void:
 
 	# Post-decoration: ensure stairs remain connected (decoration can break paths)
 	_ensure_stairs_connectivity(depth)
+	_sanitize_doors_after_decoration()
 
 	# Post-decoration: relocate any vault-placed entities stranded on non-passable tiles
 	_relocate_stranded_entities()
@@ -1013,6 +1014,8 @@ func _add_boss_room(depth: int) -> void:
 
 func _is_door_candidate(pos: Vector2i) -> bool:
 	# A position is a door candidate if it connects two areas (walls on two opposite sides, floor on the other two)
+	if not level.is_in_bounds(pos):
+		return false
 	var north := level.get_tile(pos + Vector2i(0, -1))
 	var south := level.get_tile(pos + Vector2i(0, 1))
 	var east := level.get_tile(pos + Vector2i(1, 0))
@@ -1029,6 +1032,70 @@ func _is_door_candidate(pos: Vector2i) -> bool:
 		return true
 
 	return false
+
+func _get_door_passage_dirs(pos: Vector2i) -> Array[Vector2i]:
+	# Returns the two opposite directions that represent passage flow through a door.
+	var north: int = level.get_tile(pos + Vector2i(0, -1))
+	var south: int = level.get_tile(pos + Vector2i(0, 1))
+	var east: int = level.get_tile(pos + Vector2i(1, 0))
+	var west: int = level.get_tile(pos + Vector2i(-1, 0))
+	if north == Level.Tile.WALL and south == Level.Tile.WALL and east == Level.Tile.FLOOR and west == Level.Tile.FLOOR:
+		return [Vector2i(1, 0), Vector2i(-1, 0)]
+	if east == Level.Tile.WALL and west == Level.Tile.WALL and north == Level.Tile.FLOOR and south == Level.Tile.FLOOR:
+		return [Vector2i(0, -1), Vector2i(0, 1)]
+	return []
+
+func _count_floor_neighbors(pos: Vector2i) -> int:
+	var count: int = 0
+	var dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+	for dir: Vector2i in dirs:
+		var next: Vector2i = pos + dir
+		if not level.is_in_bounds(next):
+			continue
+		if level.get_tile(next) == Level.Tile.FLOOR:
+			count += 1
+	return count
+
+func _corridor_run_length(start: Vector2i, dir: Vector2i, max_steps: int = 8) -> int:
+	# Count contiguous corridor floor tiles before hitting a room/junction/end.
+	var length: int = 0
+	for step in range(1, max_steps + 1):
+		var pos: Vector2i = start + dir * step
+		if not level.is_in_bounds(pos):
+			break
+		if level.get_tile(pos) != Level.Tile.FLOOR:
+			break
+		# Mid-corridor doors should stay in corridor space, not room borders.
+		if level.get_room_id(pos) >= 0:
+			break
+		length += 1
+		# Stop at a junction/end; this keeps doors off tiny stubs and odd protrusions.
+		if _count_floor_neighbors(pos) != 2:
+			break
+	return length
+
+func _is_valid_mid_corridor_door(pos: Vector2i) -> bool:
+	if not _is_door_candidate(pos):
+		return false
+	if _is_room_entrance(pos):
+		return false
+	var dirs: Array[Vector2i] = _get_door_passage_dirs(pos)
+	if dirs.size() != 2:
+		return false
+	# Require meaningful corridor on both sides to avoid "goes nowhere" doorway stubs.
+	var len_a: int = _corridor_run_length(pos, dirs[0], 8)
+	var len_b: int = _corridor_run_length(pos, dirs[1], 8)
+	if len_a < 2 or len_b < 2:
+		return false
+	# Never place a decorative mid-corridor door next to stairs.
+	for dir: Vector2i in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]:
+		var n: Vector2i = pos + dir
+		if not level.is_in_bounds(n):
+			continue
+		var tile: int = level.get_tile(n)
+		if tile == Level.Tile.STAIRS_UP or tile == Level.Tile.STAIRS_DOWN:
+			return false
+	return true
 
 ## Check if a floor tile is a room entrance (connects a room to a corridor).
 ## Returns true if the tile is on a room border with a corridor on the opposite side.
@@ -1074,18 +1141,16 @@ func _place_doors(depth: int) -> void:
 				if randf() < 0.60:
 					door_positions.append(pos)
 
-	# Phase 2: Rare mid-corridor doors (5% chance, min 4-tile spacing from any door)
+	# Phase 2: Rare mid-corridor doors (2% chance, min 4-tile spacing, strict validity).
 	for y in range(1, level.height - 1):
 		for x in range(1, level.width - 1):
 			var pos := Vector2i(x, y)
 			if level.get_tile(pos) != Level.Tile.FLOOR:
 				continue
-			# Must be a corridor chokepoint but NOT a room entrance
-			if not _is_door_candidate(pos):
+			# Must be a structurally valid corridor door candidate.
+			if not _is_valid_mid_corridor_door(pos):
 				continue
-			if _is_room_entrance(pos):
-				continue
-			if randf() >= 0.05:
+			if randf() >= 0.02:
 				continue
 			# Check minimum 4-tile spacing from any existing door
 			var too_close: bool = false
@@ -1114,12 +1179,39 @@ func _place_doors(depth: int) -> void:
 					has_adjacent_door = true
 					break
 		if not has_adjacent_door:
-			valid_doors.append(door_pos)
+			# Final structural gate: allow room entrances, but keep corridor doors sane.
+			if _is_room_entrance(door_pos) or _is_valid_mid_corridor_door(door_pos):
+				valid_doors.append(door_pos)
 
 	# Phase 4: Actually place door tiles
 	for door_pos: Vector2i in valid_doors:
 		var door_type: int = _pick_door_type(depth)
 		level.set_tile(door_pos, door_type)
+
+func _is_in_vault_rect(pos: Vector2i) -> bool:
+	for rect: Rect2i in _vault_rects:
+		if rect.has_point(pos):
+			return true
+	return false
+
+func _sanitize_doors_after_decoration() -> void:
+	# Later generation passes (water/lava/vault decoration/connectivity repairs) can
+	# mutate corridor geometry after doors are placed. Clean up any now-nonsensical
+	# non-vault visible doors to avoid dead-end/protrusion door artifacts.
+	for y in range(1, level.height - 1):
+		for x in range(1, level.width - 1):
+			var pos: Vector2i = Vector2i(x, y)
+			var tile: int = level.get_tile(pos)
+			if tile != Level.Tile.DOOR_OPEN \
+				and tile != Level.Tile.DOOR_CLOSED \
+				and tile != Level.Tile.DOOR_LOCKED \
+				and tile != Level.Tile.DOOR_JAMMED:
+				continue
+			if _is_in_vault_rect(pos):
+				continue
+			if _is_room_entrance(pos) or _is_valid_mid_corridor_door(pos):
+				continue
+			level.set_tile(pos, Level.Tile.FLOOR)
 
 ## Try to place a vault room of the specified type. Returns Room or null.
 func _try_place_vault_room(room_type: int, depth: int) -> Room:
@@ -2491,6 +2583,12 @@ func _spawn_items(depth: int) -> void:
 						var art_item: DataManager.ItemData = DataManager.duplicate_artifact_as_item(art)
 						# Use the artifact copy instead
 						item_copy = art_item
+			# Ensure ammo spawns as useful stacks.
+			if "tval" in item_copy and (item_copy.tval == 16 or item_copy.tval == 17):
+				var ammo_count: int = randi_range(8, 16) + int(depth / 4)
+				ammo_count = clampi(ammo_count, 8, 24)
+				item_copy.pval = ammo_count
+				item_copy.stack_count = ammo_count
 			var item: Item = item_scene.instantiate()
 			item.grid_position = spawn_pos
 			item.initialize_from_item_data(item_copy)
@@ -2563,9 +2661,10 @@ func _spawn_items(depth: int) -> void:
 		if arrow_data:
 			var arrow_copy: DataManager.ItemData = DataManager.duplicate_item_data(arrow_data)
 			if "pval" in arrow_copy:
-				arrow_copy.pval = 20  # 20 arrows
+				arrow_copy.pval = 24  # 24 arrows
+				arrow_copy.stack_count = 24
 			elif "stack_count" in arrow_copy:
-				arrow_copy.stack_count = 20
+				arrow_copy.stack_count = 24
 			var arrow_pos: Vector2i = _find_floor_near(stairs_up_pos, 3)
 			var arrow_item: Item = item_scene.instantiate()
 			arrow_item.grid_position = arrow_pos

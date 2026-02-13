@@ -1868,12 +1868,14 @@ func has_affinity(skill_name: String) -> bool:
 	return false
 
 func get_skill_cost(current_level: int, points_to_buy: int = 1, skill_name: String = "") -> int:
-	# Cost for nth skill point = 100 × n
-	# Affinity discount: -100 per point (Sil-Q standard)
-	var discount: int = 100 if not skill_name.is_empty() and has_affinity(skill_name) else 0
+	# Cost for nth skill point = 100 × n, modified by affinity/penalty level.
+	# Positive level lowers cost; negative level raises cost.
+	var adjustment: int = 0
+	if not skill_name.is_empty():
+		adjustment = get_ability_affinity_level(skill_name)
 	var cost: int = 0
 	for i in range(points_to_buy):
-		cost += maxi(0, 100 * (current_level + i + 1) - discount)
+		cost += maxi(0, 100 * (current_level + i + 1) - 100 * adjustment)
 	return cost
 
 func can_afford_skill(skill_name: String) -> bool:
@@ -1975,6 +1977,8 @@ func get_effective_skill(skill_name: String) -> int:
 			stat_bonus = dexterity
 		"hunting", "will", "smithing", "lore":
 			stat_bonus = grace
+	if skill_name == "will" and status_fx and status_fx.has_effect(Constants.EFFECT_ENDURANCE_WILL):
+		stat_bonus += 2
 	return base + stat_bonus + equip
 
 # ============================================================================
@@ -2798,11 +2802,11 @@ func can_fire_ranged() -> bool:
 		return false
 	# Check quiver for ammo
 	var quiver = equipment.get("quiver") if equipment.has("quiver") else null
-	if quiver != null and "tval" in quiver and quiver.tval == ammo_tval:
+	if quiver != null and "tval" in quiver and quiver.tval == ammo_tval and _get_ammo_count(quiver) > 0:
 		return true
 	# Check inventory for ammo
 	for item in inventory:
-		if item != null and "tval" in item and item.tval == ammo_tval:
+		if item != null and "tval" in item and item.tval == ammo_tval and _get_ammo_count(item) > 0:
 			return true
 	return false
 
@@ -2815,13 +2819,18 @@ func consume_arrow() -> bool:
 	if ranged_weapon != null and "tval" in ranged_weapon and ranged_weapon.tval == 18:
 		ammo_tval = 16  # Sling stones
 		empty_msg = "You have no more stones!"
+	# Fletchery: chance to conserve arrows on shot (models reduced breakage/retrieval).
+	if ammo_tval == 17 and has_ability(Constants.Skill.S_ARC, Constants.ArcheryAbility.ARC_FLETCHERY):
+		var raw_archery: int = int(skills.get("archery", 0))
+		var conserve_chance: float = clampf(0.15 + float(raw_archery) * 0.02, 0.15, 0.45)
+		if randf() < conserve_chance:
+			return true
 	# Check quiver first
 	if equipment.has("quiver"):
 		var quiver = equipment.get("quiver")
 		if quiver != null and "tval" in quiver and quiver.tval == ammo_tval:
-			if "pval" in quiver:
-				quiver.pval -= 1
-				if quiver.pval <= 0:
+			if _decrement_ammo_stack(quiver):
+				if _get_ammo_count(quiver) <= 0:
 					equipment["quiver"] = null
 					GameManager.log_message(empty_msg, ThemeColors.MSG_WARNING)
 				return true
@@ -2829,13 +2838,34 @@ func consume_arrow() -> bool:
 	for i in range(inventory.size()):
 		var item = inventory[i]
 		if item != null and "tval" in item and item.tval == ammo_tval:
-			if "pval" in item:
-				item.pval -= 1
-				if item.pval <= 0:
+			if _decrement_ammo_stack(item):
+				if _get_ammo_count(item) <= 0:
 					inventory.remove_at(i)
-			else:
-				inventory.remove_at(i)
-			return true
+				return true
+	return false
+
+func _get_ammo_count(item: Variant) -> int:
+	if item == null:
+		return 0
+	if "pval" in item and int(item.pval) > 0:
+		return int(item.pval)
+	if "stack_count" in item and int(item.stack_count) > 0:
+		return int(item.stack_count)
+	return 0
+
+func _decrement_ammo_stack(item: Variant) -> bool:
+	if item == null:
+		return false
+	if "pval" in item and int(item.pval) > 0:
+		item.pval = int(item.pval) - 1
+		if "stack_count" in item:
+			item.stack_count = maxi(0, int(item.pval))
+		return true
+	if "stack_count" in item and int(item.stack_count) > 0:
+		item.stack_count = int(item.stack_count) - 1
+		if "pval" in item:
+			item.pval = maxi(0, int(item.stack_count))
+		return true
 	return false
 
 ## Count adjacent allies attacking the same target (for flanking/overwhelming)
@@ -3099,6 +3129,11 @@ func tick_light_fuel() -> void:
 	var light_item = equipment.get("light")
 	if light_item == null or not "fuel" in light_item:
 		return
+	if "tval" in light_item and light_item.tval == 39 and light_item.fuel < 0:
+		var light_sval: int = light_item.sval if "sval" in light_item else -1
+		var default_fuel: int = DataManager.get_default_light_fuel(light_sval)
+		if default_fuel > 0:
+			light_item.fuel = default_fuel
 	# Feanorian Lamp doesn't consume fuel
 	if "sval" in light_item and light_item.sval == 8:
 		return
@@ -3326,21 +3361,22 @@ func try_pickup() -> bool:
 	return false
 
 func _get_movement_input() -> Vector2i:
-	if Input.is_action_just_pressed("move_up"):
+	# Support both tap and hold so players can keep moving by holding a direction.
+	if Input.is_action_pressed("move_up"):
 		return Vector2i(0, -1)
-	if Input.is_action_just_pressed("move_down"):
+	if Input.is_action_pressed("move_down"):
 		return Vector2i(0, 1)
-	if Input.is_action_just_pressed("move_left"):
+	if Input.is_action_pressed("move_left"):
 		return Vector2i(-1, 0)
-	if Input.is_action_just_pressed("move_right"):
+	if Input.is_action_pressed("move_right"):
 		return Vector2i(1, 0)
-	if Input.is_action_just_pressed("move_up_left"):
+	if Input.is_action_pressed("move_up_left"):
 		return Vector2i(-1, -1)
-	if Input.is_action_just_pressed("move_up_right"):
+	if Input.is_action_pressed("move_up_right"):
 		return Vector2i(1, -1)
-	if Input.is_action_just_pressed("move_down_left"):
+	if Input.is_action_pressed("move_down_left"):
 		return Vector2i(-1, 1)
-	if Input.is_action_just_pressed("move_down_right"):
+	if Input.is_action_pressed("move_down_right"):
 		return Vector2i(1, 1)
 	return Vector2i.ZERO
 
@@ -3567,6 +3603,10 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	var god_reduction: float = AccessibilityManager.get_god_mode_reduction()
 	if god_reduction > 0.0:
 		amount = maxi(1, int(amount * (1.0 - god_reduction)))
+
+	# Lore of Endurance: only proc on significant hits (>20% max HP after mitigation).
+	if amount > int(ceil(float(max_health) * 0.20)):
+		apply_status(Constants.EFFECT_ENDURANCE_WILL, 3)
 
 	super.take_damage(amount, damage_type, source)
 	if run_stats:

@@ -252,6 +252,17 @@ func take_turn() -> void:
 
 	EventBus.turn_ended.emit(self)
 
+func take_damage(amount: int, damage_type: String = "physical", source: Entity = null) -> void:
+	super.take_damage(amount, damage_type, source)
+	if not is_alive:
+		return
+	# Damage from the player should force immediate hostility even when sniped from range.
+	if is_instance_valid(source) and source is Player:
+		alertness = Constants.ALERTNESS_MAX
+		target = source
+		if ai_state != AIState.FLEEING:
+			ai_state = AIState.HUNTING
+
 ## Build a hunting-gated intent readout for Look/Target/HUD.
 ## Returns:
 ## {
@@ -1760,15 +1771,28 @@ func _spell_throw_web(cast_target: Entity, distance: int) -> bool:
 	if not show_msg and GameManager.current_level:
 		show_msg = GameManager.current_level.is_tile_visible(grid_position) or GameManager.current_level.is_tile_visible(primary_pos)
 
+	# Always show a visible cast trajectory when the cast or impact tile is visible.
+	if show_msg:
+		var web_color := Color(0.92, 0.94, 1.0, 0.95)
+		vfx_projectile_to(cast_target.get_world_position(), web_color, 0.18, 4.0)
+		vfx_floater("Web!", ThemeColors.STATUS_SLOW, 13)
+
 	if evade_roll >= spell_roll:
 		if show_msg:
 			GameManager.log_message("The %s hurls a web, but you slip clear!" % entity_name, ThemeColors.ABILITY_LEARNED)
+			cast_target.vfx_ring_particles(Color(0.85, 0.9, 1.0, 0.95), 5, 10.0, 0.32)
 		if webbed_tiles > 0 and show_msg:
 			GameManager.log_message("Sticky webs spread across the floor.", ThemeColors.MSG_WARNING)
 		return true
 
 	if show_msg:
 		GameManager.log_message("The %s ensnares you in webbing!" % entity_name, ThemeColors.MSG_ERROR)
+		cast_target.vfx_flash(Color(0.85, 0.9, 1.0, 1.0), 0.05, 0.16)
+		var impact_dir: Vector2 = Vector2(cast_target.grid_position - grid_position)
+		if impact_dir == Vector2.ZERO:
+			impact_dir = Vector2.RIGHT
+		cast_target.vfx_particles_directional(Color(0.86, 0.9, 1.0, 0.95), impact_dir.normalized(), 6, 3.2, 16.0, 0.35)
+		cast_target.vfx_floater("Ensnared", ThemeColors.STATUS_SLOW, 15)
 	cast_target.apply_status("slow", 4 + randi_range(1, 3))
 	return true
 

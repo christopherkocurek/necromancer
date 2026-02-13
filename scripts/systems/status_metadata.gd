@@ -37,6 +37,10 @@ static func get_status_meta(status_name: String, duration: int) -> Dictionary:
 		"entranced":
 			meta.exact_effect = "Can be unable to act effectively."
 			meta.counterplay = "Seek immunity sources and avoid control casters."
+		"endurance_will":
+			meta.name = "Endurance"
+			meta.exact_effect = "Temporary +2 Will from Lore of Endurance."
+			meta.counterplay = "Trade hits carefully; it only triggers on heavy damage."
 		_:
 			meta.exact_effect = "Temporary status effect."
 			meta.counterplay = "Observe duration and react conservatively."

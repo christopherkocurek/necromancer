@@ -79,6 +79,10 @@ func _bootstrap_run() -> bool:
 
 func _capture_sequence() -> void:
 	await _capture_named("gameplay")
+	if _main.get("hud") and _main.hud.get("minimap"):
+		_main.hud._on_minimap_clicked()
+		await _capture_named("gameplay_minimap_expanded")
+		_main.hud._on_minimap_clicked()
 
 	if _main.has_method("_toggle_inventory"):
 		_main._toggle_inventory()

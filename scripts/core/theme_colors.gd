@@ -271,6 +271,7 @@ static func get_status_color(status_name: String) -> Color:
 		"image": return STATUS_IMAGE
 		"battle_fury": return STATUS_BUFF
 		"fairy_mist": return STATUS_DARKENED
+		"endurance_will": return STATUS_BUFF
 		_: return TEXT_PRIMARY
 
 ## Get color for a damage type

@@ -28,6 +28,25 @@ static func get_direction_from_event(event: InputEventKey) -> Vector2i:
 	if not event.pressed or event.echo:
 		return Vector2i.ZERO
 
+	# Prefer action-map matching so prompts follow configurable movement binds
+	# (project uses physical_keycode-heavy mappings).
+	if InputMap.event_is_action(event, "move_up", false):
+		return Vector2i(0, -1)
+	if InputMap.event_is_action(event, "move_down", false):
+		return Vector2i(0, 1)
+	if InputMap.event_is_action(event, "move_left", false):
+		return Vector2i(-1, 0)
+	if InputMap.event_is_action(event, "move_right", false):
+		return Vector2i(1, 0)
+	if InputMap.event_is_action(event, "move_up_left", false):
+		return Vector2i(-1, -1)
+	if InputMap.event_is_action(event, "move_up_right", false):
+		return Vector2i(1, -1)
+	if InputMap.event_is_action(event, "move_down_left", false):
+		return Vector2i(-1, 1)
+	if InputMap.event_is_action(event, "move_down_right", false):
+		return Vector2i(1, 1)
+
 	# Check standard movement keys (matches the game's input bindings)
 	match event.keycode:
 		# Up / North

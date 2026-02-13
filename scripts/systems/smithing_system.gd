@@ -52,7 +52,7 @@ const BROKEN_STRANGE_NAMES: Array[String] = ["broken strange", "twisted shadow"]
 const MITHRIL_NAMES: Array[String] = ["mithril"]
 
 # TVAL ranges for type filtering
-const WEAPON_TVALS: Array[int] = [20, 21, 22, 23]  # Digging, Hafted, Polearm, Sword
+const WEAPON_TVALS: Array[int] = [16, 17, 18, 19, 20, 21, 22, 23]  # Stones, arrows, slings, bows, melee weapons
 const ARMOR_TVALS: Array[int] = [30, 31, 32, 34, 35, 36, 37]  # Boots, Gloves, Helm, Shield, Cloak, Soft, Mail
 const JEWELRY_TVALS: Array[int] = [39, 40, 45]  # Light, Amulet, Ring
 
@@ -363,8 +363,17 @@ func create_item(player: Player, template: Variant, _forge_bonus: int = 0, mithr
 
 	var smithing_skill: int = _get_effective_skill(player)
 
+	# Ammo should be forged in practical bundles, not single units.
+	if "tval" in new_item and (new_item.tval == 16 or new_item.tval == 17):
+		var ammo_count: int = 14 + smithing_skill
+		if using_mithril:
+			ammo_count += 4
+		ammo_count = clampi(ammo_count, 12, 32)
+		new_item.pval = ammo_count
+		new_item.stack_count = ammo_count
+
 	# ---- Skill-based quality scaling ----
-	if _is_weapon(new_item):
+	if _is_weapon(new_item) and not ("tval" in new_item and (new_item.tval == 16 or new_item.tval == 17)):
 		# Attack bonus: +1 per 3 smithing skill (skill 3→+1, 6→+2, 9→+3)
 		var attack_bonus: int = smithing_skill / 3
 		if "attack_bonus" in new_item:

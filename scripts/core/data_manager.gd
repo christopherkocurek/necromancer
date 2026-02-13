@@ -287,7 +287,29 @@ func load_items() -> void:
 						current_item.description += " " + value
 
 	if current_item and current_item.name != "":
+		_initialize_light_fuel_defaults(current_item)
 		items[current_item.name] = current_item
+
+	for item in items.values():
+		_initialize_light_fuel_defaults(item)
+
+func get_default_light_fuel(sval: int) -> int:
+	match sval:
+		0:
+			return 3000  # Wooden Torch
+		1:
+			return 7000  # Brass Lantern
+		_:
+			return -1
+
+func _initialize_light_fuel_defaults(item: ItemData) -> void:
+	if item == null:
+		return
+	if item.tval != 39:
+		return
+	var default_fuel: int = get_default_light_fuel(item.sval)
+	if default_fuel > 0 and item.fuel < 0:
+		item.fuel = default_fuel
 
 # ============================================================================
 # SPECIAL (EGO) PARSING

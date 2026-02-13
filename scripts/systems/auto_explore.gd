@@ -170,8 +170,14 @@ func _check_stop_conditions() -> bool:
 
 	# 2. Player took damage
 	if player.current_health < last_player_health:
-		stop_explore("Took damage")
-		return true
+		var hp_ratio: float = float(player.current_health) / float(maxi(1, player.max_health))
+		var poisoned: bool = player.status_fx != null and player.status_fx.has_effect(Constants.EFFECT_POISONED)
+		# Requested behavior: poison ticks should not stop auto-explore unless HP is low.
+		if poisoned and hp_ratio > 0.25:
+			last_player_health = player.current_health
+		else:
+			stop_explore("Took damage")
+			return true
 
 	# 3. Player on stairs
 	var tile: int = level.get_tile(player.grid_position)

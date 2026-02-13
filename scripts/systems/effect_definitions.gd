@@ -178,6 +178,14 @@ const EFFECT_DATA: Dictionary = {
 		"onset_message": "A shroud of magical darkness envelops you.",
 		"recovery_message": "The fairy mist dissipates.",
 	},
+	Constants.EFFECT_ENDURANCE_WILL: {
+		"name": "Endurance",
+		"max_duration": Constants.EFFECT_MAX_GENERAL,
+		"decay_rate": 1,
+		"has_damage": false,
+		"onset_message": "Endurance steadies your spirit.",
+		"recovery_message": "Your surge of endurance fades.",
+	},
 }
 
 # ============================================================================

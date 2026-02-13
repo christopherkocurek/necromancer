@@ -14,6 +14,7 @@ If current code conflicts with `SESSION_AUDIT_CONTEXT.md`, report the mismatch e
 
 ## Tileset Gen Memory (Required)
 For any tileset/monster sprite remap or patch workflow:
+0. Read `docs/TILESET_GEN_SKILL_MEMORY.md` first.
 1. Never allow duplicate `monster_coords[...]` atlas cells in `scripts/core/tile_mapper.gd`.
 2. Before patching atlas tiles, run:
    - `python3 tileset_generation/check_monster_tile_collisions.py`

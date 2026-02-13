@@ -410,6 +410,33 @@ func vfx_sprite_spell(effect_key: String, scale_override: float = -1.0) -> void:
 	var center: Vector2 = get_world_position()
 	SpriteSpellVFX.play(effects_node, center, effect_key, scale_override)
 
+## Spawn a lightweight projectile traveling from this entity to a world target.
+func vfx_projectile_to(world_target: Vector2, color: Color, duration: float = 0.16, thickness: float = 5.0) -> void:
+	if not GameManager.current_level:
+		return
+	var effects_node: Node = GameManager.current_level.get_node_or_null("Effects")
+	if not effects_node:
+		return
+
+	var projectile := Node2D.new()
+	var trail := ColorRect.new()
+	trail.size = Vector2(16, thickness)
+	trail.position = Vector2(-8, -thickness * 0.5)
+	trail.color = color
+	projectile.add_child(trail)
+
+	var start: Vector2 = get_world_position()
+	var delta: Vector2 = world_target - start
+	projectile.position = start
+	projectile.rotation = delta.angle()
+	effects_node.add_child(projectile)
+
+	var t := create_tween()
+	t.set_parallel(true)
+	t.tween_property(projectile, "position", world_target, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	t.tween_property(trail, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN)
+	t.chain().tween_callback(projectile.queue_free)
+
 # ============================================================================
 # STATUS EFFECTS
 # ============================================================================

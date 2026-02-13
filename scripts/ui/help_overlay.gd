@@ -51,7 +51,7 @@ func _setup_ui() -> void:
 	var forge_bind: String = _binding_text("forge", "F")
 	var equip_bind: String = _binding_text("equip", "E")
 	var skills_bind: String = _binding_text("skills", "@")
-	var abilities_bind: String = _binding_text("abilities", "A")
+	var abilities_bind: String = "T/@"
 	var help_bind: String = _binding_text("help_overlay", "?")
 
 	content.text = """[color=#%s][b]THE NECROMANCER - KEYBINDINGS[/b][/color]

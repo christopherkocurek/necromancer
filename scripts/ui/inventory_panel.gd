@@ -45,6 +45,11 @@ var _pending_drop_item: Variant = null
 # Shared tileset texture for item sprites
 static var _tileset_texture: Texture2D = null
 static var _magenta_shader: ShaderMaterial = null
+const ICON_TILESET_CANDIDATE_PATHS: Array[String] = [
+	"res://assets/sprites/necromancer_dcss_tileset.png",
+	"res://assets/sprites/necromancer_dcss_tileset_pre_outer_pits_v2.png",
+	"res://assets/sprites/64x64_necromancer.png",
+]
 
 # UI References
 @onready var inventory_grid: GridContainer = $HSplitContainer/InventorySection/InventoryGrid
@@ -66,7 +71,11 @@ var _equip_slot_order: Array[int] = []
 
 func _ready() -> void:
 	if not _tileset_texture:
-		_tileset_texture = load("res://assets/sprites/necromancer_dcss_tileset.png")
+		for path in ICON_TILESET_CANDIDATE_PATHS:
+			if FileAccess.file_exists(path):
+				_tileset_texture = load(path)
+				if _tileset_texture != null:
+					break
 	if not _magenta_shader:
 		_magenta_shader = load("res://assets/shaders/magenta_transparent.tres")
 
@@ -766,7 +775,7 @@ func _get_item_char(item: Variant) -> String:
 		return item.display_char
 	return "?"
 
-func _get_item_icon(item: Variant) -> AtlasTexture:
+func _get_item_icon(item: Variant) -> Texture2D:
 	if item == null or not _tileset_texture:
 		return null
 
@@ -776,13 +785,12 @@ func _get_item_icon(item: Variant) -> AtlasTexture:
 	else:
 		return null
 
-	var is_artifact: bool = item is DataManager.ArtifactData if item else false
-
-	var atlas_coords: Vector2i
-	if is_artifact:
-		atlas_coords = TileMapper.get_artifact_coords(item_index)
-	else:
-		atlas_coords = TileMapper.get_item_coords(item_index)
+	var atlas_coords: Vector2i = TileMapper.get_object_coords(item_index)
+	if atlas_coords.x < 0 or atlas_coords.y < 0:
+		atlas_coords = Vector2i(0, 11)
+	var tex_size: Vector2i = _tileset_texture.get_size()
+	if ((atlas_coords.x + 1) * TILE_SIZE > tex_size.x) or ((atlas_coords.y + 1) * TILE_SIZE > tex_size.y):
+		atlas_coords = Vector2i(0, 11)
 
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _tileset_texture

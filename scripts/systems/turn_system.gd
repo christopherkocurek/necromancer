@@ -139,6 +139,7 @@ func _after_player_action() -> void:
 		_check_light_recoil()
 
 	EventBus.turn_ended.emit(player)
+	player.tick_light_fuel()
 
 	# Process game tick - all entities gain energy based on speed
 	_process_game_tick()
@@ -214,7 +215,6 @@ func _end_round() -> void:
 	# Per-round effects
 	if player and player.is_alive:
 		player.tick_status_effects()
-		player.tick_light_fuel()
 		player.tick_hunger()
 		player.reset_turn_state()
 
@@ -326,6 +326,8 @@ func _tick_periodic_spawn() -> void:
 	var interval: int = Constants.PERIODIC_SPAWN_INTERVAL
 	if current_level.is_ascent:
 		interval = interval / 2
+	var depth_pressure: float = clampf(float(GameManager.current_depth - 1) / 19.0, 0.0, 1.0)
+	interval = maxi(8, int(round(interval * lerpf(1.0, 0.72, depth_pressure))))
 	var alert: int = current_level.get_floor_alertness()
 	if alert >= 40:
 		interval = maxi(8, int(interval * 0.45))
@@ -365,6 +367,27 @@ func _tick_periodic_spawn() -> void:
 	if not monster_data or monster_data.has_flag("UNIQUE"):
 		return
 
+	_spawn_periodic_hunter(spawn_pos, monster_data, alert)
+
+	# Patrol density tune: small baseline chance for a second hunter, scaling with depth and alertness.
+	var extra_spawn_chance: float = 0.08 + (depth_pressure * 0.18)
+	if alert >= 25:
+		extra_spawn_chance += 0.12
+	if alert >= 40:
+		extra_spawn_chance += 0.12
+	extra_spawn_chance = clampf(extra_spawn_chance, 0.0, 0.50)
+	if randf() < extra_spawn_chance:
+		var count_after: int = current_level.get_monsters().size()
+		if count_after < Constants.PERIODIC_SPAWN_MAX_MONSTERS:
+			var spawn2: Vector2i = _find_periodic_spawn_pos()
+			if spawn2 != Vector2i(-1, -1):
+				_spawn_periodic_hunter(spawn2, monster_data, maxi(alert, 40 if alert >= 25 else alert))
+
+func _spawn_periodic_hunter(spawn_pos: Vector2i, monster_data: DataManager.MonsterData, alert: int) -> void:
+	if current_level == null:
+		return
+	if spawn_pos == Vector2i(-1, -1):
+		return
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
 	var monster: Monster = monster_scene.instantiate()
 	monster.grid_position = spawn_pos
@@ -377,20 +400,6 @@ func _tick_periodic_spawn() -> void:
 	monster.is_sleeping = false
 	monster.encounter_type = Constants.EncounterType.HUNTER
 	current_level.add_entity(monster)
-
-	# Relentless pursuit can add a second hunter if capacity allows.
-	if alert >= 40 and randf() < 0.30:
-		var count_after: int = current_level.get_monsters().size()
-		if count_after < Constants.PERIODIC_SPAWN_MAX_MONSTERS:
-			var spawn2: Vector2i = _find_periodic_spawn_pos()
-			if spawn2 != Vector2i(-1, -1):
-				var monster2: Monster = monster_scene.instantiate()
-				monster2.grid_position = spawn2
-				monster2.initialize_from_data(monster_data)
-				monster2.alertness = Constants.ALERTNESS_VERY_ALERT
-				monster2.is_sleeping = false
-				monster2.encounter_type = Constants.EncounterType.HUNTER
-				current_level.add_entity(monster2)
 
 func _apply_pursuit_pressure() -> void:
 	if not current_level or not player:
