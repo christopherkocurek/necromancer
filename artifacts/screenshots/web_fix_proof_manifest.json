@@ -1,0 +1,16 @@
+{
+	"captured": [
+		"web_fix_proof_s2026_gameplay.png",
+		"web_fix_proof_s2026_gameplay_minimap_expanded.png",
+		"web_fix_proof_s2026_inventory.png",
+		"web_fix_proof_s2026_tome.png",
+		"web_fix_proof_s2026_look.png",
+		"web_fix_proof_s2026_target.png"
+	],
+	"captured_count": 6,
+	"failed": [],
+	"failed_count": 0,
+	"label": "web_fix_proof",
+	"output_dir": "artifacts/screenshots",
+	"seed": 2026
+}

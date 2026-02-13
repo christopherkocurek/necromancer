@@ -865,6 +865,9 @@ func _load_layer_tile_kits() -> void:
 		"lower_halls": {"light": Vector2i(30, 20), "dark": Vector2i(31, 20)},
 		"dark_halls":  {"light": Vector2i(28, 21), "dark": Vector2i(29, 21)},
 		"necropolis":  {"light": Vector2i(30, 21), "dark": Vector2i(31, 21)},
+		"pits_of_despair": {"light": Vector2i(28, 22), "dark": Vector2i(29, 22)},
+		"inner_sanctum":   {"light": Vector2i(30, 22), "dark": Vector2i(31, 22)},
+		"throne_room":     {"light": Vector2i(14, 23), "dark": Vector2i(15, 23)},
 	}
 	for layer_name: String in web_slots:
 		if layer_name in layer_tile_kits:
@@ -875,7 +878,7 @@ func _load_layer_tile_kits() -> void:
 		layer_tile_kits["lower_halls"][24] = {"light": Vector2i(26, 20), "dark": Vector2i(27, 20)}  # 24 = BONE_PILE
 	# Necropolis (layer 4): old bones should render on necropolis floor (non-void atlas cells).
 	if "necropolis" in layer_tile_kits:
-		layer_tile_kits["necropolis"][24] = {"light": Vector2i(26, 21), "dark": Vector2i(27, 21)}  # 24 = BONE_PILE
+		layer_tile_kits["necropolis"][24] = {"light": Vector2i(26, 23), "dark": Vector2i(27, 23)}  # 24 = BONE_PILE
 
 # ============================================================================
 # PUBLIC API

@@ -1,0 +1,16 @@
+{
+	"captured": [
+		"web_fix_loop3_s1340_gameplay.png",
+		"web_fix_loop3_s1340_gameplay_minimap_expanded.png",
+		"web_fix_loop3_s1340_inventory.png",
+		"web_fix_loop3_s1340_tome.png",
+		"web_fix_loop3_s1340_look.png",
+		"web_fix_loop3_s1340_target.png"
+	],
+	"captured_count": 6,
+	"failed": [],
+	"failed_count": 0,
+	"label": "web_fix_loop3",
+	"output_dir": "artifacts/screenshots",
+	"seed": 1340
+}

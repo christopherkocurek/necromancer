@@ -1,0 +1,16 @@
+{
+	"captured": [
+		"web_fix_proof_depth16_s1337_gameplay.png",
+		"web_fix_proof_depth16_s1337_gameplay_minimap_expanded.png",
+		"web_fix_proof_depth16_s1337_inventory.png",
+		"web_fix_proof_depth16_s1337_tome.png",
+		"web_fix_proof_depth16_s1337_look.png",
+		"web_fix_proof_depth16_s1337_target.png"
+	],
+	"captured_count": 6,
+	"failed": [],
+	"failed_count": 0,
+	"label": "web_fix_proof_depth16",
+	"output_dir": "artifacts/screenshots",
+	"seed": 1337
+}

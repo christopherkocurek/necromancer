@@ -115,6 +115,20 @@ func _update_info() -> void:
 		desc_tile = Level.Tile.FLOOR
 	var terrain_desc: String = DescriptionGenerator.generate_terrain_description_for_depth(desc_tile, current_depth)
 	lines.append("[color=#7D7668][i]%s[/i][/color]" % terrain_desc)
+	if OS.is_debug_build():
+		var visible_now: bool = level.is_tile_visible(look_cursor) if level.has_method("is_tile_visible") else true
+		var rendered_tile: int = tile
+		if tile == Level.Tile.TRAP and level and level.has_method("is_trap_revealed") and not bool(level.is_trap_revealed(look_cursor)):
+			rendered_tile = Level.Tile.FLOOR
+		var mapped_atlas: Vector2i = TileMapper.get_layer_terrain_coords(rendered_tile, level.layer_name, visible_now)
+		var drawn_source: int = -1
+		var drawn_atlas: Vector2i = Vector2i(-1, -1)
+		if level.terrain_layer:
+			drawn_source = level.terrain_layer.get_cell_source_id(look_cursor)
+			drawn_atlas = level.terrain_layer.get_cell_atlas_coords(look_cursor)
+		lines.append("")
+		lines.append("[color=#9CA3AF]DBG tile=%d (%s) layer=%s vis=%s[/color]" % [tile, Level.Tile.keys()[tile], level.layer_name, str(visible_now)])
+		lines.append("[color=#9CA3AF]DBG expected_atlas=%s drawn_source=%d drawn_atlas=%s[/color]" % [str(mapped_atlas), drawn_source, str(drawn_atlas)])
 
 	info_label.bbcode_enabled = true
 	info_label.text = "\n".join(lines)

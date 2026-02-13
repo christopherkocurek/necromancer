@@ -795,20 +795,6 @@ func _update_tilemap_cell(pos: Vector2i, tile: int) -> void:
 	terrain_layer.set_cell(pos, 0, atlas_coords)
 
 func _get_atlas_coords_for_tile(tile: int, lit: bool = true, pos: Vector2i = Vector2i(-1, -1)) -> Vector2i:
-	# BONE_PILE uses exact elf/orc skeleton overlays on top of the current layer floor:
-	# deterministic 50/50 split by tile position.
-	if tile == Tile.BONE_PILE and pos.x >= 0 and pos.y >= 0:
-		var h: int = (pos.x * 73856093) ^ (pos.y * 19349663) ^ (depth * 83492791)
-		var use_orc: bool = (h & 1) == 0
-		if layer_name == "lower_halls":
-			if use_orc:
-				return Vector2i(28, 20) if lit else Vector2i(29, 20)
-			return Vector2i(30, 20) if lit else Vector2i(31, 20)
-		if layer_name == "necropolis":
-			if use_orc:
-				return Vector2i(28, 21) if lit else Vector2i(29, 21)
-			return Vector2i(30, 21) if lit else Vector2i(31, 21)
-
 	# Use layer-specific tile kits for base terrain types (wall/floor/door/stairs)
 	if not layer_name.is_empty():
 		return TileMapper.get_layer_terrain_coords(tile, layer_name, lit)
