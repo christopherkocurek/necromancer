@@ -3072,18 +3072,28 @@ func get_light_radius() -> int:
 				base_radius += 2
 			1:  # Brass Lantern
 				base_radius += 3
+			2:  # Elven Light
+				base_radius += 2
+			3:  # Mallorn Torch
+				base_radius += 3
 			8:  # Feanorian Lamp
 				base_radius += 4
 			_:  # Unknown light source
 				base_radius += 2
 
+	# Light-bearing equipment (weapons/armor/jewelry egos) contributes to radius.
+	if has_equip_flag("LIGHT"):
+		base_radius += 1
+	if has_equip_flag("LIGHT_CURSE"):
+		base_radius = maxi(1, base_radius - 1)
+
 	# Keen Senses (active pulse): +1 light radius while active.
 	if _keen_senses_turns > 0:
 		base_radius += 1
 
-	# Light of the Eldar (active aura): +2 baseline, plus small scaling from Lore.
+	# Light of the Eldar (active aura): fixed +2.
 	if _is_light_of_eldar_active():
-		base_radius += 2 + (get_effective_skill("lore") / 6)
+		base_radius += 2
 
 	# DARKENED: Reduce light radius by 2 (minimum 1)
 	if status_fx and status_fx.has_effect(Constants.EFFECT_DARKENED):
@@ -3134,8 +3144,8 @@ func tick_light_fuel() -> void:
 		var default_fuel: int = DataManager.get_default_light_fuel(light_sval)
 		if default_fuel > 0:
 			light_item.fuel = default_fuel
-	# Feanorian Lamp doesn't consume fuel
-	if "sval" in light_item and light_item.sval == 8:
+	# Elven lights and Jewel-lamps don't consume fuel
+	if "sval" in light_item and (light_item.sval == 2 or light_item.sval == 8):
 		return
 	if light_item.fuel > 0:
 		light_item.fuel -= 1

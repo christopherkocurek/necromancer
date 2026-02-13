@@ -192,7 +192,7 @@ func test_voice_cost_hidden_ways():
 
 func test_voice_cost_deep_memory():
 	var system := AbilitySystem.new()
-	assert_eq(system.get_voice_cost(142), 15, "Deep Memory costs 15 voice")
+	assert_eq(system.get_voice_cost(142), 12, "Deep Memory costs 12 voice")
 	system.free()
 
 func test_voice_cost_word_of_command():
@@ -207,7 +207,7 @@ func test_voice_cost_word_of_domination():
 
 func test_voice_cost_word_of_unmaking():
 	var system := AbilitySystem.new()
-	assert_eq(system.get_voice_cost(156), 5, "Word of Unmaking costs 5 voice")
+	assert_eq(system.get_voice_cost(156), 6, "Word of Unmaking costs 6 voice")
 	system.free()
 
 func test_voice_cost_song_of_freedom_sustained():

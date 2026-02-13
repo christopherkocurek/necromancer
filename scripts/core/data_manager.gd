@@ -299,6 +299,8 @@ func get_default_light_fuel(sval: int) -> int:
 			return 3000  # Wooden Torch
 		1:
 			return 7000  # Brass Lantern
+		3:
+			return 100  # Mallorn Torch
 		_:
 			return -1
 

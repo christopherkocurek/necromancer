@@ -25,6 +25,7 @@ var target_panel: Control = null    # TargetPanel for archery/wand targeting
 var bestiary_panel: Control = null   # BestiaryPanel for monster lore
 var settings_panel: Control = null   # SettingsPanel for accessibility/display/controls
 var character_panel: Control = null  # CharacterPanel for player stats (C key)
+var beta_escape_dialog: AcceptDialog = null
 
 var current_level: Level = null
 var player: Player = null
@@ -104,7 +105,7 @@ const CharacterPanelScript := preload("res://scripts/ui/character_panel.gd")
 const GandalfMentorNPCScript := preload("res://scripts/entities/gandalf_mentor_npc.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
-const BASE_CONTENT_SIZE: Vector2i = Vector2i(1440, 810)
+const BASE_CONTENT_SIZE: Vector2i = Vector2i(1920, 1080)
 const HOTBAR_CAST_KEY_COUNT: int = 8
 
 func _ready() -> void:
@@ -219,6 +220,14 @@ func _setup_ui_panels() -> void:
 	settings_panel = SETTINGS_PANEL_SCENE.instantiate()
 	settings_panel.closed.connect(_on_settings_closed)
 	ui_layer.add_child(settings_panel)
+
+	# Beta escape modal: simple message + return to title.
+	beta_escape_dialog = AcceptDialog.new()
+	beta_escape_dialog.title = "Escape!"
+	beta_escape_dialog.dialog_text = "Congratulations, you escaped! Now to meet Gandalf..."
+	beta_escape_dialog.get_ok_button().text = "Back to Menu"
+	beta_escape_dialog.confirmed.connect(_on_beta_escape_back_to_menu)
+	ui_layer.add_child(beta_escape_dialog)
 
 	# Initialize Phase 8C systems (using preloaded scripts)
 	auto_explore = AutoExploreScript.new()
@@ -658,10 +667,30 @@ func _check_stairs() -> void:
 					return
 				_descend()
 			Level.Tile.STAIRS_UP:
-				if GameManager.current_depth > 1:
+				if GameManager.current_depth <= 1:
+					_try_beta_escape()
+				elif GameManager.current_depth > 1:
 					if _needs_stairs_confirmation(-1):
 						return
 					_ascend()
+
+func _try_beta_escape() -> void:
+	if not quest_system or not quest_system.has_method("can_escape"):
+		GameManager.log_message("The way out remains sealed.", ThemeColors.MSG_WARNING)
+		return
+	var check: Dictionary = quest_system.can_escape()
+	if not bool(check.get("can_escape", false)):
+		GameManager.log_message("You cannot leave yet.", ThemeColors.MSG_WARNING)
+		var missing: Array = check.get("missing", [])
+		for need in missing:
+			GameManager.log_message("  - %s" % String(need), ThemeColors.MSG_SYSTEM)
+		return
+	if quest_system.has_method("attempt_escape"):
+		quest_system.attempt_escape()
+	current_state = GameState.GAME_OVER
+	GameManager.is_player_turn = false
+	if beta_escape_dialog:
+		beta_escape_dialog.popup_centered_ratio(0.42)
 
 func _needs_stairs_confirmation(direction: int) -> bool:
 	# Safety confirm for high-risk transition at low HP.
@@ -1306,7 +1335,7 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 		var quarry: Entity = current_level.get_entity_at(target_pos)
 		if quarry and is_instance_valid(quarry) and quarry is Monster and quarry.is_alive:
 			if player.activate_mark_quarry_on_target(quarry):
-				_consume_turn_for_ability()
+				hud.update_player_stats(player)
 		else:
 			GameManager.log_message("No valid quarry there.", ThemeColors.MSG_SYSTEM)
 		return
@@ -1318,13 +1347,19 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 		# Word of Warding targets empty floor tiles, not monsters.
 		if ability_id == 154:
 			if ability_system and ability_system.activate_ability(ability_id, target_pos):
-				_consume_turn_for_ability()
+				if _is_minor_action_hotbar_ability(ability_id):
+					hud.update_player_stats(player)
+				else:
+					_consume_turn_for_ability()
 			return
 		var target_entity: Entity = current_level.get_entity_at(target_pos)
 		if target_entity and is_instance_valid(target_entity) and target_entity is Monster and target_entity.is_alive:
 			if ability_system:
 				if ability_system.activate_ability(ability_id, target_entity):
-					_consume_turn_for_ability()
+					if _is_minor_action_hotbar_ability(ability_id):
+						hud.update_player_stats(player)
+					else:
+						_consume_turn_for_ability()
 		else:
 			GameManager.log_message("No valid target there.", ThemeColors.MSG_SYSTEM)
 		return
@@ -1536,9 +1571,7 @@ func _cast_hotbar_ability(ability_id: int) -> bool:
 	if success:
 		if TutorialManager and TutorialManager.has_method("on_ability_cast_from_gem"):
 			TutorialManager.on_ability_cast_from_gem(ability_id)
-		if ability_id == Player.GEM_SPRINTING:
-			hud.update_player_stats(player)
-		elif _is_free_action_lore_toggle(ability_id):
+		if ability_id == Player.GEM_SPRINTING or _is_free_action_lore_toggle(ability_id) or _is_minor_action_hotbar_ability(ability_id):
 			hud.update_player_stats(player)
 		else:
 			_consume_turn_for_ability()
@@ -1547,6 +1580,21 @@ func _cast_hotbar_ability(ability_id: int) -> bool:
 func _is_free_action_lore_toggle(ability_id: int) -> bool:
 	# Design rule: sustained songs (including Herbcraft) are free to start/stop.
 	return ability_id in [143, 147, 148, 152, 153, 159]
+
+func _is_minor_action_hotbar_ability(ability_id: int) -> bool:
+	# Minor actions should not consume a full turn.
+	return ability_id in [
+		Player.GEM_DEFENSIVE_STANCE,
+		Player.GEM_READY_PARRY,
+		Player.GEM_MARK_QUARRY,
+		Player.GEM_CIRCULAR_GUARD,
+		Player.GEM_KEEN_SENSES,
+		Player.GEM_DISGUISE,
+		Player.GEM_POWER_STANCE,
+		Player.GEM_FINESSE_STANCE,
+		Player.GEM_CURSE_BREAKING,
+		Player.GEM_VANISH,
+	]
 
 func _activate_player_gem_ability(ability_id: int) -> bool:
 	if not player:
@@ -1758,8 +1806,8 @@ func _on_hud_utility_slot_activated(slot_index: int) -> void:
 		return
 	var tval: int = int(item.tval)
 
-	# Consumables: use directly (turn-consuming).
-	if tval in [55, 75, 80]:
+	# Consumables/devices: use directly from inventory (wand/horn/flask included).
+	if tval in [55, 56, 66, 75, 77, 80]:
 		if not player.inventory.has(item):
 			GameManager.log_message("Consumables must be in inventory to use.", ThemeColors.MSG_SYSTEM)
 			return
@@ -1912,6 +1960,17 @@ func _on_new_game_requested() -> void:
 	# Show character creation for new game
 	_show_character_creation()
 
+func _on_beta_escape_back_to_menu() -> void:
+	# Return to title after beta win message.
+	if current_level:
+		current_level.queue_free()
+		current_level = null
+	if player:
+		player.queue_free()
+		player = null
+	GameManager.reset_game()
+	_show_title_screen()
+
 func _on_quit_requested() -> void:
 	_cleanup_before_exit()
 	get_tree().quit()
@@ -1930,7 +1989,7 @@ func _cleanup_before_exit() -> void:
 	var nodes_to_free: Array = [
 		title_screen, character_creation, inventory_panel, tome_panel, death_screen, look_panel,
 		dialogue_panel, smithing_panel, target_panel, bestiary_panel, settings_panel,
-		character_panel, transition_overlay, voice_menu, item_menu, ability_system,
+		character_panel, transition_overlay, voice_menu, item_menu, beta_escape_dialog, ability_system,
 		quest_system, current_level, player
 	]
 	for node in nodes_to_free:
@@ -1952,6 +2011,7 @@ func _cleanup_before_exit() -> void:
 	transition_overlay = null
 	voice_menu = null
 	item_menu = null
+	beta_escape_dialog = null
 	ability_system = null
 	quest_system = null
 	current_level = null
@@ -2053,8 +2113,6 @@ func _process_rest_step() -> void:
 	# Simulate player consuming energy and processing the game tick
 	player.consume_energy()
 	turn_system._after_player_action()
-	if ability_system:
-		ability_system.regenerate_voice()
 	hud.update_player_stats(player)
 
 	# Update HP tracker for damage detection

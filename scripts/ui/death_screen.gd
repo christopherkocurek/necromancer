@@ -7,6 +7,8 @@ signal new_game_requested
 signal quit_requested
 
 @onready var epitaph_label: Label = $MarginContainer/VBoxContainer/EpitaphLabel
+@onready var margin_container: MarginContainer = $MarginContainer
+@onready var title_label: Label = $MarginContainer/VBoxContainer/TitleLabel
 @onready var character_info: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/LeftColumn/CharacterInfo
 @onready var combat_stats: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/RightColumn/CombatStats
 @onready var journey_stats: Label = $MarginContainer/VBoxContainer/ScrollContainer/StatsBox/HBoxContainer/MiddleColumn/JourneyStats
@@ -36,6 +38,24 @@ func _ready() -> void:
 	hide()
 	_setup_vignette()
 	_setup_typewriter_timer()
+	_sync_layout_to_viewport()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_sync_layout_to_viewport()
+
+func _sync_layout_to_viewport() -> void:
+	if not is_instance_valid(margin_container):
+		return
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var margin_x: int = int(clampf(viewport_size.x * 0.04, 28.0, 72.0))
+	var margin_y: int = int(clampf(viewport_size.y * 0.03, 18.0, 42.0))
+	margin_container.add_theme_constant_override("margin_left", margin_x)
+	margin_container.add_theme_constant_override("margin_right", margin_x)
+	margin_container.add_theme_constant_override("margin_top", margin_y)
+	margin_container.add_theme_constant_override("margin_bottom", margin_y)
+	if is_instance_valid(title_label):
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _setup_vignette() -> void:
 	_vignette = ColorRect.new()

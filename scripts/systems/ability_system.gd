@@ -101,6 +101,11 @@ func regenerate_voice() -> void:
 	if not player or player.voice_charges >= player.max_voice:
 		return
 	var regen_rate: float = float(player.max_voice) / VOICE_REGEN_PERIOD
+	# Sustained voice effects should meaningfully suppress regen.
+	if player.active_song_id >= 0 or player.active_song_id_2 >= 0:
+		regen_rate *= 0.5
+	if player.has_meta("light_of_eldar_active") and bool(player.get_meta("light_of_eldar_active")):
+		regen_rate *= 0.8
 	player._voice_regen_accumulator += regen_rate
 	if player._voice_regen_accumulator >= 1.0:
 		var gain: int = int(player._voice_regen_accumulator)
@@ -393,8 +398,8 @@ func get_voice_cost(ability_id: int) -> int:
 	match ability_id:
 		LoreAbility.HIDDEN_WAYS: return 2
 		LoreAbility.WORD_OF_OPENING: return 2
-		LoreAbility.DEEP_MEMORY: return 15
-		LoreAbility.HERBCRAFT: return 1       # Sustained: 1/turn
+		LoreAbility.DEEP_MEMORY: return 12
+		LoreAbility.HERBCRAFT: return 2       # Sustained: 2/turn
 		LoreAbility.LIGHT_OF_ELDAR: return 1  # Aura upkeep: 1/turn
 		LoreAbility.WORD_OF_COMMAND: return 3
 		LoreAbility.SONG_OF_FREEDOM: return 1  # Sustained: 1/turn
@@ -402,10 +407,10 @@ func get_voice_cost(ability_id: int) -> int:
 		LoreAbility.SONG_OF_BANISHMENT: return 3
 		LoreAbility.WORD_OF_DOMINATION: return 4
 		LoreAbility.SONG_OF_AULE: return 2     # Sustained: 2/turn
-		LoreAbility.SONG_OF_HEALING: return 1   # Sustained: 1/turn
+		LoreAbility.SONG_OF_HEALING: return 2   # Sustained: 2/turn
 		LoreAbility.WORD_OF_WARDING: return 3
-		LoreAbility.WORD_OF_AUTHORITY: return 4
-		LoreAbility.WORD_OF_UNMAKING: return 5
+		LoreAbility.WORD_OF_AUTHORITY: return 5
+		LoreAbility.WORD_OF_UNMAKING: return 6
 		LoreAbility.SONG_OF_THE_TREES: return 1 # Sustained: 1/turn
 		_: return 0  # Passive or no cost
 

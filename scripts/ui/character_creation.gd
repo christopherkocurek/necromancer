@@ -123,6 +123,7 @@ const FALLBACK_NAMES: Array[String] = [
 	"Beren", "Luthien", "Fingolfin", "Feanor", "Turin", "Hurin", "Earendil",
 	"Celebrimbor", "Gil-galad", "Thranduil", "Glorfindel", "Ecthelion"]
 const PLAYTEST_MAX_HERO_SPRITE_ID: int = 135  # Sauron tile
+const SHOW_PLAYTEST_MAX_HERO_BUTTON: bool = false
 const NEW_PLAYER_PRESET_LABEL: String = "New Player - Start Here (Elf Scout)"
 const NEW_PLAYER_RECOMMENDED_RACE: String = "Elf"
 const NEW_PLAYER_RECOMMENDED_HOUSE: String = "Greenwood"
@@ -512,11 +513,12 @@ func _show_race_selection() -> void:
 	_apply_creation_button_theme(guided_btn)
 	content_container.add_child(guided_btn)
 
-	var playtest_btn := Button.new()
-	playtest_btn.text = "MAX TEST HERO (AUTOLOAD)"
-	playtest_btn.pressed.connect(_create_playtest_max_hero)
-	_apply_creation_button_theme(playtest_btn)
-	content_container.add_child(playtest_btn)
+	if SHOW_PLAYTEST_MAX_HERO_BUTTON:
+		var playtest_btn := Button.new()
+		playtest_btn.text = "MAX TEST HERO (AUTOLOAD)"
+		playtest_btn.pressed.connect(_create_playtest_max_hero)
+		_apply_creation_button_theme(playtest_btn)
+		content_container.add_child(playtest_btn)
 
 	var races := DataManager.races
 	for race_name in races:
@@ -2312,6 +2314,12 @@ func _get_or_create_button_group(group_name: String) -> ButtonGroup:
 	return _button_groups[group_name]
 
 func _input(event: InputEvent) -> void:
+	# Hidden playtest path: Ctrl+W from character creation autoloads max test hero.
+	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and not event.shift_pressed and event.keycode == KEY_W:
+		_create_playtest_max_hero()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("ui_cancel"):
 		if current_stage > Stage.RACE:
 			_on_back_pressed()

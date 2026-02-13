@@ -202,7 +202,7 @@ static func calculate_cut_damage(duration: int) -> int:
 
 ## Calculate decay for poison effect: same as damage formula
 static func calculate_poison_decay(duration: int) -> int:
-	return (duration + 4) / 5
+	return 1
 
 ## Calculate decay for cut effect: same as damage formula
 static func calculate_cut_decay(duration: int) -> int:
