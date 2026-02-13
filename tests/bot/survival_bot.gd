@@ -50,6 +50,9 @@ var _turn_system: TurnSystem = null
 var archetype_config: Dictionary = {}   ## Set externally before _ready()
 var run_index: int = -1                  ## Run number within archetype
 var run_seed: int = -1                   ## Deterministic seed (-1 = random)
+var start_depth_override: int = -1       ## Optional CLI override for any archetype
+var bonus_xp_override: int = 0           ## Optional XP grant after start-depth advance
+var tick_delay_override: float = -1.0    ## Optional CLI override for bot tick delay
 
 # ============================================================================
 # RUN STATE
@@ -66,6 +69,12 @@ var _stuck_counter: int = 0
 var _last_position: Vector2i = Vector2i(-1, -1)
 var _descended_this_floor: bool = false
 var _floor_hp_at_start: int = 0
+var _floor_xp_total_start: int = 0
+var _floor_xp_available_start: int = 0
+var _last_hp: int = 0
+var _floor_start_ms: int = 0
+var _run_start_ms: int = 0
+var _tick_delay_runtime: float = TICK_DELAY
 
 # ============================================================================
 # TELEMETRY
@@ -73,6 +82,18 @@ var _floor_hp_at_start: int = 0
 
 var _floor_stats: Dictionary = {}
 var _all_floor_stats: Array[Dictionary] = []
+var _floor_seen_monsters: Dictionary = {}
+var _floor_monsters_attacked: int = 0
+var _floor_rooms_seen: Dictionary = {}
+var _floor_vault_rooms_seen: Dictionary = {}
+var _floor_vault_rects_seen: Dictionary = {}
+var _floor_detections: int = 0
+var _floor_abilities_by_id: Dictionary = {}
+var _floor_consumables_used: int = 0
+var _floor_healing_items_used: int = 0
+var _floor_buff_items_used: int = 0
+var _floor_ammo_used: int = 0
+var _floor_xp_spent: int = 0
 
 # Run-level accumulators
 var _total_kills: int = 0
@@ -81,6 +102,10 @@ var _total_damage_taken: int = 0
 var _total_healing_done: int = 0
 var _deepest_floor: int = 0
 var _total_errors: int = 0
+var _total_ammo_used: int = 0
+var _total_healing_items_used: int = 0
+var _total_buff_items_used: int = 0
+var _total_xp_spent: int = 0
 
 # Enhanced bot — skill usage tracking
 var _total_abilities_used: int = 0
@@ -129,6 +154,9 @@ var _total_assassination_attacks: int = 0  ## Attacks against unwary targets
 var _total_song_switches: int = 0          ## Times active song was changed
 var _total_voice_at_death: int = 0         ## Voice charges remaining when dying
 var _total_abilities_by_id: Dictionary = {} ## {ability_id: use_count}
+var _total_hunt_marks: int = 0
+var _total_hunt_exposes: int = 0
+var _total_hunt_exploits: int = 0
 
 # v3 internal state
 var _was_monster_unwary: bool = false       ## Set before attack, checked after kill
@@ -149,6 +177,9 @@ var _archetype_id: String = ""      ## Cached archetype identifier
 # ============================================================================
 
 func _ready() -> void:
+	_run_start_ms = Time.get_ticks_msec()
+	if tick_delay_override > 0.0:
+		_tick_delay_runtime = tick_delay_override
 	# Apply deterministic seed if set
 	if run_seed >= 0:
 		seed(run_seed)
@@ -192,6 +223,8 @@ func _ready() -> void:
 
 	# Initialize archetype-specific strategy
 	_init_archetype_strategy()
+	await _advance_to_start_depth()
+	_refresh_references()
 
 	print("[SURVIVAL BOT] Game started. Player: %s | Depth: %d | HP: %d/%d | Voice: %d/%d" % [
 		_player.entity_name, GameManager.current_depth,
@@ -279,6 +312,25 @@ func _refresh_references() -> void:
 	if not _level and _main and "current_level" in _main:
 		_level = _main.current_level
 
+func _advance_to_start_depth() -> void:
+	## Fast-forward run to configured starting depth (mid-game test mode).
+	var start_depth: int = int(archetype_config.get("start_depth", 1))
+	if start_depth_override > 0:
+		start_depth = start_depth_override
+	start_depth = maxi(1, mini(TARGET_DEPTH, start_depth))
+	if start_depth <= 1:
+		return
+	if not _main or not _main.has_method("_descend"):
+		_log_error("Cannot advance to start depth: main._descend() unavailable.")
+		return
+	while GameManager.current_depth < start_depth:
+		await _main._descend()
+		await get_tree().process_frame
+	if bonus_xp_override > 0 and _player:
+		_player.gain_experience(bonus_xp_override, "misc")
+		print("[SURVIVAL BOT] Applied bonus XP override: +%d" % bonus_xp_override)
+	print("[SURVIVAL BOT] Mid-game start enabled: depth %d" % GameManager.current_depth)
+
 func _find_node_by_script(script_name: String) -> Node:
 	return _search_tree(get_tree().root, script_name)
 
@@ -308,8 +360,13 @@ func _init_archetype_strategy() -> void:
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
 				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},
 				{"skill": Constants.Skill.S_MEL, "ability": 4, "name": "Charge"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
 				{"skill": Constants.Skill.S_MEL, "ability": 5, "name": "Follow-Through"},
 				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
 			]
@@ -361,8 +418,12 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
 				{"skill": Constants.Skill.S_ARC, "ability": 5, "name": "Keen Eyes"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
 				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
 			]
 		"RANGER_MARKSMAN":
 			_skill_priorities = ["archery", "evasion", "hunting", "stealth"]
@@ -372,7 +433,35 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
 				{"skill": Constants.Skill.S_ARC, "ability": 7, "name": "Deadly Hail"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
+			]
+		"HUNTING_STRESS_RANGED", "HUNTING_MIDGAME_RANGED":
+			_skill_priorities = ["hunting", "archery", "evasion", "stealth"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
+				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
+				{"skill": Constants.Skill.S_ARC, "ability": 2, "name": "Point Blank"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+			]
+		"HUNTING_STRESS_MELEE", "HUNTING_MIDGAME_MELEE":
+			_skill_priorities = ["hunting", "melee", "evasion", "will"]
+			_ability_wishlist = [
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
+				{"skill": Constants.Skill.S_MEL, "ability": 0, "name": "Power"},
+				{"skill": Constants.Skill.S_MEL, "ability": 1, "name": "Finesse"},
+				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
 			]
 		"RANGER_STEALTH_ARCHER":
 			_skill_priorities = ["archery", "stealth", "evasion", "hunting"]
@@ -414,7 +503,12 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_MEL, "ability": 3, "name": "Polearm Mastery"},
 				{"skill": Constants.Skill.S_MEL, "ability": 4, "name": "Charge"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
 				{"skill": Constants.Skill.S_MEL, "ability": 5, "name": "Follow-Through"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
 				{"skill": Constants.Skill.S_MEL, "ability": 8, "name": "Cleave"},
 			]
 		"ELF_SMITH":
@@ -440,23 +534,33 @@ func _init_archetype_strategy() -> void:
 				{"skill": Constants.Skill.S_EVN, "ability": 1, "name": "Blocking"},
 			]
 		"HOBBIT_SNIPER":
-			_skill_priorities = ["archery", "stealth", "evasion", "will"]
+			_skill_priorities = ["archery", "hunting", "stealth", "evasion"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
 				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
 				{"skill": Constants.Skill.S_ARC, "ability": 5, "name": "Keen Eyes"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
 				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
 			]
 		"GREENWOOD_RANGER":
-			_skill_priorities = ["stealth", "archery", "evasion", "lore"]
+			_skill_priorities = ["stealth", "archery", "hunting", "evasion"]
 			_ability_wishlist = [
 				{"skill": Constants.Skill.S_STL, "ability": 0, "name": "Disguise"},
 				{"skill": Constants.Skill.S_STL, "ability": 1, "name": "Assassination"},
 				{"skill": Constants.Skill.S_ARC, "ability": 1, "name": "Fletchery"},
 				{"skill": Constants.Skill.S_ARC, "ability": 4, "name": "Ambush"},
+				{"skill": Constants.Skill.S_PER, "ability": 0, "name": "Natural Talent"},
+				{"skill": Constants.Skill.S_PER, "ability": 1, "name": "Mark Quarry"},
+				{"skill": Constants.Skill.S_PER, "ability": 3, "name": "Hunter's Rhythm"},
 				{"skill": Constants.Skill.S_EVN, "ability": 0, "name": "Dodging"},
+				{"skill": Constants.Skill.S_PER, "ability": 5, "name": "Expose Weakness"},
 				{"skill": Constants.Skill.S_LOR, "ability": 19, "name": "Song of the Trees"},
+				{"skill": Constants.Skill.S_PER, "ability": 8, "name": "Exploit Opening"},
 			]
 		"HOBBIT_BURGLAR":
 			_skill_priorities = ["stealth", "evasion", "hunting", "melee"]
@@ -510,11 +614,8 @@ func _init_archetype_strategy() -> void:
 # ============================================================================
 
 func _run_main_loop() -> void:
-	## Outer loop: iterate through floors 1-20.
-	for target_floor in range(1, TARGET_DEPTH + 1):
-		if not _run_active:
-			break
-
+	## Outer loop: iterate until run completes, stalls, or player dies.
+	while _run_active:
 		_current_depth = GameManager.current_depth
 		_deepest_floor = maxi(_deepest_floor, _current_depth)
 		_reset_floor_stats()
@@ -528,38 +629,23 @@ func _run_main_loop() -> void:
 		_print_floor_summary()
 		_all_floor_stats.append(_floor_stats.duplicate(true))
 
-		# Check if player died
+		# Check terminal conditions
 		if not _is_player_alive():
 			_finish_run("DEATH")
 			return
-
-		# Check total turn limit
 		if _total_turns >= MAX_TOTAL_TURNS:
 			_finish_run("TOTAL_TIMEOUT")
 			return
-
-		# If we descended, continue; otherwise we timed out on this floor
+		# Reaching target depth is considered completion; no further descent is required.
+		if _current_depth >= TARGET_DEPTH:
+			_finish_run("COMPLETED")
+			return
 		if not _descended_this_floor:
-			# Try one more time to find and use stairs
-			if not _run_active:
-				break
+			_finish_run("STALLED")
+			return
 
 		# Refresh references for new floor
 		_refresh_references()
-
-		# Safety: if we're on the last floor and descended, we won
-		if _current_depth >= TARGET_DEPTH and _descended_this_floor:
-			_finish_run("COMPLETED")
-			return
-
-	# Reached end of loop
-	if _is_player_alive():
-		if _current_depth >= TARGET_DEPTH:
-			_finish_run("COMPLETED")
-		else:
-			_finish_run("STALLED")  # Alive but couldn't descend further
-	else:
-		_finish_run("DEATH")
 
 func _run_floor_loop() -> void:
 	## Inner loop: play through a single floor.
@@ -584,7 +670,7 @@ func _run_floor_loop() -> void:
 		# Wait for player turn
 		var waited: int = 0
 		while not _is_player_turn() and waited < 100:
-			await get_tree().create_timer(TICK_DELAY).timeout
+			await get_tree().create_timer(_tick_delay_runtime).timeout
 			waited += 1
 			if not _is_player_alive():
 				return
@@ -593,7 +679,7 @@ func _run_floor_loop() -> void:
 			# Timed out waiting for player turn
 			_floor_stats["errors"].append("Timeout waiting for player turn at turn %d" % _floor_turn)
 			_total_errors += 1
-			await get_tree().create_timer(TICK_DELAY).timeout
+			await get_tree().create_timer(_tick_delay_runtime).timeout
 			continue
 
 		# Decide and execute action
@@ -603,6 +689,8 @@ func _run_floor_loop() -> void:
 			_floor_turn += 1
 			_total_turns += 1
 			_floor_stats["turns_taken"] = _floor_turn
+			_track_damage()
+			_update_room_tracking()
 
 		# Track stuck detection
 		_update_stuck_detection()
@@ -623,7 +711,7 @@ func _run_floor_loop() -> void:
 			await _attempt_emergency_descent()
 			return
 
-		await get_tree().create_timer(TICK_DELAY).timeout
+		await get_tree().create_timer(_tick_delay_runtime).timeout
 
 	# Turn limit reached
 	if not _descended_this_floor:
@@ -739,6 +827,11 @@ func _decide_and_act() -> bool:
 	# Priority 4: KITING — ranged archetypes maintain distance and fire
 	if _is_ranged_archetype() and not _has_adjacent_monster() and vis_count > 0:
 		if _try_kite_and_shoot():
+			return true
+
+	# Priority 4.5: Hunting duel tools (mark/expose/exploit) for hunter-like archetypes.
+	if vis_count > 0:
+		if _try_hunting_abilities(adj_count):
 			return true
 
 	# Priority 5: RANGED ATTACK — shoot visible monsters at range
@@ -983,6 +1076,8 @@ func _count_visible_monsters() -> int:
 		if entity is Monster and entity.is_alive:
 			if _level.is_tile_visible(entity.grid_position):
 				count += 1
+	if _floor_stats.has("monsters_visible_max"):
+		_floor_stats["monsters_visible_max"] = maxi(_floor_stats["monsters_visible_max"], count)
 	return count
 
 func _get_visible_monsters() -> Array[Monster]:
@@ -996,7 +1091,9 @@ func _get_visible_monsters() -> Array[Monster]:
 			continue
 		if entity is Monster and entity.is_alive:
 			if _level.is_tile_visible(entity.grid_position):
-				monsters.append(entity as Monster)
+				var monster: Monster = entity as Monster
+				monsters.append(monster)
+				_record_seen_monster(monster)
 	# Sort by distance (closest first)
 	monsters.sort_custom(func(a: Monster, b: Monster) -> bool:
 		var da: int = maxi(absi(a.grid_position.x - pp.x), absi(a.grid_position.y - pp.y))
@@ -1023,6 +1120,8 @@ func _attack_adjacent_monster() -> bool:
 	var monster: Monster = _get_nearest_adjacent_monster()
 	if not monster:
 		return false
+
+	_track_monster_attack()
 
 	# v3: Capture alertness BEFORE the attack for stealth kill tracking
 	_was_monster_unwary = false
@@ -1095,6 +1194,7 @@ func _use_consumable_item(item: Variant) -> void:
 
 	# Use the item via ConsumableSystem (same as main.gd does)
 	if ConsumableSystem.use_item(_player, item):
+		_track_consumable(item)
 		# Decrement stack or remove
 		var count: int = item.stack_count if "stack_count" in item else 1
 		if count > 1:
@@ -1250,7 +1350,7 @@ func _do_rest() -> bool:
 			break
 		hp_before_rest = _player.current_health
 
-		await get_tree().create_timer(TICK_DELAY).timeout
+		await get_tree().create_timer(_tick_delay_runtime).timeout
 
 	# Track healing
 	var heal_amount: int = rest_turns / 4
@@ -1367,6 +1467,7 @@ func _move_in_direction(direction: Vector2i) -> bool:
 	var target_pos: Vector2i = _player.grid_position + direction
 	var entity_at: Entity = _level.get_entity_at(target_pos)
 	if entity_at != null and entity_at != _player and entity_at is Monster:
+		_track_monster_attack()
 		_player.attacked_this_turn = true
 
 	_player.moved_this_turn = true
@@ -1451,7 +1552,7 @@ func _attempt_emergency_descent() -> void:
 		# Wait for player turn
 		var waited: int = 0
 		while not _is_player_turn() and waited < 50:
-			await get_tree().create_timer(TICK_DELAY).timeout
+			await get_tree().create_timer(_tick_delay_runtime).timeout
 			waited += 1
 			if not _is_player_alive():
 				return
@@ -1471,7 +1572,7 @@ func _attempt_emergency_descent() -> void:
 		_total_turns += 1
 		_floor_turn += 1
 
-		await get_tree().create_timer(TICK_DELAY).timeout
+		await get_tree().create_timer(_tick_delay_runtime).timeout
 
 # ============================================================================
 # ENHANCED BOT — STEALTH MANAGEMENT
@@ -1568,7 +1669,10 @@ func _get_floor_explore_pct() -> float:
 	return float(explored) / float(total_floor)
 
 func _is_ranged_archetype() -> bool:
-	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER", "HOBBIT_SNIPER", "GREENWOOD_RANGER"]
+	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER", "HOBBIT_SNIPER", "GREENWOOD_RANGER", "HUNTING_STRESS_RANGED", "HUNTING_MIDGAME_RANGED"]
+
+func _is_hunter_archetype() -> bool:
+	return _archetype_id in ["RANGER", "RANGER_MARKSMAN", "RANGER_STEALTH_ARCHER", "GREENWOOD_RANGER", "HOBBIT_SNIPER", "POLEARM_MASTER", "WARRIOR", "HUNTING_STRESS_RANGED", "HUNTING_STRESS_MELEE", "HUNTING_MIDGAME_RANGED", "HUNTING_MIDGAME_MELEE"]
 
 func _is_caster_archetype() -> bool:
 	return _archetype_id in ["LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER", "ELF_SMITH"]
@@ -1580,7 +1684,45 @@ func _is_tank_archetype() -> bool:
 	return _archetype_id in ["TANK", "SHIELD_WALL", "WILL_TANK"]
 
 func _is_melee_archetype() -> bool:
-	return _archetype_id in ["WARRIOR", "POLEARM_MASTER", "TANK", "SHIELD_WALL", "WILL_TANK", "SMITH"]
+	return _archetype_id in ["WARRIOR", "POLEARM_MASTER", "TANK", "SHIELD_WALL", "WILL_TANK", "SMITH", "HUNTING_STRESS_MELEE", "HUNTING_MIDGAME_MELEE"]
+
+func _try_hunting_abilities(adj_count: int) -> bool:
+	if not _player or not _is_hunter_archetype():
+		return false
+
+	# Start duel loop by marking a visible quarry whenever available.
+	if _player.has_method("activate_mark_quarry"):
+		if _player.activate_mark_quarry():
+			_total_hunt_marks += 1
+			_track_ability_use(Constants.PerceptionAbility.PER_FOCUSED_ATTACK)
+			_player.consume_energy()
+			if _turn_system:
+				_turn_system._after_player_action()
+			return true
+
+	# Expose weakness when engaged or preparing to engage.
+	if _player.has_method("activate_expose_weakness"):
+		if adj_count > 0 or _is_ranged_archetype():
+			if _player.activate_expose_weakness():
+				_total_hunt_exposes += 1
+				_track_ability_use(Constants.PerceptionAbility.PER_BANE)
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	# Spend built focus only when we are in position to capitalize immediately.
+	if _player.has_method("activate_exploit_opening"):
+		if adj_count > 0 or _is_ranged_archetype():
+			if _player.activate_exploit_opening():
+				_total_hunt_exploits += 1
+				_track_ability_use(Constants.PerceptionAbility.PER_MASTER_HUNTER)
+				_player.consume_energy()
+				if _turn_system:
+					_turn_system._after_player_action()
+				return true
+
+	return false
 
 # ============================================================================
 # v2 — CONSUMABLE USAGE
@@ -1603,7 +1745,6 @@ func _try_use_consumable() -> bool:
 				var healed: int = maxi(0, _player.current_health - hp_before)
 				_floor_stats["healing_done"] += healed
 				_total_healing_done += healed
-				_total_consumables_used += 1
 				return true
 
 	return false
@@ -1996,6 +2137,8 @@ func _try_kite_and_shoot() -> bool:
 
 	# In optimal range — fire
 	if _player.consume_arrow():
+		_track_monster_attack()
+		_track_ammo_used()
 		_player.attacked_this_turn = true
 		_player.ranged_attack(target, target_dist)
 		_player.consume_energy()
@@ -2003,6 +2146,7 @@ func _try_kite_and_shoot() -> bool:
 			_turn_system._after_player_action()
 		_total_ranged_attacks += 1
 		_total_kite_shots += 1
+		_floor_stats["ranged_attacks"] += 1
 
 		if not is_instance_valid(target) or not target.is_alive:
 			_floor_stats["monsters_killed"] += 1
@@ -2103,7 +2247,7 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 			var check: Dictionary = _ability_system.can_use_ability(151)
 			if check.get("can_use", false):
 				if _ability_system.activate_ability(151, best_target):
-					_total_abilities_used += 1
+					_track_ability_use(151)
 					_total_dominations += 1
 					_player.consume_energy()
 					if _turn_system:
@@ -2115,7 +2259,7 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(146)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(146):
-				_total_abilities_used += 1
+				_track_ability_use(146)
 				_total_word_of_command += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2127,7 +2271,7 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(150)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(150):
-				_total_abilities_used += 1
+				_track_ability_use(150)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2138,7 +2282,7 @@ func _try_proactive_lore_abilities(vis_count: int, voice_pct: float) -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(140)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(140):
-				_total_abilities_used += 1
+				_track_ability_use(140)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2161,7 +2305,7 @@ func _try_use_deep_memory() -> bool:
 		return false
 
 	if _ability_system.activate_ability(142):
-		_total_abilities_used += 1
+		_track_ability_use(142)
 		_total_deep_memory += 1
 		_player.consume_energy()
 		if _turn_system:
@@ -2192,6 +2336,7 @@ func _try_start_combat_song() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(153)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(153):
+				_track_ability_use(153)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2203,6 +2348,7 @@ func _try_start_combat_song() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(152)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(152):
+				_track_ability_use(152)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2214,6 +2360,7 @@ func _try_start_combat_song() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(147)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(147):
+				_track_ability_use(147)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2240,6 +2387,7 @@ func _try_start_exploration_song() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(143)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(143):
+				_track_ability_use(143)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2252,6 +2400,7 @@ func _try_start_exploration_song() -> bool:
 			var check: Dictionary = _ability_system.can_use_ability(159)
 			if check.get("can_use", false):
 				if _ability_system.activate_ability(159):
+					_track_ability_use(159)
 					_total_songs_started += 1
 					_player.consume_energy()
 					if _turn_system:
@@ -2263,6 +2412,7 @@ func _try_start_exploration_song() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(147)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(147):
+				_track_ability_use(147)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2285,7 +2435,7 @@ func _try_emergency_ability() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(146)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(146):
-				_total_abilities_used += 1
+				_track_ability_use(146)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2296,7 +2446,7 @@ func _try_emergency_ability() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(150)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(150):
-				_total_abilities_used += 1
+				_track_ability_use(150)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2327,7 +2477,7 @@ func _try_offensive_ability() -> bool:
 				if target == null or m.max_health > target.max_health:
 					target = m
 			if target and _ability_system.activate_ability(151, target):
-				_total_abilities_used += 1
+				_track_ability_use(151)
 				_total_dominations += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2339,7 +2489,7 @@ func _try_offensive_ability() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(146)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(146):
-				_total_abilities_used += 1
+				_track_ability_use(146)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2350,7 +2500,7 @@ func _try_offensive_ability() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(140)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(140):
-				_total_abilities_used += 1
+				_track_ability_use(140)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2361,7 +2511,7 @@ func _try_offensive_ability() -> bool:
 		var check: Dictionary = _ability_system.can_use_ability(155)
 		if check.get("can_use", false):
 			if _ability_system.activate_ability(155):
-				_total_abilities_used += 1
+				_track_ability_use(155)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
@@ -2374,7 +2524,7 @@ func _try_offensive_ability() -> bool:
 			var check: Dictionary = _ability_system.can_use_ability(142)
 			if check.get("can_use", false):
 				if _ability_system.activate_ability(142):
-					_total_abilities_used += 1
+					_track_ability_use(142)
 					_player.consume_energy()
 					if _turn_system:
 						_turn_system._after_player_action()
@@ -2407,12 +2557,15 @@ func _try_ranged_attack() -> bool:
 		# Check line of sight
 		if _level.has_los_to(pp, monster.grid_position):
 			if _player.consume_arrow():
+				_track_monster_attack()
+				_track_ammo_used()
 				_player.attacked_this_turn = true
 				_player.ranged_attack(monster, dist)
 				_player.consume_energy()
 				if _turn_system:
 					_turn_system._after_player_action()
 				_total_ranged_attacks += 1
+				_floor_stats["ranged_attacks"] += 1
 
 				# Track kills
 				if not is_instance_valid(monster) or not monster.is_alive:
@@ -2591,6 +2744,7 @@ func _try_use_forge() -> bool:
 			var check: Dictionary = _ability_system.can_use_ability(152)
 			if check.get("can_use", false):
 				_ability_system.activate_ability(152)
+				_track_ability_use(152)
 				_total_songs_started += 1
 				_player.consume_energy()
 				if _turn_system:
@@ -2848,8 +3002,11 @@ func _get_next_ability_xp_cost() -> int:
 func _try_buy_single_skill(skill_name: String) -> bool:
 	## Attempt to buy a single skill point. Returns true if successful.
 	if _player.can_afford_skill(skill_name):
+		var xp_before: int = _player.xp_available
 		if _player.invest_skill(skill_name):
-			_total_skills_bought += 1
+			var spent: int = maxi(0, xp_before - _player.xp_available)
+			_track_xp_spent(spent)
+			_track_skill_bought()
 			return true
 	return false
 
@@ -2867,17 +3024,17 @@ func _get_skill_rush_targets() -> Array[Dictionary]:
 		"HOBBIT_BURGLAR":
 			return [{"skill": "stealth", "level": 2}, {"skill": "evasion", "level": 1}]
 		"HOBBIT_SNIPER":
-			return [{"skill": "archery", "level": 2}, {"skill": "stealth", "level": 1}]
+			return [{"skill": "archery", "level": 2}, {"skill": "hunting", "level": 2}, {"skill": "stealth", "level": 1}]
 		"GREENWOOD_RANGER":
-			return [{"skill": "stealth", "level": 2}, {"skill": "archery", "level": 1}]
+			return [{"skill": "stealth", "level": 2}, {"skill": "archery", "level": 1}, {"skill": "hunting", "level": 2}]
 		"RANGER_STEALTH_ARCHER":
 			return [{"skill": "stealth", "level": 1}, {"skill": "archery", "level": 2}]
 		"LORE_MAGE", "BANISHMENT_MAGE", "LORE_HEALER":
 			return [{"skill": "lore", "level": 7}, {"skill": "will", "level": 2}]
 		"WARRIOR":
-			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
+			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}, {"skill": "hunting", "level": 2}]
 		"POLEARM_MASTER":
-			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
+			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}, {"skill": "hunting", "level": 2}]
 		"SHIELD_WALL":
 			return [{"skill": "melee", "level": 2}, {"skill": "evasion", "level": 2}]
 		"TANK", "WILL_TANK":
@@ -2887,7 +3044,15 @@ func _get_skill_rush_targets() -> Array[Dictionary]:
 		"ELF_SMITH":
 			return [{"skill": "smithing", "level": 2}, {"skill": "evasion", "level": 1}]
 		"RANGER", "RANGER_MARKSMAN":
-			return [{"skill": "archery", "level": 2}, {"skill": "evasion", "level": 1}]
+			return [{"skill": "archery", "level": 2}, {"skill": "hunting", "level": 2}, {"skill": "evasion", "level": 1}]
+		"HUNTING_STRESS_RANGED":
+			return [{"skill": "hunting", "level": 9}, {"skill": "archery", "level": 2}, {"skill": "evasion", "level": 1}]
+		"HUNTING_STRESS_MELEE":
+			return [{"skill": "hunting", "level": 9}, {"skill": "melee", "level": 2}, {"skill": "evasion", "level": 1}]
+		"HUNTING_MIDGAME_RANGED":
+			return [{"skill": "hunting", "level": 9}, {"skill": "archery", "level": 4}, {"skill": "evasion", "level": 2}]
+		"HUNTING_MIDGAME_MELEE":
+			return [{"skill": "hunting", "level": 9}, {"skill": "melee", "level": 4}, {"skill": "evasion", "level": 2}]
 		_:
 			return []
 
@@ -2927,12 +3092,13 @@ func _try_learn_abilities() -> void:
 				# Learn it
 				_player.xp_available -= xp_cost
 				_player.learn_ability(skill_type, ability_num)
+				_track_xp_spent(xp_cost)
 				if not _player.has_meta("learned_abilities"):
 					_player.set_meta("learned_abilities", [])
 				var learned: Array = _player.get_meta("learned_abilities")
 				learned.append(entry.get("name", "Unknown"))
 				_player.set_meta("learned_abilities", learned)
-				_total_abilities_learned += 1
+				_track_ability_learned()
 				print("[SURVIVAL BOT] Learned ability: %s (-%d XP)" % [entry.get("name", "Unknown"), xp_cost])
 				return  # Only learn one per cycle
 
@@ -3083,6 +3249,8 @@ func _update_detection_tracking() -> void:
 		var prev_alertness: int = _monster_alertness_cache.get(eid, mon.alertness)
 		if prev_alertness < Constants.ALERTNESS_ALERT and mon.alertness >= Constants.ALERTNESS_ALERT:
 			_total_detections += 1
+			_floor_detections += 1
+			_floor_stats["detections"] = _floor_detections
 		_monster_alertness_cache[eid] = mon.alertness
 
 # ============================================================================
@@ -3112,10 +3280,14 @@ func _get_archetype_explore_threshold() -> float:
 # ============================================================================
 
 func _track_ability_use(ability_id: int) -> void:
-	_total_abilities_used += 1
+	_track_ability_used()
 	if not _total_abilities_by_id.has(ability_id):
 		_total_abilities_by_id[ability_id] = 0
 	_total_abilities_by_id[ability_id] += 1
+	if not _floor_abilities_by_id.has(ability_id):
+		_floor_abilities_by_id[ability_id] = 0
+	_floor_abilities_by_id[ability_id] += 1
+	_floor_stats["abilities_used_by_id"] = _floor_abilities_by_id
 
 # ============================================================================
 # v3 — BEST ASSASSINATION TARGET
@@ -3286,31 +3458,179 @@ func _reset_floor_stats() -> void:
 		"depth": _current_depth,
 		"turns_taken": 0,
 		"monsters_killed": 0,
+		"monsters_attacked": 0,
+		"monsters_on_floor_start": 0,
+		"monsters_on_floor_end": 0,
+		"monsters_seen_unique": 0,
+		"monsters_visible_max": 0,
 		"items_found": 0,
 		"damage_taken": 0,
 		"healing_done": 0,
+		"hp_start": 0,
+		"hp_end": 0,
 		"auto_explore_uses": 0,
 		"abilities_used": 0,
+		"abilities_learned": 0,
+		"skills_bought": 0,
+		"abilities_used_by_id": {},
 		"ranged_attacks": 0,
 		"items_equipped": 0,
+		"consumables_used": 0,
+		"healing_items_used": 0,
+		"buff_items_used": 0,
+		"ammo_used": 0,
+		"detections": 0,
+		"rooms_total": 0,
+		"rooms_visited": 0,
+		"vault_rooms_total": 0,
+		"vault_rooms_visited": 0,
+		"vault_rects_total": 0,
+		"vault_rects_visited": 0,
+		"xp_available_start": 0,
+		"xp_available_end": 0,
+		"xp_earned": 0,
+		"xp_spent": 0,
+		"duration_ms": 0,
 		"errors": [],
 	}
 	_floor_hp_at_start = _player.current_health if _player else 0
+	_last_hp = _player.current_health if _player else 0
+	_floor_stats["hp_start"] = _floor_hp_at_start
+	_floor_start_ms = Time.get_ticks_msec()
+	_floor_seen_monsters = {}
+	_floor_monsters_attacked = 0
+	_floor_rooms_seen = {}
+	_floor_vault_rooms_seen = {}
+	_floor_vault_rects_seen = {}
+	_floor_detections = 0
+	_floor_abilities_by_id = {}
+	_floor_stats["abilities_used_by_id"] = _floor_abilities_by_id
+	_floor_consumables_used = 0
+	_floor_healing_items_used = 0
+	_floor_buff_items_used = 0
+	_floor_ammo_used = 0
+	_floor_xp_spent = 0
+	if _player:
+		_floor_xp_total_start = _player.total_xp_earned
+		_floor_xp_available_start = _player.xp_available
+		_floor_stats["xp_available_start"] = _floor_xp_available_start
+	if _level:
+		_floor_stats["monsters_on_floor_start"] = _level.get_monsters().size()
+		_floor_stats["rooms_total"] = _level.rooms.size()
+		if "vault_room_ids" in _level:
+			_floor_stats["vault_rooms_total"] = _level.vault_room_ids.size()
+		if "vault_rects" in _level:
+			_floor_stats["vault_rects_total"] = _level.vault_rects.size()
+	_update_room_tracking()
 
 func _finalize_floor_stats() -> void:
 	## Calculate final damage taken for this floor.
 	if _player:
-		var hp_lost: int = maxi(0, _floor_hp_at_start - _player.current_health)
-		# This is approximate; actual damage tracking would need event hooks
-		_floor_stats["damage_taken"] = hp_lost
-		_total_damage_taken += hp_lost
+		_floor_stats["hp_end"] = _player.current_health
+		_floor_stats["xp_available_end"] = _player.xp_available
+		var xp_earned: int = maxi(0, _player.total_xp_earned - _floor_xp_total_start)
+		var xp_spent_calc: int = maxi(0, _floor_xp_available_start + xp_earned - _player.xp_available)
+		_floor_stats["xp_earned"] = xp_earned
+		_floor_stats["xp_spent"] = maxi(_floor_xp_spent, xp_spent_calc)
+		_total_xp_spent += maxi(0, xp_spent_calc - _floor_xp_spent)
+	if _level:
+		_floor_stats["monsters_on_floor_end"] = _level.get_monsters().size()
+	_floor_stats["monsters_seen_unique"] = _floor_seen_monsters.size()
+	_floor_stats["duration_ms"] = maxi(0, Time.get_ticks_msec() - _floor_start_ms)
+
+func _record_seen_monster(monster: Monster) -> void:
+	if not monster:
+		return
+	var key: int = monster.get_instance_id()
+	_floor_seen_monsters[key] = true
+
+func _track_monster_attack() -> void:
+	_floor_monsters_attacked += 1
+	_floor_stats["monsters_attacked"] = _floor_monsters_attacked
+
+func _track_ammo_used() -> void:
+	_total_ammo_used += 1
+	_floor_ammo_used += 1
+	_floor_stats["ammo_used"] = _floor_ammo_used
+
+func _track_consumable(item: Variant) -> void:
+	_total_consumables_used += 1
+	_floor_consumables_used += 1
+	_floor_stats["consumables_used"] = _floor_consumables_used
+
+	var item_name: String = ""
+	if item != null:
+		if "name" in item:
+			item_name = str(item.name).to_lower()
+		elif "entity_name" in item:
+			item_name = str(item.entity_name).to_lower()
+	var is_healing: bool = false
+	if not item_name.is_empty():
+		is_healing = item_name.contains("healing") \
+			or item_name.contains("cure") \
+			or item_name.contains("restore") \
+			or item_name.contains("regen")
+
+	if is_healing:
+		_total_healing_items_used += 1
+		_floor_healing_items_used += 1
+		_floor_stats["healing_items_used"] = _floor_healing_items_used
+	else:
+		_total_buff_items_used += 1
+		_floor_buff_items_used += 1
+		_floor_stats["buff_items_used"] = _floor_buff_items_used
+
+func _track_ability_used() -> void:
+	_total_abilities_used += 1
+	_floor_stats["abilities_used"] += 1
+
+func _track_ability_learned() -> void:
+	_total_abilities_learned += 1
+	_floor_stats["abilities_learned"] += 1
+
+func _track_skill_bought() -> void:
+	_total_skills_bought += 1
+	_floor_stats["skills_bought"] += 1
+
+func _track_xp_spent(amount: int) -> void:
+	if amount <= 0:
+		return
+	_total_xp_spent += amount
+	_floor_xp_spent += amount
+	_floor_stats["xp_spent"] = _floor_xp_spent
 
 func _track_damage() -> void:
 	## Update damage tracking after an action.
 	if not _player:
 		return
-	# We track damage as HP loss from start of floor
-	# The finalize step handles the overall calculation
+	var current_hp: int = _player.current_health
+	if _last_hp <= 0:
+		_last_hp = current_hp
+	_floor_stats["hp_end"] = current_hp
+	if current_hp < _last_hp:
+		var dmg: int = _last_hp - current_hp
+		_floor_stats["damage_taken"] += dmg
+		_total_damage_taken += dmg
+	_last_hp = current_hp
+
+func _update_room_tracking() -> void:
+	if not _level or not _player:
+		return
+	var rid: int = _level.get_room_id(_player.grid_position)
+	if rid >= 0:
+		_floor_rooms_seen[rid] = true
+		if "vault_room_ids" in _level and _level.vault_room_ids.has(rid):
+			_floor_vault_rooms_seen[rid] = true
+	_floor_stats["rooms_visited"] = _floor_rooms_seen.size()
+	_floor_stats["vault_rooms_visited"] = _floor_vault_rooms_seen.size()
+	if "vault_rects" in _level:
+		var idx: int = 0
+		for rect: Rect2i in _level.vault_rects:
+			if rect.has_point(_player.grid_position):
+				_floor_vault_rects_seen[idx] = true
+				break
+			idx += 1
+		_floor_stats["vault_rects_visited"] = _floor_vault_rects_seen.size()
 
 func _update_stuck_detection() -> void:
 	## Increment stuck counter if player hasn't moved.
@@ -3357,6 +3677,30 @@ func _finish_run(cause: String) -> void:
 	if _player and is_instance_valid(_player):
 		_total_voice_at_death = _player.voice_charges
 
+	var death_cause: String = ""
+	var death_killer_name: String = ""
+	var death_killer_id: int = -1
+	var death_attack_effect: String = ""
+	var last_damage_type: String = ""
+	var last_damage_source_name: String = ""
+	var last_damage_source_id: int = -1
+	var status_effects_at_end: Array[String] = []
+	var skills_at_end: Dictionary = {}
+	if _player and is_instance_valid(_player):
+		if "run_stats" in _player and _player.run_stats:
+			death_cause = _player.run_stats.died_from
+			death_killer_name = _player.run_stats.killer_name
+			death_killer_id = _player.run_stats.killer_idx
+			death_attack_effect = _player.run_stats.killer_attack_effect
+			last_damage_type = _player.run_stats.last_damage_type
+			last_damage_source_name = _player.run_stats.last_damage_source_name
+			last_damage_source_id = _player.run_stats.last_damage_source_id
+		if "status_effects" in _player and _player.status_effects:
+			for k in _player.status_effects.keys():
+				status_effects_at_end.append(str(k))
+		if "skills" in _player:
+			skills_at_end = _player.skills.duplicate()
+
 	# Emit structured JSON result line for harness capture
 	var result_json: Dictionary = {
 		"archetype": archetype_config.get("archetype_id", "DEFAULT"),
@@ -3370,6 +3714,10 @@ func _finish_run(cause: String) -> void:
 		"total_damage_taken": _total_damage_taken,
 		"total_healing_done": _total_healing_done,
 		"total_errors": _total_errors,
+		"total_ammo_used": _total_ammo_used,
+		"total_healing_items_used": _total_healing_items_used,
+		"total_buff_items_used": _total_buff_items_used,
+		"total_xp_spent": _total_xp_spent,
 		"total_abilities_used": _total_abilities_used,
 		"total_ranged_attacks": _total_ranged_attacks,
 		"total_items_equipped": _total_items_equipped,
@@ -3408,11 +3756,24 @@ func _finish_run(cause: String) -> void:
 		"total_masterwork_attempts": _total_masterwork_attempts,
 		"total_masterwork_successes": _total_masterwork_successes,
 		"total_create_successes": _total_create_successes,
-		"total_assassination_attacks": _total_assassination_attacks,
-		"total_song_switches": _total_song_switches,
-		"total_voice_at_death": _total_voice_at_death,
-		"total_abilities_by_id": _total_abilities_by_id,
+			"total_assassination_attacks": _total_assassination_attacks,
+			"total_song_switches": _total_song_switches,
+			"total_voice_at_death": _total_voice_at_death,
+			"total_hunt_marks": _total_hunt_marks,
+			"total_hunt_exposes": _total_hunt_exposes,
+			"total_hunt_exploits": _total_hunt_exploits,
+			"total_abilities_by_id": _total_abilities_by_id,
+		"skills_at_end": skills_at_end,
+		"death_cause": death_cause,
+		"death_killer_name": death_killer_name,
+		"death_killer_id": death_killer_id,
+		"death_attack_effect": death_attack_effect,
+		"last_damage_type": last_damage_type,
+		"last_damage_source_name": last_damage_source_name,
+		"last_damage_source_id": last_damage_source_id,
+		"status_effects_at_end": status_effects_at_end,
 		"per_floor_stats": _all_floor_stats,
+		"runtime_ms": maxi(0, Time.get_ticks_msec() - _run_start_ms),
 		"timestamp": Time.get_datetime_string_from_system(),
 	}
 	print("JSON_RESULT:" + JSON.stringify(result_json))
@@ -3439,6 +3800,7 @@ func _finish_run(cause: String) -> void:
 		_total_word_of_command, _total_dominations, _total_deep_memory, _total_forges_visited])
 	print("Corridor fights: %d | Repositions: %d | Doors closed: %d | Threats avoided: %d" % [
 		_total_corridor_fights, _total_corridor_repositions, _total_doors_closed, _total_threats_avoided])
+	print("Hunting: marks %d | exposes %d | exploits %d" % [_total_hunt_marks, _total_hunt_exposes, _total_hunt_exploits])
 	print("Assassinations: %d | Voice at death: %d | Materials: %d" % [
 		_total_assassination_attacks, _total_voice_at_death, _total_materials_collected])
 	if _total_forges_used > 0 or _total_reforge_attempts > 0 or _total_reclaim_attempts > 0:

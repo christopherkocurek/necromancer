@@ -142,6 +142,10 @@ var chapter_content: VBoxContainer
 # Index page elements
 var index_header: Label
 var skill_rows: Array[Dictionary] = []
+var index_skills_vbox: VBoxContainer
+var chronicle_panel: VBoxContainer
+var chronicle_label: RichTextLabel
+var _chronicle_mode: bool = false
 
 # Chapter page elements
 var chapter_header: Label
@@ -162,6 +166,7 @@ var detail_voice: Label
 var learn_button: Button
 
 # Confirm bar (skill investment staging)
+var confirm_shell: PanelContainer
 var confirm_bar: HBoxContainer
 var confirm_label: Label
 var confirm_btn: Button
@@ -176,6 +181,7 @@ var page_turn_overlay: ColorRect
 var _is_turning_page: bool = false
 
 # Footer
+var footer_shell: PanelContainer
 var footer_xp: Label
 var footer_hint: Label
 
@@ -201,6 +207,7 @@ func _process(_delta: float) -> void:
 func open(player_ref: Player) -> void:
 	player = player_ref
 	current_page = PageState.INDEX
+	_chronicle_mode = false
 	index_content.visible = true
 	chapter_content.visible = false
 	_refresh_all()
@@ -354,43 +361,90 @@ func _setup_index_content() -> void:
 	index_hint.add_theme_font_size_override("font_size", ThemeColors.FONT_SIZE_HINT - 2)
 	index_hint.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.55))
 	index_content.add_child(index_hint)
+	var chronicle_hint := Label.new()
+	chronicle_hint.text = "[R] Chronicle of the Fallen"
+	chronicle_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ThemeColors.apply_body_font(chronicle_hint, ThemeColors.FONT_SIZE_HINT - 2)
+	chronicle_hint.add_theme_color_override("font_color", Color(ThemeColors.GOLD_WARM, 0.7))
+	index_content.add_child(chronicle_hint)
 
 	var sep := HSeparator.new()
 	index_content.add_child(sep)
 
 	# [#3] Skill rows — increased spacing (2 → 8) for breathing room
-	var skills_vbox := VBoxContainer.new()
-	skills_vbox.add_theme_constant_override("separation", 8)
-	skills_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	index_content.add_child(skills_vbox)
+	index_skills_vbox = VBoxContainer.new()
+	index_skills_vbox.add_theme_constant_override("separation", 8)
+	index_skills_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	index_content.add_child(index_skills_vbox)
 
 	for i in range(SKILL_NAMES.size()):
 		var row := _create_skill_row(i)
-		skills_vbox.add_child(row.container)
+		index_skills_vbox.add_child(row.container)
 		skill_rows.append(row)
 
+	chronicle_panel = VBoxContainer.new()
+	chronicle_panel.visible = false
+	chronicle_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	index_content.add_child(chronicle_panel)
+
+	var chronicle_title := Label.new()
+	chronicle_title.text = "Chronicle of the Fallen"
+	chronicle_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ThemeColors.apply_heading_font(chronicle_title, ThemeColors.FONT_SIZE_H3)
+	chronicle_title.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
+	chronicle_panel.add_child(chronicle_title)
+
+	chronicle_label = RichTextLabel.new()
+	chronicle_label.bbcode_enabled = true
+	chronicle_label.scroll_following = true
+	chronicle_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ThemeColors.apply_rich_body_font(chronicle_label, ThemeColors.FONT_SIZE_BODY)
+	chronicle_panel.add_child(chronicle_label)
+
 	# Confirm bar (visible when pending skill investments exist)
+	confirm_shell = PanelContainer.new()
+	confirm_shell.visible = false
+	var confirm_style := StyleBoxFlat.new()
+	confirm_style.bg_color = Color(0.10, 0.08, 0.06, 0.88)
+	confirm_style.border_width_top = 1
+	confirm_style.border_width_bottom = 1
+	confirm_style.border_width_left = 1
+	confirm_style.border_width_right = 1
+	confirm_style.border_color = Color(ThemeColors.GOLD_WARM, 0.75)
+	confirm_style.corner_radius_top_left = 4
+	confirm_style.corner_radius_top_right = 4
+	confirm_style.corner_radius_bottom_left = 4
+	confirm_style.corner_radius_bottom_right = 4
+	confirm_style.content_margin_left = 8
+	confirm_style.content_margin_right = 8
+	confirm_style.content_margin_top = 5
+	confirm_style.content_margin_bottom = 5
+	confirm_shell.add_theme_stylebox_override("panel", confirm_style)
+	index_content.add_child(confirm_shell)
+
 	confirm_bar = HBoxContainer.new()
 	confirm_bar.add_theme_constant_override("separation", 8)
 	confirm_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	confirm_bar.visible = false
-	index_content.add_child(confirm_bar)
+	confirm_shell.add_child(confirm_bar)
 
 	confirm_label = Label.new()
-	ThemeColors.apply_body_font(confirm_label, ThemeColors.FONT_SIZE_HINT)
-	confirm_label.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
+	ThemeColors.apply_body_font(confirm_label, ThemeColors.FONT_SIZE_BODY)
+	confirm_label.add_theme_color_override("font_color", ThemeColors.GOLD_BRIGHT)
+	confirm_label.add_theme_constant_override("shadow_offset_x", 1)
+	confirm_label.add_theme_constant_override("shadow_offset_y", 1)
+	confirm_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	confirm_bar.add_child(confirm_label)
 
 	confirm_btn = Button.new()
-	confirm_btn.text = "Confirm"
-	confirm_btn.custom_minimum_size = Vector2(80, 28)
+	confirm_btn.text = "Apply XP"
+	confirm_btn.custom_minimum_size = Vector2(100, 30)
 	confirm_btn.pressed.connect(_confirm_investments)
 	ThemeColors.apply_button_theme(confirm_btn)
 	confirm_bar.add_child(confirm_btn)
 
 	cancel_btn = Button.new()
-	cancel_btn.text = "Cancel"
-	cancel_btn.custom_minimum_size = Vector2(80, 28)
+	cancel_btn.text = "Clear"
+	cancel_btn.custom_minimum_size = Vector2(90, 30)
 	cancel_btn.pressed.connect(_cancel_investments)
 	ThemeColors.apply_button_theme(cancel_btn)
 	confirm_bar.add_child(cancel_btn)
@@ -763,20 +817,45 @@ func _setup_page_turn_overlay() -> void:
 	add_child(page_turn_overlay)
 
 func _setup_footer(parent: VBoxContainer) -> void:
+	footer_shell = PanelContainer.new()
+	var footer_style := StyleBoxFlat.new()
+	footer_style.bg_color = Color(0.10, 0.08, 0.06, 0.88)
+	footer_style.border_width_top = 1
+	footer_style.border_width_bottom = 1
+	footer_style.border_width_left = 1
+	footer_style.border_width_right = 1
+	footer_style.border_color = Color(ThemeColors.GOLD_WARM, 0.75)
+	footer_style.corner_radius_top_left = 5
+	footer_style.corner_radius_top_right = 5
+	footer_style.corner_radius_bottom_left = 5
+	footer_style.corner_radius_bottom_right = 5
+	footer_style.content_margin_left = 10
+	footer_style.content_margin_right = 10
+	footer_style.content_margin_top = 6
+	footer_style.content_margin_bottom = 6
+	footer_shell.add_theme_stylebox_override("panel", footer_style)
+	parent.add_child(footer_shell)
+
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 20)
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
-	parent.add_child(footer)
+	footer_shell.add_child(footer)
 
 	footer_xp = Label.new()
 	ThemeColors.apply_heading_font(footer_xp, ThemeColors.FONT_SIZE_LARGE)
-	footer_xp.add_theme_color_override("font_color", ThemeColors.GOLD_WARM)
+	footer_xp.add_theme_color_override("font_color", ThemeColors.GOLD_BRIGHT)
+	footer_xp.add_theme_constant_override("shadow_offset_x", 1)
+	footer_xp.add_theme_constant_override("shadow_offset_y", 1)
+	footer_xp.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	footer.add_child(footer_xp)
 
 	footer_hint = Label.new()
-	footer_hint.text = "[1-8] Chapter  [+/-] Invest  [Enter] Open  [Esc] Close"
-	ThemeColors.apply_body_font(footer_hint, ThemeColors.FONT_SIZE_HINT - 2)
-	footer_hint.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+	footer_hint.text = "Controls: [1-8] Chapter  [+/-] Stage XP  [Enter] Confirm/Open  [Esc] Close"
+	ThemeColors.apply_body_font(footer_hint, ThemeColors.FONT_SIZE_HINT)
+	footer_hint.add_theme_color_override("font_color", Color(ThemeColors.GOLD_WARM, 0.98))
+	footer_hint.add_theme_constant_override("shadow_offset_x", 1)
+	footer_hint.add_theme_constant_override("shadow_offset_y", 1)
+	footer_hint.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.75))
 	footer.add_child(footer_hint)
 
 # ===========================================================================
@@ -795,6 +874,15 @@ func _refresh_all() -> void:
 	_update_marginalia()
 
 func _refresh_index_page() -> void:
+	if index_skills_vbox:
+		index_skills_vbox.visible = not _chronicle_mode
+	if chronicle_panel:
+		chronicle_panel.visible = _chronicle_mode
+	if _chronicle_mode:
+		_refresh_chronicle_view()
+		confirm_shell.visible = false
+		return
+
 	for i in range(SKILL_NAMES.size()):
 		var skill_name: String = SKILL_NAMES[i]
 		var row: Dictionary = skill_rows[i]
@@ -842,6 +930,20 @@ func _refresh_index_page() -> void:
 			row.preview_label.add_theme_color_override("font_color", Color(ThemeColors.SCROLL_INK, 0.6))
 	_update_confirm_bar()
 
+func _refresh_chronicle_view() -> void:
+	if not chronicle_label:
+		return
+	chronicle_label.clear()
+	if not ChronicleManager:
+		chronicle_label.append_text("Chronicle unavailable.")
+		return
+	var lines: Array[String] = ChronicleManager.get_recent_summary_lines(30)
+	if lines.is_empty():
+		chronicle_label.append_text("No fallen records yet.")
+		return
+	for line in lines:
+		chronicle_label.append_text(" - %s\n" % line)
+
 # [#4] Helper: get next ability and progress counts for a skill tree
 func _get_skill_preview(skill_idx: int) -> Dictionary:
 	var abilities := DataManager.get_abilities_for_skill(skill_idx)
@@ -854,7 +956,7 @@ func _get_skill_preview(skill_idx: int) -> Dictionary:
 		if _player_has_ability(ability):
 			learned += 1
 		elif next_name == "":
-			next_name = ability.name
+			next_name = _get_display_ability_name(ability)
 			next_level = ability.level_requirement
 
 	return {"next_name": next_name, "next_level": next_level, "learned": learned, "total": total}
@@ -869,8 +971,8 @@ func _refresh_chapter_page() -> void:
 	var is_lore: bool = selected_skill_idx == 7
 	voice_bar_container.visible = is_lore
 	if is_lore and player:
-		var max_voice: int = int(20.0 * pow(1.2, player.grace))
-		var current_voice: int = player.voice if "voice" in player else 0
+		var max_voice: int = player.max_voice
+		var current_voice: int = player.voice_charges
 		voice_bar.max_value = max_voice
 		voice_bar.value = current_voice
 		voice_label.text = "%d / %d" % [current_voice, max_voice]
@@ -938,7 +1040,8 @@ func _create_ability_row(ability: DataManager.AbilityData, player_skill_level: i
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.custom_minimum_size.y = 34
 
-	var label_text: String = "[%d] %s" % [ability.level_requirement, ability.name]
+	var display_name: String = _get_display_ability_name(ability)
+	var label_text: String = "[%d] %s" % [ability.level_requirement, display_name]
 
 	if ability.skill_type == 7:
 		var vc: int = VOICE_COSTS.get(ability.index, 0)
@@ -981,8 +1084,8 @@ func _on_ability_selected(idx: int) -> void:
 	var can_learn := _can_learn_ability(ability)
 	var xp_cost := _get_ability_xp_cost(ability)
 
-	detail_name.text = ability.name
-	detail_desc.text = ability.description
+	detail_name.text = _get_display_ability_name(ability)
+	detail_desc.text = _get_display_ability_description(ability)
 
 	if not ability.prereqs.is_empty():
 		var prereq_text: String
@@ -1114,9 +1217,19 @@ func _refresh_footer() -> void:
 	else:
 		footer_xp.text = "XP: ---"
 	if current_page == PageState.INDEX:
-		footer_hint.text = "[1-8] Chapter  [+/-] Invest  [Enter] Open  [Esc] Close"
+		if not pending_investments.is_empty():
+			var total_points: int = 0
+			var total_cost: int = 0
+			for skill_name in pending_investments.keys():
+				total_points += pending_investments[skill_name]
+				total_cost += _get_pending_cost(skill_name)
+			footer_hint.text = "Pending: %d point%s (%d XP)  |  Press [Enter] to APPLY  |  [Esc] Clear/Close" % [
+				total_points, "s" if total_points > 1 else "", total_cost
+			]
+		else:
+			footer_hint.text = "Controls: [1-8] Chapter  [+/-] Stage XP  [Enter] Open  [Esc] Close"
 	else:
-		footer_hint.text = "[1-8] Chapter  [J/K] Navigate  [Enter] Inscribe  [Esc] Back"
+		footer_hint.text = "Controls: [1-8] Chapter  [J/K] Navigate  [Enter] Inscribe Ability  [Esc] Back"
 
 # ===========================================================================
 # NAVIGATION
@@ -1253,14 +1366,16 @@ func _can_afford_invest(skill_name: String) -> bool:
 
 func _update_confirm_bar() -> void:
 	var has_pending := not pending_investments.is_empty()
-	confirm_bar.visible = has_pending
+	confirm_shell.visible = has_pending
 	if has_pending:
 		var total_points: int = 0
 		var total_cost: int = 0
 		for skill_name in pending_investments.keys():
 			total_points += pending_investments[skill_name]
 			total_cost += _get_pending_cost(skill_name)
-		confirm_label.text = "%d point%s (%d XP)" % [total_points, "s" if total_points > 1 else "", total_cost]
+		confirm_label.text = "Ready to apply: %d point%s for %d XP" % [
+			total_points, "s" if total_points > 1 else "", total_cost
+		]
 
 func _on_learn_pressed() -> void:
 	if selected_ability_idx < 0 or selected_ability_idx >= _ability_list.size():
@@ -1298,13 +1413,24 @@ func _on_learn_pressed() -> void:
 # ===========================================================================
 
 func _player_has_ability(ability: DataManager.AbilityData) -> bool:
-	if not player or not player.has_meta("learned_abilities"):
+	if not player:
+		return false
+	# Primary source of truth is runtime ability state on player.
+	if player.has_ability(ability.skill_type, ability.ability_num):
+		return true
+	if not player.has_meta("learned_abilities"):
 		return false
 	var learned: Array = player.get_meta("learned_abilities")
 	return learned.has(ability.name)
 
 func _player_has_ability_by_name(ability_name: String) -> bool:
-	if not player or not player.has_meta("learned_abilities"):
+	if not player:
+		return false
+	# Resolve by canonical ability table first so checks survive metadata drift.
+	for ability in DataManager.abilities.values():
+		if ability.name == ability_name and player.has_ability(ability.skill_type, ability.ability_num):
+			return true
+	if not player.has_meta("learned_abilities"):
 		return false
 	var learned: Array = player.get_meta("learned_abilities")
 	return learned.has(ability_name)
@@ -1353,6 +1479,36 @@ func _get_ability_xp_cost(ability: DataManager.AbilityData) -> int:
 	var affinity: int = player.get_ability_affinity_level(skill_name)
 	return maxi(0, (owned + 1) * 500 - 500 * affinity)
 
+func _get_display_ability_name(ability: DataManager.AbilityData) -> String:
+	if ability.skill_type == Constants.Skill.S_EVN:
+		match ability.ability_num:
+			Constants.EvasionAbility.EVN_CROWD_FIGHTING:
+				return "Circular Guard"
+	if ability.skill_type == Constants.Skill.S_MEL:
+		match ability.ability_num:
+			Constants.MeleeAbility.MEL_RAPID_ATTACK:
+				return "Swift Strikes"
+	if ability.skill_type == Constants.Skill.S_PER:
+		match ability.ability_num:
+			Constants.PerceptionAbility.PER_FOCUSED_ATTACK:
+				return "Mark Quarry"
+			Constants.PerceptionAbility.PER_BANE:
+				return "Expose Weakness"
+			Constants.PerceptionAbility.PER_MASTER_HUNTER:
+				return "Exploit Opening"
+	return ability.name
+
+func _get_display_ability_description(ability: DataManager.AbilityData) -> String:
+	if ability.skill_type == Constants.Skill.S_PER:
+		match ability.ability_num:
+			Constants.PerceptionAbility.PER_FOCUSED_ATTACK:
+				return "Active (Shift+H): Mark the most dangerous visible enemy as your quarry for 8 turns. While marked, pressure on the quarry fuels Focus and improves your duel control."
+			Constants.PerceptionAbility.PER_BANE:
+				return "Active (Shift+X): Read your marked quarry and expose openings in its stance. On success, apply temporary evasion/protection penalties and gain pressure momentum."
+			Constants.PerceptionAbility.PER_MASTER_HUNTER:
+				return "Active (Shift+E): Spend built Focus to arm a finishing exploit against your marked quarry. Your next hit gains bonus damage dice, with extra crit pressure at high Focus."
+	return ability.description
+
 # ===========================================================================
 # INPUT
 # ===========================================================================
@@ -1364,6 +1520,9 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if current_page == PageState.CHAPTER:
 			_navigate_to_index()
+		elif _chronicle_mode:
+			_chronicle_mode = false
+			_refresh_index_page()
 		elif not pending_investments.is_empty():
 			_cancel_investments()
 		else:
@@ -1396,7 +1555,15 @@ func _input(event: InputEvent) -> void:
 		KEY_8: key_index = 7
 
 	if key_index >= 0:
+		if _chronicle_mode:
+			_chronicle_mode = false
 		_navigate_to_chapter(key_index)
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.keycode == KEY_R and current_page == PageState.INDEX:
+		_chronicle_mode = not _chronicle_mode
+		_refresh_index_page()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -1416,6 +1583,8 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if current_page == PageState.INDEX:
+		if _chronicle_mode:
+			return
 		if event.keycode == KEY_UP or event.keycode == KEY_K:
 			var new_idx := maxi(0, selected_skill_idx - 1)
 			if new_idx != selected_skill_idx:

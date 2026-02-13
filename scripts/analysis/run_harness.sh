@@ -7,6 +7,9 @@
 #   BOT_ARCHETYPES="STEALTH_PURE STEALTH_ASSASSIN"  # Override archetype list
 #   GODOT_PATH=/path/to/godot                        # Godot binary
 #   BOT_RESULTS_DIR=/path/to/results                 # Output directory
+#   BOT_START_DEPTH=5                                # Optional: start all runs at this depth
+#   BOT_BONUS_XP=500                                 # Optional: grant bonus XP after warm-start
+#   BOT_RUN_INDEX_OFFSET=52                          # Optional: add offset to run indices
 # Defaults: 4 parallel, 20 runs each, all 10 archetypes
 
 set -euo pipefail
@@ -15,6 +18,11 @@ set -euo pipefail
 PARALLELISM="${1:-4}"
 RUNS_PER="${2:-40}"
 TIMEOUT_SECS="${BOT_TIMEOUT:-300}"
+STEALTH_TIMEOUT_SECS="${BOT_TIMEOUT_STEALTH:-$TIMEOUT_SECS}"
+START_DEPTH="${BOT_START_DEPTH:-}"
+BONUS_XP="${BOT_BONUS_XP:-}"
+BOT_TICK_DELAY="${BOT_TICK_DELAY:-}"
+RUN_INDEX_OFFSET="${BOT_RUN_INDEX_OFFSET:-0}"
 
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -48,6 +56,21 @@ echo "  Runs per archetype: $RUNS_PER"
 echo "  Total runs: $(( ${#ARCHETYPES[@]} * RUNS_PER ))"
 echo "  Parallelism: $PARALLELISM"
 echo "  Timeout per run: ${TIMEOUT_SECS}s"
+if [[ "${STEALTH_TIMEOUT_SECS}" != "${TIMEOUT_SECS}" ]]; then
+    echo "  Stealth timeout: ${STEALTH_TIMEOUT_SECS}s"
+fi
+if [[ -n "${BOT_TICK_DELAY}" ]]; then
+    echo "  Bot tick delay override: ${BOT_TICK_DELAY}s"
+fi
+if [[ -n "$START_DEPTH" ]]; then
+    echo "  Start depth override: $START_DEPTH"
+fi
+if [[ -n "$BONUS_XP" ]]; then
+    echo "  Bonus XP override: $BONUS_XP"
+fi
+if [[ "${RUN_INDEX_OFFSET}" != "0" ]]; then
+    echo "  Run index offset: $RUN_INDEX_OFFSET"
+fi
 echo "  Results dir: $RESULTS_DIR"
 echo "============================================================"
 echo ""
@@ -56,12 +79,13 @@ echo ""
 generate_jobs() {
     for archetype in "${ARCHETYPES[@]}"; do
         for (( i=0; i<RUNS_PER; i++ )); do
+            local run_idx=$((i + RUN_INDEX_OFFSET))
             # Deterministic seed: hash of archetype name + run index
-            local seed_input="${archetype}_${i}"
+            local seed_input="${archetype}_${run_idx}"
             local seed_hash
             seed_hash=$(echo -n "$seed_input" | shasum | cut -c1-8)
             local seed_dec=$((16#$seed_hash))
-            echo "$archetype $i $seed_dec"
+            echo "$archetype $run_idx $seed_dec"
         done
     done
 }
@@ -73,16 +97,36 @@ run_single() {
     local run_seed="$3"
     local result_file="$RESULTS_DIR/${archetype}_${run_idx}.json"
     local log_file="$LOG_DIR/${archetype}_${run_idx}.log"
+    local run_timeout="$TIMEOUT_SECS"
+    case "$archetype" in
+        STEALTH|STEALTH_PURE|STEALTH_ASSASSIN|RANGER_STEALTH_ARCHER|HOBBIT_BURGLAR|GREENWOOD_RANGER)
+            run_timeout="$STEALTH_TIMEOUT_SECS"
+            ;;
+    esac
+    if [[ -z "$run_timeout" ]]; then
+        run_timeout="$TIMEOUT_SECS"
+    fi
+    local bot_args=(--survival "--archetype=${archetype}" "--run-index=${run_idx}" "--seed=${run_seed}")
+    if [[ -n "${START_DEPTH}" ]]; then
+        bot_args+=("--start-depth=${START_DEPTH}")
+    fi
+    if [[ -n "${BONUS_XP}" ]]; then
+        bot_args+=("--bonus-xp=${BONUS_XP}")
+    fi
+    if [[ -n "${BOT_TICK_DELAY}" ]]; then
+        bot_args+=("--tick-delay=${BOT_TICK_DELAY}")
+    fi
 
-    echo "[START] ${archetype} #${run_idx} (seed: ${run_seed})"
+    echo "[START] ${archetype} #${run_idx} (seed: ${run_seed}, timeout: ${run_timeout}s)"
 
     # Run Godot with timeout, capture stdout
     local exit_code=0
-    timeout "$TIMEOUT_SECS" "$GODOT" \
+    timeout "$run_timeout" "$GODOT" \
         --path "$PROJECT_DIR" \
         --headless \
+        --log-file "$LOG_DIR/godot_${archetype}_${run_idx}.log" \
         --script res://test_runner.gd \
-        -- --survival "--archetype=${archetype}" "--run-index=${run_idx}" "--seed=${run_seed}" \
+        -- "${bot_args[@]}" \
         > "$log_file" 2>&1 || exit_code=$?
 
     # Extract JSON result from stdout
@@ -97,7 +141,7 @@ run_single() {
 }
 
 export -f run_single
-export GODOT PROJECT_DIR RESULTS_DIR LOG_DIR TIMEOUT_SECS
+export GODOT PROJECT_DIR RESULTS_DIR LOG_DIR TIMEOUT_SECS STEALTH_TIMEOUT_SECS START_DEPTH BONUS_XP BOT_TICK_DELAY RUN_INDEX_OFFSET
 
 # Run all jobs with parallelism
 START_TIME=$(date +%s)
@@ -109,7 +153,8 @@ ELAPSED=$(( END_TIME - START_TIME ))
 
 # Summary
 TOTAL_RESULTS=$(ls "$RESULTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
-TOTAL_ERRORS=$(grep -l '"outcome":"HARNESS_ERROR"' "$RESULTS_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+TOTAL_ERRORS=$(grep -l '"outcome":"HARNESS_ERROR"' "$RESULTS_DIR"/*.json 2>/dev/null || true)
+TOTAL_ERRORS=$(printf "%s" "$TOTAL_ERRORS" | wc -l | tr -d ' ')
 
 echo ""
 echo "============================================================"

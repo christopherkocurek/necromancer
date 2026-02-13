@@ -16,12 +16,19 @@ var _gameplay_only: bool = false
 var _bot_only: bool = false
 var _fuzz: bool = false
 var _survival: bool = false
+var _screenshot: bool = false
 var _exit_code: int = 0
 
 # Archetype bot args
 var _archetype_name: String = ""
 var _run_index_val: int = -1
 var _seed_val: int = -1
+var _start_depth_val: int = -1
+var _bonus_xp_val: int = 0
+var _tick_delay_val: float = -1.0
+var _screenshots_dir: String = ""
+var _screenshot_label: String = "capture"
+var _screenshot_seed: int = -1
 
 func _init():
 	# User args come after "--" separator in Godot 4.x
@@ -33,6 +40,7 @@ func _init():
 	_bot_only = "--bot-only" in _args or "--bot-only" in _all_args
 	_fuzz = "--fuzz" in _args or "--fuzz" in _all_args
 	_survival = "--survival" in _args or "--survival" in _all_args
+	_screenshot = "--screenshot-capture" in _args or "--screenshot-capture" in _all_args
 
 	# Parse archetype bot arguments from both arg sources
 	for arg in _args:
@@ -42,6 +50,18 @@ func _init():
 			_run_index_val = arg.substr("--run-index=".length()).to_int()
 		elif arg.begins_with("--seed="):
 			_seed_val = arg.substr("--seed=".length()).to_int()
+		elif arg.begins_with("--start-depth="):
+			_start_depth_val = arg.substr("--start-depth=".length()).to_int()
+		elif arg.begins_with("--bonus-xp="):
+			_bonus_xp_val = arg.substr("--bonus-xp=".length()).to_int()
+		elif arg.begins_with("--tick-delay="):
+			_tick_delay_val = arg.substr("--tick-delay=".length()).to_float()
+		elif arg.begins_with("--screenshots-dir="):
+			_screenshots_dir = arg.substr("--screenshots-dir=".length())
+		elif arg.begins_with("--screenshot-label="):
+			_screenshot_label = arg.substr("--screenshot-label=".length())
+		elif arg.begins_with("--screenshot-seed="):
+			_screenshot_seed = arg.substr("--screenshot-seed=".length()).to_int()
 	for arg in _all_args:
 		if arg.begins_with("--archetype="):
 			_archetype_name = arg.substr("--archetype=".length())
@@ -49,9 +69,21 @@ func _init():
 			_run_index_val = arg.substr("--run-index=".length()).to_int()
 		elif arg.begins_with("--seed="):
 			_seed_val = arg.substr("--seed=".length()).to_int()
+		elif arg.begins_with("--start-depth="):
+			_start_depth_val = arg.substr("--start-depth=".length()).to_int()
+		elif arg.begins_with("--bonus-xp="):
+			_bonus_xp_val = arg.substr("--bonus-xp=".length()).to_int()
+		elif arg.begins_with("--tick-delay="):
+			_tick_delay_val = arg.substr("--tick-delay=".length()).to_float()
+		elif arg.begins_with("--screenshots-dir="):
+			_screenshots_dir = arg.substr("--screenshots-dir=".length())
+		elif arg.begins_with("--screenshot-label="):
+			_screenshot_label = arg.substr("--screenshot-label=".length())
+		elif arg.begins_with("--screenshot-seed="):
+			_screenshot_seed = arg.substr("--screenshot-seed=".length()).to_int()
 
 	# If archetype specified, force survival mode
-	if _archetype_name != "":
+	if _archetype_name != "" and not _screenshot:
 		_survival = true
 
 	print("\n" + "=".repeat(70))
@@ -66,6 +98,8 @@ func _init():
 		print("Mode: Bot playtest only\n")
 	elif _fuzz:
 		print("Mode: Fuzz bot only\n")
+	elif _screenshot:
+		print("Mode: Screenshot capture\n")
 	elif _survival:
 		print("Mode: Survival bot only\n")
 	else:
@@ -74,8 +108,8 @@ func _init():
 	call_deferred("_run_tests")
 
 func _run_tests():
-	var _run_gut: bool = not _bot_only and not _fuzz and not _survival
-	var _run_bot: bool = not _unit_only and not _gameplay_only and not _fuzz and not _survival
+	var _run_gut: bool = not _bot_only and not _fuzz and not _survival and not _screenshot
+	var _run_bot: bool = not _unit_only and not _gameplay_only and not _fuzz and not _survival and not _screenshot
 
 	if _run_gut:
 		await _run_unit_tests()
@@ -83,6 +117,9 @@ func _run_tests():
 	if _fuzz:
 		await _run_fuzz_bot()
 		return  # Bot calls get_tree().quit() when done
+	elif _screenshot:
+		await _run_screenshot_capture()
+		return
 	elif _survival:
 		await _run_survival_bot()
 		return  # Bot calls get_tree().quit() when done
@@ -242,11 +279,50 @@ func _run_survival_bot():
 		bot.archetype_config = config
 		bot.run_index = _run_index_val
 		bot.run_seed = _seed_val
+		bot.start_depth_override = _start_depth_val
+		bot.bonus_xp_override = _bonus_xp_val
+		bot.tick_delay_override = _tick_delay_val
 		print("[SURVIVAL BOT] Archetype: %s | Run: %d | Seed: %d" % [_archetype_name, _run_index_val, _seed_val])
+	elif _tick_delay_val > 0.0:
+		bot.tick_delay_override = _tick_delay_val
 
 	main_instance.add_child(bot)
 
 	print("[SURVIVAL BOT] Running full 20-floor playthrough... (will exit when complete)\n")
+
+func _run_screenshot_capture():
+	print("─".repeat(70))
+	print("  SCREENSHOT CAPTURE")
+	print("─".repeat(70) + "\n")
+
+	var bot_script_path: String = "res://tests/bot/screenshot_capture_bot.gd"
+	if not ResourceLoader.exists(bot_script_path):
+		print("[ERROR] Screenshot bot script not found: %s\n" % bot_script_path)
+		_exit_code = 1
+		quit(_exit_code)
+		return
+
+	var main_scene_path: String = "res://scenes/main.tscn"
+	if not ResourceLoader.exists(main_scene_path):
+		print("[ERROR] Main scene not found: %s\n" % main_scene_path)
+		_exit_code = 1
+		quit(_exit_code)
+		return
+
+	var main_scene: PackedScene = load(main_scene_path)
+	var main_instance: Node = main_scene.instantiate()
+	root.add_child(main_instance)
+
+	var bot_script = load(bot_script_path)
+	var bot: Node = Node.new()
+	bot.set_script(bot_script)
+	bot.name = "ScreenshotCaptureBot"
+	bot.screenshots_dir = _screenshots_dir
+	bot.screenshot_label = _screenshot_label
+	bot.screenshot_seed = _screenshot_seed
+	main_instance.add_child(bot)
+
+	print("[SCREENSHOT] Dir: %s | Label: %s | Seed: %d\n" % [_screenshots_dir, _screenshot_label, _screenshot_seed])
 
 func _report_final():
 	print("\n" + "=".repeat(70))
