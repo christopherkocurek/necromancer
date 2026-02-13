@@ -24,6 +24,7 @@ var character_history: String = ""
 var selected_difficulty: int = GameManager.Difficulty.NORMAL
 var _pending_race_selection: String = ""
 var _finishing_creation: bool = false
+var _new_player_guided: bool = false
 
 # Skill shopping state (pre-creation investments)
 var skill_investments: Dictionary = {
@@ -53,6 +54,32 @@ const PENALTY_FLAG_MAP: Dictionary = {
 	"EVN_PENALTY": "evasion", "STL_PENALTY": "stealth",
 	"PER_PENALTY": "hunting", "WIL_PENALTY": "will",
 	"SMT_PENALTY": "smithing", "LOR_PENALTY": "lore",
+}
+const SKILL_DISPLAY_MAP: Dictionary = {
+	"melee": "Melee",
+	"archery": "Archery",
+	"evasion": "Evasion",
+	"stealth": "Stealth",
+	"hunting": "Hunting",
+	"will": "Will",
+	"smithing": "Smithing",
+	"lore": "Lore",
+}
+const SKILL_PROFICIENCY_MAP: Dictionary = {
+	"melee": "Sword proficiency",
+	"archery": "Bow proficiency",
+	"evasion": "Evasion training",
+	"stealth": "Stealth training",
+	"hunting": "Hunting craft",
+	"will": "Will discipline",
+	"smithing": "Smithcraft",
+	"lore": "Lore mastery",
+}
+const RACE_PROFICIENCY_FLAGS: Dictionary = {
+	"BOW_PROFICIENCY": "Bow proficiency",
+	"SWORD_PROFICIENCY": "Sword proficiency",
+	"AXE_PROFICIENCY": "Axe proficiency",
+	"SLING_PROFICIENCY": "Sling proficiency",
 }
 # Ability expand state for the skills stage
 var _skills_expanded_idx: int = -1  # Which skill row is expanded (-1 = none)
@@ -96,6 +123,12 @@ const FALLBACK_NAMES: Array[String] = [
 	"Beren", "Luthien", "Fingolfin", "Feanor", "Turin", "Hurin", "Earendil",
 	"Celebrimbor", "Gil-galad", "Thranduil", "Glorfindel", "Ecthelion"]
 const PLAYTEST_MAX_HERO_SPRITE_ID: int = 135  # Sauron tile
+const NEW_PLAYER_PRESET_LABEL: String = "New Player - Start Here (Elf Scout)"
+const NEW_PLAYER_RECOMMENDED_RACE: String = "Elf"
+const NEW_PLAYER_RECOMMENDED_HOUSE: String = "Greenwood"
+const NEW_PLAYER_RECOMMENDED_TRAIT: String = "Wayfarer's Instinct"
+const NEW_PLAYER_RECOMMENDED_STATS: Dictionary = {"str": 0, "dex": 2, "con": 2, "gra": 1}
+const NEW_PLAYER_RECOMMENDED_SKILLS: Dictionary = {"melee": 2, "hunting": 2, "stealth": 4, "evasion": 2}
 
 # Stat bar colors
 const STAT_COLORS: Dictionary = {
@@ -256,6 +289,7 @@ func _setup_ui() -> void:
 	_apply_creation_button_theme(next_button)
 	if chronicle_button:
 		_apply_creation_button_theme(chronicle_button)
+	info_label.hint_underlined = true
 	info_label.visible = true
 
 func _ensure_chronicle_ui() -> void:
@@ -349,6 +383,67 @@ func _show_stage(stage: Stage, direction: int = 0) -> void:
 	_update_navigation()
 	_update_progress_dots()
 
+func _start_new_player_guided_path() -> void:
+	_new_player_guided = true
+	_pending_race_selection = NEW_PLAYER_RECOMMENDED_RACE
+	call_deferred("_apply_race_selection")
+
+func _append_guided_counsel(base_text: String) -> String:
+	if not _new_player_guided:
+		return base_text
+	var counsel: String = _get_guided_counsel_for_stage()
+	if counsel.is_empty():
+		return base_text
+	if base_text.is_empty():
+		return counsel
+	return "%s\n\n%s" % [base_text, counsel]
+
+func _get_guided_counsel_for_stage() -> String:
+	var accent: String = ThemeColors.GOLD_WARM.to_html(false)
+	match current_stage:
+		Stage.RACE:
+			return "[color=#%s][b]Gandalf:[/b][/color] Choose [b]Elf[/b]. Their sight is keen in dim halls, and they lose their way less swiftly in the dark." % accent
+		Stage.HOUSE:
+			return "[color=#%s][b]Gandalf:[/b][/color] Take the house of [b]%s[/b]. Better to choose your ground than to spend your strength against every shadow." % [accent, NEW_PLAYER_RECOMMENDED_HOUSE]
+		Stage.TRAIT:
+			return "[color=#%s][b]Gandalf:[/b][/color] Mark [b]%s[/b]. In Dol Guldur, forewarning is worth more than bold words." % [accent, NEW_PLAYER_RECOMMENDED_TRAIT]
+		Stage.STATS:
+			return "[color=#%s][b]Gandalf:[/b][/color] Set your strength in [b]DEX[/b] and [b]CON[/b]. Many a tale is saved by a single heartbeat." % accent
+		Stage.SKILLS:
+			return "[color=#%s][b]Gandalf:[/b][/color] Neglect not the blade. Set [b]Melee 2[/b], [b]Hunting 2[/b], [b]Stealth 4[/b], and [b]Evasion 2[/b]. Then open [b]Abilities...[/b] and take [b]Finesse[/b], [b]Mark Quarry[/b], and [b]Assassination[/b]. If you are in doubt, use [b]Deploy Elf Scout Skills[/b], then [b]Deploy Elf Scout Abilities[/b]." % accent
+		Stage.NAME:
+			return "[color=#%s][b]Gandalf:[/b][/color] Be not hasty with name, years, and story. A wanderer who knows their own heart does not break at the first darkness." % accent
+		_:
+			return ""
+
+func _apply_new_player_stat_preset() -> void:
+	# Phase 1: baseline Elf Scout spread.
+	for key in NEW_PLAYER_RECOMMENDED_STATS.keys():
+		base_stats[key] = int(NEW_PLAYER_RECOMMENDED_STATS[key])
+
+	# Phase 2: spend all remaining stat-buy points in Elf Scout priority order.
+	var spend_order: Array[String] = ["dex", "con", "gra", "str"]
+	while true:
+		_recalculate_points()
+		if points_remaining <= 0:
+			break
+		var spent_this_pass: bool = false
+		for stat_name in spend_order:
+			var current: int = int(base_stats.get(stat_name, 0))
+			if current >= 6:
+				continue
+			var current_cost: int = Constants.get_stat_cost(current)
+			var next_cost: int = Constants.get_stat_cost(current + 1)
+			var cost_diff: int = next_cost - current_cost
+			if cost_diff <= points_remaining:
+				base_stats[stat_name] = current + 1
+				spent_this_pass = true
+				break
+		if not spent_this_pass:
+			break
+	_recalculate_points()
+	_update_stat_display()
+
 func _populate_stage(stage: Stage) -> void:
 	match stage:
 		Stage.RACE:
@@ -410,6 +505,12 @@ func _clear_content() -> void:
 
 func _show_race_selection() -> void:
 	stage_label.text = "Choose Your Race"
+
+	var guided_btn := Button.new()
+	guided_btn.text = NEW_PLAYER_PRESET_LABEL
+	guided_btn.pressed.connect(_start_new_player_guided_path)
+	_apply_creation_button_theme(guided_btn)
+	content_container.add_child(guided_btn)
 
 	var playtest_btn := Button.new()
 	playtest_btn.text = "MAX TEST HERO (AUTOLOAD)"
@@ -499,7 +600,10 @@ func _apply_race_selection() -> void:
 
 func _update_race_info() -> void:
 	if selected_race.is_empty():
-		info_label.text = "Select a race to see details."
+		var msg: String = "Select a race to see details."
+		if _new_player_guided:
+			msg += "\n\nRecommended starter race: %s" % NEW_PLAYER_RECOMMENDED_RACE
+		info_label.text = _append_guided_counsel(msg)
 		return
 
 	var race: DataManager.RaceData = DataManager.get_race(selected_race)
@@ -509,18 +613,43 @@ func _update_race_info() -> void:
 	var stats_text := "STR %+d  DEX %+d  CON %+d  GRA %+d" % [
 		race.str_mod, race.dex_mod, race.con_mod, race.gra_mod
 	]
+	var race_affinity: Array[String] = []
+	var race_penalty: Array[String] = []
+	var trait_flags: Array[String] = []
+	for flag: String in race.flags:
+		if RACE_PROFICIENCY_FLAGS.has(flag):
+			race_affinity.append(str(RACE_PROFICIENCY_FLAGS[flag]))
+			continue
+		if PENALTY_FLAG_MAP.has(flag):
+			var penalty_skill: String = str(PENALTY_FLAG_MAP[flag])
+			race_penalty.append("%s penalty" % _skill_display_name(penalty_skill))
+			continue
+		if AFFINITY_FLAG_MAP.has(flag):
+			var affinity_skill: String = str(AFFINITY_FLAG_MAP[flag])
+			race_affinity.append(_skill_proficiency_name(affinity_skill))
+			continue
+		trait_flags.append(flag)
 	var flags_text := ""
-	if not race.flags.is_empty():
+	if not trait_flags.is_empty():
 		if is_instance_valid(ThemeColors):
 			var gold := ThemeColors.PRIMARY.to_html(false)
-			flags_text = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(race.flags)
+			flags_text = "\n[color=#%s]Traits:[/color] " % gold + ", ".join(trait_flags)
 		else:
-			flags_text = "\nTraits: " + ", ".join(race.flags)
+			flags_text = "\nTraits: " + ", ".join(trait_flags)
+	var affinity_text: String = "\n[color=#%s]Proficiency:[/color] %s" % [
+		ThemeColors.MSG_INFO.to_html(false),
+		", ".join(race_affinity) if not race_affinity.is_empty() else "No race proficiencies",
+	]
+	var penalty_text: String = "\n[color=#%s]Penalty:[/color] %s" % [
+		ThemeColors.MSG_WARNING.to_html(false),
+		", ".join(race_penalty) if not race_penalty.is_empty() else "No race penalties",
+	]
 
 	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
-		selected_race, stats_text, flags_text, race.description
+	var detail_text: String = "[b]%s[/b]\n%s%s%s%s\n\n%s" % [
+		selected_race, stats_text, flags_text, affinity_text, penalty_text, race.description
 	]
+	info_label.text = _append_guided_counsel(detail_text)
 
 # ============================================================================
 # HOUSE SELECTION
@@ -554,6 +683,33 @@ func _show_house_selection() -> void:
 		_apply_creation_button_theme(btn)
 		content_container.add_child(btn)
 
+	var glossary_row := HBoxContainer.new()
+	glossary_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	glossary_row.add_theme_constant_override("separation", 12)
+
+	var affinity_chip := Label.new()
+	affinity_chip.text = "Affinity"
+	affinity_chip.tooltip_text = "Affinity lowers XP costs in matching skills and abilities."
+	affinity_chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	affinity_chip.add_theme_color_override("font_color", ThemeColors.MSG_INFO)
+	ThemeColors.apply_body_font(affinity_chip)
+	glossary_row.add_child(affinity_chip)
+
+	var penalty_chip := Label.new()
+	penalty_chip.text = "Penalty"
+	penalty_chip.tooltip_text = "Penalty raises XP costs in matching skills and abilities."
+	penalty_chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	penalty_chip.add_theme_color_override("font_color", ThemeColors.MSG_WARNING)
+	ThemeColors.apply_body_font(penalty_chip)
+	glossary_row.add_child(penalty_chip)
+
+	content_container.add_child(glossary_row)
+
+	if _new_player_guided and selected_house.is_empty():
+		var recommended_house: DataManager.HouseData = DataManager.get_house(NEW_PLAYER_RECOMMENDED_HOUSE)
+		if recommended_house and (race_data.compatible_houses.is_empty() or race_data.compatible_houses.has(recommended_house.index)):
+			selected_house = NEW_PLAYER_RECOMMENDED_HOUSE
+
 	_update_house_info()
 
 func _on_house_selected(house_name: String) -> void:
@@ -565,7 +721,7 @@ func _on_house_selected(house_name: String) -> void:
 
 func _update_house_info() -> void:
 	if selected_house.is_empty():
-		info_label.text = "Select a house to see details."
+		info_label.text = _append_guided_counsel("Select a house to see details.")
 		return
 
 	var house: DataManager.HouseData = DataManager.get_house(selected_house)
@@ -576,15 +732,27 @@ func _update_house_info() -> void:
 		house.str_mod, house.dex_mod, house.con_mod, house.gra_mod
 	]
 
-	var affinity_text := ""
-	if not house.affinities.is_empty():
-		var cyan := ThemeColors.MSG_INFO.to_html(false)
-		affinity_text = "\n[color=#%s]Affinity:[/color] " % cyan + ", ".join(house.affinities)
-
-	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\n%s%s\n\n%s" % [
-		selected_house, stats_text, affinity_text, house.description
+	var affinity_skills: Array[String] = []
+	for skill_name: String in SKILL_NAMES:
+		if _get_affinity_level(skill_name) > 0:
+			affinity_skills.append(_skill_display_name(skill_name))
+	var penalty_skills: Array[String] = []
+	for skill_name: String in SKILL_NAMES:
+		if _get_affinity_level(skill_name) < 0:
+			penalty_skills.append(_skill_display_name(skill_name))
+	var affinity_text: String = "\n[color=#%s]Affinity:[/color] %s" % [
+		ThemeColors.MSG_INFO.to_html(false),
+		", ".join(affinity_skills) if not affinity_skills.is_empty() else "No affinity discounts",
 	]
+	var penalty_text: String = "\n[color=#%s]Penalty:[/color] %s" % [
+		ThemeColors.MSG_WARNING.to_html(false),
+		", ".join(penalty_skills) if not penalty_skills.is_empty() else "No skill penalties",
+	]
+	info_label.bbcode_enabled = true
+	var detail_text: String = "[b]%s[/b]\n%s%s%s\n\n%s" % [
+		selected_house, stats_text, affinity_text, penalty_text, house.description
+	]
+	info_label.text = _append_guided_counsel(detail_text)
 
 # ============================================================================
 # GENDER SELECTION
@@ -707,6 +875,10 @@ func _show_trait_selection() -> void:
 	for td in all_traits:
 		trait_lookup[td.name] = td
 
+	if _new_player_guided and selected_trait.is_empty():
+		if trait_lookup.has(NEW_PLAYER_RECOMMENDED_TRAIT):
+			selected_trait = NEW_PLAYER_RECOMMENDED_TRAIT
+
 	# Scrollable container for the archetype columns
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 450)
@@ -768,7 +940,7 @@ func _on_trait_selected(trait_name: String) -> void:
 
 func _update_trait_info() -> void:
 	if selected_trait.is_empty():
-		info_label.text = "Select a trait to define your hero's identity."
+		info_label.text = _append_guided_counsel("Select a trait to define your hero's identity.")
 		return
 
 	var trait_data: DataManager.TraitData = DataManager.get_trait_by_name(selected_trait)
@@ -777,7 +949,8 @@ func _update_trait_info() -> void:
 
 	var gold := ThemeColors.PRIMARY.to_html(false)
 	info_label.bbcode_enabled = true
-	info_label.text = "[b]%s[/b]\n\n%s" % [trait_data.name, trait_data.description]
+	var detail_text: String = "[b]%s[/b]\n\n%s" % [trait_data.name, trait_data.description]
+	info_label.text = _append_guided_counsel(detail_text)
 
 # ============================================================================
 # STAT ALLOCATION
@@ -785,6 +958,13 @@ func _update_trait_info() -> void:
 
 func _show_stat_allocation() -> void:
 	stage_label.text = "Allocate Stats (%d points)" % Constants.STAT_POINTS_TOTAL
+
+	if _new_player_guided:
+		var preset_btn := Button.new()
+		preset_btn.text = "Apply Elf Scout Starter Spread"
+		preset_btn.pressed.connect(_apply_new_player_stat_preset)
+		_apply_creation_button_theme(preset_btn)
+		content_container.add_child(preset_btn)
 
 	# Calculate starting stats from race + house
 	var race: DataManager.RaceData = DataManager.get_race(selected_race)
@@ -959,9 +1139,10 @@ func _get_stat_summary() -> String:
 	var final_con: int = base_stats["con"] + (race.con_mod if race else 0) + (house.con_mod if house else 0)
 	var final_gra: int = base_stats["gra"] + (race.gra_mod if race else 0) + (house.gra_mod if house else 0)
 
-	return "Final Stats: STR %+d  DEX %+d  CON %+d  GRA %+d" % [
+	var summary: String = "Final Stats: STR %+d  DEX %+d  CON %+d  GRA %+d" % [
 		final_str, final_dex, final_con, final_gra
 	]
+	return _append_guided_counsel(summary)
 
 # ============================================================================
 # SKILL SHOPPING (pre-creation investments)
@@ -991,24 +1172,47 @@ func _get_affinity_level(skill_name: String) -> int:
 				level += 1
 	return level
 
+func _skill_display_name(skill_name: String) -> String:
+	return SKILL_DISPLAY_MAP.get(skill_name, skill_name.capitalize())
+
+func _skill_proficiency_name(skill_name: String) -> String:
+	return SKILL_PROFICIENCY_MAP.get(skill_name, _skill_display_name(skill_name))
+
+func _get_flag_adjustment(flags: Array[String], skill_name: String) -> int:
+	var adjustment: int = 0
+	for flag: String in flags:
+		if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
+			adjustment += 1
+		if PENALTY_FLAG_MAP.get(flag, "") == skill_name:
+			adjustment -= 1
+	return adjustment
+
+func _get_skill_adjustment(skill_name: String) -> int:
+	# Positive = affinity discount, negative = penalty surcharge.
+	return _get_affinity_level(skill_name)
+
+func _format_skill_cost_label(skill_name: String, current_level: int) -> String:
+	var base_cost: int = 100 * (current_level + 1)
+	var adjustment: int = _get_skill_adjustment(skill_name)
+	var final_cost: int = _calc_skill_point_cost(skill_name, current_level)
+	if adjustment > 0:
+		return "(%d XP | base %d, affinity -%d)" % [final_cost, base_cost, 100 * adjustment]
+	if adjustment < 0:
+		return "(%d XP | base %d, penalty +%d)" % [final_cost, base_cost, 100 * abs(adjustment)]
+	return "(%d XP)" % final_cost
+
+func _format_ability_cost_breakdown(skill_name: String, position_in_tree: int) -> String:
+	var base_cost: int = (position_in_tree + 1) * 500
+	var adjustment: int = _get_affinity_level(skill_name)
+	var affinity_part: int = maxi(0, adjustment) * 500
+	var penalty_part: int = maxi(0, -adjustment) * 500
+	var final_cost: int = _calc_ability_xp_cost(skill_name, position_in_tree)
+	return "Base %d | Affinity -%d | Penalty +%d | Final %d XP" % [base_cost, affinity_part, penalty_part, final_cost]
+
 func _calc_skill_point_cost(skill_name: String, current_level: int) -> int:
 	## Cost to go from current_level to current_level+1. Mirrors Player.get_skill_cost.
-	var has_affinity: bool = false
-	var house_data: DataManager.HouseData = DataManager.get_house(selected_house)
-	if house_data:
-		for flag in house_data.affinities:
-			if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
-				has_affinity = true
-				break
-	if not has_affinity:
-		var race_data: DataManager.RaceData = DataManager.get_race(selected_race)
-		if race_data:
-			for flag in race_data.flags:
-				if AFFINITY_FLAG_MAP.get(flag, "") == skill_name:
-					has_affinity = true
-					break
-	var discount: int = 100 if has_affinity else 0
-	return maxi(0, 100 * (current_level + 1) - discount)
+	var adjustment: int = _get_skill_adjustment(skill_name)
+	return maxi(0, 100 * (current_level + 1) - 100 * adjustment)
 
 func _calc_total_skill_cost(skill_name: String) -> int:
 	## Total XP cost for all invested points in this skill.
@@ -1037,9 +1241,21 @@ func _show_skills_stage() -> void:
 	stage_label.text = "Invest Experience"
 	_skills_expanded_idx = -1
 
+	if _new_player_guided:
+		var guided_row := HBoxContainer.new()
+		guided_row.add_theme_constant_override("separation", 8)
+
+		var deploy_skills_btn := Button.new()
+		deploy_skills_btn.text = "Deploy Elf Scout Skills"
+		deploy_skills_btn.pressed.connect(_deploy_elf_scout_skills)
+		_apply_creation_button_theme(deploy_skills_btn)
+		guided_row.add_child(deploy_skills_btn)
+		content_container.add_child(guided_row)
+
 	# Header with remaining XP
 	var header_label := RichTextLabel.new()
 	header_label.bbcode_enabled = true
+	header_label.hint_underlined = true
 	header_label.fit_content = true
 	header_label.scroll_active = false
 	var gold: String = ThemeColors.PRIMARY.to_html(false)
@@ -1047,6 +1263,9 @@ func _show_skills_stage() -> void:
 	header_label.text = "[color=#%s]Experience Remaining: %d[/color]\n[color=#%s]You don't need to spend all your experience now — you can invest more during the game.[/color]" % [
 		gold, _get_remaining_xp(), muted
 	]
+	var affinity_hint: String = "[hint=Affinity lowers XP cost in matching skills.]Affinity[/hint]"
+	var penalty_hint: String = "[hint=Penalty raises XP cost in matching skills.]Penalty[/hint]"
+	header_label.text += "\n[color=#%s]%s (*) lowers XP cost. %s (!) raises XP cost.[/color]" % [muted, affinity_hint, penalty_hint]
 	ThemeColors.apply_rich_body_font(header_label)
 	content_container.add_child(header_label)
 	stat_labels["_skills_xp_header"] = header_label
@@ -1074,8 +1293,12 @@ func _show_skills_stage() -> void:
 		# Skill name label
 		var name_label := Label.new()
 		var affinity: int = _get_affinity_level(skill_name)
-		var affinity_star: String = " *" if affinity > 0 else ""
-		name_label.text = skill_label_text + affinity_star
+		var marker: String = ""
+		if affinity > 0:
+			marker = " *"
+		elif affinity < 0:
+			marker = " !"
+		name_label.text = skill_label_text + marker
 		name_label.custom_minimum_size.x = 120
 		name_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
 		ThemeColors.apply_body_font(name_label)
@@ -1112,8 +1335,7 @@ func _show_skills_stage() -> void:
 
 		# Cost display for next point
 		var cost_label := Label.new()
-		var next_cost: int = _calc_skill_point_cost(skill_name, skill_investments[skill_name])
-		cost_label.text = "(%d XP)" % next_cost
+		cost_label.text = _format_skill_cost_label(skill_name, skill_investments[skill_name])
 		cost_label.custom_minimum_size.x = 100
 		cost_label.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
 		ThemeColors.apply_body_font(cost_label, ThemeColors.FONT_SIZE_HINT)
@@ -1145,6 +1367,88 @@ func _show_skills_stage() -> void:
 
 	info_label.bbcode_enabled = true
 	info_label.text = _get_skills_summary()
+
+func _deploy_elf_scout_skills() -> void:
+	for skill_name in NEW_PLAYER_RECOMMENDED_SKILLS.keys():
+		var target_level: int = int(NEW_PLAYER_RECOMMENDED_SKILLS[skill_name])
+		while skill_investments.get(skill_name, 0) < target_level:
+			var current_level: int = int(skill_investments.get(skill_name, 0))
+			var cost: int = _calc_skill_point_cost(skill_name, current_level)
+			if cost > _get_remaining_xp():
+				break
+			skill_investments[skill_name] = current_level + 1
+	_recalculate_precreation_xp()
+	_update_skill_buttons()
+	_update_skills_header()
+	info_label.text = _get_skills_summary()
+
+func _try_learn_ability_by_name(ability_name: String) -> bool:
+	for skill_idx in range(SKILL_NAMES.size()):
+		var skill_name: String = SKILL_NAMES[skill_idx]
+		var abilities_list: Array = DataManager.get_abilities_for_skill(skill_idx)
+		for ability in abilities_list:
+			if str(ability.name) != ability_name:
+				continue
+			if _is_ability_already_purchased(skill_idx, ability.ability_num):
+				return false
+			if skill_investments.get(skill_name, 0) < int(ability.level_requirement):
+				return false
+			if not _are_ability_prereqs_met(ability):
+				return false
+			var owned_count: int = _count_owned_abilities_for_skill(skill_name)
+			var xp_cost: int = _calc_ability_xp_cost(skill_name, owned_count)
+			if xp_cost > _get_remaining_xp():
+				return false
+			ability_purchases.append({
+				"skill_type": ability.skill_type,
+				"ability_num": ability.ability_num,
+				"skill_name": skill_name,
+				"name": ability.name,
+				"xp_cost": xp_cost,
+			})
+			return true
+	return false
+
+func _is_ability_already_purchased(skill_type: int, ability_num: int) -> bool:
+	for purchase in ability_purchases:
+		if int(purchase.skill_type) == skill_type and int(purchase.ability_num) == ability_num:
+			return true
+	return false
+
+func _are_ability_prereqs_met(ability: DataManager.AbilityData) -> bool:
+	for prereq in ability.prereqs:
+		var prereq_skill: int = int(prereq.get("skill", -1))
+		var prereq_ability: int = int(prereq.get("ability", -1))
+		if prereq_skill < 0 or prereq_ability < 0:
+			continue
+		var found: bool = false
+		for purchase in ability_purchases:
+			if int(purchase.skill_type) == prereq_skill and int(purchase.ability_num) == prereq_ability:
+				found = true
+				break
+		if not found:
+			return false
+	return true
+
+func _count_owned_abilities_for_skill(skill_name: String) -> int:
+	var count: int = 0
+	for purchase in ability_purchases:
+		if str(purchase.skill_name) == skill_name:
+			count += 1
+	return count
+
+func _refresh_expanded_ability_panels() -> void:
+	for i in range(SKILL_NAMES.size()):
+		var key: String = "skill_%s_abilities" % SKILL_NAMES[i]
+		if not stat_labels.has(key):
+			continue
+		var container: VBoxContainer = stat_labels[key]
+		if not is_instance_valid(container):
+			continue
+		for child in container.get_children():
+			child.queue_free()
+		if _skills_expanded_idx == i:
+			_populate_ability_list(i, container)
 
 func _on_skill_increment(skill_idx: int) -> void:
 	var skill_name: String = SKILL_NAMES[skill_idx]
@@ -1262,9 +1566,9 @@ func _populate_ability_list(skill_idx: int, container: VBoxContainer) -> void:
 					break
 
 		var meets_level: bool = invested_level >= ability.level_requirement
-		var affinity: int = _get_affinity_level(skill_name)
-		var xp_cost: int = maxi(0, (owned_count + 1) * 500 - 500 * affinity)
+		var xp_cost: int = _calc_ability_xp_cost(skill_name, owned_count)
 		var can_afford: bool = xp_cost <= _get_remaining_xp()
+		var cost_meta_text: String = _format_ability_cost_breakdown(skill_name, owned_count)
 
 		if already_purchased:
 			ab_name_label.add_theme_color_override("font_color", ThemeColors.ABILITY_LEARNED)
@@ -1295,7 +1599,14 @@ func _populate_ability_list(skill_idx: int, container: VBoxContainer) -> void:
 			learn_btn.disabled = not can_afford
 			learn_btn.pressed.connect(_on_ability_learn.bind(skill_idx, ability, xp_cost))
 			_apply_creation_button_theme(learn_btn)
+			learn_btn.tooltip_text = cost_meta_text
 			ab_row.add_child(learn_btn)
+
+			var cost_meta := Label.new()
+			cost_meta.text = cost_meta_text
+			cost_meta.add_theme_color_override("font_color", ThemeColors.TEXT_MUTED)
+			ThemeColors.apply_body_font(cost_meta, ThemeColors.FONT_SIZE_HINT)
+			ab_row.add_child(cost_meta)
 
 		# Description tooltip (small text after the row)
 		container.add_child(ab_row)
@@ -1349,8 +1660,7 @@ func _update_skill_buttons() -> void:
 			if current_level >= 20:
 				label.text = "(MAX)"
 			else:
-				var next_cost: int = _calc_skill_point_cost(skill_name, current_level)
-				label.text = "(%d XP)" % next_cost
+				label.text = _format_skill_cost_label(skill_name, current_level)
 
 		# Update buttons
 		var minus_key: String = "skill_%s_minus" % skill_name
@@ -1395,7 +1705,7 @@ func _get_skills_summary() -> String:
 		summary = "No skill investments yet."
 
 	summary += "\nXP Spent: %d / %d" % [_precreation_xp_spent, Player.STARTING_XP]
-	return summary
+	return _append_guided_counsel(summary)
 
 # ============================================================================
 # NAME ENTRY (with age and parentage)
@@ -1434,6 +1744,7 @@ func _show_name_entry() -> void:
 	random_btn.pressed.connect(_on_random_name)
 	_apply_creation_button_theme(random_btn)
 	name_row.add_child(random_btn)
+
 	content_container.add_child(name_row)
 
 	# Age display with reroll
@@ -1475,6 +1786,15 @@ func _show_name_entry() -> void:
 	history_label.text = "[color=#%s]%s[/color]" % [muted, character_history]
 	content_container.add_child(history_label)
 	stat_labels["_history_label"] = history_label
+
+	var history_row := HBoxContainer.new()
+	history_row.add_theme_constant_override("separation", 8)
+	var history_reroll_btn := Button.new()
+	history_reroll_btn.text = "Reroll Backstory"
+	history_reroll_btn.pressed.connect(_on_reroll_history)
+	_apply_creation_button_theme(history_reroll_btn)
+	history_row.add_child(history_reroll_btn)
+	content_container.add_child(history_row)
 
 	info_label.text = _get_character_summary()
 
@@ -1518,6 +1838,11 @@ func _on_reroll_age() -> void:
 		var age_label: Label = stat_labels["_age_label"]
 		age_label.text = "Age: %d" % character_age
 	# Regenerate history since age changed
+	_generate_history()
+	_update_history_display()
+	info_label.text = _get_character_summary()
+
+func _on_reroll_history() -> void:
 	_generate_history()
 	_update_history_display()
 	info_label.text = _get_character_summary()
@@ -1719,13 +2044,14 @@ func _get_character_summary() -> String:
 	if not ability_names.is_empty():
 		abilities_text = "\nAbilities: " + ", ".join(ability_names)
 
-	return "%s of %s\n%s %s | Age %s\nTrait: %s | Difficulty: %s\n%s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d%s%s\n\nStarting XP: %d (Invested: %d)" % [
+	var summary: String = "%s of %s\n%s %s | Age %s\nTrait: %s | Difficulty: %s\n%s\n\nSTR %+d  DEX %+d  CON %+d  GRA %+d%s%s\n\nStarting XP: %d (Invested: %d)" % [
 		display_name, house_suffix, selected_race, gender_text,
 		age_text, trait_text, diff_label, _get_lineage_flavor(),
 		final_str, final_dex, final_con, final_gra,
 		skills_text, abilities_text,
 		remaining_xp, _precreation_xp_spent,
 	]
+	return _append_guided_counsel(summary)
 
 # ============================================================================
 # DIFFICULTY SELECTION
@@ -1962,6 +2288,7 @@ func _finish_creation() -> void:
 		"skill_investments": nonzero_skills,
 		"ability_purchases": ability_purchases.duplicate(),
 		"xp_spent_precreation": _precreation_xp_spent,
+		"new_player_guided": _new_player_guided,
 	}
 	creation_complete.emit(character_data)
 

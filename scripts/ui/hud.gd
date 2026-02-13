@@ -54,6 +54,9 @@ var _bottom_expanded: bool = false
 
 # --- Minimap ---
 var minimap: Minimap = null
+var minimap_frame: PanelContainer = null
+var minimap_center: CenterContainer = null
+var _minimap_expanded: bool = false
 
 # --- Stealth meter ---
 var stealth_meter: ColorRect = null
@@ -89,6 +92,7 @@ var _equip_icon_nodes: Dictionary = {}  # slot_name -> TextureRect
 var _player_ref: Player = null
 var _goal_banner: PanelContainer = null
 var _goal_banner_label: Label = null
+var _status_signature: String = ""
 
 const DANGER_STATUSES := ["poisoned", "burning", "stunned", "confused"]
 const EQUIP_SLOTS := ["weapon", "off_hand", "armor", "head", "light", "amulet"]
@@ -100,6 +104,16 @@ const ORB_FRAME_SIZE := 100
 const MESSAGE_LOG_HEIGHT := 140
 const MESSAGE_LOG_EXPANDED := 360
 const HUD_ITEM_ICON_SIZE := 28
+const MINIMAP_COMPACT_SIZE: Vector2 = Vector2(240, 120)
+const MINIMAP_EXPANDED_SIZE: Vector2 = Vector2(480, 240)
+const MINIMAP_PADDING: int = 8
+const MINIMAP_MARGIN_TOP: int = 8
+const MINIMAP_MARGIN_RIGHT: int = 8
+const ICON_TILESET_CANDIDATE_PATHS: Array[String] = [
+	"res://assets/sprites/necromancer_dcss_tileset.png",
+	"res://assets/sprites/necromancer_dcss_tileset_pre_outer_pits_v2.png",
+	"res://assets/sprites/64x64_necromancer.png",
+]
 
 # Health/voice orb materials
 var _health_material: ShaderMaterial = null
@@ -270,14 +284,12 @@ func _build_action_bar() -> void:
 	pursuit_label.custom_minimum_size = Vector2(220, 0)
 	stats_container.add_child(pursuit_label)
 
-	# Status pills (right side of stats row)
-	var status_spacer := Control.new()
-	status_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_container.add_child(status_spacer)
-
+	# Dedicated status row to avoid icon clipping when top labels are dense.
 	status_container = HBoxContainer.new()
 	status_container.add_theme_constant_override("separation", 2)
-	stats_container.add_child(status_container)
+	status_container.alignment = BoxContainer.ALIGNMENT_END
+	status_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.add_child(status_container)
 
 	# Row 2: Quick slots (6 equipment icons)
 	quick_slots_container = HBoxContainer.new()
@@ -376,16 +388,19 @@ func _build_action_bar() -> void:
 	# Row 4: XP gem (brightness reflects XP bank)
 	var xp_row := HBoxContainer.new()
 	xp_row.add_theme_constant_override("separation", 8)
-	xp_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	xp_row.alignment = BoxContainer.ALIGNMENT_END
+	xp_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	xp_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hbox.add_child(xp_row)
+	center.add_child(xp_row)
 
 	xp_gem_icon = TextureRect.new()
-	xp_gem_icon.custom_minimum_size = Vector2(28, 28)
+	xp_gem_icon.custom_minimum_size = Vector2(32, 32)
 	xp_gem_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	xp_gem_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	xp_gem_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	xp_gem_icon.texture = _create_circle_tile_icon(Vector2i(5, 11), ThemeColors.GOLD_DIM)
+	if xp_gem_icon.texture == null:
+		xp_gem_icon.texture = _create_plain_ring_icon(ThemeColors.GOLD_DIM)
 	xp_row.add_child(xp_gem_icon)
 
 	xp_label = Label.new()
@@ -740,17 +755,7 @@ func _get_hotbar_ability_name(ability_id: int, player_ref: Player = null) -> Str
 		_: return "???"
 
 func _get_hotbar_icon_texture(ability_id: int) -> Texture2D:
-	if _ui_icon_tileset == null:
-		var candidate_paths: Array[String] = [
-			"res://assets/sprites/necromancer_dcss_tileset.png",
-			"res://assets/sprites/necromancer_dcss_tileset_pre_outer_pits_v2.png",
-		]
-		for p in candidate_paths:
-			if FileAccess.file_exists(p):
-				_ui_icon_tileset = load(p)
-				if _ui_icon_tileset != null:
-					break
-	if _ui_icon_tileset == null:
+	if not _ensure_ui_icon_tileset():
 		return _create_circle_tile_icon(Vector2i(9, 0), ThemeColors.GOLD_DIM)
 
 	var coords: Vector2i = _get_hotbar_icon_coords(ability_id)
@@ -947,15 +952,48 @@ func _build_floating_message_log() -> void:
 # ============================================================================
 
 func _build_minimap() -> void:
+	minimap_frame = PanelContainer.new()
+	minimap_frame.name = "MinimapFrame"
+	minimap_frame.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	var frame_style: StyleBoxFlat = ThemeColors.create_panel_stylebox(
+		Color(0.0, 0.0, 0.0, 0.35), Color(0.0, 0.0, 0.0, 0.35), 0, 10
+	)
+	minimap_frame.add_theme_stylebox_override("panel", frame_style)
+	add_child(minimap_frame)
+
+	minimap_center = CenterContainer.new()
+	minimap_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	minimap_center.offset_left = MINIMAP_PADDING
+	minimap_center.offset_top = MINIMAP_PADDING
+	minimap_center.offset_right = -MINIMAP_PADDING
+	minimap_center.offset_bottom = -MINIMAP_PADDING
+	minimap_frame.add_child(minimap_center)
+
 	minimap = Minimap.new()
 	minimap.name = "Minimap"
-	minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	minimap.offset_left = -168
-	minimap.offset_top = 8
-	minimap.offset_right = -8
-	minimap.offset_bottom = 88
+	minimap.tooltip_text = "Click to expand/collapse minimap"
+	minimap.minimap_clicked.connect(_on_minimap_clicked)
 	minimap.visible = false
-	add_child(minimap)
+	minimap_center.add_child(minimap)
+
+	_apply_minimap_layout()
+
+func _apply_minimap_layout() -> void:
+	if minimap == null or minimap_frame == null:
+		return
+	var minimap_size: Vector2 = MINIMAP_EXPANDED_SIZE if _minimap_expanded else MINIMAP_COMPACT_SIZE
+	minimap.set_display_size(minimap_size)
+	var frame_w: int = int(minimap_size.x) + MINIMAP_PADDING * 2
+	var frame_h: int = int(minimap_size.y) + MINIMAP_PADDING * 2
+	minimap_frame.custom_minimum_size = Vector2(frame_w, frame_h)
+	minimap_frame.offset_top = MINIMAP_MARGIN_TOP
+	minimap_frame.offset_right = -MINIMAP_MARGIN_RIGHT
+	minimap_frame.offset_left = minimap_frame.offset_right - frame_w
+	minimap_frame.offset_bottom = minimap_frame.offset_top + frame_h
+
+func _on_minimap_clicked() -> void:
+	_minimap_expanded = not _minimap_expanded
+	_apply_minimap_layout()
 
 # ============================================================================
 # BUILD: STEALTH METER
@@ -1004,6 +1042,7 @@ func _connect_signals() -> void:
 	EventBus.round_completed.connect(_on_round_completed)
 	EventBus.status_applied.connect(_on_status_applied)
 	EventBus.status_removed.connect(_on_status_removed)
+	EventBus.status_tick.connect(_on_status_tick)
 	EventBus.run_goal_completed.connect(_on_run_goal_completed)
 
 # ============================================================================
@@ -1031,6 +1070,7 @@ func update_player_stats(player: Player) -> void:
 	# XP
 	xp_label.text = "%s\nXP" % _format_number(player.xp_available)
 	_update_xp_gem(player.xp_available)
+	_refresh_status_icons_if_needed(player)
 
 	# Voice orb
 	var show_voice: bool = player.max_voice > 0
@@ -1103,6 +1143,21 @@ func _update_xp_gem(xp_value: int) -> void:
 	elif xp_gem_icon.has_meta("xp_pulse"):
 		xp_gem_icon.remove_meta("xp_pulse")
 		xp_gem_icon.modulate.a = 1.0
+
+func _refresh_status_icons_if_needed(player: Player) -> void:
+	if player == null:
+		return
+	var signature: String = ""
+	if player.status_fx != null:
+		var parts: PackedStringArray = []
+		for effect_id: StringName in player.status_fx.get_active_effects():
+			parts.append("%s:%d" % [String(effect_id), player.status_fx.get_duration(effect_id)])
+		parts.sort()
+		signature = "|".join(parts)
+	if signature == _status_signature:
+		return
+	_status_signature = signature
+	_update_status_icons(player)
 
 func _update_equip_icons(player: Player) -> void:
 	if not quick_slots_container:
@@ -1376,11 +1431,7 @@ func _update_combat_stance_gems(player: Player) -> void:
 		stance_container.add_child(badge)
 
 func _get_stance_icon_texture(icon_id: String) -> Texture2D:
-	if _stance_icon_tileset == null:
-		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
-		if FileAccess.file_exists(path):
-			_stance_icon_tileset = load(path)
-	if _stance_icon_tileset == null:
+	if not _ensure_stance_icon_tileset():
 		return null
 
 	var coords := Vector2i(-1, -1)
@@ -1661,16 +1712,12 @@ func _is_compact_hud() -> bool:
 	return width > 0.0 and width <= 1680.0
 
 func _create_circle_tile_icon(tile_coords: Vector2i, ring_color: Color) -> Texture2D:
-	if _ui_icon_tileset == null:
-		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
-		if FileAccess.file_exists(path):
-			_ui_icon_tileset = load(path)
-	if _ui_icon_tileset == null:
-		return null
+	if not _ensure_ui_icon_tileset():
+		return _create_plain_ring_icon(ring_color)
 
 	var src_image: Image = _ui_icon_tileset.get_image()
 	if src_image == null or src_image.is_empty():
-		return null
+		return _create_plain_ring_icon(ring_color)
 
 	var out_size: int = 24
 	var out := Image.create(out_size, out_size, false, Image.FORMAT_RGBA8)
@@ -1696,26 +1743,88 @@ func _create_circle_tile_icon(tile_coords: Vector2i, ring_color: Color) -> Textu
 func _get_hud_item_icon(item: Variant) -> Texture2D:
 	if item == null:
 		return null
-	if _ui_icon_tileset == null:
-		var path := "res://assets/sprites/necromancer_dcss_tileset.png"
-		if FileAccess.file_exists(path):
-			_ui_icon_tileset = load(path)
-	if _ui_icon_tileset == null:
+	if not _ensure_ui_icon_tileset():
 		return null
 	if not ("index" in item):
-		return null
+		return _create_circle_tile_icon(Vector2i(0, 11), ThemeColors.GOLD_DIM)
 
 	var item_index: int = int(item.index)
-	var atlas_coords: Vector2i
-	if item is DataManager.ArtifactData:
-		atlas_coords = TileMapper.get_artifact_coords(item_index)
-	else:
-		atlas_coords = TileMapper.get_item_coords(item_index)
+	var atlas_coords: Vector2i = TileMapper.get_object_coords(item_index)
+	if not _is_valid_tile_coords_for_texture(atlas_coords, _ui_icon_tileset):
+		atlas_coords = _get_hud_item_fallback_coords(item)
+	if not _is_valid_tile_coords_for_texture(atlas_coords, _ui_icon_tileset):
+		atlas_coords = Vector2i(0, 11)
 
 	var atlas := AtlasTexture.new()
 	atlas.atlas = _ui_icon_tileset
 	atlas.region = Rect2(atlas_coords.x * 64, atlas_coords.y * 64, 64, 64)
 	return atlas
+
+func _ensure_ui_icon_tileset() -> bool:
+	if _ui_icon_tileset != null:
+		return true
+	for path in ICON_TILESET_CANDIDATE_PATHS:
+		if FileAccess.file_exists(path):
+			_ui_icon_tileset = load(path)
+			if _ui_icon_tileset != null:
+				return true
+	return false
+
+func _ensure_stance_icon_tileset() -> bool:
+	if _stance_icon_tileset != null:
+		return true
+	for path in ICON_TILESET_CANDIDATE_PATHS:
+		if FileAccess.file_exists(path):
+			_stance_icon_tileset = load(path)
+			if _stance_icon_tileset != null:
+				return true
+	return false
+
+func _is_valid_tile_coords_for_texture(coords: Vector2i, texture: Texture2D) -> bool:
+	if texture == null:
+		return false
+	if coords.x < 0 or coords.y < 0:
+		return false
+	var tex_size: Vector2i = texture.get_size()
+	return ((coords.x + 1) * 64 <= tex_size.x) and ((coords.y + 1) * 64 <= tex_size.y)
+
+func _get_hud_item_fallback_coords(item: Variant) -> Vector2i:
+	var tval: int = int(item.tval) if item != null and ("tval" in item) else -1
+	match tval:
+		18, 19, 20, 21, 22, 23:
+			return Vector2i(24, 11)  # generic weapon
+		17:
+			return Vector2i(23, 12)  # arrow
+		34:
+			return Vector2i(21, 11)  # shield
+		36, 37:
+			return Vector2i(14, 11)  # armor
+		32, 33:
+			return Vector2i(11, 12)  # helm/crown
+		39:
+			return Vector2i(1, 13)   # torch/light
+		40, 45:
+			return Vector2i(2, 11)   # jewelry
+		80:
+			return Vector2i(13, 16)  # food
+		55, 56, 66, 75, 77:
+			return Vector2i(26, 14)  # devices/consumables
+		_:
+			return Vector2i(0, 11)   # pile
+
+func _create_plain_ring_icon(ring_color: Color) -> Texture2D:
+	var out_size: int = 24
+	var out := Image.create(out_size, out_size, false, Image.FORMAT_RGBA8)
+	out.fill(Color(0, 0, 0, 0))
+	var center := Vector2(out_size / 2, out_size / 2)
+	var outer_radius: float = 11.0
+	var inner_radius: float = 9.0
+	for y in range(out_size):
+		for x in range(out_size):
+			var d: float = Vector2(x, y).distance_to(center)
+			if d <= outer_radius and d >= inner_radius:
+				out.set_pixel(x, y, ring_color)
+	return ImageTexture.create_from_image(out)
 
 func _has_visible_hostiles() -> bool:
 	if not GameManager.current_level:
@@ -1734,6 +1843,8 @@ func _has_visible_hostiles() -> bool:
 func set_level(level: Level) -> void:
 	if minimap:
 		minimap.set_level(level)
+	if minimap_frame:
+		minimap_frame.visible = minimap != null and minimap.visible
 
 func set_player(player: Player) -> void:
 	if minimap:
@@ -1745,8 +1856,10 @@ func refresh_minimap() -> void:
 		minimap.refresh()
 
 func toggle_minimap() -> void:
-	if minimap:
-		minimap.visible = not minimap.visible
+	if minimap and minimap_frame:
+		var next_visible: bool = not minimap_frame.visible
+		minimap_frame.visible = next_visible
+		minimap.visible = next_visible
 
 # ============================================================================
 # PERIL WARNING (Sauron senses your peril)
@@ -1963,16 +2076,24 @@ func _on_status_applied(entity: Entity, status_name: String, duration: int) -> v
 		return
 	if entity is Player:
 		_on_message_logged("You are afflicted with %s (%d turns)." % [status_name, duration], ThemeColors.MSG_WARNING)
-		_update_status_icons(entity as Player)
+		_refresh_status_icons_if_needed(entity as Player)
 
 func _on_status_removed(entity: Entity, status_name: String) -> void:
 	if not is_instance_valid(entity):
 		return
 	if entity is Player:
 		_on_message_logged("The %s effect wears off." % status_name, ThemeColors.MSG_INFO)
-		_update_status_icons(entity as Player)
+		_refresh_status_icons_if_needed(entity as Player)
+
+func _on_status_tick(entity: Entity, _status_name: String, _duration: int) -> void:
+	if not is_instance_valid(entity):
+		return
+	if entity is Player:
+		_refresh_status_icons_if_needed(entity as Player)
 
 func _update_status_icons(player: Player) -> void:
+	if status_container == null:
+		return
 	for child in status_container.get_children():
 		if child.has_meta("pulse_tween"):
 			var pulse_tween: Variant = child.get_meta("pulse_tween")
@@ -2008,20 +2129,39 @@ func _update_status_icons(player: Player) -> void:
 
 		var badge := PanelContainer.new()
 		badge.add_theme_stylebox_override("panel", ThemeColors.create_status_pill(status_color))
+		var icon_row := HBoxContainer.new()
+		icon_row.add_theme_constant_override("separation", 2)
+		badge.add_child(icon_row)
 
-		var icon := Label.new()
-		icon.text = _get_status_abbreviation(status_name)
-		icon.add_theme_color_override("font_color", status_color)
-		ThemeColors.apply_body_font(icon, ThemeColors.FONT_SIZE_HINT)
-		icon.add_theme_color_override("font_color", status_color)
-		icon.tooltip_text = "%s (%d turns)\nSeverity: %s\nEffect: %s\nCounterplay: %s" % [
+		var icon_tex: Texture2D = _get_status_icon_texture(status_name)
+		if icon_tex != null:
+			var icon_rect := TextureRect.new()
+			icon_rect.custom_minimum_size = Vector2(16, 16)
+			icon_rect.texture = icon_tex
+			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_row.add_child(icon_rect)
+		else:
+			var fallback := Label.new()
+			fallback.text = _get_status_abbreviation(status_name)
+			fallback.add_theme_color_override("font_color", status_color)
+			ThemeColors.apply_body_font(fallback, ThemeColors.FONT_SIZE_HINT)
+			icon_row.add_child(fallback)
+
+		var dur_label := Label.new()
+		dur_label.text = str(duration)
+		ThemeColors.apply_body_font(dur_label, ThemeColors.FONT_SIZE_HINT - 2)
+		dur_label.add_theme_color_override("font_color", ThemeColors.TEXT_PRIMARY)
+		icon_row.add_child(dur_label)
+
+		badge.tooltip_text = "%s (%d turns)\nSeverity: %s\nEffect: %s\nCounterplay: %s" % [
 			str(meta.get("name", status_name.capitalize())),
 			duration,
 			str(meta.get("severity", "minor")),
 			str(meta.get("exact_effect", "Temporary effect.")),
 			str(meta.get("counterplay", "React defensively.")),
 		]
-		badge.add_child(icon)
 		status_container.add_child(badge)
 
 		if status_name.to_lower() in DANGER_STATUSES:
@@ -2042,6 +2182,29 @@ func _pulse_node(node: Control) -> void:
 	tween.tween_property(node, "modulate:a", 0.5, 0.5).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(node, "modulate:a", 1.0, 0.5).set_ease(Tween.EASE_IN_OUT)
 
+func pulse_hotbar_slot(slot_index: int, pulses: int = 3) -> void:
+	if slot_index < 0 or slot_index >= hotbar_slots.size():
+		return
+	var slot: PanelContainer = hotbar_slots[slot_index]
+	if slot == null or not is_instance_valid(slot):
+		return
+	var icon: TextureRect = _hotbar_icon_nodes[slot_index] if slot_index < _hotbar_icon_nodes.size() else null
+	var label: Label = _hotbar_key_labels[slot_index] if slot_index < _hotbar_key_labels.size() else null
+	var loops: int = maxi(1, pulses)
+	var base_slot: Color = slot.modulate
+	var base_icon: Color = icon.modulate if icon else Color.WHITE
+	var tween := create_tween()
+	tween.bind_node(slot)
+	for _i in range(loops):
+		tween.tween_property(slot, "modulate", Color(ThemeColors.GOLD_BRIGHT, 1.0), 0.15).set_ease(Tween.EASE_IN_OUT)
+		if icon:
+			tween.parallel().tween_property(icon, "modulate", Color(1.3, 1.25, 1.15, 1.0), 0.15).set_ease(Tween.EASE_IN_OUT)
+		if label:
+			label.add_theme_color_override("font_color", ThemeColors.GOLD_BRIGHT)
+		tween.tween_property(slot, "modulate", base_slot, 0.22).set_ease(Tween.EASE_IN_OUT)
+		if icon:
+			tween.parallel().tween_property(icon, "modulate", base_icon, 0.22).set_ease(Tween.EASE_IN_OUT)
+
 func _get_status_abbreviation(status_name: String) -> String:
 	match status_name.to_lower():
 		"poisoned": return "PSN"
@@ -2057,7 +2220,37 @@ func _get_status_abbreviation(status_name: String) -> String:
 		"rage": return "RGE"
 		"darkened": return "DRK"
 		"image": return "HAL"
+		"endurance_will": return "END"
 		_: return status_name.substr(0, 3).to_upper()
+
+func _get_status_icon_texture(status_name: String) -> Texture2D:
+	if not _ensure_ui_icon_tileset():
+		return null
+	var coords: Vector2i = _get_status_icon_coords(status_name)
+	if not _is_valid_tile_coords_for_texture(coords, _ui_icon_tileset):
+		return null
+	var atlas := AtlasTexture.new()
+	atlas.atlas = _ui_icon_tileset
+	atlas.region = Rect2(coords.x * 64, coords.y * 64, 64, 64)
+	return atlas
+
+func _get_status_icon_coords(status_name: String) -> Vector2i:
+	match status_name.to_lower():
+		"poisoned": return Vector2i(22, 15)
+		"burning": return Vector2i(27, 14)
+		"stunned": return Vector2i(3, 15)
+		"confused": return Vector2i(24, 15)
+		"afraid": return Vector2i(30, 14)
+		"blind": return Vector2i(24, 14)
+		"slow": return Vector2i(28, 14)
+		"fast": return Vector2i(28, 12)
+		"entranced": return Vector2i(9, 16)
+		"cut": return Vector2i(29, 11)
+		"rage": return Vector2i(2, 16)
+		"darkened": return Vector2i(25, 14)
+		"image": return Vector2i(19, 12)
+		"endurance_will": return Vector2i(3, 14)
+		_: return Vector2i(9, 0)
 
 # ============================================================================
 # HELPERS

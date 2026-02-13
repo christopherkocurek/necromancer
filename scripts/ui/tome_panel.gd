@@ -6,6 +6,8 @@ class_name TomePanel
 signal skill_increased(skill_name: String, new_level: int)
 signal ability_purchased(ability_name: String)
 signal closed
+signal opened
+signal chapter_opened(skill_name: String)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -214,6 +216,7 @@ func open(player_ref: Player) -> void:
 	PanelTransition.open_panel(self)
 	set_process(true)
 	grab_focus()
+	opened.emit()
 
 func close() -> void:
 	pending_investments.clear()
@@ -1242,6 +1245,8 @@ func _navigate_to_chapter(skill_idx: int) -> void:
 	_play_page_turn(skill_idx, true)
 	_update_selection_indicators()
 	_update_marginalia()
+	if skill_idx >= 0 and skill_idx < SKILL_NAMES.size():
+		chapter_opened.emit(SKILL_NAMES[skill_idx])
 
 func _navigate_to_index() -> void:
 	current_page = PageState.INDEX
@@ -1508,6 +1513,60 @@ func _get_display_ability_description(ability: DataManager.AbilityData) -> Strin
 			Constants.PerceptionAbility.PER_MASTER_HUNTER:
 				return "Active (Shift+E): Spend built Focus to arm a finishing exploit against your marked quarry. Your next hit gains bonus damage dice, with extra crit pressure at high Focus."
 	return ability.description
+
+func pulse_skill_plus(skill_name: String, pulses: int = 3) -> void:
+	var idx: int = SKILL_NAMES.find(skill_name.to_lower())
+	if idx < 0 or idx >= skill_rows.size():
+		return
+	if current_page != PageState.INDEX:
+		_navigate_to_index()
+	if idx != selected_skill_idx:
+		selected_skill_idx = idx
+		_update_selection_indicators()
+	var row: Dictionary = skill_rows[idx]
+	var plus_btn: Button = row.get("buy_btn")
+	if plus_btn:
+		_pulse_button(plus_btn, pulses)
+
+func pulse_skill_row(skill_name: String, pulses: int = 3) -> void:
+	var idx: int = SKILL_NAMES.find(skill_name.to_lower())
+	if idx < 0 or idx >= skill_rows.size():
+		return
+	if current_page != PageState.INDEX:
+		_navigate_to_index()
+	if idx != selected_skill_idx:
+		selected_skill_idx = idx
+		_update_selection_indicators()
+	var row: Dictionary = skill_rows[idx]
+	var row_btn: Button = row.get("container")
+	if row_btn:
+		_pulse_button(row_btn, pulses)
+
+func pulse_ability_by_name(ability_name: String, pulses: int = 3) -> void:
+	if ability_name.is_empty():
+		return
+	var target_idx: int = -1
+	for i in range(_ability_list.size()):
+		var ability: DataManager.AbilityData = _ability_list[i]
+		if _get_display_ability_name(ability).to_lower() == ability_name.to_lower() or ability.name.to_lower() == ability_name.to_lower():
+			target_idx = i
+			break
+	if target_idx < 0 or target_idx >= ability_buttons.size():
+		return
+	_on_ability_selected(target_idx)
+	var btn: Button = ability_buttons[target_idx]
+	_pulse_button(btn, pulses)
+
+func _pulse_button(btn: Control, pulses: int) -> void:
+	if btn == null or not is_instance_valid(btn):
+		return
+	var loops: int = maxi(1, pulses)
+	var base_modulate: Color = btn.modulate
+	var tween := create_tween()
+	tween.bind_node(btn)
+	for _i in range(loops):
+		tween.tween_property(btn, "modulate", Color(ThemeColors.GOLD_BRIGHT, 1.0), 0.16).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(btn, "modulate", base_modulate, 0.2).set_ease(Tween.EASE_IN_OUT)
 
 # ===========================================================================
 # INPUT

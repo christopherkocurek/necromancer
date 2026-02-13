@@ -31,6 +31,7 @@ var player: Player = null
 var transition_overlay: ColorRect = null
 var _cleanup_done: bool = false
 var _starting_new_game: bool = false
+var _guided_new_player_run: bool = false
 
 # Quest system (using Node type to avoid load order issues)
 var quest_system: Node = null
@@ -61,6 +62,7 @@ var _mining: bool = false
 var _mining_turns_taken: int = 0
 var _mining_turns_required: int = 4
 var _mining_target: Vector2i = Vector2i(-1, -1)
+var _mining_target_tile: int = Level.Tile.RUBBLE
 var _mining_hp_before: int = 0
 var _pending_tunnel: bool = false
 var _pending_stairs_confirm: bool = false
@@ -99,6 +101,7 @@ const AutoExploreScript := preload("res://scripts/systems/auto_explore.gd")
 const MonsterMemoryScript := preload("res://scripts/systems/monster_memory.gd")
 const BestiaryPanelScript := preload("res://scripts/ui/bestiary_panel.gd")
 const CharacterPanelScript := preload("res://scripts/ui/character_panel.gd")
+const GandalfMentorNPCScript := preload("res://scripts/entities/gandalf_mentor_npc.gd")
 const SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
 const ITEM_SCENE := preload("res://scenes/entities/item.tscn")
 const BASE_CONTENT_SIZE: Vector2i = Vector2i(1440, 810)
@@ -163,6 +166,14 @@ func _setup_ui_panels() -> void:
 	# Instantiate Tome panel (replaces skills + abilities panels)
 	tome_panel = TOME_PANEL_SCENE.instantiate()
 	tome_panel.closed.connect(_on_tome_closed)
+	if tome_panel.has_signal("opened"):
+		tome_panel.opened.connect(_on_tome_opened)
+	if tome_panel.has_signal("chapter_opened"):
+		tome_panel.chapter_opened.connect(_on_tome_chapter_opened)
+	if tome_panel.has_signal("skill_increased"):
+		tome_panel.skill_increased.connect(_on_tome_skill_increased)
+	if tome_panel.has_signal("ability_purchased"):
+		tome_panel.ability_purchased.connect(_on_tome_ability_purchased)
 	ui_layer.add_child(tome_panel)
 
 	# Instantiate death screen (hidden by default)
@@ -301,6 +312,9 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	current_state = GameState.PLAYING
 	GameManager.start_new_game()
 	DataManager.reset_spawned_uniques()
+	_guided_new_player_run = bool(character_data.get("new_player_guided", false))
+	if TutorialManager and TutorialManager.has_method("start_gandalf_guidance_session"):
+		TutorialManager.start_gandalf_guidance_session(_guided_new_player_run)
 
 	# Generate first level
 	_generate_level(1)
@@ -338,12 +352,15 @@ func _start_new_game(character_data: Dictionary = {}) -> void:
 	# Welcome message
 	var name_str: String = character_data.get("name", "Necromancer")
 	GameManager.log_message("Welcome, %s. You descend into Dol Guldur..." % name_str, ThemeColors.MSG_INFO)
-	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Tome: T/@/A  Tunnel: Shift+T  Pickup: G", ThemeColors.MSG_SYSTEM)
+	GameManager.log_message("Move: WASD/HJKL  Inventory: I  Tome: T/@  Tunnel: Shift+T  Pickup: G", ThemeColors.MSG_SYSTEM)
 
 	# Show layer entry message
 	var entry_msg := LayerConfig.get_entry_message(1, 0)
 	if not entry_msg.is_empty():
 		GameManager.log_message(entry_msg, ThemeColors.MSG_WARNING)
+
+	if _guided_new_player_run:
+		_spawn_gandalf_intro_npc()
 
 	_starting_new_game = false
 
@@ -391,6 +408,8 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	# Apply character creation data
 	if not character_data.is_empty():
 		player.entity_name = character_data.get("name", "Necromancer")
+		if bool(character_data.get("new_player_guided", false)):
+			player.set_meta("new_player_guided", true)
 		player.race_name = character_data.get("race", "Man")
 		player.house_name = character_data.get("house", "")
 		player.trait_name = character_data.get("trait", "")
@@ -470,6 +489,34 @@ func _spawn_player(character_data: Dictionary = {}) -> void:
 	# Set player on quest system
 	if quest_system:
 		quest_system.set_player(player)
+
+func _spawn_gandalf_intro_npc() -> void:
+	if not current_level or not player or not dialogue_panel:
+		return
+	if GameManager.current_depth != 1:
+		return
+	for entity in current_level.entities:
+		if not is_instance_valid(entity):
+			continue
+		if str(entity.get("npc_id")) == "gandalf_mentor_intro":
+			return
+
+	var spawn_pos: Vector2i = _find_open_tile_near(player.grid_position)
+	if spawn_pos == Vector2i(-1, -1):
+		spawn_pos = _find_or_create_open_tile_near(player.grid_position)
+	if spawn_pos == Vector2i(-1, -1):
+		return
+
+	var gandalf: Node = GandalfMentorNPCScript.create_at_position(spawn_pos)
+	current_level.add_entity(gandalf)
+	call_deferred("_open_intro_dialogue_with_npc", gandalf)
+
+func _open_intro_dialogue_with_npc(npc: Node) -> void:
+	if not is_instance_valid(npc):
+		return
+	if not dialogue_panel:
+		return
+	dialogue_panel.open_dialogue(npc)
 
 # ============================================================================
 # STARTING EQUIPMENT
@@ -909,10 +956,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_tome()
 		get_viewport().set_input_as_handled()
 
-	# Abilities toggle (A key → opens Tome)
-	if event.is_action_pressed("abilities"):
-		_toggle_tome()
-		get_viewport().set_input_as_handled()
+	# NOTE: Avoid consuming A key here so WASD movement remains reliable.
+	# Tome is available via T and @/Shift+2.
 
 	# Tome toggle (t key, lowercase only)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_T and not event.shift_pressed and not event.echo:
@@ -1076,8 +1121,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-	# Disarm trap (D key, no shift — Shift+D is drop)
-	if event is InputEventKey and event.pressed and not event.echo and not event.shift_pressed:
+	# Disarm trap (Ctrl+D, to avoid conflicting with D movement)
+	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and not event.shift_pressed:
 		if event.keycode == KEY_D:
 			if player and player.is_alive and GameManager.is_player_turn and current_level:
 				var hunting_skill: int = player.get_effective_perception()
@@ -1139,6 +1184,8 @@ func _toggle_inventory() -> void:
 		if tome_panel and tome_panel.visible:
 			tome_panel.close()
 		inventory_panel.open(player)
+		if TutorialManager and TutorialManager.has_method("on_inventory_opened"):
+			TutorialManager.on_inventory_opened()
 		GameManager.is_player_turn = false  # Pause game while in menu
 
 func _toggle_tome() -> void:
@@ -1151,10 +1198,16 @@ func _toggle_tome() -> void:
 		tome_panel.open(player)
 		GameManager.is_player_turn = false
 
+func _on_tome_opened() -> void:
+	if TutorialManager and TutorialManager.has_method("on_tome_opened"):
+		TutorialManager.on_tome_opened(tome_panel)
+
 func _on_inventory_closed() -> void:
 	_pending_utility_bind_slot = -1
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
+	if TutorialManager and TutorialManager.has_method("on_inventory_closed"):
+		TutorialManager.on_inventory_closed()
 
 func _on_inventory_item_selected(item_data: Variant) -> void:
 	if _pending_utility_bind_slot < 0 or item_data == null or not player:
@@ -1171,6 +1224,20 @@ func _on_inventory_item_selected(item_data: Variant) -> void:
 func _on_tome_closed() -> void:
 	GameManager.is_player_turn = true
 	hud.update_player_stats(player)
+	if TutorialManager and TutorialManager.has_method("on_tome_closed"):
+		TutorialManager.on_tome_closed()
+
+func _on_tome_chapter_opened(skill_name: String) -> void:
+	if TutorialManager and TutorialManager.has_method("on_tome_chapter_opened"):
+		TutorialManager.on_tome_chapter_opened(skill_name, tome_panel)
+
+func _on_tome_skill_increased(skill_name: String, _new_level: int) -> void:
+	if TutorialManager and TutorialManager.has_method("on_tome_skill_increased"):
+		TutorialManager.on_tome_skill_increased(skill_name, tome_panel)
+
+func _on_tome_ability_purchased(ability_name: String) -> void:
+	if TutorialManager and TutorialManager.has_method("on_tome_ability_purchased"):
+		TutorialManager.on_tome_ability_purchased(ability_name, tome_panel)
 
 func _toggle_look() -> void:
 	if look_panel.visible:
@@ -1265,6 +1332,9 @@ func _on_target_selected(target_pos: Vector2i) -> void:
 	# Archery targeting
 	var target_entity: Entity = current_level.get_entity_at(target_pos)
 	if target_entity and is_instance_valid(target_entity) and target_entity.is_alive:
+		if target_entity == player:
+			GameManager.log_message("You can't target yourself.", ThemeColors.MSG_SYSTEM)
+			return
 		var dist: int = max(abs(target_pos.x - player.grid_position.x),
 						   abs(target_pos.y - player.grid_position.y))
 		if player.consume_arrow():
@@ -1319,6 +1389,8 @@ func _open_voice_menu(bind_slot: int = -1) -> void:
 	GameManager.is_player_turn = false
 	if bind_slot >= 0:
 		GameManager.log_message("Choose an ability for gem %d." % (bind_slot + 1), ThemeColors.MSG_INFO)
+		if TutorialManager and TutorialManager.has_method("on_ability_bind_menu_opened"):
+			TutorialManager.on_ability_bind_menu_opened(bind_slot)
 	else:
 		GameManager.log_message("Select an ability to cast.", ThemeColors.MSG_SYSTEM)
 
@@ -1339,7 +1411,10 @@ func _on_voice_menu_selected(index: int) -> void:
 	if bind_slot >= 0:
 		if bind_slot < player.ability_hotkeys.size():
 			player.ability_hotkeys[bind_slot] = ability_id
-			GameManager.log_message("Bound %s to gem %d." % [str(ab.get("name", "Ability")), bind_slot + 1], ThemeColors.MSG_INFO)
+			var bound_name: String = str(ab.get("name", "Ability"))
+			GameManager.log_message("Bound %s to gem %d." % [bound_name, bind_slot + 1], ThemeColors.MSG_INFO)
+			if TutorialManager and TutorialManager.has_method("on_ability_bound_to_gem"):
+				TutorialManager.on_ability_bound_to_gem(bind_slot, ability_id, bound_name, hud)
 			hud.update_hotbar(player, ability_system)
 		_pending_ability_bind_slot = -1
 		if voice_menu:
@@ -1459,11 +1534,19 @@ func _cast_hotbar_ability(ability_id: int) -> bool:
 	else:
 		success = _activate_player_gem_ability(ability_id)
 	if success:
+		if TutorialManager and TutorialManager.has_method("on_ability_cast_from_gem"):
+			TutorialManager.on_ability_cast_from_gem(ability_id)
 		if ability_id == Player.GEM_SPRINTING:
+			hud.update_player_stats(player)
+		elif _is_free_action_lore_toggle(ability_id):
 			hud.update_player_stats(player)
 		else:
 			_consume_turn_for_ability()
 	return success
+
+func _is_free_action_lore_toggle(ability_id: int) -> bool:
+	# Design rule: sustained songs (including Herbcraft) are free to start/stop.
+	return ability_id in [143, 147, 148, 152, 153, 159]
 
 func _activate_player_gem_ability(ability_id: int) -> bool:
 	if not player:
@@ -2008,11 +2091,14 @@ func _has_visible_monster() -> bool:
 func _try_start_tunnel() -> void:
 	if not player or not player.is_alive:
 		return
-	if not player.has_equip_flag("TUNNEL"):
-		GameManager.log_message("You need a digging tool to mine rubble.", ThemeColors.MSG_WARNING)
+	# Webs can be cleared with any equipped weapon; rubble still needs tunneling gear.
+	var can_tunnel_rubble: bool = player.has_equip_flag("TUNNEL")
+	var can_cut_webs: bool = _has_equipped_weapon_for_web_cutting()
+	if not can_tunnel_rubble and not can_cut_webs:
+		GameManager.log_message("You need a digging tool for rubble, or a weapon to cut webs.", ThemeColors.MSG_WARNING)
 		return
 	_pending_tunnel = true
-	GameManager.log_message("Tunnel in which direction?", ThemeColors.MSG_INFO)
+	GameManager.log_message("Tunnel/cut in which direction?", ThemeColors.MSG_INFO)
 
 func _try_mine_direction(dir: Vector2i) -> void:
 	_pending_tunnel = false
@@ -2022,18 +2108,31 @@ func _try_mine_direction(dir: Vector2i) -> void:
 	if not current_level.is_in_bounds(target_pos):
 		GameManager.log_message("Nothing to mine there.", ThemeColors.MSG_SYSTEM)
 		return
-	if current_level.get_tile(target_pos) != Level.Tile.RUBBLE:
-		GameManager.log_message("There is no rubble in that direction.", ThemeColors.MSG_SYSTEM)
+	var target_tile: int = current_level.get_tile(target_pos)
+	var can_tunnel_rubble: bool = player.has_equip_flag("TUNNEL")
+	var can_cut_webs: bool = _has_equipped_weapon_for_web_cutting()
+	if target_tile == Level.Tile.RUBBLE and not can_tunnel_rubble:
+		GameManager.log_message("You need a digging tool to mine rubble.", ThemeColors.MSG_WARNING)
+		return
+	if target_tile == Level.Tile.WEB and not can_cut_webs:
+		GameManager.log_message("You need a weapon equipped to cut through webs.", ThemeColors.MSG_WARNING)
+		return
+	if target_tile != Level.Tile.RUBBLE and target_tile != Level.Tile.WEB:
+		GameManager.log_message("There is no rubble or web in that direction.", ThemeColors.MSG_SYSTEM)
 		return
 
-	# Calculate mining turns based on smithing skill
+	# Calculate action time: webs are fast to clear; rubble uses smithing-based timing.
 	var smithing_level: int = player.get_effective_skill("smithing") if player.has_method("get_effective_skill") else 0
-	_mining_turns_required = maxi(2, 4 - smithing_level / 2)
+	_mining_turns_required = 1 if target_tile == Level.Tile.WEB else maxi(2, 4 - smithing_level / 2)
 	_mining_target = target_pos
+	_mining_target_tile = target_tile
 	_mining_turns_taken = 0
 	_mining_hp_before = player.current_health
 	_mining = true
-	GameManager.log_message("You begin mining the rubble... (%d turns)" % _mining_turns_required, ThemeColors.MSG_SYSTEM)
+	if target_tile == Level.Tile.WEB:
+		GameManager.log_message("You begin cutting through the web... (%d turn)" % _mining_turns_required, ThemeColors.MSG_SYSTEM)
+	else:
+		GameManager.log_message("You begin mining the rubble... (%d turns)" % _mining_turns_required, ThemeColors.MSG_SYSTEM)
 
 func _process_mining_step() -> void:
 	if not _mining or not player or not player.is_alive:
@@ -2075,8 +2174,12 @@ func _complete_mining() -> void:
 	_mining = false
 	if current_level and current_level.is_in_bounds(_mining_target):
 		current_level.set_tile(_mining_target, Level.Tile.FLOOR)
-		GameManager.log_message("You clear the rubble.", ThemeColors.MSG_INFO)
-		player.gain_experience(5, "mining")
+		if _mining_target_tile == Level.Tile.WEB:
+			GameManager.log_message("You tear the web apart.", ThemeColors.MSG_INFO)
+			player.gain_experience(2, "mining")
+		else:
+			GameManager.log_message("You clear the rubble.", ThemeColors.MSG_INFO)
+			player.gain_experience(5, "mining")
 		# Refresh FOV since rubble was already transparent but passability changed
 		var fov_radius: int = current_level.get_fov_radius()
 		var light_radius: int = player.get_light_radius()
@@ -2085,6 +2188,19 @@ func _complete_mining() -> void:
 		current_level.update_entity_visibility()
 		current_level.apply_fov_to_tilemap()
 		hud.update_player_stats(player)
+
+func _has_equipped_weapon_for_web_cutting() -> bool:
+	if not player:
+		return false
+	var weapon_slots: Array[String] = ["weapon", "off_hand", "bow"]
+	for slot_name: String in weapon_slots:
+		var item: Variant = player.equipment.get(slot_name, null)
+		if item == null or not ("tval" in item):
+			continue
+		var tval: int = int(item.tval)
+		if tval in [18, 19, 20, 21, 22, 23]:
+			return true
+	return false
 
 func _stop_mining(reason: String) -> void:
 	if not _mining:
