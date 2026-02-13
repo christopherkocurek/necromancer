@@ -160,7 +160,12 @@ func _build_action_bar() -> void:
 	# Main horizontal layout: [HealthOrb] [CenterStats] [VoiceOrb]
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 8)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.alignment = BoxContainer.ALIGNMENT_BEGIN
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.offset_left = 12
+	hbox.offset_right = -12
+	hbox.offset_top = 4
+	hbox.offset_bottom = -4
 	action_bar.add_child(hbox)
 
 	# --- Health Orb (left) ---
@@ -169,8 +174,7 @@ func _build_action_bar() -> void:
 
 	# --- Center Column ---
 	var center := VBoxContainer.new()
-	center.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	center.custom_minimum_size = Vector2(760, 0)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.add_theme_constant_override("separation", 3)
 	hbox.add_child(center)
 

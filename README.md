@@ -93,17 +93,12 @@ necromancer-godot/
     sprites/        # DCSS tileset + DALL-E custom sprites
     audio/          # Sound effects and ambient audio
   scenes/           # Godot .tscn scene files
-  tests/
-    unit/           # GUT unit tests (combat, FOV, energy, status effects)
-    gameplay/       # Scenario tests (abilities, inventory, dungeon gen, transitions)
-    integration/    # Turn flow integration tests
-    bot/            # Fuzz bot, survival bot, archetype configs
-  docs/             # Design documents, gap analysis, balance reports
+  docs/             # Slim beta docs for internal test distribution
 ```
 
 ## Development Status
 
-**Alpha build** -- 46 commits, 58k lines, 162 files. All core systems implemented. Validated with 120 automated bot playthroughs across 6 archetypes.
+**Beta v1.1 internal build** -- slim tester distribution.
 
 - 88 monsters, 214 items, 104 artifacts, 93 abilities across 8 skill trees
 - 7 dungeon layers with distinct themes (Outer Pits through Throne Room)
@@ -111,19 +106,16 @@ necromancer-godot/
 - Sustained song system (Song of Freedom, Song of the Trees, Song of Aule)
 - 4 difficulty modes (Easy, Normal, Hard, Ironman)
 - Named Tolkien bosses at layer transitions
-- 125/130 automated tests passing, 684 assertions
-- 120 bot playthroughs: 0% win rate confirms difficulty is balanced for skilled play
-
-See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for current limitations and [docs/CHANGELOG.md](docs/CHANGELOG.md) for version history.
+- Includes gameplay/UI fixes through the latest Beta v1.1 pass.
 
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) -- System architecture and dependency graph
-- [docs/GAME_DESIGN_DOCUMENT.md](docs/GAME_DESIGN_DOCUMENT.md) -- Complete game design document
-- [docs/BALANCE_REPORT.md](docs/BALANCE_REPORT.md) -- 120-run bot playthrough analysis
-- [docs/CHANGELOG.md](docs/CHANGELOG.md) -- Full development history
-- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) -- Known bugs and unimplemented features
-- [docs/PARITY_ANALYSIS.md](docs/PARITY_ANALYSIS.md) -- C source vs Godot feature comparison
+- [tutorial.md](tutorial.md) -- Tester-facing tutorial notes
+- [docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md](docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md) -- Canonical Beta v1.1 game design document
+- [docs/pdf/GAME_DESIGN_DOCUMENT_BETA_V1_1.pdf](docs/pdf/GAME_DESIGN_DOCUMENT_BETA_V1_1.pdf) -- PDF export of the Beta v1.1 game design document
+- [docs/manual/THE_NECROMANCER_MANUAL_BETA_V1_1.md](docs/manual/THE_NECROMANCER_MANUAL_BETA_V1_1.md) -- Canonical Beta v1.1 player's manual
+- [docs/pdf/THE_NECROMANCER_MANUAL_BETA_V1_1.pdf](docs/pdf/THE_NECROMANCER_MANUAL_BETA_V1_1.pdf) -- PDF export of the Beta v1.1 player's manual
 
 ## Credits
 
