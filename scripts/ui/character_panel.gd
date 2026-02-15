@@ -96,10 +96,19 @@ func _refresh() -> void:
 	text += "  Attack:      [color=#%s]%+d[/color]\n" % [secondary, player.melee_bonus]
 	text += "  Evasion:     [color=#%s]%+d[/color]\n" % [secondary, player.evasion_bonus]
 	text += "  Weapon:      [color=#%s]%s[/color]\n" % [secondary, player.get_weapon_damage_dice()]
-	if player.protection_dice > 0 and player.protection_sides > 0:
-		text += "  Protection:  [color=#%s]%dd%d[/color]\n" % [secondary, player.protection_dice, player.protection_sides]
+	var protection_summary: String = player.get_protection_pool_summary()
+	if protection_summary != "none":
+		var prot_range: Dictionary = player.get_protection_min_max()
+		text += "  Protection:  [color=#%s]%s[/color] [color=#%s](%d-%d)[/color]\n" % [
+			secondary,
+			protection_summary,
+			muted,
+			int(prot_range.get("min", 0)),
+			int(prot_range.get("max", 0))
+		]
 	else:
 		text += "  Protection:  [color=#%s]none[/color]\n" % muted
+	text += "  Light:       [color=#%s]radius %d[/color]\n" % [secondary, player.get_light_radius()]
 	text += "  Health:      [color=#%s]%d / %d[/color]\n" % [secondary, player.current_health, player.max_health]
 	text += "  Voice:       [color=#%s]%d / %d[/color]\n" % [secondary, player.voice_charges, player.max_voice]
 	text += "\n"

@@ -1,0 +1,30 @@
+{
+	"schema_version": "v1",
+	"id": "protection_model_v1",
+	"name": "Protection pool validity (live)",
+	"mode": "deterministic",
+	"seed": 103,
+	"severity": "blocker",
+	"tags": ["protection", "combat", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "Protection Harness"}},
+		{"op": "set_protection_pool", "args": {"effect_id": "valid_pool", "dice": 2, "sides": 4}},
+		{"op": "set_protection_pool", "args": {"effect_id": "invalid_pool_zero", "dice": 0, "sides": 0}},
+		{"op": "set_protection_pool", "args": {"effect_id": "invalid_pool_one_zero", "dice": 1, "sides": 0}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_protection_valid",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "protection"}}],
+			"assertions": [
+				{"type": "range", "path": "protection_state.total_min", "min": 0, "max": 99, "severity": "major"},
+				{"type": "contains", "path": "protection_state.invalid_pools_filtered", "value": "0d0", "severity": "blocker"},
+				{"type": "contains", "path": "protection_state.invalid_pools_filtered", "value": "1d0", "severity": "blocker"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

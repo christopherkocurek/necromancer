@@ -920,8 +920,32 @@ const BOSS_POOL: Dictionary = {
 	],
 }
 
+const TRANSITION_BOSS_BASES: Dictionary = {
+	3: ["Broodmother"],
+}
+
+func _get_reserved_transition_bases(depth: int) -> Array[String]:
+	if not LayerConfig.is_boss_level(depth):
+		return []
+	return TRANSITION_BOSS_BASES.get(depth, [])
+
+func _is_reserved_transition_monster(data: DataManager.MonsterData, depth: int) -> bool:
+	if data == null:
+		return false
+	var reserved: Array[String] = _get_reserved_transition_bases(depth)
+	if reserved.is_empty():
+		return false
+	return data.name in reserved
+
+func _transition_boss_spawn_key(depth: int) -> String:
+	return "transition_boss_depth_%d" % depth
+
 func _add_boss_room(depth: int) -> void:
 	if rooms.size() < 3:
+		return
+
+	var transition_key: String = _transition_boss_spawn_key(depth)
+	if DataManager.is_unique_already_spawned(transition_key):
 		return
 
 	# Pick a room that isn't first or last (not near stairs)
@@ -936,7 +960,12 @@ func _add_boss_room(depth: int) -> void:
 
 	# Spawn using themed monster for depth+3 as the base
 	var monster_scene := preload("res://scenes/entities/monster.tscn")
-	var boss_data := DataManager.get_themed_monster_for_depth(depth + 3)
+	var boss_data: DataManager.MonsterData = null
+	var reserved_bases: Array[String] = _get_reserved_transition_bases(depth)
+	if not reserved_bases.is_empty():
+		boss_data = DataManager.get_monster(reserved_bases[0])
+	if not boss_data:
+		boss_data = DataManager.get_themed_monster_for_depth(depth + 3)
 	if not boss_data:
 		boss_data = DataManager.get_random_monster_for_depth(depth + 2)
 	if not boss_data:
@@ -962,7 +991,11 @@ func _add_boss_room(depth: int) -> void:
 	boss.experience_value = int(boss.experience_value * boss_info.xp_mult)
 	boss.is_unique = true
 	boss.is_brave = true
+	boss.set_meta("is_transition_boss", true)
+	boss.set_meta("transition_boss_depth", depth)
 	level.add_entity(boss)
+	DataManager.mark_unique_spawned(transition_key)
+	DataManager.mark_unique_spawned(boss_info.title)
 
 	# Guaranteed quality treasure near boss (2 items)
 	var item_scene := preload("res://scenes/entities/item.tscn")
@@ -1285,9 +1318,11 @@ func _can_place_vault_at(pos: Vector2i, vault: DataManager.VaultData) -> bool:
 	return true
 
 ## Place a vault monster with proper alertness (sleeping by default, awake in greater vaults).
-func _place_vault_monster(monster_scene: PackedScene, pos: Vector2i, data: DataManager.MonsterData, is_greater_vault: bool) -> void:
+func _place_vault_monster(monster_scene: PackedScene, pos: Vector2i, data: DataManager.MonsterData, is_greater_vault: bool, depth: int) -> void:
 	# Don't stack monsters on occupied tiles
 	if level.get_entity_at(pos) != null:
+		return
+	if _is_reserved_transition_monster(data, depth):
 		return
 	# Unique cap check
 	if data.has_flag("UNIQUE"):
@@ -1405,7 +1440,7 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 					if d3_roll <= 2:  # 1=monster only, 2=both
 						var m_data := DataManager.get_themed_monster_for_depth(effective_vault_depth)
 						if m_data:
-							_place_vault_monster(monster_scene, tile_pos, m_data, is_greater)
+							_place_vault_monster(monster_scene, tile_pos, m_data, is_greater, depth)
 					if d3_roll >= 2:  # 2=both, 3=item only
 						var i_data := DataManager.get_themed_item_for_depth(effective_vault_depth)
 						if i_data:
@@ -1440,7 +1475,7 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 					var monster_depth: int = mini(effective_vault_depth + int(ch), 20)
 					var monster_data := DataManager.get_themed_monster_for_depth(monster_depth)
 					if monster_data:
-						_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
+						_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater, depth)
 				_:
 					# Check for named monster characters
 					if ch.to_upper() == ch and ch != ch.to_lower():
@@ -1448,13 +1483,13 @@ func _carve_vault(pos: Vector2i, vault: DataManager.VaultData, depth: int) -> vo
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
 						var monster_data := DataManager.get_monster_by_char(ch, effective_vault_depth)
 						if monster_data:
-							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
+							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater, depth)
 					elif ch.to_lower() == ch and ch != ch.to_upper():
 						# Lowercase letter - potentially a monster
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
 						var monster_data := DataManager.get_monster_by_char(ch, effective_vault_depth)
 						if monster_data:
-							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater)
+							_place_vault_monster(monster_scene, tile_pos, monster_data, is_greater, depth)
 					else:
 						# Unknown symbol, treat as floor
 						level.set_tile(tile_pos, Level.Tile.FLOOR)
@@ -2112,7 +2147,7 @@ func _trim_monsters_to_cap(cap: int) -> void:
 	var keep: Array[Monster] = []
 	var removable: Array[Monster] = []
 	for m in monsters:
-		if m.monster_data and m.monster_data.has_flag("UNIQUE"):
+		if m.is_unique or (m.monster_data and m.monster_data.has_flag("UNIQUE")) or m.has_meta("is_transition_boss"):
 			keep.append(m)
 		else:
 			removable.append(m)
@@ -2176,6 +2211,16 @@ func _place_monster_with_entourage(monster_scene: PackedScene, pos: Vector2i, de
 		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
 
 	if not monster_data:
+		return 0
+
+	# Reserve transition boss species for dedicated boss spawns/titles.
+	for _retry in range(5):
+		if not _is_reserved_transition_monster(monster_data, depth):
+			break
+		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
+		if not monster_data:
+			return 0
+	if _is_reserved_transition_monster(monster_data, depth):
 		return 0
 
 	# Unique cap check

@@ -1,0 +1,147 @@
+{
+  "schema_version": "intent_rules_v1",
+  "pack_id": "advisory_core_v1",
+  "description": "Advisory intent rules derived from beta v1.1 game design and player-guide expectations.",
+  "source_docs": [
+    "docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md",
+    "docs/manual/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.md",
+    "docs/GAME_OVERVIEW_2_PAGER_BETA_V1_1.md"
+  ],
+  "rules": [
+    {
+      "id": "schema.version_v1",
+      "severity": "major",
+      "description": "Telemetry schema must remain v1 for advisory rule compatibility.",
+      "assert": {"type": "eq", "path": "schema_version", "value": "v1"}
+    },
+    {
+      "id": "runtime.depth_valid",
+      "severity": "major",
+      "description": "Depth must be valid and non-zero during live play.",
+      "assert": {"type": "range", "path": "runtime_state.depth", "min": 1, "max": 200}
+    },
+    {
+      "id": "runtime.player_in_bounds",
+      "severity": "blocker",
+      "description": "Player should never resolve outside level bounds.",
+      "assert": {"type": "eq", "path": "runtime_state.player_in_bounds", "value": true}
+    },
+    {
+      "id": "runtime.hp_max_positive",
+      "severity": "blocker",
+      "description": "Player max HP must remain positive.",
+      "assert": {"type": "range", "path": "runtime_state.player_max_hp", "min": 1, "max": 9999}
+    },
+    {
+      "id": "runtime.hp_nonnegative",
+      "severity": "blocker",
+      "description": "Player HP should not be negative.",
+      "assert": {"type": "range", "path": "runtime_state.player_hp", "min": 0, "max": 9999}
+    },
+    {
+      "id": "light.runtime_anchor",
+      "severity": "major",
+      "description": "Light radius should stay in expected tactical readability band.",
+      "assert": {"type": "range", "path": "light_state.runtime_radius", "min": 1, "max": 12}
+    },
+    {
+      "id": "light.ui_anchor",
+      "severity": "major",
+      "description": "UI-reported light radius should remain in expected range.",
+      "assert": {"type": "range", "path": "light_state.ui_radius", "min": 1, "max": 12}
+    },
+    {
+      "id": "light.stack_present",
+      "severity": "minor",
+      "description": "Light stack breakdown should be present for diagnostics.",
+      "assert": {"type": "exists", "path": "light_state.stack"}
+    },
+    {
+      "id": "naming.display_exists_when_raw",
+      "severity": "major",
+      "description": "Item display name should exist when a raw item sample exists.",
+      "when": [
+        {"type": "regex", "path": "naming_state.raw_name", "value": ".+"}
+      ],
+      "assert": {"type": "regex", "path": "naming_state.display_name", "value": ".+"}
+    },
+    {
+      "id": "naming.category_prefix_known",
+      "severity": "major",
+      "description": "Item category prefix should remain within known UI taxonomy.",
+      "when": [
+        {"type": "regex", "path": "naming_state.raw_name", "value": ".+"}
+      ],
+      "assert": {"type": "regex", "path": "naming_state.category_prefix", "value": "^(Consumable|Wondrous|Ammunition|Item)$"}
+    },
+    {
+      "id": "xp.event_source_exists_when_gain",
+      "severity": "major",
+      "description": "XP gain events should identify a source for post-run analysis.",
+      "when": [
+        {"type": "range", "path": "xp_state.raw_amount", "min": 1, "max": 1000000}
+      ],
+      "assert": {"type": "regex", "path": "xp_state.source", "value": ".+"}
+    },
+    {
+      "id": "xp.final_nonzero_when_raw",
+      "severity": "major",
+      "description": "Positive raw XP should produce positive final XP.",
+      "when": [
+        {"type": "range", "path": "xp_state.raw_amount", "min": 1, "max": 1000000}
+      ],
+      "assert": {"type": "range", "path": "xp_state.final_amount", "min": 1, "max": 1000000}
+    },
+    {
+      "id": "xp.multiplier_reasonable",
+      "severity": "major",
+      "description": "XP multiplier should remain in a sane, debuggable band.",
+      "when": [
+        {"type": "range", "path": "xp_state.raw_amount", "min": 1, "max": 1000000}
+      ],
+      "assert": {"type": "range", "path": "xp_state.multiplier", "min": 0.1, "max": 6.0}
+    },
+    {
+      "id": "protection.invalid_filtered_exists",
+      "severity": "major",
+      "description": "Protection invalid-pool diagnostics should exist for regression forensics.",
+      "assert": {"type": "exists", "path": "protection_state.invalid_pools_filtered"}
+    },
+    {
+      "id": "boss.unique_key_format",
+      "severity": "blocker",
+      "description": "Transition bosses must expose a reproducible unique key.",
+      "when": [
+        {"type": "eq", "path": "boss_state.is_transition_boss", "value": true}
+      ],
+      "assert": {"type": "regex", "path": "boss_state.unique_key", "value": "^transition_boss_depth_[0-9]+:.+"}
+    },
+    {
+      "id": "boss.spawn_source_transition",
+      "severity": "major",
+      "description": "Transition bosses should report transition_event spawn source.",
+      "when": [
+        {"type": "eq", "path": "boss_state.is_transition_boss", "value": true}
+      ],
+      "assert": {"type": "eq", "path": "boss_state.spawn_source", "value": "transition_event"}
+    },
+    {
+      "id": "aggro.source_present_when_wake",
+      "severity": "major",
+      "description": "Aggro propagation events should include source monster identity.",
+      "when": [
+        {"type": "range", "path": "aggro_state.wake_count", "min": 1, "max": 1000}
+      ],
+      "assert": {"type": "regex", "path": "aggro_state.source_monster", "value": ".+"}
+    },
+    {
+      "id": "aggro.radius_reasonable",
+      "severity": "minor",
+      "description": "Social aggro radius should remain in expected tactical range.",
+      "when": [
+        {"type": "range", "path": "aggro_state.wake_count", "min": 1, "max": 1000}
+      ],
+      "assert": {"type": "range", "path": "aggro_state.radius", "min": 1, "max": 20}
+    }
+  ]
+}

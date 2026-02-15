@@ -114,8 +114,10 @@ necromancer-godot/
 - [tutorial.md](tutorial.md) -- Tester-facing tutorial notes
 - [docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md](docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md) -- Canonical Beta v1.1 game design document
 - [docs/pdf/GAME_DESIGN_DOCUMENT_BETA_V1_1.pdf](docs/pdf/GAME_DESIGN_DOCUMENT_BETA_V1_1.pdf) -- PDF export of the Beta v1.1 game design document
-- [docs/manual/THE_NECROMANCER_MANUAL_BETA_V1_1.md](docs/manual/THE_NECROMANCER_MANUAL_BETA_V1_1.md) -- Canonical Beta v1.1 player's manual
-- [docs/pdf/THE_NECROMANCER_MANUAL_BETA_V1_1.pdf](docs/pdf/THE_NECROMANCER_MANUAL_BETA_V1_1.pdf) -- PDF export of the Beta v1.1 player's manual
+- [docs/GAME_OVERVIEW_2_PAGER_BETA_V1_1.md](docs/GAME_OVERVIEW_2_PAGER_BETA_V1_1.md) -- Beta v1.1 two-page overview
+- [docs/pdf/GAME_OVERVIEW_2_PAGER_BETA_V1_1.pdf](docs/pdf/GAME_OVERVIEW_2_PAGER_BETA_V1_1.pdf) -- PDF export of the two-page overview
+- [docs/manual/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.md](docs/manual/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.md) -- Canonical Beta v1.1 player's guide
+- [docs/pdf/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.pdf](docs/pdf/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.pdf) -- PDF export of the Beta v1.1 player's guide
 
 ## Credits
 

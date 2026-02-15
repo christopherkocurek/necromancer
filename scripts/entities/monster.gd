@@ -262,6 +262,52 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 		target = source
 		if ai_state != AIState.FLEEING:
 			ai_state = AIState.HUNTING
+		# Social creatures rapidly propagate contact to nearby allies.
+		if _is_social_caller():
+			_propagate_social_alert(source as Player)
+
+func _is_social_caller() -> bool:
+	if not monster_data:
+		return false
+	if has_friends_flag:
+		return true
+	if monster_data.has_flag("ORC") or monster_data.has_flag("MAN") or monster_data.has_flag("ELF"):
+		return true
+	var n: String = entity_name.to_lower()
+	return n.contains("ghoul")
+
+func _get_social_alert_radius() -> int:
+	if not monster_data:
+		return 6
+	if monster_data.has_flag("ORC"):
+		return 12
+	if monster_data.has_flag("MAN") or monster_data.has_flag("ELF") or entity_name.to_lower().contains("ghoul"):
+		return 10
+	return 8
+
+func _propagate_social_alert(source_player: Player) -> void:
+	if not GameManager.current_level or not is_instance_valid(source_player):
+		return
+	var radius: int = _get_social_alert_radius()
+	for entity in GameManager.current_level.entities:
+		if not is_instance_valid(entity) or not entity is Monster or entity == self:
+			continue
+		var ally: Monster = entity as Monster
+		if not ally.is_alive:
+			continue
+		var dist: int = _grid_distance(grid_position, ally.grid_position)
+		if dist > radius:
+			continue
+		# Orc/humanoid/ghoul social groups share targets aggressively.
+		ally.alertness = maxi(ally.alertness, Constants.ALERTNESS_QUITE_ALERT)
+		ally.target = source_player
+		ally.last_known_player_pos = source_player.grid_position
+		if ally.ai_state != AIState.FLEEING:
+			ally.ai_state = AIState.HUNTING
+		if ally.is_sleeping:
+			ally._wake_up()
+	if GameManager.current_level.has_method("add_floor_noise"):
+		GameManager.current_level.add_floor_noise(6)
 
 ## Build a hunting-gated intent readout for Look/Target/HUD.
 ## Returns:
@@ -1672,6 +1718,11 @@ func _spell_shriek() -> bool:
 				var dist: int = _grid_distance(grid_position, entity.grid_position)
 				if dist <= 10:
 					entity._wake_up()
+			if entity is Monster:
+				var ally: Monster = entity as Monster
+				ally.alertness = maxi(ally.alertness, Constants.ALERTNESS_QUITE_ALERT)
+				if is_instance_valid(GameManager.player):
+					ally.last_known_player_pos = GameManager.player.grid_position
 	return true
 
 func _spell_darkness(cast_target: Entity) -> bool:

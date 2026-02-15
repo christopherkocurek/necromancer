@@ -212,7 +212,7 @@ func log_message(text: String, color: Color = ThemeColors.TEXT_PRIMARY) -> void:
 # ============================================================================
 
 ## Tvals that require identification
-const IDENT_TVALS: Array[int] = [40, 45, 55, 75, 80]  # Amulets, Rings, Scrolls, Potions, Food/Herbs
+const IDENT_TVALS: Array[int] = [39, 40, 45, 55, 75, 80]  # Lights, Amulets, Rings, Scrolls, Potions, Food/Herbs
 
 ## Food svals that are always identified (basic food, not herbs)
 const ALWAYS_IDENTIFIED_FOOD_SVALS: Array[int] = [1, 35, 36, 37, 38, 39, 40]  # Waymeal, Travel Bread, Dried Meat, Lembas, Cram, etc.
@@ -271,9 +271,7 @@ func identify_item(item: Variant) -> void:
 	EventBus.item_identified.emit(item)
 	# Grant XP for first-time identification
 	if first_time and player:
-		var xp_amount: int = 10  # Consumable default
-		if "tval" in item and item.tval in [40, 45]:  # Ring or amulet
-			xp_amount = 25
+		var xp_amount: int = _get_identify_xp(item)
 		player.gain_experience(xp_amount, "identify")
 
 ## Get the display name for an item (respects identification)
@@ -287,8 +285,79 @@ func get_item_display_name(item: Variant) -> String:
 
 func _get_real_name(item: Variant) -> String:
 	if "name" in item:
-		return item.name
+		return _format_item_category_name(item, item.name)
 	return "Unknown Item"
+
+func _format_item_category_name(item: Variant, raw_name: String) -> String:
+	if item == null or not "tval" in item:
+		return raw_name
+	var name: String = raw_name.strip_edges()
+	var lower_name: String = name.to_lower()
+	var prefix_parts: Dictionary = _extract_quality_prefix(name)
+	var quality_prefix: String = str(prefix_parts.get("prefix", ""))
+	var base_name: String = str(prefix_parts.get("name", name))
+	var base_lower: String = base_name.to_lower()
+	match int(item.tval):
+		39:
+			if lower_name.begins_with("ring of ") or lower_name.begins_with("amulet of ") or lower_name.begins_with("scroll of "):
+				return name
+			if base_lower.contains("torch") or base_lower.contains("lantern") or base_lower.contains("lamp") or base_lower.contains("light"):
+				return name
+			return "%sLight of %s" % [quality_prefix, base_name]
+		40:
+			if base_lower.begins_with("amulet of "):
+				return name
+			return "%sAmulet of %s" % [quality_prefix, base_name]
+		45:
+			if base_lower.begins_with("ring of "):
+				return name
+			return "%sRing of %s" % [quality_prefix, base_name]
+		55:
+			if base_lower.begins_with("scroll of "):
+				return name
+			return "%sScroll of %s" % [quality_prefix, base_name]
+	return name
+
+func _extract_quality_prefix(name: String) -> Dictionary:
+	var prefixes: Array[String] = ["Improved ", "Fine ", "Flawless ", "Masterwork ", "Mithril "]
+	for prefix in prefixes:
+		if name.begins_with(prefix):
+			return {"prefix": prefix, "name": name.substr(prefix.length())}
+	return {"prefix": "", "name": name}
+
+func _get_identify_xp(item: Variant) -> int:
+	var base: int = 12
+	if item != null and "tval" in item:
+		match int(item.tval):
+			39:
+				base = 30
+			40, 45:
+				base = 36
+			55:
+				base = 20
+			75:
+				base = 16
+			80:
+				base = 12
+			_:
+				base = 12
+	if item != null and "cost" in item:
+		base += clampi(int(item.cost) / 250, 0, 20)
+	return clampi(base, 8, 80)
+
+func get_valid_dice_string(dice_str: String) -> String:
+	if dice_str.is_empty():
+		return ""
+	var parts: PackedStringArray = dice_str.to_lower().split("d")
+	if parts.size() != 2:
+		return ""
+	if not parts[0].is_valid_int() or not parts[1].is_valid_int():
+		return ""
+	var dice: int = int(parts[0])
+	var sides: int = int(parts[1])
+	if dice < 1 or sides < 1:
+		return ""
+	return "%dd%d" % [dice, sides]
 
 func _get_unidentified_name(item: Variant) -> String:
 	if not "tval" in item or not "sval" in item:
@@ -298,6 +367,7 @@ func _get_unidentified_name(item: Variant) -> String:
 		return flavor_names[key]
 	# Fallback generic names
 	match item.tval:
+		39: return "Unknown Light"
 		40: return "Unknown Amulet"
 		45: return "Unknown Ring"
 		55: return "Unknown Scroll"

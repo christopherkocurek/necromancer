@@ -233,6 +233,7 @@ var moved_last_turn: bool = false  # For Dodging/Concentration abilities
 # Shield tracking for Blocking ability
 var _shield_dice: int = 0
 var _shield_sides: int = 0
+var _protection_pools: Array[Dictionary] = []  # [{dice, sides, source, is_shield}]
 
 # Opening Strike tracking: monsters we've already attacked
 var _opening_strike_used: Dictionary = {}  # entity instance_id -> bool
@@ -1656,10 +1657,8 @@ func try_drain_stat(stat_name: String, drain_amount: int) -> int:
 	return drain_amount
 
 func _recalculate_protection() -> void:
-	# Sum up protection dice from all armor pieces
-	var total_dice: int = 0
-	var total_sides: int = 0
-	# Track shield dice separately for Blocking ability
+	# Aggregate as true pools (e.g. 2d4 + 1d2 + 1d1), not collapsed max-sides dice.
+	_protection_pools.clear()
 	_shield_dice = 0
 	_shield_sides = 0
 
@@ -1667,46 +1666,120 @@ func _recalculate_protection() -> void:
 		var item = equipment[slot]
 		if item == null:
 			continue
-		# Parse protection_dice string like "1d4" or "2d6"
 		if "protection_dice" in item and item.protection_dice != "":
-			var parsed := _parse_dice_string(item.protection_dice)
-			if parsed.dice > 0:
-				# Track shield dice separately
-				if slot == "off_hand":
-					_shield_dice = parsed.dice
-					_shield_sides = parsed.sides
-				total_dice += parsed.dice
-				if parsed.sides > total_sides:
-					total_sides = parsed.sides
+			var parsed: Dictionary = _parse_dice_string(item.protection_dice)
+			var dice: int = int(parsed.get("dice", 0))
+			var sides: int = int(parsed.get("sides", 0))
+			if dice >= 1 and sides >= 1:
+				var is_shield_pool: bool = slot == "off_hand"
+				if is_shield_pool:
+					_shield_dice = dice
+					_shield_sides = sides
+				_protection_pools.append({
+					"dice": dice,
+					"sides": sides,
+					"source": slot,
+					"is_shield": is_shield_pool,
+				})
 
-	protection_dice = total_dice
-	protection_sides = total_sides
+	# Temporary status pools (e.g. thornvine) are additive and explicit.
+	for pool in _get_temporary_protection_pools():
+		var dice: int = int(pool.get("dice", 0))
+		var sides: int = int(pool.get("sides", 0))
+		if dice >= 1 and sides >= 1:
+			_protection_pools.append(pool)
+
+	var agg: Dictionary = get_protection_min_max()
+	protection_dice = int(agg.get("min", 0))
+	protection_sides = int(agg.get("max", 0))
 
 ## Override protection roll to handle shield Blocking ability.
 ## When player has EVN_BLOCKING and did not move last turn, shield dice are doubled.
 func roll_protection(_damage_type: int = 1) -> int:
-	if protection_dice <= 0 or protection_sides <= 0:
+	if _protection_pools.is_empty():
 		return 0
 
 	var total: int = 0
-	# Roll non-shield armor dice normally
-	var armor_dice: int = protection_dice - _shield_dice
-	for i in range(armor_dice):
-		total += randi_range(1, protection_sides)
-
-	# Roll shield dice (doubled if Blocking is active)
-	var shield_mult: int = 1
-	if _shield_dice > 0 and has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_BLOCKING):
-		if not moved_last_turn:
-			shield_mult = 2
-	for i in range(_shield_dice * shield_mult):
-		total += randi_range(1, _shield_sides if _shield_sides > 0 else protection_sides)
+	for pool in _protection_pools:
+		var dice: int = int(pool.get("dice", 0))
+		var sides: int = int(pool.get("sides", 0))
+		if dice < 1 or sides < 1:
+			continue
+		var roll_dice: int = dice
+		if bool(pool.get("is_shield", false)) \
+			and has_ability(Constants.Skill.S_EVN, Constants.EvasionAbility.EVN_BLOCKING) \
+			and not moved_last_turn:
+			roll_dice *= 2
+		for _i in range(roll_dice):
+			total += randi_range(1, sides)
 
 	# Mithril Skin: innate +1d2 protection
 	if trait_effect_id == "mithril_skin":
 		total += randi_range(1, 2)
 
 	return total
+
+func _get_temporary_protection_pools() -> Array[Dictionary]:
+	if has_meta("temporary_protection_pools"):
+		var pools: Variant = get_meta("temporary_protection_pools")
+		if pools is Array:
+			return pools
+	return []
+
+func set_temporary_protection_pool(effect_id: StringName, dice: int, sides: int) -> void:
+	var pools: Array[Dictionary] = _get_temporary_protection_pools()
+	var key: String = String(effect_id)
+	var updated: bool = false
+	for i in range(pools.size()):
+		var pool: Dictionary = pools[i]
+		if str(pool.get("effect_id", "")) == key:
+			pools[i] = {"effect_id": key, "dice": maxi(0, dice), "sides": maxi(0, sides), "source": key, "is_shield": false}
+			updated = true
+			break
+	if not updated:
+		pools.append({"effect_id": key, "dice": maxi(0, dice), "sides": maxi(0, sides), "source": key, "is_shield": false})
+	set_meta("temporary_protection_pools", pools)
+	_recalculate_protection()
+
+func clear_temporary_protection_pool(effect_id: StringName) -> void:
+	if not has_meta("temporary_protection_pools"):
+		return
+	var pools: Array[Dictionary] = _get_temporary_protection_pools()
+	var key: String = String(effect_id)
+	var filtered: Array[Dictionary] = []
+	for pool in pools:
+		if str(pool.get("effect_id", "")) != key:
+			filtered.append(pool)
+	set_meta("temporary_protection_pools", filtered)
+	_recalculate_protection()
+
+func get_protection_pool_summary() -> String:
+	var parts: Array[String] = []
+	for pool in _protection_pools:
+		var dice: int = int(pool.get("dice", 0))
+		var sides: int = int(pool.get("sides", 0))
+		if dice >= 1 and sides >= 1:
+			parts.append("%dd%d" % [dice, sides])
+	if trait_effect_id == "mithril_skin":
+		parts.append("1d2")
+	if parts.is_empty():
+		return "none"
+	return " + ".join(parts)
+
+func get_protection_min_max() -> Dictionary:
+	var min_total: int = 0
+	var max_total: int = 0
+	for pool in _protection_pools:
+		var dice: int = int(pool.get("dice", 0))
+		var sides: int = int(pool.get("sides", 0))
+		if dice < 1 or sides < 1:
+			continue
+		min_total += dice
+		max_total += dice * sides
+	if trait_effect_id == "mithril_skin":
+		min_total += 1
+		max_total += 2
+	return {"min": min_total, "max": max_total}
 
 func _parse_dice_string(dice_str: String) -> Dictionary:
 	# Parse "NdM" format
@@ -3054,71 +3127,118 @@ func award_stealth_exploration_xp(new_tiles: int) -> void:
 
 ## Get player's effective light radius from equipped light source
 func get_light_radius() -> int:
+	var breakdown: Dictionary = get_light_radius_breakdown()
+	return int(breakdown.get("final_radius", 1))
+
+func get_light_radius_breakdown() -> Dictionary:
 	# BLIND: Can only see self tile
 	if status_fx and status_fx.is_blind():
-		return 1
+		return {
+			"base_radius": 1,
+			"light_source_bonus": 0,
+			"equip_light_bonus": 0,
+			"status_bonus": 0,
+			"status_penalty": 0,
+			"depth_modifier": 0,
+			"dark_aura_penalty": 0,
+			"final_radius": 1,
+		}
 
 	var base_radius: int = 1  # Can see adjacent tiles even without a light
+	var light_source_bonus: int = 0
+	var equip_light_bonus: int = 0
+	var status_bonus: int = 0
+	var status_penalty: int = 0
+	var depth_modifier: int = 0
+	var dark_aura_penalty: int = 0
 	var light_item = equipment.get("light")
 	if light_item != null and "tval" in light_item:
+		var sval: int = light_item.sval if "sval" in light_item else 0
+		var is_permanent: bool = sval in [2, 8, 9]  # Elven Light, Jewel-lamp, Star-glass
 		# Check fuel remaining (if applicable)
-		if "fuel" in light_item and light_item.fuel <= 0:
-			return base_radius  # Light source exhausted
+		if "fuel" in light_item and light_item.fuel <= 0 and not is_permanent:
+			return {
+				"base_radius": base_radius,
+				"light_source_bonus": 0,
+				"equip_light_bonus": equip_light_bonus,
+				"status_bonus": status_bonus,
+				"status_penalty": status_penalty,
+				"depth_modifier": depth_modifier,
+				"dark_aura_penalty": dark_aura_penalty,
+				"final_radius": base_radius,
+			}
 
 		# Map light source sval to radius
-		var sval: int = light_item.sval if "sval" in light_item else 0
 		match sval:
 			0:  # Wooden Torch
-				base_radius += 2
+				light_source_bonus += 0
 			1:  # Brass Lantern
-				base_radius += 3
+				light_source_bonus += 1
 			2:  # Elven Light
-				base_radius += 2
+				light_source_bonus += 2
 			3:  # Mallorn Torch
-				base_radius += 3
+				light_source_bonus += 3
 			8:  # Feanorian Lamp
-				base_radius += 4
+				light_source_bonus += 4
+			9:  # Star-glass
+				light_source_bonus += 2
 			_:  # Unknown light source
-				base_radius += 2
+				light_source_bonus += 2
+	base_radius += light_source_bonus
 
 	# Light-bearing equipment (weapons/armor/jewelry egos) contributes to radius.
 	if has_equip_flag("LIGHT"):
-		base_radius += 1
+		equip_light_bonus += 1
 	if has_equip_flag("LIGHT_CURSE"):
-		base_radius = maxi(1, base_radius - 1)
+		status_penalty -= 1
 
 	# Keen Senses (active pulse): +1 light radius while active.
 	if _keen_senses_turns > 0:
-		base_radius += 1
+		status_bonus += 1
 
 	# Light of the Eldar (active aura): fixed +2.
 	if _is_light_of_eldar_active():
-		base_radius += 2
+		status_bonus += 2
 
 	# DARKENED: Reduce light radius by 2 (minimum 1)
 	if status_fx and status_fx.has_effect(Constants.EFFECT_DARKENED):
-		base_radius = maxi(1, base_radius - 2)
+		status_penalty -= 2
 
 	# BURNING: Ironically gives +1 light (you're on fire)
 	if status_fx and status_fx.has_effect(Constants.EFFECT_BURNING):
-		base_radius += 1
+		status_bonus += 1
 
 	# PHOSPHOR: +1 light radius from Phosphorescent Moss
 	if status_fx and status_fx.has_effect(Constants.EFFECT_PHOSPHOR):
-		base_radius += 1
+		status_bonus += 1
+
+	base_radius += equip_light_bonus
+	base_radius += status_bonus
+	base_radius += status_penalty
 
 	# Depth darkness modifier (deeper layers suppress light)
 	if GameManager.current_level:
-		var depth_mod: int = LayerConfig.get_darkness_modifier(GameManager.current_level.depth)
-		base_radius = maxi(1, base_radius + depth_mod)
+		depth_modifier = LayerConfig.get_darkness_modifier(GameManager.current_level.depth)
+		base_radius += depth_modifier
 
 	# Dark Aura: adjacent monsters with DARK_AURA suppress light by 1 each
 	if GameManager.current_level:
 		var dark_aura_count: int = _count_adjacent_dark_aura()
 		if dark_aura_count > 0:
-			base_radius = maxi(1, base_radius - dark_aura_count)
+			dark_aura_penalty = dark_aura_count
+			base_radius -= dark_aura_count
 
-	return base_radius
+	base_radius = maxi(1, base_radius)
+	return {
+		"base_radius": 1,
+		"light_source_bonus": light_source_bonus,
+		"equip_light_bonus": equip_light_bonus,
+		"status_bonus": status_bonus,
+		"status_penalty": status_penalty,
+		"depth_modifier": depth_modifier,
+		"dark_aura_penalty": dark_aura_penalty,
+		"final_radius": base_radius,
+	}
 
 ## Count adjacent monsters that have the DARK_AURA flag
 func _count_adjacent_dark_aura() -> int:
@@ -3159,7 +3279,9 @@ func has_light() -> bool:
 	var light_item = equipment.get("light")
 	if light_item == null:
 		return false
-	if "fuel" in light_item and light_item.fuel <= 0:
+	var sval: int = int(light_item.sval) if "sval" in light_item else -1
+	var is_permanent: bool = sval in [2, 8, 9]
+	if "fuel" in light_item and light_item.fuel <= 0 and not is_permanent:
 		return false
 	return true
 

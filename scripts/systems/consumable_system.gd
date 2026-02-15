@@ -387,8 +387,7 @@ static func _apply_thornvine(player: Player, dice_bonus: int, duration: int) -> 
 	if player.status_fx and player.status_fx.has_effect(&"thornvine"):
 		player.status_fx.remove_effect(&"thornvine", false)
 
-	player.protection_dice += dice_bonus
-	player.set_meta("thornvine_protection", dice_bonus)
+	player.set_temporary_protection_pool(&"thornvine", dice_bonus, 2)
 	player.apply_status("thornvine", duration)
 
 ## Restore all 4 base stats by up to the given amount (won't exceed original base)

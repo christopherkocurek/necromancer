@@ -2382,6 +2382,9 @@ func _observe_visible_monsters() -> void:
 					entity.visible = true
 
 			if is_visible:
+				var first_sighting: bool = false
+				if entity.monster_data and "index" in entity.monster_data:
+					first_sighting = monster_memory.get_observation_count(entity.monster_data.index) == 0
 				# Deep Memory: on first sighting, grant Lore/3 bonus observations
 				if has_deep_memory and entity.monster_data and "index" in entity.monster_data:
 					var monster_id: int = entity.monster_data.index
@@ -2392,6 +2395,10 @@ func _observe_visible_monsters() -> void:
 						var monster_name: String = entity.entity_name if entity.entity_name else "creature"
 						GameManager.log_message("Deep Memory: You recall lore about the %s." % monster_name, ThemeColors.SKILL_LORE)
 				monster_memory.record_observation(entity)
+				# Sil-style encounter XP: first sighting of a monster type grants a small lore reward.
+				if first_sighting and player:
+					var encounter_xp: int = maxi(6, int(entity.experience_value * 0.20))
+					player.gain_experience(encounter_xp, "encounter")
 				# Update health bar based on knowledge tier (use effective tier with lore bonus)
 				if entity.monster_data and "index" in entity.monster_data:
 					var tier: int = monster_memory.get_effective_tier(entity.monster_data.index, player_lore)

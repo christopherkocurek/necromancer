@@ -1,0 +1,28 @@
+{
+	"schema_version": "v1",
+	"id": "social_aggro_v1",
+	"name": "Social aggro propagation (live)",
+	"mode": "deterministic",
+	"seed": 106,
+	"severity": "major",
+	"tags": ["ai", "aggro", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "Aggro Harness"}},
+		{"op": "simulate_social_aggro", "args": {"source_monster": "harness_orc_a", "ally_count": 2}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_social_aggro",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "aggro"}}],
+			"assertions": [
+				{"type": "contains", "path": "aggro_state.alerted_monsters", "value": "harness_orc_1", "severity": "major"},
+				{"type": "range", "path": "aggro_state.wake_count", "min": 1, "max": 8, "severity": "major"},
+				{"type": "range", "path": "aggro_state.target_updates", "min": 1, "max": 8, "severity": "minor"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

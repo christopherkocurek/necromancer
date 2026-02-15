@@ -1,0 +1,29 @@
+{
+	"schema_version": "v1",
+	"id": "identify_naming_v1",
+	"name": "Item naming and identify state (live)",
+	"mode": "deterministic",
+	"seed": 102,
+	"severity": "major",
+	"tags": ["naming", "identify", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "Naming Harness"}},
+		{"op": "set_item_sample", "args": {"raw_name": "Potion of Healing", "tval": 75, "sval": 2, "identified": false}},
+		{"op": "identify_item_sample", "args": {}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_naming_identified",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "naming"}}],
+			"assertions": [
+				{"type": "contains", "path": "naming_state.display_name", "value": "Healing", "severity": "major"},
+				{"type": "eq", "path": "naming_state.identified", "value": true, "severity": "major"},
+				{"type": "regex", "path": "naming_state.category_prefix", "value": "^(Consumable|Wondrous|Item)$", "severity": "minor"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

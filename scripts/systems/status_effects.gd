@@ -378,11 +378,9 @@ func _on_effect_removed(effect_id: StringName) -> void:
 				if owner is Player:
 					owner._recalculate_stats()
 		&"thornvine":
-			# Remove temporary protection dice bonus
-			if owner.has_meta("thornvine_protection"):
-				var bonus: int = owner.get_meta("thornvine_protection")
-				owner.protection_dice -= bonus
-				owner.remove_meta("thornvine_protection")
+			# Remove temporary protection pool from Thornvine Root.
+			if owner is Player:
+				(owner as Player).clear_temporary_protection_pool(&"thornvine")
 		Constants.EFFECT_BATTLE_FURY:
 			# Reverse Horn of Challenge stat modifications
 			if owner.has_meta("battle_fury_str"):

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>GAME_DESIGN_DOCUMENT_BETA_V1_1</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#the-necromancer" id="toc-the-necromancer">The
+Necromancer</a>
+<ul>
+<li><a href="#game-design-document-beta-v1.1"
+id="toc-game-design-document-beta-v1.1">Game Design Document (Beta
+v1.1)</a></li>
+<li><a href="#design-intent" id="toc-design-intent">1. Design
+Intent</a></li>
+<li><a href="#pillars" id="toc-pillars">2. Pillars</a></li>
+<li><a href="#core-run-structure" id="toc-core-run-structure">3. Core
+Run Structure</a></li>
+<li><a href="#beta-v1.1-win-state" id="toc-beta-v1.1-win-state">4. Beta
+v1.1 Win State</a></li>
+<li><a href="#action-economy-policy" id="toc-action-economy-policy">5.
+Action Economy Policy</a></li>
+<li><a href="#economy-design" id="toc-economy-design">6. Economy
+Design</a></li>
+<li><a href="#light-economy" id="toc-light-economy">6.1 Light
+Economy</a></li>
+<li><a href="#voice-economy" id="toc-voice-economy">6.2 Voice
+Economy</a></li>
+<li><a href="#utility-and-consumables"
+id="toc-utility-and-consumables">6.3 Utility and Consumables</a></li>
+<li><a href="#combat-stealth-and-information"
+id="toc-combat-stealth-and-information">7. Combat, Stealth, and
+Information</a></li>
+<li><a href="#combat-identity" id="toc-combat-identity">7.1 Combat
+Identity</a></li>
+<li><a href="#stealth-role" id="toc-stealth-role">7.2 Stealth
+Role</a></li>
+<li><a href="#information-surfaces" id="toc-information-surfaces">7.3
+Information Surfaces</a></li>
+<li><a href="#ui-and-presentation-requirements"
+id="toc-ui-and-presentation-requirements">8. UI and Presentation
+Requirements</a></li>
+<li><a href="#audio-direction" id="toc-audio-direction">9. Audio
+Direction</a></li>
+<li><a href="#scope-boundaries-beta-v1.1"
+id="toc-scope-boundaries-beta-v1.1">10. Scope Boundaries (Beta
+v1.1)</a></li>
+<li><a href="#validation-gates" id="toc-validation-gates">11. Validation
+Gates</a></li>
+<li><a href="#risks-and-mitigations" id="toc-risks-and-mitigations">12.
+Risks and Mitigations</a></li>
+<li><a href="#canonical-documentation-set"
+id="toc-canonical-documentation-set">13. Canonical Documentation
+Set</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="the-necromancer">The Necromancer</h1>
+<h2 id="game-design-document-beta-v1.1">Game Design Document (Beta
+v1.1)</h2>
+<p><strong>Version:</strong> Beta v1.1<br />
+<strong>Date:</strong> 2026-02-14<br />
+<strong>Engine:</strong> Godot 4.6<br />
+<strong>Positioning:</strong> A Third Age tactical roguelike in the
+Sil-Q lineage, rebuilt for modern readability while preserving
+permadeath rigor.</p>
+<h2 id="design-intent">1. Design Intent</h2>
+<p>The Necromancer is built around one uncompromising loop:
+<strong>delve, recover, escape</strong>.</p>
+<p>The player enters Dol Guldur, descends under escalating pressure,
+secures <strong>Thrain’s map and key</strong>, then ascends to
+escape.</p>
+<p>Core design law: - decisions must remain meaningful under stress, -
+information must be incomplete but legible, - failure must be teachable,
+- victory must be earned, not accumulated.</p>
+<h2 id="pillars">2. Pillars</h2>
+<ol type="1">
+<li><p><strong>Tolkien Fidelity</strong> Language, threats, and stakes
+are anchored to the Third Age and written with literary
+restraint.</p></li>
+<li><p><strong>Sil-Q Mechanical DNA</strong> Tactical positioning,
+high-lethality exchanges, and pressure-based resource play remain
+central.</p></li>
+<li><p><strong>Agency Under Constraint</strong> At least one
+strategically valid alternative should exist in most dangerous
+turns.</p></li>
+<li><p><strong>Readable Systems</strong> Complexity is welcome; opacity
+is not. UI/logs must let players reason about outcomes.</p></li>
+<li><p><strong>Permadeath Integrity</strong> Losses stand. Mastery is
+learned through iteration.</p></li>
+</ol>
+<h2 id="core-run-structure">3. Core Run Structure</h2>
+<ol type="1">
+<li>Character setup (race, house, trait, stats).</li>
+<li>Early-floor stabilization (weapon line, defense line, light
+line).</li>
+<li>Mid-depth specialization (skills and abilities with explicit
+tradeoffs).</li>
+<li>Objective acquisition (Thrain’s map and key).</li>
+<li>Ascent phase under accumulated pressure.</li>
+<li>Escape or death.</li>
+</ol>
+<h2 id="beta-v1.1-win-state">4. Beta v1.1 Win State</h2>
+<p>Beta v1.1 uses a practical completion gate: - Upstairs on floor 1
+checks objective state. - Escape is allowed only if the player has
+<strong>Thrain’s map and key</strong>. - Success triggers:
+<code>"Congratulations, you escaped! Now to meet Gandalf..."</code> -
+Player returns to menu.</p>
+<p>This is intentionally a beta endpoint before a full exterior chapter
+is shipped.</p>
+<h2 id="action-economy-policy">5. Action Economy Policy</h2>
+<p>Turn cost must track impact.</p>
+<ul>
+<li>Movement and attacks consume full turns.</li>
+<li>Non-transformative setup/stance/utility actions should generally be
+<strong>minor actions</strong>.</li>
+<li>This includes cases like parry prep, mark-like setup, and circular
+guard style activation unless balance demands exception.</li>
+</ul>
+<p>Rationale: active tactical play should not be structurally weaker
+than passive play.</p>
+<h2 id="economy-design">6. Economy Design</h2>
+<h2 id="light-economy">6.1 Light Economy</h2>
+<p>Target behavior: - darkness creates pressure and uncertainty, - depth
+remains tactically playable, - players can plan around light rather than
+lose to arbitrary blindness.</p>
+<p>Beta v1.1 anchors: - Torch: +2 - Lantern: +3 - Elvish Light: +2,
+infinite - Mallorn Torch: +3 - Jeweled/Feanorian Lamp: +4, infinite -
+Light of the Eldar aura: +2</p>
+<h2 id="voice-economy">6.2 Voice Economy</h2>
+<p>Voice should feel scarce, powerful, and build-defining.</p>
+<p>Beta direction: - reduce exploit loops from sustained effects, -
+increase opportunity cost of sustain states, - preserve viability of
+lore-forward runs.</p>
+<h2 id="utility-and-consumables">6.3 Utility and Consumables</h2>
+<p>If an item is prepared for utility use, activation path should be
+fast and reliable in combat context. Inventory micromanagement should
+not be the dominant difficulty.</p>
+<h2 id="combat-stealth-and-information">7. Combat, Stealth, and
+Information</h2>
+<h2 id="combat-identity">7.1 Combat Identity</h2>
+<ul>
+<li>positional advantage over raw stat inflation,</li>
+<li>high lethality with recoverable tactical errors,</li>
+<li>encounter triage as expected skill.</li>
+</ul>
+<h2 id="stealth-role">7.2 Stealth Role</h2>
+<p>Stealth is a primary survival language: - controls engagement order,
+- reduces chain pulls, - enables objective-focused routing.</p>
+<h2 id="information-surfaces">7.3 Information Surfaces</h2>
+<p>Player must be able to read: - immediate threat pressure, - status
+burden (including poison decay expectations), - actionable options
+without menu friction.</p>
+<h2 id="ui-and-presentation-requirements">8. UI and Presentation
+Requirements</h2>
+<ol type="1">
+<li><strong>Scale and framing</strong>: default startup should cleanly
+frame full playfield/HUD on common desktop resolutions, notably
+1920x1080 behavior.</li>
+<li><strong>HUD integrity</strong>: core widgets (health, voice/mana
+analogs, XP gem, inventory and hotbar clusters) must retain intentional
+layout hierarchy.</li>
+<li><strong>Death screen</strong>: centered and legible; post-run
+analysis utility is part of design quality.</li>
+<li><strong>Title screen</strong>: poetic quest framing in thematic
+register.</li>
+</ol>
+<h2 id="audio-direction">9. Audio Direction</h2>
+<p>Audio priorities: - gameplay readability first, - atmosphere second,
+- avoid repetitive/grating cues, - maintain clear event-to-sound
+mapping.</p>
+<h2 id="scope-boundaries-beta-v1.1">10. Scope Boundaries (Beta
+v1.1)</h2>
+<p>In scope: - complete beta run loop with gated escape, - stable build
+identities, - functioning light/voice/utility systems, - coherent docs
+for internal playtest.</p>
+<p>Out of scope for this milestone: - full post-escape exterior
+campaign, - final narrative epilogues, - final long-term balance
+lock.</p>
+<h2 id="validation-gates">11. Validation Gates</h2>
+<p>Release candidate must pass: 1. build and launch reliability, 2. no
+critical UI break in core HUD flow, 3. escape gate correctness (Thrain’s
+map + key), 4. no known blocking activation bug for intended utility
+items, 5. manual smoke pass on light/voice/action economy behavior, 6.
+docs in sync: GDD + Tutorial + Player’s Guide.</p>
+<h2 id="risks-and-mitigations">12. Risks and Mitigations</h2>
+<ul>
+<li><p><strong>Over-oppression drift</strong> (darkness/resource
+pressure too severe): depth-band telemetry and targeted tuning.</p></li>
+<li><p><strong>Action tax regression</strong> (active play punished):
+automated/targeted audit on turn consumption for non-attack utility
+actions.</p></li>
+<li><p><strong>UI trust erosion</strong> (mispositioned HUD, unclear
+status): prioritize high-visibility UI fixes before feature
+additions.</p></li>
+<li><p><strong>Doc drift</strong> (game and guide diverge): docs update
+in same release branch as balance/UX changes.</p></li>
+</ul>
+<h2 id="canonical-documentation-set">13. Canonical Documentation
+Set</h2>
+<ul>
+<li><code>docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md</code></li>
+<li><code>docs/GAME_OVERVIEW_2_PAGER_BETA_V1_1.md</code></li>
+<li><code>docs/manual/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.md</code></li>
+<li><code>tutorial.md</code></li>
+</ul>
+</body>
+</html>

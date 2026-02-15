@@ -1,0 +1,19 @@
+@page {
+  size: Letter;
+  margin: 0.9in 0.85in 0.95in 0.85in;
+}
+
+body {
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  font-size: 11pt;
+  line-height: 1.35;
+  color: #1f1b16;
+}
+
+h1, h2, h3 { color: #241a12; page-break-after: avoid; }
+h1 { font-size: 21pt; }
+h2 { font-size: 15pt; margin-top: 0.9em; }
+h3 { font-size: 12pt; margin-top: 0.7em; }
+
+img { max-width: 100%; height: auto; }
+p, li { margin: 0.22em 0; }

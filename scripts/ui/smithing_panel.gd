@@ -195,8 +195,10 @@ func _populate_items_for_recipe() -> void:
 				var display: String = _get_item_display_name(template)
 				if "damage_dice" in template and template.damage_dice != "":
 					display += " (%s)" % template.damage_dice
-				elif "protection_dice" in template and template.protection_dice != "" and template.protection_dice != "0d0":
-					display += " [%s]" % template.protection_dice
+				elif "protection_dice" in template and template.protection_dice != "":
+					var prot: String = GameManager.get_valid_dice_string(template.protection_dice)
+					if not prot.is_empty():
+						display += " [%s]" % prot
 				item_list.add_item(_wrap_list_text(display))
 
 			# Show Mithril as optional material (if player has any)
@@ -388,7 +390,9 @@ func _update_info() -> void:
 		if "damage_dice" in selected_template and selected_template.damage_dice != "":
 			lines.append("Damage: %s" % selected_template.damage_dice)
 		if "protection_dice" in selected_template and selected_template.protection_dice != "":
-			lines.append("Protection: %s" % selected_template.protection_dice)
+			var prot: String = GameManager.get_valid_dice_string(selected_template.protection_dice)
+			if not prot.is_empty():
+				lines.append("Protection: %s" % prot)
 		if "evasion_bonus" in selected_template and selected_template.evasion_bonus != 0:
 			lines.append("Evasion: %+d" % selected_template.evasion_bonus)
 		lines.append("")
@@ -531,8 +535,10 @@ func _handle_type_selection(index: int) -> void:
 		var display: String = _get_item_display_name(subtype)
 		if "damage_dice" in subtype and subtype.damage_dice != "":
 			display += " (%s)" % subtype.damage_dice
-		elif "protection_dice" in subtype and subtype.protection_dice != "" and subtype.protection_dice != "0d0":
-			display += " [%s]" % subtype.protection_dice
+		elif "protection_dice" in subtype and subtype.protection_dice != "":
+			var prot: String = GameManager.get_valid_dice_string(subtype.protection_dice)
+			if not prot.is_empty():
+				display += " [%s]" % prot
 		item_list.add_item(_wrap_list_text(display))
 
 	_update_info()
@@ -576,7 +582,9 @@ func _start_reforge_mastery(depth: int, forge_bonus: int) -> void:
 		if "damage_dice" in item and item.damage_dice != "":
 			display += " (%s)" % item.damage_dice
 		elif "protection_dice" in item and item.protection_dice != "":
-			display += " [%s]" % item.protection_dice
+			var prot: String = GameManager.get_valid_dice_string(item.protection_dice)
+			if not prot.is_empty():
+				display += " [%s]" % prot
 		item_list.add_item(_wrap_list_text(display))
 
 	forge_button.disabled = true
@@ -635,6 +643,8 @@ func _on_smithing_failed(_item: Variant, _reason: String) -> void:
 func _get_item_display_name(item: Variant) -> String:
 	if item == null:
 		return "Unknown"
+	if GameManager:
+		return GameManager.get_item_display_name(item)
 	if "name" in item:
 		return item.name
 	return "Unknown Item"

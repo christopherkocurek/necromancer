@@ -1,0 +1,29 @@
+{
+	"schema_version": "v1",
+	"id": "transition_boss_v1",
+	"name": "Transition boss identity (live)",
+	"mode": "deterministic",
+	"seed": 104,
+	"severity": "blocker",
+	"tags": ["boss", "transition", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "Boss Harness"}},
+		{"op": "spawn_transition_boss", "args": {"displayed_title": "Durin's Bane", "depth": 3}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_boss_identity",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "boss"}}],
+			"assertions": [
+				{"type": "exists", "path": "boss_state.base_monster_name", "severity": "major"},
+				{"type": "eq", "path": "boss_state.displayed_title", "value": "Durin's Bane", "severity": "blocker"},
+				{"type": "exists", "path": "boss_state.unique_key", "severity": "blocker"},
+				{"type": "eq", "path": "boss_state.is_transition_boss", "value": true, "severity": "major"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

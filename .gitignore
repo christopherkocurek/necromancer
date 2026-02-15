@@ -40,3 +40,4 @@ bot_results_*/
 builds/
 godot_crash.log
 godot_gl.log
+artifacts/

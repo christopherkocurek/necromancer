@@ -1,0 +1,29 @@
+{
+	"schema_version": "v1",
+	"id": "xp_sources_v1",
+	"name": "XP source accounting (live)",
+	"mode": "deterministic",
+	"seed": 105,
+	"severity": "major",
+	"tags": ["xp", "progression", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "XP Harness"}},
+		{"op": "gain_xp", "args": {"source": "kill", "raw_amount": 12, "event_context": "elite_bonus"}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_xp_ledger",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "xp"}}],
+			"assertions": [
+				{"type": "eq", "path": "xp_state.source", "value": "kill", "severity": "minor"},
+				{"type": "eq", "path": "xp_state.raw_amount", "value": 12, "severity": "minor"},
+				{"type": "eq", "path": "xp_state.final_amount", "value": 15, "severity": "major"},
+				{"type": "contains", "path": "xp_state.event_context", "value": "bonus", "severity": "minor"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

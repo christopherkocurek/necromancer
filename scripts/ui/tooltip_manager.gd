@@ -196,7 +196,9 @@ static func format_item_tooltip(item: Variant) -> String:
 	if "evasion_bonus" in item and item.evasion_bonus != 0:
 		text += "[color=#%s]Evasion: %+d[/color]\n" % [ThemeColors.SECONDARY.to_html(false), item.evasion_bonus]
 	if "protection_dice" in item and item.protection_dice != "":
-		text += "Protection: %s\n" % item.protection_dice
+		var prot: String = GameManager.get_valid_dice_string(item.protection_dice)
+		if not prot.is_empty():
+			text += "Protection: %s\n" % prot
 	if "weight" in item:
 		text += "[color=#%s]Weight: %.1f lb[/color]\n" % [ThemeColors.TEXT_MUTED.to_html(false), item.weight / 10.0]
 

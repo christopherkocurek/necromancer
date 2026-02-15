@@ -1,0 +1,28 @@
+{
+	"schema_version": "v1",
+	"id": "light_matrix_v1",
+	"name": "Light radius consistency (live)",
+	"mode": "deterministic",
+	"seed": 101,
+	"severity": "major",
+	"tags": ["light", "ui", "live"],
+	"setup": [
+		{"op": "boot_game", "args": {"name": "Light Harness"}},
+		{"op": "wait_frames", "args": {"count": 2}},
+		{"op": "move", "args": {"dir": "right", "steps": 1}}
+	],
+	"actions": [],
+	"settle_ticks": 1,
+	"checkpoints": [
+		{
+			"id": "cp_light_consistent",
+			"actions": [{"op": "inject_regression_if_enabled", "args": {"class": "light"}}],
+			"assertions": [
+				{"type": "range", "path": "light_state.runtime_radius", "min": 1, "max": 12, "severity": "major"},
+				{"type": "eq", "path": "light_state.ui_radius", "value": 1, "severity": "major"}
+			],
+			"visual_severity": "minor"
+		}
+	],
+	"teardown": [{"op": "teardown_game"}]
+}

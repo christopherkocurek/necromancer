@@ -2,242 +2,175 @@
 ## Game Design Document (Beta v1.1)
 
 **Version:** Beta v1.1  
-**Date:** 2026-02-13  
+**Date:** 2026-02-14  
 **Engine:** Godot 4.6  
-**Design Intent:** High-fidelity Tolkien roguelike inspired by Sil-Q, rebuilt for modern readability, tactical expression, and long-run mastery.
+**Positioning:** A Third Age tactical roguelike in the Sil-Q lineage, rebuilt for modern readability while preserving permadeath rigor.
 
-## 1. Vision
+## 1. Design Intent
 
-### 1.1 High Concept
-The player infiltrates Dol Guldur to recover Thrain's map and key, survive the descent, and escape alive before the darkness closes around them.
+The Necromancer is built around one uncompromising loop: **delve, recover, escape**.
 
-The game is a turn-based, tile-based, permadeath roguelike with:
-- skill-based progression instead of character levels,
-- lethal tactical combat,
-- stealth as a first-class system,
-- scarce but powerful resource economies (light, voice, hunger, stamina/tempo),
-- Tolkien-literate atmosphere and language.
+The player enters Dol Guldur, descends under escalating pressure, secures **Thrain's map and key**, then ascends to escape.
 
-### 1.2 Experience Targets
-The game should feel:
-- oppressive but never arbitrary,
-- information-rich but not noisy,
-- dangerous in every room,
-- fair enough that losses teach clear lessons,
-- deeply replayable through archetypes, routes, and ability builds.
+Core design law:
+- decisions must remain meaningful under stress,
+- information must be incomplete but legible,
+- failure must be teachable,
+- victory must be earned, not accumulated.
 
-### 1.3 Pillars
-- `Tolkien Authenticity`: language, threats, gear, and stakes feel native to Third Age Mirkwood.
-- `Sil-Q DNA`: opposed-roll style tactics, positional play, and pressure-based survival.
-- `Agency Under Pressure`: every turn has meaningful alternatives.
-- `Readable Depth`: complex systems are surfaced through UI, logs, and consistent rules.
-- `Permadeath Integrity`: no cheap saves; victories are earned.
+## 2. Pillars
 
-## 2. Core Loop
+1. **Tolkien Fidelity**
+Language, threats, and stakes are anchored to the Third Age and written with literary restraint.
 
-1. Character creation (race, house, trait, stats).
-2. Enter depth 1 and establish survivability.
-3. Explore, fight, sneak, and loot under resource pressure.
-4. Spend XP on skills and abilities to define build identity.
-5. Reach deeper layers, recover Thrain's objective state.
-6. Ascend under threat and attempt escape.
-7. Die and learn, or escape and close the run.
+2. **Sil-Q Mechanical DNA**
+Tactical positioning, high-lethality exchanges, and pressure-based resource play remain central.
 
-## 3. Run Structure and Win State
+3. **Agency Under Constraint**
+At least one strategically valid alternative should exist in most dangerous turns.
 
-### 3.1 Dungeon Arc
-- The run is a multi-floor descent with escalating threat composition and lower average safety windows.
-- Floor transitions are strategic checkpoints, not resets.
+4. **Readable Systems**
+Complexity is welcome; opacity is not. UI/logs must let players reason about outcomes.
 
-### 3.2 Beta v1.1 Escape Win
-For Beta, a pragmatic win path is implemented:
-- on floor 1, taking upstairs checks escape requirements,
-- if requirements are met (quest-gated, including Thrain objective items),
-- the run ends with: `"Congratulations, you escaped! Now to meet Gandalf..."`
-- player returns to title/menu.
+5. **Permadeath Integrity**
+Losses stand. Mastery is learned through iteration.
 
-This is the Beta win placeholder and intentionally precedes the full exterior post-escape sequence.
+## 3. Core Run Structure
 
-## 4. Character Model
+1. Character setup (race, house, trait, stats).
+2. Early-floor stabilization (weapon line, defense line, light line).
+3. Mid-depth specialization (skills and abilities with explicit tradeoffs).
+4. Objective acquisition (Thrain's map and key).
+5. Ascent phase under accumulated pressure.
+6. Escape or death.
 
-### 4.1 Build Axes
-Build identity is formed by:
-- race + house,
-- trait,
-- early skill purchases,
-- equipment and light plan,
-- voice/lore commitment,
-- tactical style (aggressive pressure, stealth control, shield attrition, lore burst).
+## 4. Beta v1.1 Win State
 
-### 4.2 Skill Philosophy
-- XP is spendable currency.
-- Skills unlock tactical permissions, not just numerical scaling.
-- Defensive and utility expression should compete with raw damage as valid routes to win.
+Beta v1.1 uses a practical completion gate:
+- Upstairs on floor 1 checks objective state.
+- Escape is allowed only if the player has **Thrain's map and key**.
+- Success triggers: `"Congratulations, you escaped! Now to meet Gandalf..."`
+- Player returns to menu.
 
-### 4.3 Active Ability Design Rule (Beta v1.1)
-Non-movement, non-attack utility/stance actions are `minor actions` and should not consume a full turn.
+This is intentionally a beta endpoint before a full exterior chapter is shipped.
 
-Examples include:
-- parry prep,
-- mark quarry,
-- circular guard,
-- defensive/stance toggles,
-- selected utility toggles.
+## 5. Action Economy Policy
 
-Goal: preserve tactical responsiveness and avoid punishing players for using active systems.
+Turn cost must track impact.
 
-## 5. Economy Design
+- Movement and attacks consume full turns.
+- Non-transformative setup/stance/utility actions should generally be **minor actions**.
+- This includes cases like parry prep, mark-like setup, and circular guard style activation unless balance demands exception.
 
-## 5.1 Light Economy
-Light is both survival and tempo.
+Rationale: active tactical play should not be structurally weaker than passive play.
 
-Design goals:
-- darkness should create pressure and uncertainty,
-- but average light viability past depth 10 must remain playable,
-- Necromancer can be darker than Sil-Q baseline, but not starvation-dark.
+## 6. Economy Design
 
-### Implemented Baseline (Beta v1.1)
-- Torch: +2 radius
-- Lantern: +3 radius
-- Elvish Light: +2 radius, infinite (no charge drain)
-- Mallorn Torch: +3 radius
-- Jeweled/Feanorian Lamp: +4 radius, infinite (no charge drain)
-- Equipment light egos/flags contribute to radius when present
-- Light curses reduce effective light
-- Light of the Eldar aura: fixed +2 radius
+## 6.1 Light Economy
 
-Design intent:
-- keep oppressive darkness identity,
-- ensure enough mid/deep run light continuity to support tactical planning.
+Target behavior:
+- darkness creates pressure and uncertainty,
+- depth remains tactically playable,
+- players can plan around light rather than lose to arbitrary blindness.
 
-## 5.2 Voice Economy
-Voice powers lore and songs. It must feel scarce, strategic, and build-defining.
+Beta v1.1 anchors:
+- Torch: +2
+- Lantern: +3
+- Elvish Light: +2, infinite
+- Mallorn Torch: +3
+- Jeweled/Feanorian Lamp: +4, infinite
+- Light of the Eldar aura: +2
 
-Beta v1.1 tuning direction:
-- reduce free sustain loops,
-- make sustained effects materially suppress regen,
-- preserve high-impact word fantasy with meaningful cost,
-- keep pure-lore runs difficult but viable.
+## 6.2 Voice Economy
 
-Current balancing principles:
-- sustained songs are long-horizon commitments,
-- burst words should swing moments but not trivialize encounters,
-- resting should not produce unintended voice exploit loops.
+Voice should feel scarce, powerful, and build-defining.
 
-## 5.3 Consumables and Utility Slots
-All interactive consumables/devices intended for belt/utility use should be executable from their hotbar path without inventory micromanagement dead-ends.
+Beta direction:
+- reduce exploit loops from sustained effects,
+- increase opportunity cost of sustain states,
+- preserve viability of lore-forward runs.
 
-Design goal:
-- if the player prepared the item, activation friction should be low and reliable.
+## 6.3 Utility and Consumables
 
-## 6. Combat and Tactics
+If an item is prepared for utility use, activation path should be fast and reliable in combat context. Inventory micromanagement should not be the dominant difficulty.
 
-### 6.1 Combat Identity
-- deterministic structure with stochastic resolution,
-- high lethality, positional value, and encounter triage,
-- attrition and morale pressure matter.
+## 7. Combat, Stealth, and Information
 
-### 6.2 Encounter Tempo
-A turn is expensive. Rules that consume turns must preserve fairness:
-- movement and attacks are core-turn actions,
-- setup/stance utility should usually be minor-action unless overtly transformative.
+## 7.1 Combat Identity
 
-### 6.3 Status Effects
-Status readability and decay cadence are critical.
+- positional advantage over raw stat inflation,
+- high lethality with recoverable tactical errors,
+- encounter triage as expected skill.
 
-Beta v1.1 correction:
-- poison decay should tick at a clear, expected per-turn rate to avoid opaque overlong punishment.
+## 7.2 Stealth Role
 
-## 7. Stealth, Detection, and Information
+Stealth is a primary survival language:
+- controls engagement order,
+- reduces chain pulls,
+- enables objective-focused routing.
 
-Stealth is not optional flavor; it is a major survival language.
+## 7.3 Information Surfaces
 
-Design requirements:
-- stealth interactions are legible,
-- detection escalation is understandable,
-- informed disengagement is possible,
-- look/inspect surfaces enough context to support low-risk planning.
+Player must be able to read:
+- immediate threat pressure,
+- status burden (including poison decay expectations),
+- actionable options without menu friction.
 
-## 8. UI/UX Design
+## 8. UI and Presentation Requirements
 
-### 8.1 Layout and Scale
-Default startup presentation should frame the full game cleanly on common desktop displays.
-
-Beta v1.1 target:
-- default content scale and window assumptions align to `1920x1080` behavior.
-
-### 8.2 Failure and Death UX
-Death presentation must be centered, readable, and emotionally clear. Broken alignment degrades tone and post-run analysis value.
-
-### 8.3 Title Screen Tone
-The title screen should establish place, dread, and quest burden immediately.
-
-Beta v1.1 adds central lore poem treatment to set narrative frame before play.
+1. **Scale and framing**: default startup should cleanly frame full playfield/HUD on common desktop resolutions, notably 1920x1080 behavior.
+2. **HUD integrity**: core widgets (health, voice/mana analogs, XP gem, inventory and hotbar clusters) must retain intentional layout hierarchy.
+3. **Death screen**: centered and legible; post-run analysis utility is part of design quality.
+4. **Title screen**: poetic quest framing in thematic register.
 
 ## 9. Audio Direction
 
-Audio supports tactical readability first, mood second.
+Audio priorities:
+- gameplay readability first,
+- atmosphere second,
+- avoid repetitive/grating cues,
+- maintain clear event-to-sound mapping.
 
-Principles:
-- minimize repetitive grating vocalizations,
-- keep event-to-sound mapping consistent,
-- reserve dramatic vocals for rare high-signal beats,
-- maintain mix clarity in crowded turns.
+## 10. Scope Boundaries (Beta v1.1)
 
-See `docs/BETA_V1_1_SOUND_PROPOSAL.md` for event table and replacement strategy.
+In scope:
+- complete beta run loop with gated escape,
+- stable build identities,
+- functioning light/voice/utility systems,
+- coherent docs for internal playtest.
 
-## 10. Accessibility and Onboarding
+Out of scope for this milestone:
+- full post-escape exterior campaign,
+- final narrative epilogues,
+- final long-term balance lock.
 
-- core game remains deep and lethal,
-- readability and discoverability improvements are encouraged,
-- tutorials/help should teach survival patterns, not over-automate decisions.
+## 11. Validation Gates
 
-## 11. Content Scope (Beta)
+Release candidate must pass:
+1. build and launch reliability,
+2. no critical UI break in core HUD flow,
+3. escape gate correctness (Thrain's map + key),
+4. no known blocking activation bug for intended utility items,
+5. manual smoke pass on light/voice/action economy behavior,
+6. docs in sync: GDD + Tutorial + Player's Guide.
 
-In-scope for Beta quality:
-- full core loop through escape placeholder win,
-- stable character creation and progression,
-- major economy systems functional,
-- reliable UI flows for combat/inventory/abilities,
-- coherent audiovisual identity.
+## 12. Risks and Mitigations
 
-Deferred beyond Beta:
-- full exterior post-escape chapter,
-- expanded ending states and epilogues,
-- deeper narrative NPC chain.
+- **Over-oppression drift** (darkness/resource pressure too severe):
+  depth-band telemetry and targeted tuning.
 
-## 12. QA and Validation Gates
+- **Action tax regression** (active play punished):
+  automated/targeted audit on turn consumption for non-attack utility actions.
 
-Minimum gates for Beta updates:
-- headless boot/load success,
-- automated tests passing or known-failure accounting,
-- no regressions on input/turn-consumption semantics,
-- no blocking economy exploit introduced,
-- one targeted manual smoke pass on: light, voice, utility activation, escape flow, death screen, title screen.
+- **UI trust erosion** (mispositioned HUD, unclear status):
+  prioritize high-visibility UI fixes before feature additions.
 
-## 13. Risks and Mitigations
+- **Doc drift** (game and guide diverge):
+  docs update in same release branch as balance/UX changes.
 
-- `Over-oppression risk` (darkness + scarcity stacks too hard):
-  Mitigation: depth-band telemetry for light radius and escape viability.
-- `Action-tax risk` (active builds underperform due to turn costs):
-  Mitigation: enforce minor-action policy and audit new abilities.
-- `Economy drift risk` (voice or fuel loops):
-  Mitigation: periodic tuning with bot + targeted human playtests.
-- `UI trust risk` (misaligned state feedback):
-  Mitigation: fix high-visibility layout/feedback defects quickly.
+## 13. Canonical Documentation Set
 
-## 14. Release Positioning (Beta v1.1)
-
-Beta v1.1 is positioned as:
-- the first strong "full run" candidate with a complete Beta victory condition,
-- a major light/voice/ability-tempo correction pass,
-- a UI and presentation quality uplift,
-- a foundation for the next iteration: post-escape content, deeper balancing, and expanded narrative payoff.
-
-## 15. Canonical References
-
-- `docs/manual/THE_NECROMANCER_MANUAL_BETA_V1_1.md`
+- `docs/GAME_DESIGN_DOCUMENT_BETA_V1_1.md`
 - `docs/GAME_OVERVIEW_2_PAGER_BETA_V1_1.md`
-- `docs/BETA_V1_1_LIGHT_VOICE_AUDIT.md`
-- `docs/BETA_V1_1_SOUND_PROPOSAL.md`
-
+- `docs/manual/THE_NECROMANCER_PLAYERS_GUIDE_BETA_V1_1.md`
+- `tutorial.md`

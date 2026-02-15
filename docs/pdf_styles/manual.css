@@ -1,0 +1,48 @@
+@page {
+  size: Letter;
+  margin: 0.9in 0.85in 0.95in 0.85in;
+}
+
+body {
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, "URW Palladio L", serif;
+  font-size: 12pt;
+  line-height: 1.35;
+  color: #1f1b16;
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  color: #241a12;
+  page-break-after: avoid;
+}
+
+h1 { font-size: 23pt; margin-top: 0.5em; margin-bottom: 0.2em; }
+h2 { font-size: 16pt; margin-top: 1.0em; margin-bottom: 0.25em; }
+h3 { font-size: 13pt; margin-top: 0.8em; margin-bottom: 0.2em; }
+
+p, li { margin: 0.25em 0; }
+ul, ol { margin-top: 0.25em; margin-bottom: 0.45em; }
+
+blockquote {
+  margin: 0.6em 1.2em;
+  padding-left: 0.7em;
+  border-left: 2px solid #85725a;
+  color: #43352a;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.6em auto;
+  page-break-inside: avoid;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #8e7a63;
+  margin: 1.1em 0;
+}
+
+a { color: #2e2c2a; text-decoration: none; }
+code { font-family: "Menlo", "Consolas", monospace; font-size: 9.5pt; }

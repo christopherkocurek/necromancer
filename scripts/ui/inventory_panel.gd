@@ -672,7 +672,9 @@ func _update_item_info(item: Variant) -> void:
 	if "evasion_bonus" in item and item.evasion_bonus != 0:
 		stats_str += "Evasion: %+d\n" % item.evasion_bonus
 	if "protection_dice" in item and item.protection_dice != "":
-		stats_str += "Protection: %s\n" % item.protection_dice
+		var prot: String = GameManager.get_valid_dice_string(item.protection_dice)
+		if not prot.is_empty():
+			stats_str += "Protection: %s\n" % prot
 	if "weight" in item:
 		stats_str += "Weight: %.1f lb\n" % (item.weight / 10.0)
 

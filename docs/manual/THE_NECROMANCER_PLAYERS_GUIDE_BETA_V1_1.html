@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Beta v1.1" />
+  <meta name="dcterms.date" content="2026-02-14" />
+  <title>The Necromancer: Player’s Guide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">The Necromancer: Player’s Guide</h1>
+<p class="author">Beta v1.1</p>
+<p class="date">February 14, 2026</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#a-word-before-you-descend"
+id="toc-a-word-before-you-descend">A Word Before You Descend</a></li>
+<li><a href="#contents" id="toc-contents">Contents</a></li>
+<li><a href="#about-the-necromancer" id="toc-about-the-necromancer">1.
+About The Necromancer</a></li>
+<li><a href="#what-kind-of-game-this-is"
+id="toc-what-kind-of-game-this-is">2. What Kind of Game This Is</a></li>
+<li><a href="#the-beta-v1.1-objective"
+id="toc-the-beta-v1.1-objective">3. The Beta v1.1 Objective</a></li>
+<li><a href="#core-run-loop" id="toc-core-run-loop">4. Core Run
+Loop</a></li>
+<li><a href="#controls-and-interface" id="toc-controls-and-interface">5.
+Controls and Interface</a>
+<ul>
+<li><a href="#startup-scale-and-framing"
+id="toc-startup-scale-and-framing">Startup scale and framing</a></li>
+</ul></li>
+<li><a href="#character-creation-and-build-identity"
+id="toc-character-creation-and-build-identity">6. Character Creation and
+Build Identity</a></li>
+<li><a href="#the-four-stats" id="toc-the-four-stats">7. The Four
+Stats</a>
+<ul>
+<li><a href="#strength" id="toc-strength">Strength</a></li>
+<li><a href="#dexterity" id="toc-dexterity">Dexterity</a></li>
+<li><a href="#constitution" id="toc-constitution">Constitution</a></li>
+<li><a href="#grace" id="toc-grace">Grace</a></li>
+</ul></li>
+<li><a href="#skills-xp-and-ability-timing"
+id="toc-skills-xp-and-ability-timing">8. Skills, XP, and Ability
+Timing</a>
+<ul>
+<li><a href="#minor-actions-and-turn-economy-beta-v1.1"
+id="toc-minor-actions-and-turn-economy-beta-v1.1">Minor actions and turn
+economy (Beta v1.1)</a></li>
+</ul></li>
+<li><a href="#combat-doctrine" id="toc-combat-doctrine">9. Combat
+Doctrine</a></li>
+<li><a href="#stealth-pursuit-and-disengagement"
+id="toc-stealth-pursuit-and-disengagement">10. Stealth, Pursuit, and
+Disengagement</a></li>
+<li><a href="#light-economy" id="toc-light-economy">11. Light
+Economy</a>
+<ul>
+<li><a href="#beta-v1.1-anchor-values"
+id="toc-beta-v1.1-anchor-values">Beta v1.1 anchor values</a></li>
+</ul></li>
+<li><a href="#voice-and-lore-economy"
+id="toc-voice-and-lore-economy">12. Voice and Lore Economy</a></li>
+<li><a href="#inventory-gear-and-utility-slots"
+id="toc-inventory-gear-and-utility-slots">13. Inventory, Gear, and
+Utility Slots</a></li>
+<li><a href="#floor-progression-and-risk-management"
+id="toc-floor-progression-and-risk-management">14. Floor Progression and
+Risk Management</a></li>
+<li><a href="#threat-reading-and-death-forensics"
+id="toc-threat-reading-and-death-forensics">15. Threat Reading and Death
+Forensics</a></li>
+<li><a href="#build-paths-for-early-wins"
+id="toc-build-paths-for-early-wins">16. Build Paths for Early Wins</a>
+<ul>
+<li><a href="#a.-durable-frontliner" id="toc-a.-durable-frontliner">A.
+Durable frontliner</a></li>
+<li><a href="#b.-ranged-control" id="toc-b.-ranged-control">B. Ranged
+control</a></li>
+<li><a href="#c.-lore-led-tactician" id="toc-c.-lore-led-tactician">C.
+Lore-led tactician</a></li>
+</ul></li>
+<li><a href="#notes-for-sil-q-players"
+id="toc-notes-for-sil-q-players">17. Notes for Sil-Q Players</a></li>
+<li><a href="#practical-win-checklist"
+id="toc-practical-win-checklist">18. Practical Win Checklist</a></li>
+<li><a href="#appendix-hotkeys" id="toc-appendix-hotkeys">19. Appendix:
+Hotkeys</a></li>
+<li><a href="#skills-and-abilities-compendium"
+id="toc-skills-and-abilities-compendium">20. Skills and Abilities
+Compendium</a>
+<ul>
+<li><a href="#melee" id="toc-melee">Melee</a></li>
+<li><a href="#archery" id="toc-archery">Archery</a></li>
+<li><a href="#evasion" id="toc-evasion">Evasion</a></li>
+<li><a href="#stealth" id="toc-stealth">Stealth</a></li>
+<li><a href="#hunting" id="toc-hunting">Hunting</a></li>
+<li><a href="#will" id="toc-will">Will</a></li>
+<li><a href="#smithing" id="toc-smithing">Smithing</a></li>
+<li><a href="#song-lore" id="toc-song-lore">Song (Lore)</a></li>
+</ul></li>
+<li><a href="#closing" id="toc-closing">21. Closing</a></li>
+</ul>
+</nav>
+<figure>
+<img
+src="../../assets/concept_art/title_screen_dalle3/generated/10_mythic_low_angle.png"
+alt="Cover art for The Necromancer" />
+<figcaption aria-hidden="true">Cover art for The
+Necromancer</figcaption>
+</figure>
+<h1 id="a-word-before-you-descend">A Word Before You Descend</h1>
+<p>There are games in which death is delay. This is not one of them.</p>
+<p>In these halls beneath Dol Guldur, each turn is a wager between
+knowledge and fear. You are not here to clear every chamber, nor to
+build an invincible hero. You are here to do one hard thing well:
+descend, recover Thrain’s map and key, and return alive.</p>
+<p>This guide is written in the spirit of old roguelike manuals: plain
+where it must be plain, and exact where precision keeps you alive.</p>
+<h1 id="contents">Contents</h1>
+<ol type="1">
+<li>About The Necromancer</li>
+<li>What Kind of Game This Is</li>
+<li>The Beta v1.1 Objective</li>
+<li>Core Run Loop</li>
+<li>Controls and Interface</li>
+<li>Character Creation and Build Identity</li>
+<li>The Four Stats</li>
+<li>Skills, XP, and Ability Timing</li>
+<li>Combat Doctrine</li>
+<li>Stealth, Pursuit, and Disengagement</li>
+<li>Light Economy</li>
+<li>Voice and Lore Economy</li>
+<li>Inventory, Gear, and Utility Slots</li>
+<li>Floor Progression and Risk Management</li>
+<li>Threat Reading and Death Forensics</li>
+<li>Build Paths for Early Wins</li>
+<li>Notes for Sil-Q Players</li>
+<li>Practical Win Checklist</li>
+<li>Appendix: Hotkeys</li>
+</ol>
+<h1 id="about-the-necromancer">1. About The Necromancer</h1>
+<p>The Necromancer belongs to a long open-source line.</p>
+<ul>
+<li><code>Rogue</code> established the grammar: procedural descent,
+scarce resources, and irreversible death.</li>
+<li><code>Moria</code>, then <code>Angband</code>, deepened simulation,
+item identity, and tactical variance.</li>
+<li><code>Sil</code> and <code>Sil-Q</code> sharpened that lineage into
+something harder and cleaner: positional combat, high consequence, and
+Tolkien fidelity treated as design law rather than ornament.</li>
+</ul>
+<p>The Necromancer continues that tradition in the Third Age.</p>
+<p>The first implementation path for this project began in C with
+Sil-Q’s structure as its mechanical compass. The project was then fully
+ported into Godot to make the game more legible, more teachable, and
+easier for a modern audience to approach without sacrificing the core
+roguelike compact:</p>
+<ul>
+<li>permadeath means decisions matter,</li>
+<li>the identification and interpretation game still matters,</li>
+<li>the delve-recover-escape arc remains the spine,</li>
+<li>Tolkien’s world is treated as source material, not set
+dressing.</li>
+</ul>
+<p>Sil-Q is not replaced here. It is honored. The Necromancer is a
+sibling work with different era, different pressures, and the same
+demand for disciplined play.</p>
+<h1 id="what-kind-of-game-this-is">2. What Kind of Game This Is</h1>
+<p>The Necromancer is a turn-based, tile-based, permadeath
+roguelike.</p>
+<p>You are expected to: - evaluate danger before committing, - preserve
+optionality, - avoid unnecessary fights, - convert information into
+tempo.</p>
+<p>The game punishes greed faster than caution. It also punishes
+passivity: refusing to spend resources until too late is one of the most
+common causes of death.</p>
+<h1 id="the-beta-v1.1-objective">3. The Beta v1.1 Objective</h1>
+<p>In Beta v1.1, the victory route is intentionally focused.</p>
+<p>To win: 1. Descend and secure <strong>Thrain’s map and key</strong>.
+2. Return to depth 1. 3. Take the upstairs.</p>
+<p>If requirements are satisfied, the current beta ending appears:</p>
+<p>“Congratulations, you escaped! Now to meet Gandalf…”</p>
+<p>This is the beta completion state. A larger post-escape exterior
+chapter is planned later.</p>
+<h1 id="core-run-loop">4. Core Run Loop</h1>
+<p>Each successful run follows the same broad rhythm:</p>
+<ol type="1">
+<li><p><strong>Stabilize</strong> Acquire a reliable weapon line,
+survivable positioning options, and working light.</p></li>
+<li><p><strong>Specialize</strong> Spend XP on tools that solve present
+danger, not imagined future elegance.</p></li>
+<li><p><strong>Pressure test</strong> As depth rises, enemy composition
+and room geometry reduce your margin for error.</p></li>
+<li><p><strong>Recover objective</strong> Take calculated risks when
+objective proximity justifies them.</p></li>
+<li><p><strong>Ascend under stress</strong> Return pathing is often
+deadlier than descent because mistakes compound.</p></li>
+</ol>
+<h1 id="controls-and-interface">5. Controls and Interface</h1>
+<figure>
+<img src="../../assets/ui/tome/raw/page_index_1024.png"
+alt="Tome UI motif" />
+<figcaption aria-hidden="true">Tome UI motif</figcaption>
+</figure>
+<p>The interface is built around quick reads: - combat/log feedback, -
+depth and threat state, - hotbar and utility access, - resource pools
+(HP, voice, related combat economies).</p>
+<p>If you feel input friction, first close overlays with
+<code>Esc</code>, then retry. Most “stuck” states are panel focus
+collisions rather than hard lock.</p>
+<h2 id="startup-scale-and-framing">Startup scale and framing</h2>
+<p>Beta v1.1 targets clean default framing on common desktop displays
+(notably 1920x1080 behavior). If your frame is clipped, report exact
+resolution and OS scaling in bug notes.</p>
+<h1 id="character-creation-and-build-identity">6. Character Creation and
+Build Identity</h1>
+<p>Race, house, and trait are strategic commitments.</p>
+<p>Practical rule for early consistency: - pick one primary lane and
+fund it immediately.</p>
+<p>Common collapse pattern: - buying “a little of everything” early and
+reaching depth 4-6 with no decisive answer to burst damage or crowd
+pressure.</p>
+<h1 id="the-four-stats">7. The Four Stats</h1>
+<h2 id="strength">Strength</h2>
+<p>Improves force-based solutions, heavy gear handling, and direct
+combat authority.</p>
+<h2 id="dexterity">Dexterity</h2>
+<p>Improves precision, reactive defense lines, and positional
+flexibility.</p>
+<h2 id="constitution">Constitution</h2>
+<p>Expands survival tolerance and forgiveness against imperfect
+reads.</p>
+<h2 id="grace">Grace</h2>
+<p>Shapes voice/lore capability and supports control-heavy game
+plans.</p>
+<p>Beginner-safe guidance: - do not tank Constitution to chase elegant
+offense. Most first wins are disciplined survivability wins.</p>
+<h1 id="skills-xp-and-ability-timing">8. Skills, XP, and Ability
+Timing</h1>
+<p>XP is your most adaptable resource after information.</p>
+<p>Good spending asks: 1. What is killing me right now? 2. Which
+purchase changes that outcome immediately? 3. What path am I delaying to
+buy this?</p>
+<h2 id="minor-actions-and-turn-economy-beta-v1.1">Minor actions and turn
+economy (Beta v1.1)</h2>
+<p>A key beta correction: many non-attack, non-movement hotbar abilities
+are treated as minor actions. Setup play should not be a disguised
+self-stun.</p>
+<p>If your build depends on parry/mark/circular guard style setup,
+confirm your tactics rely on this tempo rule rather than sacrificing
+full turns in lethal windows.</p>
+<h1 id="combat-doctrine">9. Combat Doctrine</h1>
+<p>Combat in The Necromancer is not solved by damage alone.</p>
+<p>Use this order of operations: 1. <strong>Geometry first</strong>:
+fight in chokepoints, never in open multi-angle kill boxes when
+avoidable. 2. <strong>Initiative second</strong>: choose when contact
+begins. 3. <strong>Resource third</strong>: spend what keeps tomorrow
+available.</p>
+<p>When unsure, retreat one turn earlier than instinct suggests.</p>
+<h1 id="stealth-pursuit-and-disengagement">10. Stealth, Pursuit, and
+Disengagement</h1>
+<p>Stealth is a primary win language, not a side feature.</p>
+<p>Use it to: - decide engagement order, - cut down chain pulls, - avoid
+low-value attrition.</p>
+<p>If detected in poor terrain: - break line, - reset spacing, -
+re-engage on your terms.</p>
+<p>“Can I win this fight?” is often the wrong question. The right one
+is: “Can I win this exchange without ruining the next three?”</p>
+<h1 id="light-economy">11. Light Economy</h1>
+<figure>
+<img src="../../assets/ui/tome/raw/page_lore_1024.png"
+alt="Tome lore page motif" />
+<figcaption aria-hidden="true">Tome lore page motif</figcaption>
+</figure>
+<p>Light controls knowledge radius; knowledge radius controls
+survival.</p>
+<h2 id="beta-v1.1-anchor-values">Beta v1.1 anchor values</h2>
+<ul>
+<li>Torch: +2</li>
+<li>Lantern: +3</li>
+<li>Elvish Light: +2, infinite, no charge drain</li>
+<li>Mallorn Torch: +3</li>
+<li>Jeweled (Feanorian) Lamp: +4, infinite, no charge drain</li>
+<li>Light of the Eldar aura: +2</li>
+</ul>
+<p>Design truth: - Necromancer is intentionally oppressive, but deep
+darkness should be tense, not blind and arbitrary.</p>
+<p>Practical rule: - never enter a new risk band without a clear next
+light plan.</p>
+<h1 id="voice-and-lore-economy">12. Voice and Lore Economy</h1>
+<p>Voice is not decoration. It is decisive power with real opportunity
+cost.</p>
+<p>Beta v1.1 direction: - reduce sustain loops that trivialize scarcity,
+- preserve high-impact word identity, - keep pure-lore victories
+difficult but viable.</p>
+<p>If you repeatedly die with full voice, you are under-spending a
+principal survival currency.</p>
+<p>If you repeatedly arrive at critical fights dry, you are
+over-spending on low-leverage moments.</p>
+<h1 id="inventory-gear-and-utility-slots">13. Inventory, Gear, and
+Utility Slots</h1>
+<p>Utility systems should reduce friction, not create it.</p>
+<p>Core practice: - stage activatable tools where they can be used under
+pressure, - verify context-legal activation before danger spikes, -
+audit your kit at each floor transition.</p>
+<p>Beta expectation: - interactive consumables and devices should be
+accessible from proper hotbar/utility paths when configured.</p>
+<h1 id="floor-progression-and-risk-management">14. Floor Progression and
+Risk Management</h1>
+<p>Depth progression is not linear power fantasy. It is compression.</p>
+<p>You have less room for recovery as: - map states become less
+forgiving, - pursuit pressure rises, - resource replacement intervals
+widen.</p>
+<p>Use floor transitions as planning checkpoints: 1. Is my light plan
+stable? 2. Can I survive two bad engagements in a row? 3. Do I have one
+emergency answer still unspent?</p>
+<h1 id="threat-reading-and-death-forensics">15. Threat Reading and Death
+Forensics</h1>
+<p>Most deaths are prepared long before the final blow.</p>
+<p>Post-run review protocol: 1. Identify first preventable error (not
+the final hit). 2. Classify failure: positioning, timing, greed, or
+resource denial. 3. Define one concrete behavior change for next
+run.</p>
+<p>Do not call it bad luck until you can prove no better line
+existed.</p>
+<h1 id="build-paths-for-early-wins">16. Build Paths for Early Wins</h1>
+<h2 id="a.-durable-frontliner">A. Durable frontliner</h2>
+<ul>
+<li>Prioritize survivability and stable melee exchanges.</li>
+<li>Convert ambiguous rooms into controlled lane fights.</li>
+</ul>
+<h2 id="b.-ranged-control">B. Ranged control</h2>
+<ul>
+<li>Build around spacing, scouting, and tempo denial.</li>
+<li>Never permit uncontrolled melee collapse.</li>
+</ul>
+<h2 id="c.-lore-led-tactician">C. Lore-led tactician</h2>
+<ul>
+<li>Build Grace/voice pathways with disciplined sustain budgeting.</li>
+<li>Treat lore activations as encounter-shaping commitments.</li>
+</ul>
+<p>All three can win. The difference is where your mistakes become
+fatal.</p>
+<h1 id="notes-for-sil-q-players">17. Notes for Sil-Q Players</h1>
+<p>What carries over: - positional rigor, - information as a weapon, -
+tactical patience, - severe consequences for poor sequencing.</p>
+<p>What does not carry over directly: - exact value parity, - exact
+action economy assumptions, - identical interface cadence.</p>
+<p>The right adaptation posture is principle transfer, not number
+memorization.</p>
+<h1 id="practical-win-checklist">18. Practical Win Checklist</h1>
+<p>Before objective push: - I can survive two hard encounters without
+perfect rolls. - My light plan covers descent and retreat. - My voice
+plan includes one panic option. - My utility bar contains tools I can
+actually trigger under stress.</p>
+<p>Before ascent attempt: - Thrain’s map and key are secured. - I have a
+route and fallback route. - I am not relying on one fragile
+assumption.</p>
+<h1 id="appendix-hotkeys">19. Appendix: Hotkeys</h1>
+<p>Movement: - <code>W/A/S/D</code>, arrows, or vi keys
+<code>H/J/K/L</code> - diagonals <code>Y/U/B/N</code> - wait
+<code>.</code></p>
+<p>Core actions: - interact/confirm/stairs <code>Enter</code> - pick up
+<code>G</code> - inventory <code>I</code> - tome <code>T</code> or
+<code>@</code> - voice/lore <code>V</code> - look <code>X</code> -
+minimap <code>M</code> - stealth toggle <code>;</code> - pause/settings
+<code>Esc</code></p>
+<p>Hotbar: - gem slots <code>1-8</code> (cast/bind depending on slot
+state)</p>
+<h1 id="skills-and-abilities-compendium">20. Skills and Abilities
+Compendium</h1>
+<p>This section is generated from <code>data/ability.txt</code> so the
+guide tracks the real beta ruleset.</p>
+<p>Reading keys: - <code>Level</code>: minimum effective skill value for
+unlock. - <code>Type</code>: Active means you trigger it; Sustain means
+ongoing voice commitment; Passive is always-on when learned. -
+<code>Prereq</code>: listed as <code>skill/ability</code> internal
+references where relevant.</p>
+<h2 id="melee">Melee</h2>
+<p>Frontline control, kill conversion, and positional dominance.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Power</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives a bonus of +1 damage sides to your melee attacks, but makes it
+harder to score critical hits (increasing the base required by 1).</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Finesse</td>
+<td>Passive</td>
+<td>-</td>
+<td>Lowers the base number needed to get critical hits with melee from 7
+to 5.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Knock Back</td>
+<td>Passive</td>
+<td>-</td>
+<td>You have a chance to knock enemies back a square in melee depending
+upon your effective strength and your opponent’s constitution.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Polearm Mastery</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you +2 to attack with polearms (spears &amp; glaives) and lets
+you set them to receive free attacks on advancing enemies when you wait
+(z or 5).</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Charge</td>
+<td>Passive</td>
+<td>-</td>
+<td>When you attack an opponent immediately after moving towards it,
+your attack is calculated as if you had 3 points more strength and
+dexterity.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Follow-Through</td>
+<td>Passive</td>
+<td>0/0:0/1</td>
+<td>Allows you to continue your attack if you kill an opponent, moving
+onto the next adjacent enemy.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Opening Strike</td>
+<td>Passive</td>
+<td>0/1</td>
+<td>Grants an additional damage die on your first melee attack against
+an unwary or sleeping enemy. Your Ranger training pays off.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Subtlety</td>
+<td>Passive</td>
+<td>0/1</td>
+<td>Lowers the base number needed to get critical hits with melee by 2
+points, when you are using a one handed weapon with the other hand
+free.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Cleave</td>
+<td>Passive</td>
+<td>0/3:0/5</td>
+<td>When you kill an enemy, you get free attacks on all other adjacent
+enemies. Your blade sweeps through the horde.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Zone of Control</td>
+<td>Passive</td>
+<td>0/1:0/3</td>
+<td>You get a free attack whenever an opponent moves between two squares
+which are adjacent to you.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Mighty Blow</td>
+<td>Passive</td>
+<td>0/2:0/4</td>
+<td>When using a two-handed weapon, your first attack each turn deals
+bonus damage equal to your Strength. If you use this, you lose a turn to
+recover from the exertion.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Defensive Stance</td>
+<td>Passive</td>
+<td>0/1:2/1</td>
+<td>When you do not move, you gain +3 evasion and enemies do not gain
+flanking bonuses against you. Hold the line like Gondor’s
+defenders.</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Swift Strikes</td>
+<td>Passive</td>
+<td>0/7:3/4</td>
+<td>When wielding a one-handed weapon, you gain an extra attack but your
+attacks are calculated as if you had 3 less Strength and Dexterity.</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Strength</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of strength.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="archery">Archery</h2>
+<p>Range control and opening damage before melee contact.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>Rout</td>
+<td>Passive</td>
+<td>-</td>
+<td>Firing at fleeing monsters is calculated as if you had 5 points more
+dexterity.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Fletchery</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to use the ‘-’ command to give ordinary arrows a +3
+bonus. Takes one turn for each arrow.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Point Blank Archery</td>
+<td>Passive</td>
+<td>-</td>
+<td>The monster you are firing at cannot get an attack of
+opportunity.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Puncture</td>
+<td>Passive</td>
+<td>-</td>
+<td>Whenever an enemy’s armour roll would fully block your archery
+damage roll, you deal the enemy a flat five damage instead.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Ambush</td>
+<td>Passive</td>
+<td>-</td>
+<td>Grants an additional critical damage die whenever you hit an unwary
+or sleeping monster with an arrow.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Keen Eyes</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain +2 to archery attacks at ranges beyond 5 squares, and can
+spot enemies in dim light at the edge of your vision. Elven
+far-sight.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Crippling Shot</td>
+<td>Passive</td>
+<td>1/3:1/4</td>
+<td>Your critical hits sometimes temporarily slow monsters (depending on
+the level of critical and the monster’s Will).</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Deadly Hail</td>
+<td>Passive</td>
+<td>1/0:1/3</td>
+<td>Arrows fired the turn after killing an enemy with an arrow do twice
+their normal damage.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Dexterity</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of dexterity.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="evasion">Evasion</h2>
+<p>Survivability through movement discipline, shields, and reaction
+tools.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>Dodging</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you a +3 bonus to evasion if you moved on your last turn.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Blocking</td>
+<td>Passive</td>
+<td>-</td>
+<td>Doubles the protection roll for your shield against all attacks if
+you did not move on your last turn.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Parry</td>
+<td>Passive</td>
+<td>-</td>
+<td>Doubles the evasion bonus granted by your primary melee weapon.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Circular Guard</td>
+<td>Passive</td>
+<td>-</td>
+<td>Halves the bonus opponents get for surrounding you.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Leaping</td>
+<td>Passive</td>
+<td>-</td>
+<td>You can leap over a chasm or trap if you moved towards it the
+previous turn. (Roosts and webs are not leapable).</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Sprinting</td>
+<td>Passive</td>
+<td>2/0:2/4</td>
+<td>You start moving more quickly if you run four or more squares in
+roughly the same direction.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Flanking</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you a free attack on an opponent if you step from a square
+which is adjacent to it, to another square which is adjacent to it.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Heavy Armour Use</td>
+<td>Passive</td>
+<td>2/1:2/3</td>
+<td>Gives you [1dX] protection, where X is your total armour weight
+divided by 15 lbs.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Riposte</td>
+<td>Passive</td>
+<td>2/2</td>
+<td>It gives you a free attack on an opponent who misses you by at least
+10 + the weight of your weapon (only once per round).</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Controlled Retreat</td>
+<td>Passive</td>
+<td>2/0:2/1</td>
+<td>Gives you a free attack on an opponent when you step away from it,
+but only if you did not move the previous round.</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Dexterity</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of dexterity.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="stealth">Stealth</h2>
+<p>Detection denial, opener quality, and disengagement flexibility.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>Disguise</td>
+<td>Passive</td>
+<td>-</td>
+<td>Halves any bonuses that awake but unwary enemies have to notice you
+due to you being in their line of sight.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Assassination</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you a melee bonus against non-alert creatures equal to your
+stealth score.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Throat Slit</td>
+<td>Passive</td>
+<td>3/1</td>
+<td>You can instantly kill sleeping or unaware humanoid enemies without
+alerting nearby monsters. A quick, silent death in the darkness.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Disorienting Strike</td>
+<td>Passive</td>
+<td>3/1</td>
+<td>Your critical hits sometimes confuse monsters with the pain
+(depending on crit level vs Will). Confused enemies lose track of
+you.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Escape Artist</td>
+<td>Passive</td>
+<td>3/0:2/3</td>
+<td>You can break free from webs and similar effects automatically.
+Traps deal half damage and don’t alert nearby enemies.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Distraction</td>
+<td>Passive</td>
+<td>3/0</td>
+<td>When an alert enemy misses you by 5 or more, they become confused
+for 1 turn. Quick footwork leaves your foes bewildered.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Light Fingers</td>
+<td>Passive</td>
+<td>3/1</td>
+<td>When adjacent to an unwary enemy, you can attempt to steal a random
+item without alerting them. Like a proper burglar.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Vanish</td>
+<td>Passive</td>
+<td>3/0</td>
+<td>Gives a +10 stealth bonus towards making enemies become unwary when
+you are out of their line of sight.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Fade</td>
+<td>Passive</td>
+<td>3/1:3/5</td>
+<td>When you kill an unaware enemy, you fade into the shadows and become
+invisible to other enemies for 2 turns. Chain assassinations.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Pilfer</td>
+<td>Passive</td>
+<td>3/4</td>
+<td>Your kills have a 25% chance to drop an extra item. A thief’s eye
+for hidden treasures ensures you always profit from your work.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Dexterity</td>
+<td>Passive</td>
+<td>3/0:3/1</td>
+<td>You gain a point of dexterity.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Silent Kill</td>
+<td>Passive</td>
+<td>3/7:3/8</td>
+<td>Removes the humanoid restriction from Throat Slit. Any sleeping or
+unaware enemy can be silently dispatched. The ultimate assassin.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hunting">Hunting</h2>
+<p>Target control, information quality, and objective pressure.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Natural Talent</td>
+<td>Passive</td>
+<td>-</td>
+<td>You possess an innate gift that allows you to take advanced
+abilities without the usual prerequisites. Some are simply born to
+greatness.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Mark Quarry</td>
+<td>Active</td>
+<td>-</td>
+<td>Active. Mark a visible enemy as your quarry for several turns.
+Reading and pressuring the marked foe grants tactical advantage.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Keen Senses</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to see enemies who are just beyond the edge of a pool of
+light, and gives a +5 bonus to spot ‘invisible’ creatures.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Concentration</td>
+<td>Sustain</td>
+<td>-</td>
+<td>Sustained pressure on your marked quarry builds Focus. Focus
+improves your duel state and feeds finishing windows.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Alchemy</td>
+<td>Passive</td>
+<td>-</td>
+<td>Lets you identify all herbs and potions. Your knowledge of natural
+compounds also allows you to create improved herbs: combine two
+identical herbs to produce a mo…</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Expose Weakness</td>
+<td>Active</td>
+<td>-</td>
+<td>Active. Read your marked quarry and open its guard. On success,
+temporarily reduce evasion and protection.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Outwit</td>
+<td>Passive</td>
+<td>-</td>
+<td>Whenever you receive a critical hit, make a Hunting roll against the
+attacker’s Perception. If you succeed, negate all critical damage.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Listen</td>
+<td>Passive</td>
+<td>4/2</td>
+<td>Gives you a chance each turn to detect enemies that you cannot see
+(including around corners and through doors).</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Exploit Opening</td>
+<td>Passive</td>
+<td>4/3:4/5</td>
+<td>Active finisher. Spend accumulated Focus to arm your next strike
+against the marked quarry for bonus damage and crit pressure.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Grace</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of grace.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="will">Will</h2>
+<p>Mental resilience, anti-curse utility, and clutch survival.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Curse Breaking</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to break the curses on items when you attempt to take
+them off.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Force of Will</td>
+<td>Passive</td>
+<td>-</td>
+<td>Your mental strength lets you recognise all staves and horns and use
+them twice as efficiently.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Strength in Adversity</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you bonuses to Strength, Dexterity and Grace when seriously
+injured: +1 when less than or equal to 50% health, +3 when 25%.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Formidable</td>
+<td>Passive</td>
+<td>-</td>
+<td>Slaying enemies in melee scares all other enemies who see it.
+Enemies do not gain morale based on your injuries.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Defy Death</td>
+<td>Passive</td>
+<td>5/2</td>
+<td>Once per floor, when reduced to 0 HP, make a Will save to survive
+with 1 HP. Your determination keeps you fighting beyond mortal
+limits.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Indomitable</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you resistance to fear, confusion, stunning, and
+hallucination. Slows hunger to one third the normal rate.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Oath</td>
+<td>Passive</td>
+<td>-</td>
+<td>Swear a great oath, and be rewarded for keeping it.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Poison Resistance</td>
+<td>Passive</td>
+<td>-</td>
+<td>Gives you resistance to poison.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Vengeance</td>
+<td>Passive</td>
+<td>5/2</td>
+<td>When you are damaged in melee by an enemy, an additional damage die
+is added to your next successful strike. This effect does not
+stack.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Majesty</td>
+<td>Passive</td>
+<td>5/0:5/4</td>
+<td>Lowers monster morale by half the difference between your Will and
+theirs.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Constitution</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of constitution.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="smithing">Smithing</h2>
+<p>Long-run power through gear quality and forging economy.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>Weaponsmith</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to create weapons.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Armoursmith</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to create armour.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Jeweller</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to create rings, amulets, and light sources, and identify
+such items you encounter. The craft of adornment and illumination.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Reforge</td>
+<td>Passive</td>
+<td>-</td>
+<td>Allows you to combine two Broken Glowing items at a forge to create
+a randomly enchanted item of that type. Costs 600 experience
+points.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Expertise</td>
+<td>Passive</td>
+<td>6/3</td>
+<td>Reduces the time taken to forge an item by half and reduces
+experience and stat costs by 50%. At Smithing 10 or higher, reduction
+increases to 75%.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Reclaim</td>
+<td>Passive</td>
+<td>6/3</td>
+<td>Allows you to combine two Broken Strange items at a forge to create
+a random artifact of that type. The artifact is drawn from the legends
+of Middle-earth.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Masterwork</td>
+<td>Passive</td>
+<td>6/5</td>
+<td>Allows you to combine four Broken Strange items at a forge to create
+a legendary artifact. These are the greatest works of the Third Age,
+surpassing even ancient…</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Grace</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of grace.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Reforge Mastery</td>
+<td>Passive</td>
+<td>6/3</td>
+<td>When using Reforge, you may reject the random result once and
+reroll. You must accept the second result.</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Salvage</td>
+<td>Passive</td>
+<td>6/8</td>
+<td>When equipment would be destroyed by acid, fire, or breakage, there
+is a 50% chance to recover it as a Broken Glowing item instead of losing
+it entirely.</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Reclaim Mastery</td>
+<td>Passive</td>
+<td>6/5</td>
+<td>When using Reclaim, you are shown three random artifacts of the
+chosen type and may select which one to create.</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Master Smith</td>
+<td>Passive</td>
+<td>6/6</td>
+<td>Your legendary skill allows you to create Masterwork items with only
+2 Broken Strange items instead of 4.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="song-lore">Song (Lore)</h2>
+<p>Voice-powered active and sustained lore tools.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Ability</th>
+<th>Type</th>
+<th>Prereq</th>
+<th>What It Does (Practical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Lore of Hidden Ways</td>
+<td>Passive</td>
+<td>-</td>
+<td>Your knowledge of concealment dampens all nearby sounds and senses,
+reducing monster perception temporarily. Uses status-based drain.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Word of Opening</td>
+<td>Passive</td>
+<td>-</td>
+<td>Speaking the words of unbinding, you discover and overcome nearby
+doors, traps, and rubble. Grants freedom of movement.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Deep Memory</td>
+<td>Passive</td>
+<td>-</td>
+<td>Drawing on ancestral knowledge, you gradually perceive the layout of
+your surroundings, sensing passages and chambers nearby.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Herbcraft</td>
+<td>Sustain</td>
+<td>-</td>
+<td>A sustained song of healing lore. While active, stops bleeding each
+turn, grants +50% rest regeneration, and doubles herb effectiveness.
+Drains 1 voice charge per…</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Lore of Naming</td>
+<td>Passive</td>
+<td>-</td>
+<td>Your knowledge of the true names of creatures grants +2 to Will
+contests against types you have previously slain. Also reveals monster
+stats when you examine them.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Light of the Eldar</td>
+<td>Passive</td>
+<td>-</td>
+<td>Your spirit shines with inner radiance, increasing your light radius
+by 1 per 3 Lore. Shadow creatures suffer -2 attack and -2 evasion in
+your light. Wraiths take…</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Song of the Trees</td>
+<td>Sustain</td>
+<td>-</td>
+<td>A sustained song of the ancient forests. Grants +5 stealth while
+singing. The trees themselves seem to hide your passage. Drains 1 voice
+charge per turn.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Word of Command</td>
+<td>Passive</td>
+<td>-</td>
+<td>Speaking a word of terrible power causes fear in nearby servants of
+the Enemy. 12-turn cooldown. Your voice carries ancient authority.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Song of Freedom</td>
+<td>Sustain</td>
+<td>-</td>
+<td>A sustained song granting +3 evasion while singing. When a status
+effect targets you, make a Will contest to resist it. If the contest
+fails, the song is disrupte…</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Song of Lorien</td>
+<td>Sustain</td>
+<td>-</td>
+<td>A sustained song of the dream-gardens of Lorien. Each turn, monsters
+within radius 5 lose alertness equal to Lore/3. When alertness reaches
+minimum, they fall asl…</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Lore of Endurance</td>
+<td>Passive</td>
+<td>7/3</td>
+<td>Ancient techniques of mental fortitude grant a bonus to Will equal
+to half your Lore score, [2d2] protection, and +2 temporary Will for 3
+turns whenever you take…</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Song of Banishment</td>
+<td>Passive</td>
+<td>7/5</td>
+<td>You sing a song of banishment that deals [Lore/2]d6 damage to undead
+and forces them to flee for 5 turns. Ignores fear immunity. Usable once
+per floor.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Word of Domination</td>
+<td>Passive</td>
+<td>7/6</td>
+<td>Speaking words of binding, you attempt to dominate a monster’s will.
+On success, the creature fights for you for Lore/2 turns. Uniques are
+immune. Dominated creat…</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Song of Aule</td>
+<td>Sustain</td>
+<td>7/6</td>
+<td>A sustained song of the smith-god. Grants +1 weapon damage die and
++1 armor protection die while singing. At a forge, grants +3 smithing.
+Drains 2 voice charges p…</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Song of Healing</td>
+<td>Sustain</td>
+<td>-</td>
+<td>A sustained song of restoration. Heals Lore/2 HP per turn while
+singing. Also heals dominated allies within radius 3. Drains 1 voice
+charge per turn.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Word of Warding</td>
+<td>Passive</td>
+<td>7/6</td>
+<td>Speaking words of ancient warding, you inscribe a sigil on the floor
+that no monster can pass. Maximum 3 sigils active at once. Each lasts
+Lore*3 turns.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Word of Authority</td>
+<td>Passive</td>
+<td>7/6</td>
+<td>Your commanding presence stuns all nearby enemies. Radius 2+Lore/4,
+Will contest against each target. Stunned for 2+Lore/4 turns. 20-turn
+cooldown.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Word of Unmaking</td>
+<td>Passive</td>
+<td>7/6:7/14</td>
+<td>A word of terrible destruction. Dispels enchantment on target item,
+destroys rubble/walls in radius 2, deals [Lore]d6 to undead in radius 3,
+stuns living 2 turns….</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Mastery of Themes</td>
+<td>Passive</td>
+<td>7/7</td>
+<td>Your deep understanding of musical power allows you to sustain two
+songs simultaneously. The second song operates at full strength.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Grace</td>
+<td>Passive</td>
+<td>-</td>
+<td>You gain a point of grace.</td>
+</tr>
+</tbody>
+</table>
+<h1 id="closing">21. Closing</h1>
+<p>This guide can keep you from obvious deaths. It cannot play the turn
+for you.</p>
+<p>The Necromancer rewards the same habit its predecessors rewarded:
+thinking before acting, then accepting consequences without excuses.</p>
+<p>Descend prepared. Return with Thrain’s map and key. Or leave a better
+lesson for the next run.</p>
+</body>
+</html>

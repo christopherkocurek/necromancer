@@ -703,6 +703,8 @@ func _consume_material(player: Player, material: Variant) -> void:
 func _get_item_name(item: Variant) -> String:
 	if item == null:
 		return "item"
+	if GameManager:
+		return GameManager.get_item_display_name(item)
 	if "name" in item:
 		return item.name
 	return "item"
