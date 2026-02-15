@@ -779,11 +779,9 @@ func _get_item_icon(item: Variant) -> Texture2D:
 	if item == null or not _tileset_texture:
 		return null
 
-	var item_index: int = -1
-	if "index" in item:
-		item_index = item.index
-	else:
-		return null
+	var item_index: int = _resolve_item_index(item)
+	if item_index < 0:
+		item_index = 0  # Generic pile fallback
 
 	var atlas_coords: Vector2i = TileMapper.get_object_coords(item_index)
 	if atlas_coords.x < 0 or atlas_coords.y < 0:
@@ -801,6 +799,21 @@ func _get_item_icon(item: Variant) -> Texture2D:
 		TILE_SIZE
 	)
 	return atlas
+
+func _resolve_item_index(item: Variant) -> int:
+	if item == null:
+		return -1
+	if "index" in item:
+		return int(item.index)
+	# Backward compatibility for older save payloads that may only carry id.
+	if "id" in item:
+		return int(item.id)
+	# Recover from tval/sval when possible.
+	if "tval" in item and "sval" in item:
+		var base_item: DataManager.ItemData = DataManager.get_item_by_tval_sval(int(item.tval), int(item.sval))
+		if base_item != null:
+			return int(base_item.index)
+	return -1
 
 func _get_item_name(item: Variant) -> String:
 	if item == null:

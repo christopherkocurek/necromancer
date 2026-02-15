@@ -473,6 +473,8 @@ func _deserialize_player(player: Player, data: Dictionary) -> void:
 		for slot_name in data.equipment:
 			if slot_name in player.equipment:
 				player.equipment[slot_name] = data.equipment[slot_name]
+	_hydrate_item_indices(player.inventory)
+	_hydrate_equipment_indices(player.equipment)
 
 	# Status effects
 	player.status_effects = data.get("status_effects", {}).duplicate()
@@ -561,6 +563,43 @@ func _load_metadata_for_slot(slot: int) -> Dictionary:
 
 func _get_save_path(slot: int) -> String:
 	return SAVE_DIR + "slot_%d%s" % [slot, SAVE_EXTENSION]
+
+func _hydrate_item_indices(items: Array) -> void:
+	for i in range(items.size()):
+		var item: Variant = items[i]
+		if not (item is Dictionary):
+			continue
+		var dict_item: Dictionary = item
+		if dict_item.has("index"):
+			continue
+		var recovered: int = _recover_item_index(dict_item)
+		if recovered >= 0:
+			dict_item["index"] = recovered
+			items[i] = dict_item
+
+func _hydrate_equipment_indices(equipment: Dictionary) -> void:
+	for slot_name in equipment:
+		var item: Variant = equipment[slot_name]
+		if not (item is Dictionary):
+			continue
+		var dict_item: Dictionary = item
+		if dict_item.has("index"):
+			continue
+		var recovered: int = _recover_item_index(dict_item)
+		if recovered >= 0:
+			dict_item["index"] = recovered
+			equipment[slot_name] = dict_item
+
+func _recover_item_index(item: Dictionary) -> int:
+	if item.has("index"):
+		return int(item["index"])
+	if item.has("id"):
+		return int(item["id"])
+	if item.has("tval") and item.has("sval"):
+		var base_item: DataManager.ItemData = DataManager.get_item_by_tval_sval(int(item["tval"]), int(item["sval"]))
+		if base_item != null:
+			return int(base_item.index)
+	return -1
 
 func _get_slot_from_filename(filename: String) -> int:
 	# Extract slot number from "slot_X.sav"

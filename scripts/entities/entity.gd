@@ -44,6 +44,8 @@ var energy: int = 0
 var sprite: Sprite2D
 var _pending_atlas_coords: Vector2i = Vector2i(-1, -1)  # Coords to apply after sprite creation
 var _move_tween: Tween = null
+var _dodge_tween: Tween = null
+var _sprite_rest_position: Vector2 = Vector2.ZERO
 
 # Shared resources (loaded once)
 static var _tileset_texture: Texture2D = null
@@ -79,6 +81,8 @@ func _setup_sprite() -> void:
 	sprite.texture = _tileset_texture
 	sprite.region_enabled = true
 	sprite.material = _magenta_shader
+	# Anchor for local sprite-only VFX offsets (prevents drift from stacked tweens).
+	_sprite_rest_position = sprite.position
 
 	# Apply pending atlas coords if set, otherwise use default
 	if _pending_atlas_coords != Vector2i(-1, -1):
@@ -132,6 +136,9 @@ func _apply_atlas_coords(atlas_coords: Vector2i) -> void:
 
 func _update_visual_position() -> void:
 	position = Vector2(grid_position) * GameManager.TILE_SIZE
+	# Keep sprite anchored when not actively playing dodge VFX.
+	if sprite and (_dodge_tween == null or not _dodge_tween.is_running()):
+		sprite.position = _sprite_rest_position
 
 func get_world_position() -> Vector2:
 	return position + Vector2(GameManager.TILE_SIZE / 2, GameManager.TILE_SIZE / 2)
@@ -363,11 +370,15 @@ func vfx_particles_directional(color: Color, direction: Vector2, count: int = 3,
 func vfx_dodge(offset_px: float = 2.0, duration: float = 0.15) -> void:
 	if not sprite:
 		return
-	var orig_pos: Vector2 = sprite.position
-	var shifted: Vector2 = orig_pos + Vector2(offset_px, 0)
-	var t := create_tween()
-	t.tween_property(sprite, "position", shifted, duration * 0.4).set_ease(Tween.EASE_OUT)
-	t.tween_property(sprite, "position", orig_pos, duration * 0.6).set_ease(Tween.EASE_IN)
+	# If the effect is retriggered mid-animation, reset to rest before replaying.
+	if _dodge_tween and _dodge_tween.is_running():
+		_dodge_tween.kill()
+	_dodge_tween = null
+	sprite.position = _sprite_rest_position
+	var shifted: Vector2 = _sprite_rest_position + Vector2(offset_px, 0)
+	_dodge_tween = create_tween()
+	_dodge_tween.tween_property(sprite, "position", shifted, duration * 0.4).set_ease(Tween.EASE_OUT)
+	_dodge_tween.tween_property(sprite, "position", _sprite_rest_position, duration * 0.6).set_ease(Tween.EASE_IN)
 
 ## Spawn ring of particles above the entity (for stun stars effect).
 func vfx_ring_particles(color: Color, count: int = 5, radius: float = 10.0, duration: float = 0.6) -> void:
