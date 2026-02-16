@@ -194,7 +194,7 @@ const EFFECT_DATA: Dictionary = {
 
 ## Calculate damage for poison effect: (duration + 4) / 5
 static func calculate_poison_damage(duration: int) -> int:
-	return (duration + 4) / 5
+	return maxi(1, (duration + 7) / 8)
 
 ## Calculate damage for cut/bleeding effect: (duration + 4) / 5
 static func calculate_cut_damage(duration: int) -> int:
@@ -202,7 +202,7 @@ static func calculate_cut_damage(duration: int) -> int:
 
 ## Calculate decay for poison effect: same as damage formula
 static func calculate_poison_decay(duration: int) -> int:
-	return 1
+	return maxi(1, (duration + 9) / 10)
 
 ## Calculate decay for cut effect: same as damage formula
 static func calculate_cut_decay(duration: int) -> int:

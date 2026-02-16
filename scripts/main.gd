@@ -72,6 +72,7 @@ var _pending_stairs_dir: int = 0  # -1 up, +1 down
 
 # Auto-explore state (flag-based loop)
 var _auto_exploring: bool = false
+var _auto_explore_skip_step: bool = false
 
 # Wizard mode (Ctrl+W to toggle, then Ctrl+D/H/K/R/J/T for debug commands)
 var wizard_mode: bool = false
@@ -2111,8 +2112,12 @@ func _process_rest_step() -> void:
 		player.current_health = mini(player.current_health + 1, player.max_health)
 
 	# Simulate player consuming energy and processing the game tick
+	var round_before: int = int(turn_system.current_round) if turn_system else 0
 	player.consume_energy()
 	turn_system._after_player_action()
+	# Ensure resting advances DOT timers even in high-speed states where round-end may not fire.
+	if turn_system and int(turn_system.current_round) == round_before:
+		player.tick_status_effects()
 	hud.update_player_stats(player)
 
 	# Update HP tracker for damage detection
@@ -2283,6 +2288,7 @@ func _start_auto_explore() -> void:
 
 	if auto_explore.start_explore():
 		_auto_exploring = true
+		_auto_explore_skip_step = false
 
 func _process_auto_explore_step() -> void:
 	if not _auto_exploring or not auto_explore or not auto_explore.is_exploring:
@@ -2291,6 +2297,11 @@ func _process_auto_explore_step() -> void:
 
 	if not player or not player.is_alive:
 		_stop_auto_explore_flag("Player died")
+		return
+
+	# Intentional 50% pacing cut: execute every other processing opportunity.
+	_auto_explore_skip_step = not _auto_explore_skip_step
+	if _auto_explore_skip_step:
 		return
 
 	# Get next step (handles stop conditions internally)
@@ -2340,6 +2351,7 @@ func _stop_auto_explore_flag(reason: String) -> void:
 	if not _auto_exploring:
 		return
 	_auto_exploring = false
+	_auto_explore_skip_step = false
 	if auto_explore and auto_explore.is_exploring:
 		auto_explore.stop_explore(reason)
 

@@ -185,12 +185,12 @@ D: Where there are pups, the pack is near.
 N:22:Broodmother
 W:3:6
 G:M:G
-I:1:16d4:0
+I:1:14d4:0
 A:10:6:2:4
 P:[+5,2d4]
-B:BITE:POISON:(+10,2d8)
+B:BITE:POISON:(+7,2d6)
 F:SPIDER | TERRITORIAL | RES_POIS | FEMALE
-S:SPELL_PCT_20 | POW_8
+S:SPELL_PCT_12 | POW_6
 S:HATCH_SPIDER | SLOW
 D:A bloated horror, her abdomen swollen with countless eggs.
 D: She is slow but deadly, and her children swarm to protect her.

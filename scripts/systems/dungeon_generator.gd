@@ -886,7 +886,7 @@ func _add_secret_doors(depth: int) -> void:
 ## Boss names override the base monster name for flavor
 const BOSS_POOL: Dictionary = {
 	3: [  # Forest Breach → Orc Warrens
-		{"title": "Ungoliant's Broodmother", "hp_mult": 1.8, "xp_mult": 3},
+		{"title": "Ungoliant's Broodmother", "hp_mult": 1.45, "xp_mult": 3},
 		{"title": "Shelob's Daughter", "hp_mult": 1.6, "xp_mult": 3},
 		{"title": "The Tanglethorn Ancient", "hp_mult": 2.0, "xp_mult": 3},
 	],
@@ -923,11 +923,16 @@ const BOSS_POOL: Dictionary = {
 const TRANSITION_BOSS_BASES: Dictionary = {
 	3: ["Broodmother"],
 }
+const UNGOLIANT_BROODMOTHER_TITLE: String = "Ungoliant's Broodmother"
 
 func _get_reserved_transition_bases(depth: int) -> Array[String]:
 	if not LayerConfig.is_boss_level(depth):
 		return []
-	return TRANSITION_BOSS_BASES.get(depth, [])
+	var raw_reserved: Array = TRANSITION_BOSS_BASES.get(depth, [])
+	var reserved: Array[String] = []
+	for name in raw_reserved:
+		reserved.append(str(name))
+	return reserved
 
 func _is_reserved_transition_monster(data: DataManager.MonsterData, depth: int) -> bool:
 	if data == null:
@@ -964,6 +969,8 @@ func _add_boss_room(depth: int) -> void:
 	var reserved_bases: Array[String] = _get_reserved_transition_bases(depth)
 	if not reserved_bases.is_empty():
 		boss_data = DataManager.get_monster(reserved_bases[0])
+	if boss_info.get("title", "") == UNGOLIANT_BROODMOTHER_TITLE:
+		boss_data = DataManager.get_monster("Broodmother")
 	if not boss_data:
 		boss_data = DataManager.get_themed_monster_for_depth(depth + 3)
 	if not boss_data:
@@ -993,6 +1000,13 @@ func _add_boss_room(depth: int) -> void:
 	boss.is_brave = true
 	boss.set_meta("is_transition_boss", true)
 	boss.set_meta("transition_boss_depth", depth)
+	if boss_info.get("title", "") == UNGOLIANT_BROODMOTHER_TITLE:
+		boss.set_meta("ungoliant_broodmother", true)
+		boss.set_sprite_from_monster_id(22)
+		var sprite: Sprite2D = boss.get_node_or_null("Sprite2D") as Sprite2D
+		if sprite:
+			# Darker palette touch variant for Ungoliant's brood while retaining base Broodmother silhouette.
+			sprite.modulate = Color(0.44, 0.38, 0.50, 1.0)
 	level.add_entity(boss)
 	DataManager.mark_unique_spawned(transition_key)
 	DataManager.mark_unique_spawned(boss_info.title)
@@ -1321,6 +1335,8 @@ func _can_place_vault_at(pos: Vector2i, vault: DataManager.VaultData) -> bool:
 func _place_vault_monster(monster_scene: PackedScene, pos: Vector2i, data: DataManager.MonsterData, is_greater_vault: bool, depth: int) -> void:
 	# Don't stack monsters on occupied tiles
 	if level.get_entity_at(pos) != null:
+		return
+	if not _can_place_pre_spawn_monster(depth, data):
 		return
 	if _is_reserved_transition_monster(data, depth):
 		return
@@ -1887,7 +1903,7 @@ func _spawn_forge_guardian(forge_pos: Vector2i, depth: int, forge_tile: int) -> 
 		var pos: Vector2i = forge_pos + dir
 		if level.is_in_bounds(pos) and level.is_passable(pos) and level.get_entity_at(pos) == null:
 			var guard_data: DataManager.MonsterData = DataManager.get_themed_monster_for_depth(guard_depth)
-			if guard_data:
+			if guard_data and _can_place_pre_spawn_monster(depth, guard_data):
 				var guard: Monster = monster_scene.instantiate()
 				guard.grid_position = pos
 				guard.initialize_from_data(guard_data)
@@ -2010,13 +2026,7 @@ func _spawn_monsters(depth: int) -> void:
 	var existing_monsters: int = level.get_monsters().size()
 
 	# Density formula: based on passable tiles, scales with depth
-	var passable: int = level.count_passable_tiles()
-	var divisor: float = lerpf(35.0, 25.0, clampf(float(depth - 1) / 19.0, 0.0, 1.0))
-	var max_total: int = clampi(int(passable / divisor), 4, 20)
-
-	# Ascent escalation: double monster count
-	if level.is_ascent:
-		max_total = mini(int(max_total * Constants.ASCENT_SPAWN_MULTIPLIER), 40)
+	var max_total: int = _get_floor_monster_budget(depth)
 
 	# Layer transition smoothing: reduce effective depth by 1 at boundaries
 	var spawn_depth: int = depth
@@ -2124,10 +2134,11 @@ func _spawn_monsters(depth: int) -> void:
 
 	# Hard safety cap: prevent runaway vault/guard spawns.
 	var pre_trim_count: int = level.get_monsters().size()
-	_trim_monsters_to_cap(Constants.PERIODIC_SPAWN_MAX_MONSTERS)
-	if pre_trim_count > Constants.PERIODIC_SPAWN_MAX_MONSTERS:
+	var hard_cap: int = _get_runtime_monster_hard_cap(max_total)
+	_trim_monsters_to_cap(hard_cap)
+	if pre_trim_count > hard_cap:
 		print("Monster cap applied at depth %d: %d -> %d (cap %d)" % [
-			depth, pre_trim_count, level.get_monsters().size(), Constants.PERIODIC_SPAWN_MAX_MONSTERS
+			depth, pre_trim_count, level.get_monsters().size(), hard_cap
 		])
 
 	var final_count: int = 0
@@ -2135,6 +2146,29 @@ func _spawn_monsters(depth: int) -> void:
 		if is_instance_valid(e) and e is Monster:
 			final_count += 1
 	print("Spawned %d monsters at depth %d (cap %d)" % [final_count, depth, max_total])
+
+func _get_runtime_monster_hard_cap(floor_budget: int = -1) -> int:
+	var hard_cap: int = Constants.PERIODIC_SPAWN_MAX_MONSTERS
+	if floor_budget > 0:
+		hard_cap = mini(hard_cap, floor_budget)
+	if GameManager and GameManager.has_meta("advisory_monster_cap_override"):
+		var override_val: int = int(GameManager.get_meta("advisory_monster_cap_override"))
+		if override_val > 0:
+			hard_cap = override_val
+	return hard_cap
+
+func _get_floor_monster_budget(depth: int) -> int:
+	var passable: int = maxi(level.count_passable_tiles(), 1)
+	var divisor: float = lerpf(35.0, 25.0, clampf(float(depth - 1) / 19.0, 0.0, 1.0))
+	var max_total: int = clampi(int(passable / divisor), 4, 20)
+	if level.is_ascent:
+		max_total = mini(int(max_total * Constants.ASCENT_SPAWN_MULTIPLIER), 40)
+	return max_total
+
+func _can_place_pre_spawn_monster(depth: int, monster_data: DataManager.MonsterData = null) -> bool:
+	if monster_data and (monster_data.has_flag("UNIQUE") or _is_reserved_transition_monster(monster_data, depth)):
+		return true
+	return level.get_monsters().size() < _get_floor_monster_budget(depth)
 
 ## Enforce a hard cap on total monsters (vaults/guards can exceed spawn budget).
 func _trim_monsters_to_cap(cap: int) -> void:
@@ -2213,14 +2247,14 @@ func _place_monster_with_entourage(monster_scene: PackedScene, pos: Vector2i, de
 	if not monster_data:
 		return 0
 
-	# Reserve transition boss species for dedicated boss spawns/titles.
-	for _retry in range(5):
-		if not _is_reserved_transition_monster(monster_data, depth):
+	# Reserve transition boss species for dedicated boss spawns/titles and keep early floors safe.
+	for _retry in range(8):
+		if not _is_reserved_transition_monster(monster_data, depth) and not _is_disallowed_monster_for_floor(monster_data, depth):
 			break
 		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
 		if not monster_data:
 			return 0
-	if _is_reserved_transition_monster(monster_data, depth):
+	if _is_reserved_transition_monster(monster_data, depth) or _is_disallowed_monster_for_floor(monster_data, depth):
 		return 0
 
 	# Unique cap check
@@ -2257,6 +2291,14 @@ func _place_monster_with_entourage(monster_scene: PackedScene, pos: Vector2i, de
 		spawned += _spawn_escort_group(monster_scene, pos, monster_data, depth, escort_count)
 
 	return spawned
+
+func _is_disallowed_monster_for_floor(monster_data: DataManager.MonsterData, floor_depth: int) -> bool:
+	if monster_data == null:
+		return true
+	# Layer-1 safety gate: Broodmother (and all title variants based on it) must not appear before depth 3.
+	if monster_data.name == "Broodmother" and floor_depth < 3:
+		return true
+	return false
 
 ## Get FRIENDS pack size by monster type.
 func _get_friends_pack_size(data: DataManager.MonsterData) -> int:
@@ -2763,7 +2805,7 @@ func _place_door_guards(depth: int) -> void:
 				var guard_pos: Vector2i = pos + dir
 				if level.is_in_bounds(guard_pos) and level.get_tile(guard_pos) == Level.Tile.FLOOR and level.get_entity_at(guard_pos) == null:
 					var guard_data: DataManager.MonsterData = DataManager.get_themed_monster_for_depth(depth)
-					if guard_data:
+					if guard_data and _can_place_pre_spawn_monster(depth, guard_data):
 						var guard: Monster = monster_scene.instantiate()
 						guard.grid_position = guard_pos
 						guard.initialize_from_data(guard_data)

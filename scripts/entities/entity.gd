@@ -211,6 +211,7 @@ func take_damage(amount: int, damage_type: String = "physical", source: Entity =
 	_flash_damage()
 
 	if current_health <= 0:
+		current_health = 0
 		die(source)
 
 func _calculate_damage_reduction(base_damage: int, _damage_type: String) -> int:

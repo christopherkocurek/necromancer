@@ -265,6 +265,8 @@ var noise_this_turn: int = 0         # Accumulated noise from actions
 var was_attacked_this_turn: bool = false  # For combat noise
 var attacked_this_turn: bool = false     # For combat noise
 var _skip_input_this_frame: bool = false  # Set by main.gd when stealth toggled via direct keycode
+var _held_move_last_direction: Vector2i = Vector2i.ZERO
+var _held_move_skip_next: bool = false
 
 func _ready() -> void:
 	super._ready()
@@ -3310,6 +3312,8 @@ func handle_input() -> bool:
 	# CONFUSED: 50% chance of random movement instead of intended
 	if status_fx and status_fx.is_confused():
 		var direction := _get_movement_input()
+		if direction != Vector2i.ZERO and not _should_process_held_movement(direction):
+			return false
 		if direction != Vector2i.ZERO or Input.is_action_just_pressed("wait"):
 			if randf() < 0.5:
 				# Random direction
@@ -3333,6 +3337,8 @@ func handle_input() -> bool:
 	if status_fx and status_fx.is_afraid():
 		var direction := _get_movement_input()
 		if direction != Vector2i.ZERO:
+			if not _should_process_held_movement(direction):
+				return false
 			var flee_dir: Vector2i = _get_flee_direction()
 			if flee_dir != Vector2i.ZERO:
 				GameManager.log_message("Terror drives you to flee!", ThemeColors.STATUS_AFRAID)
@@ -3344,11 +3350,15 @@ func handle_input() -> bool:
 
 	var direction := _get_movement_input()
 	if direction != Vector2i.ZERO:
+		if not _should_process_held_movement(direction):
+			return false
 		moved_this_turn = true
 		var did_move: bool = try_move(direction)
 		if did_move:
 			record_action(direction_to_action(direction))
 		return did_move or attacked_this_turn
+
+	_reset_held_movement_gate()
 
 	if Input.is_action_just_pressed("wait"):
 		return true  # Skip turn
@@ -3372,6 +3382,21 @@ func handle_input() -> bool:
 		return _try_search()
 
 	return false
+
+func _should_process_held_movement(direction: Vector2i) -> bool:
+	if direction == Vector2i.ZERO:
+		_reset_held_movement_gate()
+		return false
+	if direction != _held_move_last_direction:
+		_held_move_last_direction = direction
+		_held_move_skip_next = false
+		return true
+	_held_move_skip_next = not _held_move_skip_next
+	return not _held_move_skip_next
+
+func _reset_held_movement_gate() -> void:
+	_held_move_last_direction = Vector2i.ZERO
+	_held_move_skip_next = false
 
 ## Use the first consumable of a given tval from inventory
 func _use_first_consumable(target_tval: int) -> bool:

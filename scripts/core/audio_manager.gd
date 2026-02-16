@@ -86,6 +86,11 @@ const SFX_FILES: Dictionary = {
 	"terrain_dark_pool_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak2.ogg",
 	"terrain_morgul_rune_step": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak3.ogg",
 	"terrain_shadow_floor_bite": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/creak3.ogg",
+	"dungeon_entry": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/doorOpen_2.ogg",
+	"player_swing": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/drawKnife1.ogg",
+	"player_hit": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/knifeSlice.ogg",
+	"monster_swing": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/drawKnife3.ogg",
+	"monster_hit": "res://third_party_assets/sfx/kenney_rpg_audio/Audio/chop.ogg",
 }
 
 # Settings file
@@ -391,8 +396,13 @@ func _on_entity_damaged(entity: Node, _damage: int, damage_type: String, source:
 			if source != null:
 				play_sfx("dmg_dark")
 		_:
-			# Keep the metallic clang; disable the voice-like impact variant.
-			play_sfx("hit")
+			# Distinguish player offense from incoming monster pressure in the core combat loop.
+			if _is_player(source) and not _is_player(entity):
+				play_sfx(["player_hit", "hit"].pick_random())
+			elif _is_player(entity) and not _is_player(source):
+				play_sfx(["monster_hit", "hit1"].pick_random())
+			else:
+				play_sfx("hit")
 
 	# Start combat music if player is involved
 	if _is_player(entity) or _is_player(source):
@@ -404,7 +414,11 @@ func _on_entity_died(entity: Node, _killer: Node) -> void:
 	else:
 		play_sfx(["kill", "kill1"].pick_random())
 
-func _on_attack_missed(_attacker: Node, _defender: Node) -> void:
+func _on_attack_missed(attacker: Node, _defender: Node) -> void:
+	if _is_player(attacker):
+		play_sfx("player_swing")
+	else:
+		play_sfx("monster_swing")
 	play_sfx(["miss", "miss1"].pick_random())
 
 func _on_item_picked_up(_entity: Node, _item: Variant) -> void:
@@ -420,6 +434,7 @@ func _on_item_used(_entity: Node, _item: Variant) -> void:
 	play_ui_sound("eat")
 
 func _on_level_entered(depth: int) -> void:
+	play_sfx("dungeon_entry")
 	play_sfx("level")
 	# Switch to exploration music for this depth (unless in combat)
 	if not in_combat:

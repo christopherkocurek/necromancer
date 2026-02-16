@@ -2,6 +2,8 @@ extends Node2D
 class_name Level
 ## Manages a dungeon level - terrain, entities, items, FOV.
 
+const InscriptionTextBankScript := preload("res://scripts/systems/inscription_text_bank.gd")
+
 signal generation_complete(width: int, height: int)
 
 # Level dimensions
@@ -289,9 +291,15 @@ func on_entity_step(entity: Entity, pos: Vector2i) -> bool:
 
 	# Environmental storytelling — inscription tiles with one-time flavor messages
 	if tile == Tile.INSCRIPTION and entity is Player:
+		var inscription_hint_id: String = "inscription_depth_%d_%d_%d" % [depth, pos.x, pos.y]
+		var inscription_text: String = _get_inscription_popup_text(pos)
+		if TutorialManager and TutorialManager.has_method("show_forced_hint"):
+			TutorialManager.show_forced_hint(inscription_hint_id, inscription_text, 6.0, true)
 		if pos in flavor_messages and pos not in _seen_flavor_positions:
 			_seen_flavor_positions[pos] = true
 			EventBus.message_logged.emit(flavor_messages[pos], ThemeColors.MSG_INFO)
+		else:
+			EventBus.message_logged.emit(inscription_text, ThemeColors.MSG_INFO)
 		if pos not in _seen_inscription_rewards:
 			_seen_inscription_rewards[pos] = true
 			var xp_reward: int = 500
@@ -334,6 +342,12 @@ func consume_forge_use(pos: Vector2i) -> int:
 		forge_uses.erase(pos)
 		set_tile(pos, Tile.FLOOR)
 	return remaining
+
+func _get_inscription_popup_text(pos: Vector2i) -> String:
+	var slot_seed: int = int(depth * 100000 + pos.x * 131 + pos.y * 137)
+	var slot: int = posmod(slot_seed, 100)
+	var layer_key: String = LayerConfig.get_layer_name(depth)
+	return InscriptionTextBankScript.get_line(layer_key, slot)
 
 func get_terrain_name(pos: Vector2i) -> String:
 	match get_tile(pos):

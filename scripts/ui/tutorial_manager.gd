@@ -140,10 +140,17 @@ func show_hint(hint_id: String, text: String, duration_sec: float = 5.0) -> void
 	if AccessibilityManager and AccessibilityManager.has_method("is_assist_enabled"):
 		if not AccessibilityManager.is_assist_enabled():
 			return
-	if _shown_hints.has(hint_id):
-		return
-	_shown_hints[hint_id] = true
-	_save_hints()
+	_show_hint_internal(hint_id, text, duration_sec, true)
+
+func show_forced_hint(hint_id: String, text: String, duration_sec: float = 5.0, remember_once: bool = true) -> void:
+	_show_hint_internal(hint_id, text, duration_sec, remember_once)
+
+func _show_hint_internal(hint_id: String, text: String, duration_sec: float, remember_once: bool) -> void:
+	if remember_once:
+		if _shown_hints.has(hint_id):
+			return
+		_shown_hints[hint_id] = true
+		_save_hints()
 	_hint_label.text = text
 	call_deferred("_reposition_hint_panel")
 	_hint_panel.visible = true

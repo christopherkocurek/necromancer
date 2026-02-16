@@ -62,6 +62,9 @@ var _shift_cooldown: int = 0  # Turns until can shift again
 var _wolf_speed_bonus: int = 0  # Temporary speed bonus applied in wolf form
 var _wolf_attack_bonus: int = 0  # Temporary attack bonus applied in wolf form
 var last_attack_effect: String = ""
+var _spell_cooldowns: Dictionary = {}  # StringName -> turns remaining
+const WEB_SPELL_COOLDOWN_TURNS: int = 4
+const HATCH_SPIDER_COOLDOWN_TURNS: int = 6
 
 # Hunting duel debuff (Expose Weakness)
 var _hunter_exposed_turns: int = 0
@@ -188,6 +191,8 @@ func initialize_from_data(data: DataManager.MonsterData) -> void:
 func take_turn() -> void:
 	if not is_alive or never_moves:
 		return
+
+	_tick_spell_cooldowns()
 
 	# Tick Expose Weakness debuff on this monster's own turn.
 	if _hunter_exposed_turns > 0:
@@ -1623,6 +1628,9 @@ func _try_cast_spell(cast_target: Entity, distance: int) -> bool:
 
 	# Build list of available spells
 	var available_spells: Array[String] = _get_available_spells()
+	available_spells = available_spells.filter(func(spell_name: String) -> bool:
+		return not _is_spell_on_cooldown(spell_name)
+	)
 	if available_spells.is_empty():
 		return false
 
@@ -1674,36 +1682,82 @@ func _cast_spell(spell: String, cast_target: Entity, distance: int) -> bool:
 	if not is_instance_valid(cast_target):
 		return false
 
+	var casted: bool = false
 	match spell:
 		"SHRIEK":
-			return _spell_shriek()
+			casted = _spell_shriek()
 		"DARKNESS":
-			return _spell_darkness(cast_target)
+			casted = _spell_darkness(cast_target)
 		"SLOW":
-			return _spell_slow(cast_target)
+			casted = _spell_slow(cast_target)
 		"BR_FIRE":
-			return _spell_breath(cast_target, "fire", distance)
+			casted = _spell_breath(cast_target, "fire", distance)
 		"BR_COLD":
-			return _spell_breath(cast_target, "cold", distance)
+			casted = _spell_breath(cast_target, "cold", distance)
 		"BR_POIS":
-			return _spell_breath(cast_target, "poison", distance)
+			casted = _spell_breath(cast_target, "poison", distance)
 		"BR_DARK":
-			return _spell_breath(cast_target, "dark", distance)
+			casted = _spell_breath(cast_target, "dark", distance)
 		"ARROW1":
-			return _spell_ranged_attack(cast_target, distance, 1)
+			casted = _spell_ranged_attack(cast_target, distance, 1)
 		"ARROW2":
-			return _spell_ranged_attack(cast_target, distance, 2)
+			casted = _spell_ranged_attack(cast_target, distance, 2)
 		"BOULDER":
-			return _spell_ranged_attack(cast_target, distance, 3)
+			casted = _spell_ranged_attack(cast_target, distance, 3)
 		"HOLD":
-			return _spell_hold(cast_target)
+			casted = _spell_hold(cast_target)
 		"SCARE":
-			return _spell_scare(cast_target)
+			casted = _spell_scare(cast_target)
 		"CONF":
-			return _spell_conf(cast_target)
+			casted = _spell_conf(cast_target)
+		"HATCH_SPIDER":
+			casted = _spell_hatch_spider()
 		"WEB", "THROW_WEB":
-			return _spell_throw_web(cast_target, distance)
-	return false
+			casted = _spell_throw_web(cast_target, distance)
+	if casted:
+		_apply_spell_cooldown(spell)
+	return casted
+
+func _tick_spell_cooldowns() -> void:
+	if _spell_cooldowns.is_empty():
+		return
+	var expired: Array[StringName] = []
+	for key in _spell_cooldowns.keys():
+		var remaining: int = int(_spell_cooldowns.get(key, 0)) - 1
+		if remaining <= 0:
+			expired.append(key)
+		else:
+			_spell_cooldowns[key] = remaining
+	for key in expired:
+		_spell_cooldowns.erase(key)
+
+func _spell_cooldown_key(spell: String) -> StringName:
+	match spell:
+		"WEB", "THROW_WEB":
+			return &"WEB"
+		"HATCH_SPIDER":
+			return &"HATCH_SPIDER"
+		_:
+			return &""
+
+func _is_spell_on_cooldown(spell: String) -> bool:
+	var key: StringName = _spell_cooldown_key(spell)
+	if String(key).is_empty():
+		return false
+	return int(_spell_cooldowns.get(key, 0)) > 0
+
+func _apply_spell_cooldown(spell: String) -> void:
+	var key: StringName = _spell_cooldown_key(spell)
+	if String(key).is_empty():
+		return
+	var turns: int = 0
+	match key:
+		&"WEB":
+			turns = WEB_SPELL_COOLDOWN_TURNS
+		&"HATCH_SPIDER":
+			turns = HATCH_SPIDER_COOLDOWN_TURNS
+	if turns > 0:
+		_spell_cooldowns[key] = turns
 
 func _spell_shriek() -> bool:
 	# Raise floor alertness and wake nearby monsters
@@ -1845,6 +1899,47 @@ func _spell_throw_web(cast_target: Entity, distance: int) -> bool:
 		cast_target.vfx_particles_directional(Color(0.86, 0.9, 1.0, 0.95), impact_dir.normalized(), 6, 3.2, 16.0, 0.35)
 		cast_target.vfx_floater("Ensnared", ThemeColors.STATUS_SLOW, 15)
 	cast_target.apply_status("slow", 4 + randi_range(1, 3))
+	return true
+
+func _spell_hatch_spider() -> bool:
+	if not GameManager.current_level:
+		return false
+	var level: Level = GameManager.current_level
+	var spawn_names: Array[String] = ["Mirkwood Spider", "Web Spinner", "Great Spider"]
+	var offsets: Array[Vector2i] = [
+		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
+		Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)
+	]
+	offsets.shuffle()
+	var spawned: int = 0
+	var spawn_target: int = 2 if entity_name.to_lower().contains("ungoliant") else 1 + randi_range(0, 1)
+	var scene := preload("res://scenes/entities/monster.tscn")
+	for offset in offsets:
+		if spawned >= spawn_target:
+			break
+		var pos: Vector2i = grid_position + offset
+		if not level.is_in_bounds(pos):
+			continue
+		if not level.is_passable(pos):
+			continue
+		if level.get_entity_at(pos) != null:
+			continue
+		var picked_name: String = spawn_names.pick_random()
+		var hatch_data: DataManager.MonsterData = DataManager.get_monster(picked_name)
+		if hatch_data == null:
+			continue
+		if hatch_data.name == "Broodmother":
+			continue
+		var hatchling: Monster = scene.instantiate()
+		hatchling.grid_position = pos
+		hatchling.initialize_from_data(hatch_data)
+		hatchling.alertness = maxi(alertness, Constants.ALERTNESS_QUITE_ALERT)
+		hatchling.is_sleeping = false
+		level.add_entity(hatchling)
+		spawned += 1
+	if spawned <= 0:
+		return false
+	GameManager.log_message("The %s spills spiderlings into the shadows!" % entity_name, ThemeColors.MSG_WARNING)
 	return true
 
 func _place_web_cluster(center: Vector2i) -> int:

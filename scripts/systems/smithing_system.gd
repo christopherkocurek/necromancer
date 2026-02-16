@@ -420,6 +420,10 @@ func create_item(player: Player, template: Variant, _forge_bonus: int = 0, mithr
 		if "name" in new_item:
 			new_item.name = "Mithril " + new_item.name
 
+	# Forge/Reforge policy: crafted gear can roll from the full compatible ego pool.
+	_apply_forge_ego(new_item)
+
+	if using_mithril:
 		player.inventory.append(new_item)
 		item_forged.emit(new_item, "Forged from Mithril!")
 		GameManager.log_message("You forge a %s from Mithril!" % _get_item_name(new_item), ThemeColors.ABILITY_LEARNED)
@@ -716,15 +720,18 @@ func _get_item_name(item: Variant) -> String:
 func _apply_reforge_ego(item: DataManager.ItemData, depth: int) -> void:
 	if item == null:
 		return
-	var sval: int = item.sval if "sval" in item else 0
-	# Try exact depth first, then broaden search up to depth 20
-	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, sval, depth, true)
+	# Sil-Q style smithing target: allow any compatible ego type, not just shallow-depth pools.
+	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, 0, 20, true)
 	if ego == null:
-		# Broaden: try with sval 0 (wildcard) and higher depth
-		ego = DataManager.select_ego_for_item(item.tval, 0, maxi(depth, 10), true)
-	if ego == null:
-		# Last resort: try any non-cursed ego at max depth
-		ego = DataManager.select_ego_for_item(item.tval, 0, 20, true)
+		var sval: int = item.sval if "sval" in item else 0
+		ego = DataManager.select_ego_for_item(item.tval, sval, maxi(depth, 10), true)
+	if ego:
+		DataManager.apply_ego_to_item(item, ego)
+
+func _apply_forge_ego(item: DataManager.ItemData) -> void:
+	if item == null:
+		return
+	var ego: DataManager.EgoData = DataManager.select_ego_for_item(item.tval, 0, 20, true)
 	if ego:
 		DataManager.apply_ego_to_item(item, ego)
 

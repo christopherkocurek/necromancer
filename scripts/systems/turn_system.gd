@@ -192,7 +192,10 @@ func _process_monster_turn() -> void:
 	# Process all pending monsters synchronously in one frame for instant responsiveness.
 	# The 0.01s move tweens run independently and don't need awaiting.
 	while not pending_monsters.is_empty():
-		var monster: Monster = pending_monsters.pop_front()
+		var next_monster = pending_monsters.pop_front()
+		if not is_instance_valid(next_monster) or not (next_monster is Monster):
+			continue
+		var monster: Monster = next_monster
 		if monster.is_alive and monster.can_act():
 			monster.reset_light_recoil()
 			monster.take_turn()
@@ -364,7 +367,12 @@ func _tick_periodic_spawn() -> void:
 	else:
 		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
 
-	if not monster_data or monster_data.has_flag("UNIQUE"):
+	for _retry in range(8):
+		if monster_data and not _is_disallowed_periodic_monster(monster_data, GameManager.current_depth):
+			break
+		monster_data = DataManager.get_random_monster_for_depth(effective_depth, true)
+
+	if not monster_data or monster_data.has_flag("UNIQUE") or _is_disallowed_periodic_monster(monster_data, GameManager.current_depth):
 		return
 
 	_spawn_periodic_hunter(spawn_pos, monster_data, alert)
@@ -400,6 +408,13 @@ func _spawn_periodic_hunter(spawn_pos: Vector2i, monster_data: DataManager.Monst
 	monster.is_sleeping = false
 	monster.encounter_type = Constants.EncounterType.HUNTER
 	current_level.add_entity(monster)
+
+func _is_disallowed_periodic_monster(monster_data: DataManager.MonsterData, floor_depth: int) -> bool:
+	if monster_data == null:
+		return true
+	if monster_data.name == "Broodmother" and floor_depth < 3:
+		return true
+	return false
 
 func _apply_pursuit_pressure() -> void:
 	if not current_level or not player:
